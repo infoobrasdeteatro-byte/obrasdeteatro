@@ -22,12 +22,12 @@ export default function RegistroPage() {
       email,
       password,
       options: {
-        data: { username }
+        data: { display_name: username }
       }
     })
 
     if (error) {
-      setMessage(error.message)
+      setMessage('Error: ' + JSON.stringify(error))
     } else {
       setMessage('¡Revisa tu email para confirmar tu cuenta!')
     }
@@ -71,7 +71,9 @@ export default function RegistroPage() {
             {loading ? 'Creando cuenta...' : 'Registrarse'}
           </button>
         </form>
-        {message && <p className="mt-4 text-center text-sm">{message}</p>}
+        {message && (
+          <p className="mt-4 text-center text-sm font-medium">{message}</p>
+        )}
         <p className="mt-4 text-center text-sm">
           ¿Ya tienes cuenta?{' '}
           <Link href="/auth/login" className="underline">Inicia sesión</Link>
