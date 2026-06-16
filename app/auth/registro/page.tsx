@@ -40,18 +40,18 @@ export default function RegistroPage() {
         <h1 className="text-2xl font-bold text-center mb-6">Crear cuenta</h1>
         <form onSubmit={handleRegistro} className="space-y-4">
           <input
-            type="text"
-            placeholder="Nombre de usuario"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            required
-            className="w-full border p-3 rounded"
-          />
-          <input
             type="email"
             placeholder="Email"
             value={email}
             onChange={e => setEmail(e.target.value)}
+            required
+            className="w-full border p-3 rounded"
+          />
+          <input
+            type="text"
+            placeholder="Nombre de usuario"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
             required
             className="w-full border p-3 rounded"
           />

@@ -27,7 +27,7 @@ export default function Home() {
           <a href="#" style={{ color: '#888', textDecoration: 'none' }}>Compañías</a>
           <a href="#" style={{ color: '#888', textDecoration: 'none' }}>Convocatorias</a>
           <a href="#" style={{ color: '#888', textDecoration: 'none' }}>Profesionales</a>
-          <a href="#" style={{ color: '#c9a84c', textDecoration: 'none', border: '1px solid #c9a84c', padding: '6px 16px' }}>Acceder</a>
+          <a href="/auth/login" style={{ color: '#c9a84c', textDecoration: 'none', border: '1px solid #c9a84c', padding: '6px 16px' }}>Acceder</a>
         </div>
       </nav>
 
