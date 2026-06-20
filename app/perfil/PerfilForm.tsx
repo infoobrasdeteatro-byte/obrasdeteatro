@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/supabase'
+import { COUNTRIES } from '@/lib/geo/countries'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
 
@@ -28,10 +29,19 @@ interface Profile {
   bio: string | null
   pais: string
   ciudad: string | null
+  country_code: string | null
+  region: string | null
+  postal_code: string | null
   tipo_perfil: TipoPerfil
   perfil_publico: boolean
   slug: string | null
 }
+
+// España al inicio, resto en el orden original del dataset
+const SORTED_COUNTRIES = [
+  COUNTRIES.find(c => c.code === 'ES')!,
+  ...COUNTRIES.filter(c => c.code !== 'ES'),
+]
 
 export default function PerfilForm({ profile }: { profile: Profile | null }) {
   const [nombre, setNombre] = useState(profile?.nombre || '')
@@ -39,11 +49,33 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
   const [nombreArtistico, setNombreArtistico] = useState(profile?.nombre_artistico || '')
   const [tipoPerfil, setTipoPerfil] = useState<TipoPerfil>(profile?.tipo_perfil ?? ('publico' as TipoPerfil))
   const [bio, setBio] = useState(profile?.bio || '')
-  const [pais, setPais] = useState(profile?.pais || 'España')
-  const [ciudad, setCiudad] = useState(profile?.ciudad || '')
   const [perfilPublico, setPerfilPublico] = useState(profile?.perfil_publico ?? true)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+
+  // Ubicación estructurada
+  const initialCode =
+    profile?.country_code ??
+    COUNTRIES.find(c => c.name === profile?.pais)?.code ??
+    'ES'
+  const initialCountry = COUNTRIES.find(c => c.code === initialCode) ?? COUNTRIES[0]
+
+  const [countryCode, setCountryCode] = useState(initialCode)
+  const [pais, setPais] = useState(initialCountry.name)
+  const [region, setRegion] = useState(profile?.region ?? '')
+  const [ciudad, setCiudad] = useState(profile?.ciudad ?? '')
+  const [postalCode, setPostalCode] = useState(profile?.postal_code ?? '')
+
+  const currentCountry = COUNTRIES.find(c => c.code === countryCode)
+
+  const handleCountryChange = (code: string) => {
+    const country = COUNTRIES.find(c => c.code === code)
+    if (country) {
+      setCountryCode(country.code)
+      setPais(country.name)
+      setRegion('')
+    }
+  }
 
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,7 +93,10 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
         tipo_perfil: tipoPerfil,
         bio: bio || null,
         pais,
+        country_code: countryCode || null,
+        region: region || null,
         ciudad: ciudad || null,
+        postal_code: postalCode || null,
         perfil_publico: perfilPublico,
         updated_at: new Date().toISOString(),
       })
@@ -145,26 +180,56 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">País</label>
-          <input
-            type="text"
-            value={pais}
-            onChange={e => setPais(e.target.value)}
-            className="w-full border p-3 rounded"
-            placeholder="España"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Ciudad</label>
-          <input
-            type="text"
-            value={ciudad}
-            onChange={e => setCiudad(e.target.value)}
-            className="w-full border p-3 rounded"
-            placeholder="Madrid"
-          />
+      {/* Ubicación estructurada */}
+      <div>
+        <label className="block text-sm font-medium mb-3">Ubicación</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">País</label>
+            <select
+              value={countryCode}
+              onChange={e => handleCountryChange(e.target.value)}
+              className="w-full border p-3 rounded"
+            >
+              {SORTED_COUNTRIES.map(c => (
+                <option key={c.code} value={c.code}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Provincia / Estado / Región</label>
+            <select
+              value={region}
+              onChange={e => setRegion(e.target.value)}
+              className="w-full border p-3 rounded"
+            >
+              <option value="">— Seleccionar —</option>
+              {currentCountry?.regions.map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Ciudad</label>
+            <input
+              type="text"
+              value={ciudad}
+              onChange={e => setCiudad(e.target.value)}
+              className="w-full border p-3 rounded"
+              placeholder="Madrid"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Código postal</label>
+            <input
+              type="text"
+              value={postalCode}
+              onChange={e => setPostalCode(e.target.value)}
+              className="w-full border p-3 rounded"
+              placeholder="28001"
+              maxLength={12}
+            />
+          </div>
         </div>
       </div>
 

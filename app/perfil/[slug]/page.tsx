@@ -49,7 +49,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, pais, bio, perfil_publico, created_at')
+    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, perfil_publico, created_at')
     .eq('slug', slug)
     .is('deleted_at', null)
     .single()
@@ -61,7 +61,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
   const nombrePublico = profile.nombre_artistico || profile.nombre
   const nombreCompleto = [profile.nombre, profile.apellidos].filter(Boolean).join(' ')
   const tipo = TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil
-  const ubicacion = [profile.ciudad, profile.pais].filter(Boolean).join(', ')
+  const ubicacion = [profile.ciudad, profile.region, profile.pais].filter(Boolean).join(' · ')
 
   return (
     <div className="min-h-screen bg-gray-50">

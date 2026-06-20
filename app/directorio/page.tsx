@@ -55,7 +55,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
 
   let query = supabase
     .from('profiles')
-    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, pais, bio, slug, avatar_url, verificado')
+    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, country_code, pais, bio, slug, avatar_url, verificado')
     .eq('perfil_publico', true)
     .is('deleted_at', null)
     .not('slug', 'is', null)
