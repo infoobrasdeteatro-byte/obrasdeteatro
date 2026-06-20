@@ -38,7 +38,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const now = new Date().toISOString()
 
   await supabase.from('subscriptions')
-    .update({ status: 'cancelled', updated_at: now })
+    .update({ status: 'canceled', updated_at: now })
     .eq('stripe_subscription_id', subscription.id)
 
   // Recuperar profile_id para degradar el plan

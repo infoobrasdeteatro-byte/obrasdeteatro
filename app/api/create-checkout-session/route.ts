@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 
-const PLANES: Record<string, string | undefined> = {
-  premium:   process.env.STRIPE_PRICE_PREMIUM_ID,
-  destacado: process.env.STRIPE_PRICE_DESTACADO_ID,
-  empresas:  process.env.STRIPE_PRICE_EMPRESAS_ID,
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { plan, userId, email } = await req.json()
 
     if (!plan || !userId || !email) {
       return NextResponse.json({ error: 'Faltan parámetros requeridos' }, { status: 400 })
+    }
+
+    const PLANES: Record<string, string | undefined> = {
+      premium:   process.env.STRIPE_PRICE_PREMIUM_ID,
+      destacado: process.env.STRIPE_PRICE_DESTACADO_ID,
+      empresas:  process.env.STRIPE_PRICE_EMPRESAS_ID,
     }
 
     const priceId = PLANES[plan]
