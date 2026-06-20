@@ -56,6 +56,9 @@ export default async function DashboardPage() {
             <p className="text-gray-500 mt-1">{user.email}</p>
           </div>
           <div className="flex gap-3">
+            <Link href="/directorio" className="bg-gray-100 text-gray-700 px-4 py-2 rounded font-medium text-sm hover:bg-gray-200">
+              Directorio
+            </Link>
             {perfilPublicoUrl && (
               <Link
                 href={perfilPublicoUrl}
