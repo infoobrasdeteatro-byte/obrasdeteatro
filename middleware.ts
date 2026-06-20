@@ -31,6 +31,28 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  const { pathname } = request.nextUrl
+
+  const isProtectedRoute =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/perfil') ||
+    pathname.startsWith('/mis-obras') ||
+    pathname.startsWith('/obras/nueva') ||
+    (pathname.startsWith('/obras/') && pathname.endsWith('/editar'))
+
+  const isAuthRoute =
+    pathname.startsWith('/auth') &&
+    !pathname.startsWith('/auth/logout') &&
+    !pathname.startsWith('/auth/callback')
+
+  if (isProtectedRoute && !user) {
+    return NextResponse.redirect(new URL('/auth/login', request.url))
+  }
+
+  if (isAuthRoute && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
   return supabaseResponse
 }
 

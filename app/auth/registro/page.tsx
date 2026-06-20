@@ -7,7 +7,7 @@ import Link from 'next/link'
 export default function RegistroPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [username, setUsername] = useState('')
+  const [nombre, setNombre] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -22,7 +22,7 @@ export default function RegistroPage() {
       email,
       password,
       options: {
-        data: { display_name: username }
+        data: { nombre }
       }
     })
 
@@ -49,9 +49,9 @@ export default function RegistroPage() {
           />
           <input
             type="text"
-            placeholder="Nombre de usuario"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
+            placeholder="Tu nombre"
+            value={nombre}
+            onChange={e => setNombre(e.target.value)}
             required
             className="w-full border p-3 rounded"
           />
