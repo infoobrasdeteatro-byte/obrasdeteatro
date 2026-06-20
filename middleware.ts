@@ -39,7 +39,8 @@ export async function middleware(request: NextRequest) {
 
   const isAuthRoute =
     pathname.startsWith('/auth') &&
-    !pathname.startsWith('/auth/logout')
+    !pathname.startsWith('/auth/logout') &&
+    !pathname.startsWith('/auth/callback')
 
   if (isProtectedRoute && !user) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
