@@ -35,7 +35,10 @@ export async function middleware(request: NextRequest) {
 
   const isProtectedRoute =
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/perfil')
+    pathname.startsWith('/perfil') ||
+    pathname.startsWith('/mis-obras') ||
+    pathname.startsWith('/obras/nueva') ||
+    (pathname.startsWith('/obras/') && pathname.endsWith('/editar'))
 
   const isAuthRoute =
     pathname.startsWith('/auth') &&

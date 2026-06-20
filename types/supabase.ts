@@ -2169,6 +2169,7 @@ export type Database = {
       }
       works: {
         Row: {
+          author: string | null
           cast_size_max: number | null
           cast_size_min: number | null
           created_at: string | null
@@ -2188,6 +2189,7 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          author?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
           created_at?: string | null
@@ -2207,6 +2209,7 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          author?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
           created_at?: string | null

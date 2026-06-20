@@ -143,9 +143,12 @@ export default async function DashboardPage() {
               Editar →
             </Link>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm opacity-60">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
             <h2 className="font-semibold text-lg mb-1">Mis obras</h2>
-            <p className="text-gray-400 text-sm">Próximamente</p>
+            <p className="text-gray-400 text-sm mb-4">Gestiona tu catálogo de obras</p>
+            <Link href="/mis-obras" className="text-sm font-medium underline text-gray-600 hover:text-black">
+              Ver obras →
+            </Link>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm opacity-60">
             <h2 className="font-semibold text-lg mb-1">Castings</h2>
