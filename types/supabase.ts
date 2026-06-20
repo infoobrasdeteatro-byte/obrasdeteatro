@@ -1737,6 +1737,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           ciudad: string | null
+          country_code: string | null
           cover_url: string | null
           created_at: string
           deleted_at: string | null
@@ -1754,6 +1755,8 @@ export type Database = {
           perfil_publico: boolean
           phone: string | null
           plan: Database["public"]["Enums"]["plan_suscripcion"]
+          postal_code: string | null
+          region: string | null
           scenaia_analisis: boolean
           scenaia_recomendaciones: boolean
           slug: string | null
@@ -1769,6 +1772,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           ciudad?: string | null
+          country_code?: string | null
           cover_url?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -1786,6 +1790,8 @@ export type Database = {
           perfil_publico?: boolean
           phone?: string | null
           plan?: Database["public"]["Enums"]["plan_suscripcion"]
+          postal_code?: string | null
+          region?: string | null
           scenaia_analisis?: boolean
           scenaia_recomendaciones?: boolean
           slug?: string | null
@@ -1801,6 +1807,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           ciudad?: string | null
+          country_code?: string | null
           cover_url?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -1818,6 +1825,8 @@ export type Database = {
           perfil_publico?: boolean
           phone?: string | null
           plan?: Database["public"]["Enums"]["plan_suscripcion"]
+          postal_code?: string | null
+          region?: string | null
           scenaia_analisis?: boolean
           scenaia_recomendaciones?: boolean
           slug?: string | null
