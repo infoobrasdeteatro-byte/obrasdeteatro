@@ -23,11 +23,18 @@ const PLAN_LABEL: Record<string, string> = {
   empresas:  'Empresas',
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string }>
+}) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
+
+  const params = await searchParams
+  const showSuccess = !!params.success
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -78,6 +85,13 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Banner éxito tras suscripción */}
+        {showSuccess && (
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm">
+            ¡Suscripción activada correctamente! Tu plan ha sido actualizado.
+          </div>
+        )}
+
         {/* Tarjeta de cuenta */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h2 className="font-semibold text-lg mb-4">Mi cuenta</h2>
@@ -92,7 +106,7 @@ export default async function DashboardPage() {
             </div>
             <div>
               <dt className="text-xs text-gray-400 uppercase tracking-wide mb-1">Plan</dt>
-              <dd>
+              <dd className="flex items-center gap-2">
                 <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${
                   profile?.plan === 'gratuito'
                     ? 'bg-gray-100 text-gray-600'
@@ -100,6 +114,11 @@ export default async function DashboardPage() {
                 }`}>
                   {plan}
                 </span>
+                {profile?.plan === 'gratuito' && (
+                  <Link href="/precios" className="text-xs text-gray-400 hover:text-black underline">
+                    Mejorar
+                  </Link>
+                )}
               </dd>
             </div>
             <div>
