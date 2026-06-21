@@ -31,8 +31,14 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (err) {
-    console.error('Error creando sesión de checkout:', err)
+  } catch (err: unknown) {
+    const e = err as Record<string, unknown>
+    console.error('STRIPE_DEBUG', JSON.stringify({
+      type:        e?.type,
+      code:        e?.code,
+      message:     e?.message,
+      raw_message: (e?.raw as Record<string, unknown>)?.message,
+    }))
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
   }
 }
