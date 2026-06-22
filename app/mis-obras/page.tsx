@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import MisObrasList from './MisObrasList'
+import NavAutenticado from '@/components/NavAutenticado'
 
 export const metadata: Metadata = {
   title: 'Mis obras | ObrasDeTeatro',
@@ -26,16 +27,12 @@ export default async function MisObrasPage() {
   const borradores = total - publicadas
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <NavAutenticado />
+      <div className="max-w-5xl mx-auto p-8">
 
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Mis obras</h1>
-            <Link href="/dashboard" className="text-sm text-gray-500 hover:text-black mt-1 inline-block">
-              ← Volver al panel
-            </Link>
-          </div>
+          <h1 className="text-3xl font-bold">Mis obras</h1>
           <Link
             href="/obras/nueva"
             className="bg-black text-white px-5 py-2.5 rounded font-medium text-sm hover:bg-gray-800"

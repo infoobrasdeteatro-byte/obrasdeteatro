@@ -154,6 +154,9 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                       </>
                     )}
                   </div>
+                  {plan.precio > 0 && (
+                    <p className="text-xs text-gray-400 mt-1">Facturación mensual · Cancela cuando quieras</p>
+                  )}
                 </div>
 
                 {/* Características */}
@@ -194,9 +197,15 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                   <button
                     onClick={() => handleSubscribe(plan.id)}
                     disabled={isLoading || !!loadingPlan}
-                    className="w-full py-2.5 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      plan.recomendado
+                        ? 'bg-black text-white hover:bg-gray-800'
+                        : 'bg-gray-900 text-white hover:bg-black'
+                    }`}
                   >
-                    {isLoading ? 'Redirigiendo a Stripe…' : 'Suscribirse'}
+                    {isLoading
+                      ? 'Redirigiendo a Stripe…'
+                      : `Activar plan ${plan.nombre}`}
                   </button>
                 )}
               </div>

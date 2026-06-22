@@ -49,12 +49,13 @@ export default async function PerfilPublicoPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, perfil_publico, created_at')
+    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, created_at')
     .eq('slug', slug)
+    .eq('perfil_publico', true)
     .is('deleted_at', null)
     .single()
 
-  if (!profile || !profile.perfil_publico) {
+  if (!profile) {
     notFound()
   }
 

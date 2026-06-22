@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import NavAutenticado from '@/components/NavAutenticado'
 
 const TIPO_PERFIL_LABEL: Record<string, string> = {
   actor:        'Actor / Actriz',
@@ -53,42 +54,39 @@ export default async function DashboardPage({
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <NavAutenticado />
+
+      <div className="max-w-4xl mx-auto p-8">
 
         {/* Cabecera */}
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Panel de control</h1>
-            <p className="text-gray-500 mt-1">{user.email}</p>
-          </div>
-          <div className="flex gap-3">
-            <Link href="/directorio" className="bg-gray-100 text-gray-700 px-4 py-2 rounded font-medium text-sm hover:bg-gray-200">
-              Directorio
-            </Link>
-            {perfilPublicoUrl && (
-              <Link
-                href={perfilPublicoUrl}
-                className="bg-gray-100 text-gray-700 px-4 py-2 rounded font-medium text-sm hover:bg-gray-200"
-              >
-                Ver perfil público
-              </Link>
-            )}
-            <Link href="/perfil" className="bg-gray-200 text-black px-4 py-2 rounded font-medium text-sm">
-              Editar perfil
-            </Link>
-            <form action="/auth/logout" method="POST">
-              <button type="submit" className="bg-black text-white px-4 py-2 rounded font-medium text-sm">
-                Cerrar sesión
-              </button>
-            </form>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">Panel de control</h1>
+          <p className="text-gray-500 mt-1">{user.email}</p>
         </div>
 
         {/* Banner éxito tras suscripción */}
         {showSuccess && (
           <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm">
             ¡Suscripción activada correctamente! Tu plan ha sido actualizado.
+          </div>
+        )}
+
+        {/* Bloque onboarding para plan gratuito */}
+        {profile?.plan === 'gratuito' && (
+          <div className="mb-6 bg-black text-white rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Impulsa tu perfil profesional</h3>
+              <p className="text-gray-400 text-sm">
+                Aparece antes en el directorio, publica obras ilimitadas y obtén badge premium.
+              </p>
+            </div>
+            <Link
+              href="/precios"
+              className="shrink-0 bg-white text-black px-5 py-2.5 rounded font-medium text-sm hover:bg-gray-100 transition-colors text-center"
+            >
+              Ver planes
+            </Link>
           </div>
         )}
 
