@@ -64,7 +64,7 @@ export default function UpdatePasswordPage() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Contraseña actualizada</h1>
           <p className="text-gray-500 mb-6">Tu contraseña ha sido cambiada correctamente.</p>
-          <p className="text-sm text-gray-400 mb-4">Redirigiendo al dashboard en {countdown}...</p>
+          <p className="text-sm text-gray-600 mb-4">Redirigiendo al dashboard en {countdown}...</p>
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full bg-black text-white p-3 rounded font-medium"
@@ -104,7 +104,8 @@ export default function UpdatePasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
-          <p className="text-gray-400 text-sm">Verificando sesión...</p>
+          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">Verificando sesión...</p>
         </div>
       </div>
     )
@@ -122,7 +123,7 @@ export default function UpdatePasswordPage() {
             onChange={e => setPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-gray-500"
           />
           <input
             type="password"
@@ -131,7 +132,7 @@ export default function UpdatePasswordPage() {
             onChange={e => setConfirm(e.target.value)}
             required
             minLength={6}
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-gray-500"
           />
           <button
             type="submit"

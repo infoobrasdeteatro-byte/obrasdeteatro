@@ -95,15 +95,15 @@ export default async function DashboardPage({
           <h2 className="font-semibold text-lg mb-4">Mi cuenta</h2>
           <dl className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <dt className="text-xs text-gray-400 uppercase tracking-wide mb-1">Nombre</dt>
+              <dt className="text-xs text-gray-500 uppercase tracking-wide mb-1">Nombre</dt>
               <dd className="font-medium text-gray-900">{nombreMostrado}</dd>
             </div>
             <div>
-              <dt className="text-xs text-gray-400 uppercase tracking-wide mb-1">Tipo de perfil</dt>
+              <dt className="text-xs text-gray-500 uppercase tracking-wide mb-1">Tipo de perfil</dt>
               <dd className="font-medium text-gray-900">{tipo}</dd>
             </div>
             <div>
-              <dt className="text-xs text-gray-400 uppercase tracking-wide mb-1">Plan</dt>
+              <dt className="text-xs text-gray-500 uppercase tracking-wide mb-1">Plan</dt>
               <dd className="flex items-center gap-2">
                 <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${
                   profile?.plan === 'gratuito'
@@ -113,14 +113,14 @@ export default async function DashboardPage({
                   {plan}
                 </span>
                 {profile?.plan === 'gratuito' && (
-                  <Link href="/precios" className="text-xs text-gray-400 hover:text-black underline">
+                  <Link href="/precios" className="text-xs text-gray-600 hover:text-black underline">
                     Mejorar
                   </Link>
                 )}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-gray-400 uppercase tracking-wide mb-1">Miembro desde</dt>
+              <dt className="text-xs text-gray-500 uppercase tracking-wide mb-1">Miembro desde</dt>
               <dd className="font-medium text-gray-900 text-sm">{fechaRegistro}</dd>
             </div>
           </dl>
@@ -155,21 +155,21 @@ export default async function DashboardPage({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <h2 className="font-semibold text-lg mb-1">Mi perfil</h2>
-            <p className="text-gray-400 text-sm mb-4">Completa tu perfil profesional</p>
+            <p className="text-gray-500 text-sm mb-4">Completa tu perfil profesional</p>
             <Link href="/perfil" className="text-sm font-medium underline text-gray-600 hover:text-black">
               Editar →
             </Link>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <h2 className="font-semibold text-lg mb-1">Mis obras</h2>
-            <p className="text-gray-400 text-sm mb-4">Gestiona tu catálogo de obras</p>
+            <p className="text-gray-500 text-sm mb-4">Gestiona tu catálogo de obras</p>
             <Link href="/mis-obras" className="text-sm font-medium underline text-gray-600 hover:text-black">
               Ver obras →
             </Link>
           </div>
           <div className="bg-white p-6 rounded-xl shadow-sm opacity-60">
             <h2 className="font-semibold text-lg mb-1">Castings</h2>
-            <p className="text-gray-400 text-sm">Próximamente</p>
+            <p className="text-gray-500 text-sm">Próximamente</p>
           </div>
         </div>
 

@@ -51,7 +51,7 @@ export default function RegistroPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-gray-500"
           />
           <input
             type="text"
@@ -59,7 +59,7 @@ export default function RegistroPage() {
             value={nombre}
             onChange={e => setNombre(e.target.value)}
             required
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-gray-500"
           />
           <input
             type="password"
@@ -67,7 +67,7 @@ export default function RegistroPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-gray-500"
           />
           <button
             type="submit"

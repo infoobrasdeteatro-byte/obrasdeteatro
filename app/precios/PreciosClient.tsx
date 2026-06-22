@@ -145,7 +145,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-400 mb-4">{plan.descripcion}</p>
+                  <p className="text-sm text-gray-500 mb-4">{plan.descripcion}</p>
                   <div className="flex items-baseline gap-1">
                     {plan.precio === 0 ? (
                       <span className="text-3xl font-bold">Gratis</span>
@@ -154,12 +154,12 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                         <span className="text-3xl font-bold">
                           {plan.precio.toFixed(2).replace('.', ',')} €
                         </span>
-                        <span className="text-sm text-gray-400">/mes</span>
+                        <span className="text-sm text-gray-500">/mes</span>
                       </>
                     )}
                   </div>
                   {plan.precio > 0 && (
-                    <p className="text-xs text-gray-400 mt-1">Facturación mensual · Cancela cuando quieras</p>
+                    <p className="text-xs text-gray-500 mt-1">Facturación mensual · Cancela cuando quieras</p>
                   )}
                 </div>
 
@@ -183,7 +183,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
 
                 {/* CTA */}
                 {isCurrent ? (
-                  <div className="w-full text-center py-2.5 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-default select-none">
+                  <div className="w-full text-center py-2.5 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium cursor-default select-none">
                     Plan actual
                   </div>
                 ) : !isAuthenticated ? (
@@ -194,7 +194,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                     {isPaid ? 'Crear cuenta' : 'Empezar gratis'}
                   </Link>
                 ) : plan.id === 'gratuito' ? (
-                  <div className="w-full text-center py-2.5 rounded-lg bg-gray-100 text-gray-400 text-sm font-medium cursor-default select-none">
+                  <div className="w-full text-center py-2.5 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium cursor-default select-none">
                     Incluido
                   </div>
                 ) : (
@@ -274,7 +274,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
         )}
 
         {/* Señales de confianza */}
-        <p className="text-center text-gray-400 text-sm mt-8">
+        <p className="text-center text-gray-500 text-sm mt-8">
           Pago seguro con Stripe · Cancela en cualquier momento · Sin permanencia mínima
         </p>
 
