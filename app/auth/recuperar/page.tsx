@@ -1,18 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { translateAuthError } from '@/lib/auth-errors'
 
 export default function RecuperarPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [isError, setIsError] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('expired') === 'true') {
+      setMessage('El enlace de recuperación ha expirado. Solicita uno nuevo.')
+      setIsError(true)
+    }
+  }, [])
 
   const handleRecuperar = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
+    setIsError(false)
 
     const supabase = createClient()
 
@@ -21,9 +32,11 @@ export default function RecuperarPage() {
     })
 
     if (error) {
-      setMessage(error.message)
+      setMessage(translateAuthError(error.message))
+      setIsError(true)
     } else {
       setMessage('¡Revisa tu email para restablecer tu contraseña!')
+      setIsError(false)
     }
     setLoading(false)
   }
@@ -49,7 +62,11 @@ export default function RecuperarPage() {
             {loading ? 'Enviando...' : 'Enviar enlace'}
           </button>
         </form>
-        {message && <p className="mt-4 text-center text-sm">{message}</p>}
+        {message && (
+          <p className={`mt-4 text-center text-sm ${isError ? 'text-red-500' : 'text-green-600'}`}>
+            {message}
+          </p>
+        )}
         <p className="mt-4 text-center text-sm">
           <Link href="/auth/login" className="underline">Volver al login</Link>
         </p>

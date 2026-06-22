@@ -26,5 +26,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth/login?error=auth_error`)
+  return NextResponse.redirect(`${origin}/auth/recuperar?expired=true`)
 }
