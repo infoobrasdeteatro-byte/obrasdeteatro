@@ -1,4 +1,4 @@
-export type PlanId = 'gratuito' | 'destacado' | 'empresas'
+export type PlanId = 'gratuito' | 'premium' | 'destacado' | 'empresas'
 
 export interface Plan {
   id: PlanId
@@ -20,6 +20,19 @@ export const PLANES: Plan[] = [
       'Hasta 3 obras publicadas',
       'Acceso a convocatorias abiertas',
       'Visible para compañías y teatros',
+    ],
+    recomendado: false,
+  },
+  {
+    id: 'premium',
+    nombre: 'Premium',
+    precio: 2.99,
+    descripcion: 'Para empezar a destacar',
+    caracteristicas: [
+      'Todo lo del plan Gratuito',
+      'Obras ilimitadas publicadas',
+      'Acceso a todas las convocatorias',
+      'Mayor visibilidad en búsquedas',
     ],
     recomendado: false,
   },
