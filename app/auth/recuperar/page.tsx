@@ -52,7 +52,7 @@ export default function RecuperarPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full border p-3 rounded"
+            className="w-full border p-3 rounded placeholder:text-gray-500"
           />
           <button
             type="submit"
@@ -63,9 +63,14 @@ export default function RecuperarPage() {
           </button>
         </form>
         {message && (
-          <p className={`mt-4 text-center text-sm ${isError ? 'text-red-500' : 'text-green-600'}`}>
-            {message}
-          </p>
+          <div className={`mt-4 flex items-center justify-center gap-2 text-sm ${isError ? 'text-red-500' : 'text-green-700'}`}>
+            {!isError && (
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+            <p className="text-center">{message}</p>
+          </div>
         )}
         <p className="mt-4 text-center text-sm">
           <Link href="/auth/login" className="underline">Volver al login</Link>
