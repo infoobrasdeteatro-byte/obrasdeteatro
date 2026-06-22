@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { translateAuthError } from '@/lib/auth-errors'
 
 export default function RegistroPage() {
   const [email, setEmail] = useState('')
@@ -27,7 +28,7 @@ export default function RegistroPage() {
     })
 
     if (error) {
-      setMessage('Error: ' + JSON.stringify(error))
+      setMessage(translateAuthError(error.message))
     } else {
       fetch('/api/auth/welcome-email', {
         method: 'POST',

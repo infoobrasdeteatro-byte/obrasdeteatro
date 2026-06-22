@@ -14,6 +14,10 @@ interface Props {
 export default function PreciosClient({ userId, userEmail, currentPlan, cancelled }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false)
+  const [acceptRenewal, setAcceptRenewal] = useState(false)
+  const legalAccepted = acceptTerms && acceptPrivacy && acceptRenewal
 
   const handleSubscribe = async (planId: string) => {
     if (!userId || !userEmail) return
@@ -196,7 +200,8 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                 ) : (
                   <button
                     onClick={() => handleSubscribe(plan.id)}
-                    disabled={isLoading || !!loadingPlan}
+                    disabled={isLoading || !!loadingPlan || !legalAccepted}
+                    title={!legalAccepted ? 'Acepta los términos para continuar' : undefined}
                     className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       plan.recomendado
                         ? 'bg-black text-white hover:bg-gray-800'
@@ -213,8 +218,63 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
           })}
         </div>
 
+        {/* Aceptación legal — solo para usuarios autenticados */}
+        {isAuthenticated && (
+          <div className="mt-10 max-w-lg mx-auto bg-gray-50 border border-gray-200 rounded-xl p-6">
+            <p className="text-sm font-semibold text-gray-700 mb-4">
+              Antes de activar un plan, acepta los siguientes términos:
+            </p>
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={e => setAcceptTerms(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-black shrink-0"
+                />
+                <span className="text-sm text-gray-600">
+                  Acepto los{' '}
+                  <a href="/legal/terminos" className="underline hover:text-black" target="_blank" rel="noopener noreferrer">
+                    Términos y Condiciones
+                  </a>
+                </span>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptPrivacy}
+                  onChange={e => setAcceptPrivacy(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-black shrink-0"
+                />
+                <span className="text-sm text-gray-600">
+                  He leído la{' '}
+                  <a href="/legal/privacidad" className="underline hover:text-black" target="_blank" rel="noopener noreferrer">
+                    Política de Privacidad
+                  </a>
+                </span>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptRenewal}
+                  onChange={e => setAcceptRenewal(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-black shrink-0"
+                />
+                <span className="text-sm text-gray-600">
+                  Acepto la renovación automática de la suscripción hasta su cancelación
+                </span>
+              </label>
+            </div>
+            {!legalAccepted && (
+              <p className="text-xs text-amber-700 mt-3">
+                Acepta los tres puntos anteriores para habilitar el botón de pago.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Señales de confianza */}
-        <p className="text-center text-gray-400 text-sm mt-12">
+        <p className="text-center text-gray-400 text-sm mt-8">
           Pago seguro con Stripe · Cancela en cualquier momento · Sin permanencia mínima
         </p>
 
