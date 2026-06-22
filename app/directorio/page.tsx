@@ -3,6 +3,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 import type { Database } from '@/types/supabase'
+import { COUNTRIES } from '@/lib/geo/countries'
+import FiltrosGeo from './FiltrosGeo'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
 
@@ -40,16 +42,22 @@ export const metadata: Metadata = {
 }
 
 type Props = {
-  searchParams: Promise<{ tipo?: string; q?: string }>
+  searchParams: Promise<{ tipo?: string; q?: string; pais?: string; region?: string }>
 }
 
 export default async function DirectorioPage({ searchParams }: Props) {
-  const { tipo, q } = await searchParams
+  const { tipo, q, pais: paisParam, region: regionParam } = await searchParams
 
   const tipoValido: TipoPerfil | null = TIPOS_VALIDOS.includes(tipo as typeof TIPOS_VALIDOS[number])
     ? (tipo as TipoPerfil)
     : null
   const busqueda = (q?.trim() ?? '').slice(0, 100)
+
+  const countryValido = COUNTRIES.find(c => c.code === (paisParam ?? '')) ?? null
+  const paisValido = countryValido?.code ?? null
+  const regionValida = (countryValido && regionParam && countryValido.regions.includes(regionParam))
+    ? regionParam
+    : null
 
   const supabase = await createClient()
 
@@ -62,6 +70,14 @@ export default async function DirectorioPage({ searchParams }: Props) {
 
   if (tipoValido) {
     query = query.eq('tipo_perfil', tipoValido)
+  }
+
+  if (paisValido) {
+    query = query.eq('country_code', paisValido)
+  }
+
+  if (regionValida) {
+    query = query.eq('region', regionValida)
   }
 
   if (busqueda) {
@@ -112,9 +128,19 @@ export default async function DirectorioPage({ searchParams }: Props) {
           </p>
         </div>
 
+        {/* Filtros geográficos */}
+        <FiltrosGeo
+          paisActivo={paisValido}
+          regionActiva={regionValida}
+          tipoActivo={tipoValido}
+          busqueda={busqueda}
+        />
+
         {/* Buscador */}
         <form method="GET" action="/directorio" className="mb-6">
           {tipoValido && <input type="hidden" name="tipo" value={tipoValido} />}
+          {paisValido && <input type="hidden" name="pais" value={paisValido} />}
+          {regionValida && <input type="hidden" name="region" value={regionValida} />}
           <div className="flex gap-2">
             <input
               type="text"
@@ -129,7 +155,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
             >
               Buscar
             </button>
-            {(busqueda || tipoValido) && (
+            {(busqueda || tipoValido || paisValido) && (
               <Link
                 href="/directorio"
                 className="border border-gray-300 text-gray-600 px-4 py-2.5 rounded-lg text-sm hover:bg-gray-100 shrink-0"
@@ -148,6 +174,8 @@ export default async function DirectorioPage({ searchParams }: Props) {
             const qs = new URLSearchParams()
             if (filtro.value !== 'todos') qs.set('tipo', filtro.value)
             if (busqueda) qs.set('q', busqueda)
+            if (paisValido) qs.set('pais', paisValido)
+            if (regionValida) qs.set('region', regionValida)
             const href = `/directorio${qs.toString() ? `?${qs.toString()}` : ''}`
             return (
               <Link
@@ -171,6 +199,8 @@ export default async function DirectorioPage({ searchParams }: Props) {
             ? 'Sin resultados'
             : `${total} perfil${total === 1 ? '' : 'es'} encontrado${total === 1 ? '' : 's'}`}
           {tipoValido && ` · ${TIPO_PERFIL_LABEL[tipoValido] ?? tipoValido}`}
+          {paisValido && ` · ${countryValido?.name ?? paisValido}`}
+          {regionValida && ` · ${regionValida}`}
           {busqueda && ` · "${busqueda}"`}
         </p>
 
