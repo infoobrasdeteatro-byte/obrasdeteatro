@@ -159,7 +159,7 @@ export default function Home() {
           <div style={{ fontSize: '11px', letterSpacing: '4px', color: '#555', marginBottom: '40px', textTransform: 'uppercase' }}>
             Planes
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             {PLANES.map((plan) => {
               const color = plan.recomendado ? '#c9a84c' : plan.id === 'empresas' ? '#555' : '#333'
               const precioStr = plan.precio === 0 ? '0€' : `${plan.precio.toFixed(2).replace('.', ',')}€`
