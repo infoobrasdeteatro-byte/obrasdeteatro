@@ -29,6 +29,11 @@ export default function RegistroPage() {
     if (error) {
       setMessage('Error: ' + JSON.stringify(error))
     } else {
+      fetch('/api/auth/welcome-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, nombre }),
+      }).catch(() => {})
       setMessage('¡Revisa tu email para confirmar tu cuenta!')
     }
     setLoading(false)

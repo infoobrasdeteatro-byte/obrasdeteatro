@@ -1,3 +1,5 @@
+import { PLANES } from '@/lib/plans'
+
 export default function Home() {
   return (
     <main style={{
@@ -158,20 +160,26 @@ export default function Home() {
             Planes
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-            {[
-              { nombre: 'Gratis', precio: '0€', desc: 'Perfil básico · Acceso al directorio · Convocatorias', color: '#333' },
-              { nombre: 'Premium', precio: '6,99€', desc: 'Perfil destacado · ScenaIA · Analytics · Badge premium', color: '#c9a84c' },
-              { nombre: 'Empresas', precio: '8,99€', desc: 'Página empresarial · Convocatorias ilimitadas · Verificado', color: '#555' },
-            ].map((plan, i) => (
-              <div key={i} style={{
-                border: `1px solid ${plan.color}`,
-                padding: '32px',
-              }}>
-                <div style={{ fontSize: '11px', letterSpacing: '2px', color: plan.color, marginBottom: '16px', textTransform: 'uppercase' }}>{plan.nombre}</div>
-                <div style={{ fontSize: '40px', color: '#fff', marginBottom: '16px' }}>{plan.precio}<span style={{ fontSize: '14px', color: '#555' }}>/mes</span></div>
-                <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.7' }}>{plan.desc}</div>
-              </div>
-            ))}
+            {PLANES.map((plan) => {
+              const color = plan.recomendado ? '#c9a84c' : plan.id === 'empresas' ? '#555' : '#333'
+              const precioStr = plan.precio === 0 ? '0€' : `${plan.precio.toFixed(2).replace('.', ',')}€`
+              return (
+                <div key={plan.id} style={{ border: `1px solid ${color}`, padding: '32px' }}>
+                  <div style={{ fontSize: '11px', letterSpacing: '2px', color, marginBottom: '16px', textTransform: 'uppercase' }}>
+                    {plan.nombre}
+                  </div>
+                  <div style={{ fontSize: '40px', color: '#fff', marginBottom: '16px' }}>
+                    {precioStr}<span style={{ fontSize: '14px', color: '#555' }}>/mes</span>
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.7' }}>
+                    {plan.caracteristicas.slice(0, 3).join(' · ')}
+                  </div>
+                  <a href="/precios" style={{ display: 'inline-block', marginTop: '20px', border: '1px solid #333', color: '#888', padding: '8px 20px', textDecoration: 'none', fontSize: '12px', letterSpacing: '1px' }}>
+                    VER PLAN →
+                  </a>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

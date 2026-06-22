@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import PerfilForm from './PerfilForm'
+import NavAutenticado from '@/components/NavAutenticado'
 
 export default async function PerfilPage() {
   const supabase = await createClient()
@@ -21,15 +22,11 @@ export default async function PerfilPage() {
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <NavAutenticado />
+      <div className="max-w-2xl mx-auto p-8">
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Mi perfil</h1>
-            <Link href="/dashboard" className="text-sm text-gray-500 hover:text-black mt-1 inline-block">
-              ← Volver al panel
-            </Link>
-          </div>
+          <h1 className="text-3xl font-bold">Mi perfil</h1>
           {perfilPublicoUrl && (
             <Link
               href={perfilPublicoUrl}
