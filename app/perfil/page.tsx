@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import PerfilForm from './PerfilForm'
 import NavAutenticado from '@/components/NavAutenticado'
+import Sidebar from '@/components/design-system/Sidebar'
 
 export default async function PerfilPage() {
   const supabase = await createClient()
@@ -22,21 +23,23 @@ export default async function PerfilPage() {
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
       <NavAutenticado />
-      <div className="max-w-2xl mx-auto p-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Mi perfil</h1>
-          {perfilPublicoUrl && (
-            <Link
-              href={perfilPublicoUrl}
-              className="text-sm font-medium bg-gray-100 text-gray-700 px-4 py-2 rounded hover:bg-gray-200"
-            >
-              Ver perfil público →
-            </Link>
-          )}
-        </div>
-        <PerfilForm profile={profile} />
+      <div className="app-layout">
+        <Sidebar />
+        <main className="app-main">
+          <div className="page-header">
+            <div className="page-title-group">
+              <h1 className="page-title">Mi perfil</h1>
+            </div>
+            {perfilPublicoUrl && (
+              <Link href={perfilPublicoUrl} className="ds-btn-secondary" style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }}>
+                Ver perfil público →
+              </Link>
+            )}
+          </div>
+          <PerfilForm profile={profile} />
+        </main>
       </div>
     </div>
   )

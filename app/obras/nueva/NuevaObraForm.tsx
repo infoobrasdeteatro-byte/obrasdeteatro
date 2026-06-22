@@ -93,14 +93,11 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
     router.push(`/obras/${data.slug}/editar`)
   }
 
-  const inputClass =
-    'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black'
-
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm space-y-5">
+    <form onSubmit={handleSubmit} className="account-card ds-form">
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Título *</label>
+      <div className="ds-form-group">
+        <label className="ds-label">Título *</label>
         <input
           type="text"
           value={title}
@@ -108,41 +105,41 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
           required
           maxLength={200}
           placeholder="Título de la obra"
-          className={inputClass}
+          className="ds-input"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Autor / Autora</label>
+      <div className="ds-form-group">
+        <label className="ds-label">Autor / Autora</label>
         <input
           type="text"
           value={author}
           onChange={e => setAuthor(e.target.value)}
           maxLength={200}
           placeholder="Nombre del autor o autora"
-          className={inputClass}
+          className="ds-input"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Sinopsis</label>
+      <div className="ds-form-group">
+        <label className="ds-label">Sinopsis</label>
         <textarea
           value={synopsis}
           onChange={e => setSynopsis(e.target.value)}
           rows={4}
           maxLength={2000}
           placeholder="Descripción breve de la obra..."
-          className={`${inputClass} resize-none`}
+          className="ds-textarea"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Género</label>
+      <div className="ds-form-grid">
+        <div className="ds-form-group">
+          <label className="ds-label">Género</label>
           <select
             value={genre}
             onChange={e => setGenre(e.target.value)}
-            className={`${inputClass} bg-white`}
+            className="ds-select"
           >
             <option value="">— Seleccionar —</option>
             {GENEROS.map(g => (
@@ -150,12 +147,12 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Idioma</label>
+        <div className="ds-form-group">
+          <label className="ds-label">Idioma</label>
           <select
             value={language}
             onChange={e => setLanguage(e.target.value)}
-            className={`${inputClass} bg-white`}
+            className="ds-select"
           >
             {IDIOMAS.map(l => (
               <option key={l.value} value={l.value}>{l.label}</option>
@@ -164,9 +161,9 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Duración (minutos)</label>
+      <div className="ds-form-grid">
+        <div className="ds-form-group">
+          <label className="ds-label">Duración (minutos)</label>
           <input
             type="number"
             value={duration}
@@ -174,11 +171,11 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
             min={1}
             max={600}
             placeholder="90"
-            className={inputClass}
+            className="ds-input"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Edad mínima recomendada</label>
+        <div className="ds-form-group">
+          <label className="ds-label">Edad mínima recomendada</label>
           <input
             type="number"
             value={minAge}
@@ -186,21 +183,21 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
             min={0}
             max={99}
             placeholder="7"
-            className={inputClass}
+            className="ds-input"
           />
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Tamaño del reparto</label>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="ds-form-group">
+        <label className="ds-label">Tamaño del reparto</label>
+        <div className="ds-form-grid">
           <input
             type="number"
             value={castMin}
             onChange={e => setCastMin(e.target.value)}
             min={1}
             placeholder="Mínimo"
-            className={inputClass}
+            className="ds-input"
           />
           <input
             type="number"
@@ -208,46 +205,38 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
             onChange={e => setCastMax(e.target.value)}
             min={1}
             placeholder="Máximo"
-            className={inputClass}
+            className="ds-input"
           />
         </div>
-        <p className="text-xs text-gray-400 mt-1">Número de actores necesarios</p>
+        <p className="ds-form-hint">Número de actores necesarios</p>
       </div>
 
-      <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+      <div className="ds-checkbox-row">
         <input
           type="checkbox"
           id="is_published"
           checked={isPublished}
           onChange={e => setIsPublished(e.target.checked)}
-          className="w-4 h-4 cursor-pointer"
         />
         <div>
-          <label htmlFor="is_published" className="text-sm font-medium cursor-pointer">
-            Publicar obra
-          </label>
-          <p className="text-xs text-gray-400">
-            Si no la publicas, quedará como borrador privado
-          </p>
+          <label htmlFor="is_published" className="ds-checkbox-label">Publicar obra</label>
+          <p className="ds-checkbox-hint">Si no la publicas, quedará como borrador privado</p>
         </div>
       </div>
 
       {error && (
-        <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>
+        <div className="ds-alert-error">{error}</div>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div style={{ display: 'flex', gap: '12px' }}>
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-black text-white py-3 rounded-lg font-medium text-sm hover:bg-gray-800 disabled:opacity-50"
+          className="ds-btn-primary"
         >
           {loading ? 'Creando...' : 'Crear obra'}
         </button>
-        <a
-          href="/mis-obras"
-          className="px-6 py-3 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 text-center"
-        >
+        <a href="/mis-obras" className="ds-btn-secondary" style={{ flex: 'none' }}>
           Cancelar
         </a>
       </div>

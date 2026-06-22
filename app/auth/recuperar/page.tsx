@@ -8,10 +8,10 @@ import { translateAuthError } from '@/lib/auth-errors'
 
 function RecuperarSpinner({ label }: { label: string }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
-        <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-gray-500 text-sm">{label}</p>
+    <div className="auth-spinner-wrap">
+      <div className="auth-spinner-card">
+        <div className="auth-spinner" />
+        <p className="auth-spinner-text">{label}</p>
       </div>
     </div>
   )
@@ -25,7 +25,6 @@ function RecuperarContent() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
-  // isExpiredLink leído síncronamente → isChecking empieza en true si hay enlace expirado
   const [isChecking, setIsChecking] = useState(isExpiredLink)
 
   useEffect(() => {
@@ -64,39 +63,45 @@ function RecuperarContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold text-center mb-6">Recuperar contraseña</h1>
-        <form onSubmit={handleRecuperar} className="space-y-4">
+    <div className="auth-page">
+      <Link href="/" className="auth-logo">
+        obras<span>de</span>teatro.com
+      </Link>
+      <div className="auth-card">
+        <h1 className="auth-title">Recuperar contraseña</h1>
+        <form onSubmit={handleRecuperar} className="auth-form">
           <input
             type="email"
             placeholder="Tu email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white p-3 rounded font-medium"
+            className="ds-btn-primary"
+            style={{ marginTop: '4px' }}
           >
             {loading ? 'Enviando...' : 'Enviar enlace'}
           </button>
         </form>
         {message && (
-          <div className={`mt-4 flex items-center justify-center gap-2 text-sm ${isError ? 'text-red-500' : 'text-green-700'}`}>
+          <div className={`auth-message ${isError ? 'auth-message--error' : 'auth-message--success'}`}>
             {!isError && (
-              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M5 13l4 4L19 7" />
               </svg>
             )}
-            <p className="text-center">{message}</p>
+            {message}
           </div>
         )}
-        <p className="mt-4 text-center text-sm">
-          <Link href="/auth/login" className="underline">Volver al login</Link>
-        </p>
+        <div className="auth-footer">
+          <p>
+            <Link href="/auth/login">Volver al inicio de sesión</Link>
+          </p>
+        </div>
       </div>
     </div>
   )

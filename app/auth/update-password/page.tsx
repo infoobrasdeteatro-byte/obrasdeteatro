@@ -55,19 +55,25 @@ export default function UpdatePasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      <div className="auth-spinner-wrap">
+        <div className="auth-spinner-card">
+          <div className="auth-result-icon auth-result-icon--success">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-2">Contraseña actualizada</h1>
-          <p className="text-gray-500 mb-6">Tu contraseña ha sido cambiada correctamente.</p>
-          <p className="text-sm text-gray-600 mb-4">Redirigiendo al dashboard en {countdown}...</p>
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: '22px', color: 'var(--black)', marginBottom: '8px', letterSpacing: '-0.3px' }}>
+            Contraseña actualizada
+          </h1>
+          <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '20px', lineHeight: 1.5 }}>
+            Tu contraseña ha sido cambiada correctamente.
+          </p>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '16px' }}>
+            Redirigiendo al dashboard en {countdown}...
+          </p>
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-full bg-black text-white p-3 rounded font-medium"
+            className="ds-btn-primary"
           >
             Ir al dashboard ahora
           </button>
@@ -78,21 +84,20 @@ export default function UpdatePasswordPage() {
 
   if (sessionValid === false) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      <div className="auth-spinner-wrap">
+        <div className="auth-spinner-card">
+          <div className="auth-result-icon auth-result-icon--error">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold mb-2">Enlace expirado o inválido</h1>
-          <p className="text-gray-500 mb-6 text-sm">
+          <h1 style={{ fontFamily: 'var(--serif)', fontSize: '20px', color: 'var(--black)', marginBottom: '8px', letterSpacing: '-0.3px' }}>
+            Enlace expirado o inválido
+          </h1>
+          <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '20px', lineHeight: 1.5 }}>
             El enlace de recuperación ya fue utilizado o ha caducado.
           </p>
-          <Link
-            href="/auth/recuperar"
-            className="inline-block w-full bg-black text-white p-3 rounded font-medium text-center"
-          >
+          <Link href="/auth/recuperar" className="ds-btn-primary">
             Solicitar nuevo enlace
           </Link>
         </div>
@@ -102,20 +107,23 @@ export default function UpdatePasswordPage() {
 
   if (sessionValid === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Verificando sesión...</p>
+      <div className="auth-spinner-wrap">
+        <div className="auth-spinner-card">
+          <div className="auth-spinner" />
+          <p className="auth-spinner-text">Verificando sesión...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold text-center mb-6">Nueva contraseña</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="auth-page">
+      <Link href="/" className="auth-logo">
+        obras<span>de</span>teatro.com
+      </Link>
+      <div className="auth-card">
+        <h1 className="auth-title">Nueva contraseña</h1>
+        <form onSubmit={handleSubmit} className="auth-form">
           <input
             type="password"
             placeholder="Nueva contraseña"
@@ -123,7 +131,7 @@ export default function UpdatePasswordPage() {
             onChange={e => setPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <input
             type="password"
@@ -132,17 +140,20 @@ export default function UpdatePasswordPage() {
             onChange={e => setConfirm(e.target.value)}
             required
             minLength={6}
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white p-3 rounded font-medium"
+            className="ds-btn-primary"
+            style={{ marginTop: '4px' }}
           >
             {loading ? 'Guardando...' : 'Guardar contraseña'}
           </button>
         </form>
-        {error && <p className="mt-4 text-center text-sm text-red-500">{error}</p>}
+        {error && (
+          <p className="auth-message auth-message--error">{error}</p>
+        )}
       </div>
     </div>
   )
