@@ -10,12 +10,17 @@ export default function RecuperarPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
+  const [isChecking, setIsChecking] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('expired') === 'true') {
-      setMessage('El enlace de recuperación ha expirado. Solicita uno nuevo.')
-      setIsError(true)
+      setIsChecking(true)
+      setTimeout(() => {
+        setIsChecking(false)
+        setMessage('El enlace de recuperación ha expirado. Solicita uno nuevo.')
+        setIsError(true)
+      }, 900)
     }
   }, [])
 
@@ -39,6 +44,17 @@ export default function RecuperarPage() {
       setIsError(false)
     }
     setLoading(false)
+  }
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
+          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">Verificando enlace...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

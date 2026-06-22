@@ -25,17 +25,17 @@ export default function LegalPage({ title, lastUpdate, sections }) {
         <div className="space-y-10">
           {sections.map((section, i) => (
             <section key={i} id={`seccion-${i + 1}`}>
-              <h2 className="text-lg font-bold text-gray-900 mb-3 pb-2 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-3 pb-2 border-b border-gray-100">
                 {section.title}
               </h2>
-              <div className="space-y-3 text-sm text-gray-700 leading-relaxed">
+              <div className="space-y-4 text-base text-gray-800 leading-relaxed">
                 {section.content.map((block, j) => {
                   if (block.type === "text") {
                     return <p key={j}>{block.text}</p>;
                   }
                   if (block.type === "list") {
                     return (
-                      <ul key={j} className="space-y-1 pl-4">
+                      <ul key={j} className="space-y-2 pl-4">
                         {block.items.map((item, k) => (
                           <li key={k} className="flex items-start gap-2">
                             <span className="text-red-600 mt-1 flex-shrink-0">—</span>
@@ -79,7 +79,7 @@ export default function LegalPage({ title, lastUpdate, sections }) {
 
         {/* Navegación a otras políticas */}
         <div className="mt-16 pt-8 border-t border-gray-100">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-4">
             También puede interesarte
           </p>
           <div className="flex flex-wrap gap-3">
