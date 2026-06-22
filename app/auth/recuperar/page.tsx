@@ -1,28 +1,42 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { translateAuthError } from '@/lib/auth-errors'
 
-export default function RecuperarPage() {
+function RecuperarSpinner({ label }: { label: string }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-gray-500 text-sm">{label}</p>
+      </div>
+    </div>
+  )
+}
+
+function RecuperarContent() {
+  const searchParams = useSearchParams()
+  const isExpiredLink = searchParams.get('expired') === 'true'
+
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
-  const [isChecking, setIsChecking] = useState(false)
+  // isExpiredLink leído síncronamente → isChecking empieza en true si hay enlace expirado
+  const [isChecking, setIsChecking] = useState(isExpiredLink)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('expired') === 'true') {
-      setIsChecking(true)
-      setTimeout(() => {
-        setIsChecking(false)
-        setMessage('El enlace de recuperación ha expirado. Solicita uno nuevo.')
-        setIsError(true)
-      }, 900)
-    }
-  }, [])
+    if (!isExpiredLink) return
+    const t = setTimeout(() => {
+      setIsChecking(false)
+      setMessage('El enlace de recuperación ha expirado. Solicita uno nuevo.')
+      setIsError(true)
+    }, 900)
+    return () => clearTimeout(t)
+  }, [isExpiredLink])
 
   const handleRecuperar = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,20 +55,12 @@ export default function RecuperarPage() {
       setIsError(true)
     } else {
       setMessage('¡Revisa tu email para restablecer tu contraseña!')
-      setIsError(false)
     }
     setLoading(false)
   }
 
   if (isChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full p-8 bg-white rounded-lg shadow text-center">
-          <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-800 rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">Verificando enlace...</p>
-        </div>
-      </div>
-    )
+    return <RecuperarSpinner label="Verificando enlace..." />
   }
 
   return (
@@ -93,5 +99,13 @@ export default function RecuperarPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function RecuperarPage() {
+  return (
+    <Suspense fallback={<RecuperarSpinner label="Cargando..." />}>
+      <RecuperarContent />
+    </Suspense>
   )
 }
