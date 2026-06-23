@@ -540,7 +540,7 @@ body {
 .dir-profile-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 @media (max-width: 900px) { .dir-profile-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 580px) { .dir-profile-grid { grid-template-columns: 1fr; } }
@@ -612,8 +612,13 @@ body {
 .auth-title {
   font-family: var(--serif);
   font-size: 24px; color: var(--black);
-  letter-spacing: -0.4px; margin-bottom: 24px;
+  letter-spacing: -0.4px; margin-bottom: 6px;
   text-align: center; line-height: 1.2;
+}
+.auth-tagline {
+  font-size: 13px; color: var(--muted);
+  text-align: center; line-height: 1.5;
+  font-weight: 300; margin-bottom: 20px;
 }
 .auth-form { display: flex; flex-direction: column; gap: 12px; }
 .auth-footer {

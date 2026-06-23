@@ -50,6 +50,7 @@ export default function RegistroPage() {
       </Link>
       <div className="auth-card">
         <h1 className="auth-title">Crear cuenta</h1>
+        <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
         <form onSubmit={handleRegistro} className="auth-form">
           <input
             type="email"

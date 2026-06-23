@@ -258,7 +258,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <h2 style={{ fontFamily: 'var(--serif)', fontSize: '16px', color: 'var(--black)', letterSpacing: '-0.2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <h2 style={{ fontFamily: 'var(--serif)', fontSize: '18px', color: 'var(--black)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {nombrePublico}
                         </h2>
                         {perfil.verificado && (

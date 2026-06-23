@@ -47,6 +47,7 @@ export default function LoginPage() {
       </Link>
       <div className="auth-card">
         <h1 className="auth-title">Iniciar sesión</h1>
+        <p className="auth-tagline">El ecosistema digital del teatro en español.</p>
         <form onSubmit={handleLogin} className="auth-form">
           <input
             type="email"
