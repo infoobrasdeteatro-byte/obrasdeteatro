@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/supabase'
 import { COUNTRIES } from '@/lib/geo/countries'
+import AvatarUpload from '@/components/AvatarUpload'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
 
@@ -35,6 +36,7 @@ interface Profile {
   tipo_perfil: TipoPerfil
   perfil_publico: boolean
   slug: string | null
+  avatar_url: string | null
 }
 
 // España al inicio, resto en el orden original del dataset
@@ -121,8 +123,16 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
     )
   }
 
+  const displayName = profile.nombre_artistico || profile.nombre
+
   return (
     <form onSubmit={handleGuardar} className="account-card ds-form">
+
+      <AvatarUpload
+        profileId={profile.id}
+        initialAvatarUrl={profile.avatar_url}
+        displayName={displayName}
+      />
 
       <div className="ds-form-grid">
         <div className="ds-form-group">

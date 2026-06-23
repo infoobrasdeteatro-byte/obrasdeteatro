@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const TIPO_PERFIL_LABEL: Record<string, string> = {
   actor:        'Actor / Actriz',
@@ -49,7 +50,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, created_at')
+    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, avatar_url, created_at')
     .eq('slug', slug)
     .eq('perfil_publico', true)
     .is('deleted_at', null)
@@ -76,8 +77,21 @@ export default async function PerfilPublicoPage({ params }: Props) {
         {/* Cabecera */}
         <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
           <div className="flex items-start gap-6">
-            <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400 shrink-0">
-              {nombrePublico.charAt(0).toUpperCase()}
+            <div className="shrink-0">
+              {profile.avatar_url ? (
+                <Image
+                  src={profile.avatar_url}
+                  alt={`Foto de perfil de ${nombrePublico}`}
+                  width={80}
+                  height={80}
+                  sizes="80px"
+                  style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb', display: 'block' }}
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400" aria-label={`Inicial de ${nombrePublico}`}>
+                  {nombrePublico.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-bold text-gray-900 leading-tight">{nombrePublico}</h1>
