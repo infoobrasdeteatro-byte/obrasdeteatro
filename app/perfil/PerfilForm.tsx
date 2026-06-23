@@ -52,6 +52,7 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
   const [perfilPublico, setPerfilPublico] = useState(profile?.perfil_publico ?? true)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [isError, setIsError] = useState(false)
 
   // Ubicación estructurada
   const initialCode =
@@ -104,64 +105,67 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
 
     if (error) {
       setMessage('Error al guardar: ' + error.message)
+      setIsError(true)
     } else {
       setMessage('¡Perfil actualizado correctamente!')
+      setIsError(false)
     }
     setLoading(false)
   }
 
   if (!profile) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <p className="text-gray-500 text-sm">No se encontró el perfil.</p>
+      <div className="account-card">
+        <p style={{ fontSize: '14px', color: 'var(--muted)' }}>No se encontró el perfil.</p>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleGuardar} className="bg-white p-6 rounded-lg shadow space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Nombre *</label>
+    <form onSubmit={handleGuardar} className="account-card ds-form">
+
+      <div className="ds-form-grid">
+        <div className="ds-form-group">
+          <label className="ds-label">Nombre *</label>
           <input
             type="text"
             value={nombre}
             onChange={e => setNombre(e.target.value)}
             required
-            className="w-full border p-3 rounded"
+            className="ds-input"
             placeholder="Tu nombre"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Apellidos</label>
+        <div className="ds-form-group">
+          <label className="ds-label">Apellidos</label>
           <input
             type="text"
             value={apellidos}
             onChange={e => setApellidos(e.target.value)}
-            className="w-full border p-3 rounded"
+            className="ds-input"
             placeholder="Tus apellidos"
           />
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Nombre artístico / Nombre público</label>
+      <div className="ds-form-group">
+        <label className="ds-label">Nombre artístico / Nombre público</label>
         <input
           type="text"
           value={nombreArtistico}
           onChange={e => setNombreArtistico(e.target.value)}
-          className="w-full border p-3 rounded"
+          className="ds-input"
           placeholder="Nombre que aparecerá en tu perfil público"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Tipo de perfil *</label>
+      <div className="ds-form-group">
+        <label className="ds-label">Tipo de perfil *</label>
         <select
           value={tipoPerfil}
           onChange={e => setTipoPerfil(e.target.value as TipoPerfil)}
           required
-          className="w-full border p-3 rounded"
+          className="ds-select"
         >
           {TIPO_PERFIL_OPTIONS.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -169,39 +173,39 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Biografía</label>
+      <div className="ds-form-group">
+        <label className="ds-label">Biografía</label>
         <textarea
           value={bio}
           onChange={e => setBio(e.target.value)}
           rows={4}
-          className="w-full border p-3 rounded"
+          className="ds-textarea"
           placeholder="Cuéntanos sobre ti..."
         />
       </div>
 
       {/* Ubicación estructurada */}
       <div>
-        <label className="block text-sm font-medium mb-3">Ubicación</label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">País</label>
+        <label className="ds-label" style={{ marginBottom: '12px' }}>Ubicación</label>
+        <div className="ds-form-grid">
+          <div className="ds-form-group">
+            <label className="ds-label ds-label-sub">País</label>
             <select
               value={countryCode}
               onChange={e => handleCountryChange(e.target.value)}
-              className="w-full border p-3 rounded"
+              className="ds-select"
             >
               {SORTED_COUNTRIES.map(c => (
                 <option key={c.code} value={c.code}>{c.name}</option>
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Provincia / Estado / Región</label>
+          <div className="ds-form-group">
+            <label className="ds-label ds-label-sub">Provincia / Estado / Región</label>
             <select
               value={region}
               onChange={e => setRegion(e.target.value)}
-              className="w-full border p-3 rounded"
+              className="ds-select"
             >
               <option value="">— Seleccionar —</option>
               {currentCountry?.regions.map(r => (
@@ -209,23 +213,23 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Ciudad</label>
+          <div className="ds-form-group">
+            <label className="ds-label ds-label-sub">Ciudad</label>
             <input
               type="text"
               value={ciudad}
               onChange={e => setCiudad(e.target.value)}
-              className="w-full border p-3 rounded"
+              className="ds-input"
               placeholder="Madrid"
             />
           </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Código postal</label>
+          <div className="ds-form-group">
+            <label className="ds-label ds-label-sub">Código postal</label>
             <input
               type="text"
               value={postalCode}
               onChange={e => setPostalCode(e.target.value)}
-              className="w-full border p-3 rounded"
+              className="ds-input"
               placeholder="28001"
               maxLength={12}
             />
@@ -233,36 +237,39 @@ export default function PerfilForm({ profile }: { profile: Profile | null }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="ds-checkbox-row">
         <input
           type="checkbox"
           id="perfil_publico"
           checked={perfilPublico}
           onChange={e => setPerfilPublico(e.target.checked)}
-          className="w-4 h-4"
         />
-        <label htmlFor="perfil_publico" className="text-sm">
-          Perfil público (visible para otros usuarios)
-        </label>
+        <div>
+          <label htmlFor="perfil_publico" className="ds-checkbox-label">
+            Perfil público
+          </label>
+          <p className="ds-checkbox-hint">Visible para otros usuarios en el directorio</p>
+        </div>
       </div>
 
       {profile.slug && (
-        <p className="text-xs text-gray-400">
-          URL de tu perfil: <span className="font-mono">/perfil/{profile.slug}</span>
+        <p style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'monospace' }}>
+          URL: obrasdeteatro.com/perfil/{profile.slug}
         </p>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-black text-white p-3 rounded font-medium"
+        className="ds-btn-primary"
       >
         {loading ? 'Guardando...' : 'Guardar perfil'}
       </button>
+
       {message && (
-        <p className={`text-center text-sm mt-2 ${message.startsWith('Error') ? 'text-red-500' : 'text-green-600'}`}>
+        <div className={isError ? 'ds-alert-error' : 'ds-alert-success'}>
           {message}
-        </p>
+        </div>
       )}
     </form>
   )

@@ -39,4 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-supabase/.branches 
+supabase/.branches
+
+# design reference — solo desarrollo local, no entra en producción
+/design-reference/
+
+# informes internos de desarrollo
+INFORME_POST_BUILD.md

@@ -109,81 +109,73 @@ export default function EditarObraForm({ obra }: { obra: Work }) {
     router.push('/mis-obras')
   }
 
-  const inputClass =
-    'w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black'
-
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      <div className={`rounded-xl p-4 flex items-center justify-between ${
-        isPublished
-          ? 'bg-green-50 border border-green-200'
-          : 'bg-amber-50 border border-amber-200'
-      }`}>
+      {/* Estado de publicación */}
+      <div className={`ds-status-banner ${isPublished ? 'ds-status-banner--published' : 'ds-status-banner--draft'}`}>
         <div>
-          <p className={`text-sm font-medium ${isPublished ? 'text-green-700' : 'text-amber-700'}`}>
+          <p className="ds-status-title">
             {isPublished ? 'Obra publicada' : 'Borrador privado'}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isPublished
-              ? 'Visible públicamente en ObrasDeTeatro'
-              : 'Solo tú puedes verla'}
+          <p className="ds-status-hint">
+            {isPublished ? 'Visible públicamente en ObrasDeTeatro' : 'Solo tú puedes verla'}
           </p>
         </div>
         {obra.is_published && obra.slug && (
           <Link
             href={`/obras/${obra.slug}`}
             target="_blank"
-            className="text-xs underline text-gray-500 hover:text-black"
+            className="table-link"
           >
             Ver publicada →
           </Link>
         )}
       </div>
 
-      <form onSubmit={handleSave} className="bg-white p-6 rounded-xl shadow-sm space-y-5">
+      <form onSubmit={handleSave} className="account-card ds-form">
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Título *</label>
+        <div className="ds-form-group">
+          <label className="ds-label">Título *</label>
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
             maxLength={200}
-            className={inputClass}
+            className="ds-input"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Autor / Autora</label>
+        <div className="ds-form-group">
+          <label className="ds-label">Autor / Autora</label>
           <input
             type="text"
             value={author}
             onChange={e => setAuthor(e.target.value)}
             maxLength={200}
-            className={inputClass}
+            className="ds-input"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Sinopsis</label>
+        <div className="ds-form-group">
+          <label className="ds-label">Sinopsis</label>
           <textarea
             value={synopsis}
             onChange={e => setSynopsis(e.target.value)}
             rows={4}
             maxLength={2000}
-            className={`${inputClass} resize-none`}
+            className="ds-textarea"
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Género</label>
+        <div className="ds-form-grid">
+          <div className="ds-form-group">
+            <label className="ds-label">Género</label>
             <select
               value={genre}
               onChange={e => setGenre(e.target.value)}
-              className={`${inputClass} bg-white`}
+              className="ds-select"
             >
               <option value="">— Sin especificar —</option>
               {GENEROS.map(g => (
@@ -191,12 +183,12 @@ export default function EditarObraForm({ obra }: { obra: Work }) {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Idioma</label>
+          <div className="ds-form-group">
+            <label className="ds-label">Idioma</label>
             <select
               value={language}
               onChange={e => setLanguage(e.target.value)}
-              className={`${inputClass} bg-white`}
+              className="ds-select"
             >
               {IDIOMAS.map(l => (
                 <option key={l.value} value={l.value}>{l.label}</option>
@@ -205,41 +197,41 @@ export default function EditarObraForm({ obra }: { obra: Work }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Duración (minutos)</label>
+        <div className="ds-form-grid">
+          <div className="ds-form-group">
+            <label className="ds-label">Duración (minutos)</label>
             <input
               type="number"
               value={duration}
               onChange={e => setDuration(e.target.value)}
               min={1}
               max={600}
-              className={inputClass}
+              className="ds-input"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Edad mínima recomendada</label>
+          <div className="ds-form-group">
+            <label className="ds-label">Edad mínima recomendada</label>
             <input
               type="number"
               value={minAge}
               onChange={e => setMinAge(e.target.value)}
               min={0}
               max={99}
-              className={inputClass}
+              className="ds-input"
             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Tamaño del reparto</label>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="ds-form-group">
+          <label className="ds-label">Tamaño del reparto</label>
+          <div className="ds-form-grid">
             <input
               type="number"
               value={castMin}
               onChange={e => setCastMin(e.target.value)}
               min={1}
               placeholder="Mínimo"
-              className={inputClass}
+              className="ds-input"
             />
             <input
               type="number"
@@ -247,55 +239,47 @@ export default function EditarObraForm({ obra }: { obra: Work }) {
               onChange={e => setCastMax(e.target.value)}
               min={1}
               placeholder="Máximo"
-              className={inputClass}
+              className="ds-input"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+        <div className="ds-checkbox-row">
           <input
             type="checkbox"
             id="is_published"
             checked={isPublished}
             onChange={e => setIsPublished(e.target.checked)}
-            className="w-4 h-4 cursor-pointer"
           />
           <div>
-            <label htmlFor="is_published" className="text-sm font-medium cursor-pointer">
-              Publicar obra
-            </label>
-            <p className="text-xs text-gray-400">
-              La obra será visible públicamente en ObrasDeTeatro
-            </p>
+            <label htmlFor="is_published" className="ds-checkbox-label">Publicar obra</label>
+            <p className="ds-checkbox-hint">La obra será visible públicamente en ObrasDeTeatro</p>
           </div>
         </div>
 
-        {error && (
-          <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>
-        )}
-        {message && (
-          <p className="text-green-600 text-sm bg-green-50 p-3 rounded-lg">{message}</p>
-        )}
+        {error && <div className="ds-alert-error">{error}</div>}
+        {message && <div className="ds-alert-success">{message}</div>}
 
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-black text-white py-3 rounded-lg font-medium text-sm hover:bg-gray-800 disabled:opacity-50"
+          className="ds-btn-primary"
         >
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
 
       </form>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-red-100">
-        <h3 className="font-semibold text-gray-900 mb-1">Zona de peligro</h3>
-        <p className="text-sm text-gray-500 mb-4">
+      {/* Zona de peligro */}
+      <div className="ds-danger-zone">
+        <p className="ds-danger-zone-title">Zona de peligro</p>
+        <p className="ds-danger-zone-text">
           Eliminar la obra la retira permanentemente del directorio. No se puede deshacer.
         </p>
         <button
           onClick={handleDelete}
           disabled={deleting}
-          className="bg-red-500 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+          className="ds-btn-danger"
         >
           {deleting ? 'Eliminando...' : 'Eliminar obra'}
         </button>

@@ -41,17 +41,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold text-center mb-6">Iniciar sesión</h1>
-        <form onSubmit={handleLogin} className="space-y-4">
+    <div className="auth-page">
+      <Link href="/" className="auth-logo">
+        obras<span>de</span>teatro.com
+      </Link>
+      <div className="auth-card">
+        <h1 className="auth-title">Iniciar sesión</h1>
+        <p className="auth-tagline">El ecosistema digital del teatro en español.</p>
+        <form onSubmit={handleLogin} className="auth-form">
           <input
             type="email"
             placeholder="Email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <input
             type="password"
@@ -59,24 +63,29 @@ export default function LoginPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white p-3 rounded font-medium"
+            className="ds-btn-primary"
+            style={{ marginTop: '4px' }}
           >
             {loading ? 'Entrando...' : 'Iniciar sesión'}
           </button>
         </form>
-        {message && <p className="mt-4 text-center text-sm text-red-500">{message}</p>}
-        <p className="mt-4 text-center text-sm">
-          ¿No tienes cuenta?{' '}
-          <Link href="/auth/registro" className="underline">Regístrate</Link>
-        </p>
-        <p className="mt-2 text-center text-sm">
-          <Link href="/auth/recuperar" className="underline">¿Olvidaste tu contraseña?</Link>
-        </p>
+        {message && (
+          <p className="auth-message auth-message--error">{message}</p>
+        )}
+        <div className="auth-footer">
+          <p>
+            ¿No tienes cuenta?{' '}
+            <Link href="/auth/registro">Regístrate gratis</Link>
+          </p>
+          <p style={{ marginTop: '6px' }}>
+            <Link href="/auth/recuperar">¿Olvidaste tu contraseña?</Link>
+          </p>
+        </div>
       </div>
     </div>
   )

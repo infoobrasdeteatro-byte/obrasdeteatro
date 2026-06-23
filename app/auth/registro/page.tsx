@@ -11,6 +11,7 @@ export default function RegistroPage() {
   const [nombre, setNombre] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,6 +30,7 @@ export default function RegistroPage() {
 
     if (error) {
       setMessage(translateAuthError(error.message))
+      setIsSuccess(false)
     } else {
       fetch('/api/auth/welcome-email', {
         method: 'POST',
@@ -36,22 +38,27 @@ export default function RegistroPage() {
         body: JSON.stringify({ email, nombre }),
       }).catch(() => {})
       setMessage('¡Revisa tu email para confirmar tu cuenta!')
+      setIsSuccess(true)
     }
     setLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold text-center mb-6">Crear cuenta</h1>
-        <form onSubmit={handleRegistro} className="space-y-4">
+    <div className="auth-page">
+      <Link href="/" className="auth-logo">
+        obras<span>de</span>teatro.com
+      </Link>
+      <div className="auth-card">
+        <h1 className="auth-title">Crear cuenta</h1>
+        <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
+        <form onSubmit={handleRegistro} className="auth-form">
           <input
             type="email"
             placeholder="Email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <input
             type="text"
@@ -59,7 +66,7 @@ export default function RegistroPage() {
             value={nombre}
             onChange={e => setNombre(e.target.value)}
             required
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <input
             type="password"
@@ -67,23 +74,28 @@ export default function RegistroPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="w-full border p-3 rounded placeholder:text-gray-500"
+            className="ds-input"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-black text-white p-3 rounded font-medium"
+            className="ds-btn-primary"
+            style={{ marginTop: '4px' }}
           >
             {loading ? 'Creando cuenta...' : 'Registrarse'}
           </button>
         </form>
         {message && (
-          <p className="mt-4 text-center text-sm font-medium">{message}</p>
+          <p className={`auth-message ${isSuccess ? 'auth-message--success' : 'auth-message--error'}`}>
+            {message}
+          </p>
         )}
-        <p className="mt-4 text-center text-sm">
-          ¿Ya tienes cuenta?{' '}
-          <Link href="/auth/login" className="underline">Inicia sesión</Link>
-        </p>
+        <div className="auth-footer">
+          <p>
+            ¿Ya tienes cuenta?{' '}
+            <Link href="/auth/login">Inicia sesión</Link>
+          </p>
+        </div>
       </div>
     </div>
   )

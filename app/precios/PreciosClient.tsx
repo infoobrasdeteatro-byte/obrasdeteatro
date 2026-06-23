@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { PLANES } from '@/lib/plans'
+import TopNav from '@/components/design-system/TopNav'
+import NavAutenticado from '@/components/NavAutenticado'
 
 interface Props {
   userId: string | null
@@ -52,66 +54,35 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
   const isAuthenticated = !!userId
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navegación */}
-      <nav className="bg-white border-b px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="font-bold text-xl tracking-tight">
-            ObrasDeTeatro®
-          </Link>
-          <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <Link
-                href="/dashboard"
-                className="text-sm text-gray-600 hover:text-black transition-colors"
-              >
-                Mi panel →
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  className="text-sm text-gray-600 hover:text-black px-4 py-2 transition-colors"
-                >
-                  Iniciar sesión
-                </Link>
-                <Link
-                  href="/auth/registro"
-                  className="text-sm bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors"
-                >
-                  Crear cuenta
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+    <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
+      {isAuthenticated ? <NavAutenticado /> : <TopNav />}
 
-      <main className="max-w-5xl mx-auto px-6 py-16">
+      <main style={{ maxWidth: '1060px', margin: '0 auto', padding: '56px 24px 80px' }}>
+
         {/* Encabezado */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Planes y precios</h1>
-          <p className="text-gray-500 text-lg max-w-xl mx-auto">
+        <div className="precios-header">
+          <h1 className="precios-headline">Planes y precios</h1>
+          <p className="precios-sub">
             Elige el plan que mejor se adapta a tu actividad profesional en el teatro.
           </p>
         </div>
 
         {/* Banner: pago cancelado */}
         {cancelled && (
-          <div className="mb-8 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm text-center">
-            Has cancelado el proceso de pago. Tu plan actual no ha cambiado.
+          <div className="ds-status-banner ds-status-banner--draft" style={{ maxWidth: '520px', margin: '0 auto 32px' }}>
+            <p className="ds-status-title">Has cancelado el proceso de pago. Tu plan actual no ha cambiado.</p>
           </div>
         )}
 
         {/* Banner: error */}
         {error && (
-          <div className="mb-8 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm text-center">
+          <div className="ds-alert-error" style={{ maxWidth: '520px', margin: '0 auto 32px', textAlign: 'center' }}>
             {error}
           </div>
         )}
 
         {/* Tarjetas de planes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="precios-plan-grid">
           {PLANES.map((plan) => {
             const isCurrent = currentPlan === plan.id
             const isLoading = loadingPlan === plan.id
@@ -120,97 +91,55 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
             return (
               <div
                 key={plan.id}
-                className={`bg-white rounded-2xl p-8 flex flex-col relative ${
-                  plan.recomendado
-                    ? 'ring-2 ring-black shadow-md'
-                    : 'border border-gray-200 shadow-sm'
-                }`}
+                className={`precios-card${plan.recomendado ? ' precios-card--highlighted' : ''}`}
               >
-                {/* Badge más popular */}
                 {plan.recomendado && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-black text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
-                      Más popular
-                    </span>
-                  </div>
+                  <span className="precios-badge">Más popular</span>
                 )}
 
-                {/* Encabezado del plan */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-1">
-                    <h2 className="text-lg font-bold">{plan.nombre}</h2>
-                    {isCurrent && (
-                      <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                        Activo
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 mb-4">{plan.descripcion}</p>
-                  <div className="flex items-baseline gap-1">
-                    {plan.precio === 0 ? (
-                      <span className="text-3xl font-bold">Gratis</span>
-                    ) : (
-                      <>
-                        <span className="text-3xl font-bold">
-                          {plan.precio.toFixed(2).replace('.', ',')} €
-                        </span>
-                        <span className="text-sm text-gray-500">/mes</span>
-                      </>
-                    )}
-                  </div>
-                  {plan.precio > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">Facturación mensual · Cancela cuando quieras</p>
-                  )}
-                </div>
+                <div className="precios-card-label">{plan.nombre}</div>
 
-                {/* Características */}
-                <ul className="space-y-2.5 mb-8 flex-1">
-                  {plan.caracteristicas.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm text-gray-700">
-                      <svg
-                        className="w-4 h-4 text-green-500 mt-0.5 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2.5}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                <div className="precios-card-price">
+                  {plan.precio === 0 ? 'Gratis' : `${plan.precio.toFixed(2).replace('.', ',')} €`}
+                </div>
+                {plan.precio > 0 && (
+                  <>
+                    <div className="precios-card-period">/mes</div>
+                    <div className="precios-card-billing">Facturación mensual · Cancela cuando quieras</div>
+                  </>
+                )}
+                {plan.precio === 0 && <div className="precios-card-period">Para siempre</div>}
+
+                <ul className="precios-card-features">
+                  {plan.caracteristicas.map(feat => (
+                    <li key={feat} className="precios-card-feature">
+                      <svg className="precios-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                        <path d="M5 13l4 4L19 7" />
                       </svg>
                       {feat}
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA */}
                 {isCurrent ? (
-                  <div className="w-full text-center py-2.5 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium cursor-default select-none">
-                    Plan actual
-                  </div>
+                  <div className="precios-card-current">Plan actual</div>
                 ) : !isAuthenticated ? (
                   <Link
                     href="/auth/registro"
-                    className="w-full text-center py-2.5 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition-colors block"
+                    className="precios-card-btn precios-card-btn--dark"
                   >
                     {isPaid ? 'Crear cuenta' : 'Empezar gratis'}
                   </Link>
                 ) : plan.id === 'gratuito' ? (
-                  <div className="w-full text-center py-2.5 rounded-lg bg-gray-100 text-gray-500 text-sm font-medium cursor-default select-none">
-                    Incluido
-                  </div>
+                  <div className="precios-card-current">Incluido</div>
                 ) : (
                   <button
                     onClick={() => handleSubscribe(plan.id)}
                     disabled={isLoading || !!loadingPlan || !legalAccepted}
                     title={!legalAccepted ? 'Acepta los términos para continuar' : undefined}
-                    className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      plan.recomendado
-                        ? 'bg-black text-white hover:bg-gray-800'
-                        : 'bg-gray-900 text-white hover:bg-black'
-                    }`}
+                    className={`precios-card-btn ${plan.recomendado ? 'precios-card-btn--red' : 'precios-card-btn--dark'}`}
                   >
-                    {isLoading
-                      ? 'Redirigiendo a Stripe…'
-                      : `Activar plan ${plan.nombre}`}
+                    {isLoading ? 'Redirigiendo a Stripe…' : `Activar plan ${plan.nombre}`}
                   </button>
                 )}
               </div>
@@ -220,53 +149,46 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
 
         {/* Aceptación legal — solo para usuarios autenticados */}
         {isAuthenticated && (
-          <div className="mt-10 max-w-lg mx-auto bg-gray-50 border border-gray-200 rounded-xl p-6">
-            <p className="text-sm font-semibold text-gray-700 mb-4">
+          <div className="precios-legal-box">
+            <p className="precios-legal-title">
               Antes de activar un plan, acepta los siguientes términos:
             </p>
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={acceptTerms}
-                  onChange={e => setAcceptTerms(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-black shrink-0"
-                />
-                <span className="text-sm text-gray-600">
-                  Acepto los{' '}
-                  <a href="/legal/terminos" className="underline hover:text-black" target="_blank" rel="noopener noreferrer">
-                    Términos y Condiciones
-                  </a>
-                </span>
-              </label>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={acceptPrivacy}
-                  onChange={e => setAcceptPrivacy(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-black shrink-0"
-                />
-                <span className="text-sm text-gray-600">
-                  He leído la{' '}
-                  <a href="/legal/privacidad" className="underline hover:text-black" target="_blank" rel="noopener noreferrer">
-                    Política de Privacidad
-                  </a>
-                </span>
-              </label>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={acceptRenewal}
-                  onChange={e => setAcceptRenewal(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-black shrink-0"
-                />
-                <span className="text-sm text-gray-600">
-                  Acepto la renovación automática de la suscripción hasta su cancelación
-                </span>
-              </label>
-            </div>
+            <label className="precios-legal-item">
+              <input
+                type="checkbox"
+                checked={acceptTerms}
+                onChange={e => setAcceptTerms(e.target.checked)}
+              />
+              <span>
+                Acepto los{' '}
+                <a href="/legal/terminos" style={{ textDecoration: 'underline', color: 'var(--text)' }} target="_blank" rel="noopener noreferrer">
+                  Términos y Condiciones
+                </a>
+              </span>
+            </label>
+            <label className="precios-legal-item">
+              <input
+                type="checkbox"
+                checked={acceptPrivacy}
+                onChange={e => setAcceptPrivacy(e.target.checked)}
+              />
+              <span>
+                He leído la{' '}
+                <a href="/legal/privacidad" style={{ textDecoration: 'underline', color: 'var(--text)' }} target="_blank" rel="noopener noreferrer">
+                  Política de Privacidad
+                </a>
+              </span>
+            </label>
+            <label className="precios-legal-item">
+              <input
+                type="checkbox"
+                checked={acceptRenewal}
+                onChange={e => setAcceptRenewal(e.target.checked)}
+              />
+              <span>Acepto la renovación automática de la suscripción hasta su cancelación</span>
+            </label>
             {!legalAccepted && (
-              <p className="text-xs text-amber-700 mt-3">
+              <p className="precios-legal-warning">
                 Acepta los tres puntos anteriores para habilitar el botón de pago.
               </p>
             )}
@@ -274,13 +196,13 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
         )}
 
         {/* Señales de confianza */}
-        <p className="text-center text-gray-500 text-sm mt-8">
+        <p className="precios-trust">
           Pago seguro con Stripe · Cancela en cualquier momento · Sin permanencia mínima
         </p>
 
         {isAuthenticated && (
-          <div className="text-center mt-4">
-            <Link href="/dashboard" className="text-sm text-gray-500 hover:text-black underline">
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <Link href="/dashboard" style={{ fontSize: '13px', color: 'var(--muted)', textDecoration: 'underline' }}>
               ← Volver al panel de control
             </Link>
           </div>
