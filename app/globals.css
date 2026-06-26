@@ -129,9 +129,11 @@ body {
   inset: 0;
   background: linear-gradient(
     105deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.15) 50%,
-    transparent 70%
+    transparent 20%,
+    rgba(255, 255, 255, 0.10) 38%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.10) 62%,
+    transparent 80%
   );
   transform: translateX(-100%);
   animation: nav-cta-shimmer 7s linear infinite;
