@@ -114,6 +114,16 @@ body {
 }
 .nav--hero .nav-btn-cta:hover { background: rgba(255,255,255,0.20); }
 
+@keyframes nav-cta-pulse {
+  0%, 10%, 100% { transform: scale(1); }
+  5%            { transform: scale(1.04); }
+}
+.nav-btn-cta--pulse {
+  animation: nav-cta-pulse 8s ease-in-out infinite;
+  transform-origin: center;
+}
+.nav-btn-cta--pulse:hover { animation-play-state: paused; }
+
 /* ═══════════════════════════════════════════════════
    HERO SECTION
 ═══════════════════════════════════════════════════ */
