@@ -50,7 +50,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, avatar_url, created_at')
+    .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, avatar_url, created_at')
     .eq('slug', slug)
     .eq('perfil_publico', true)
     .is('deleted_at', null)
@@ -60,10 +60,25 @@ export default async function PerfilPublicoPage({ params }: Props) {
     notFound()
   }
 
+  let perfilDirector: { biografia: string | null; trayectoria: string | null; formacion: string | null } | null = null
+
+  if (profile.tipo_perfil === 'director') {
+    const { data } = await supabase
+      .from('perfil_director')
+      .select('biografia, trayectoria, formacion')
+      .eq('user_id', profile.id)
+      .maybeSingle()
+    perfilDirector = data
+  }
+
   const nombrePublico = profile.nombre_artistico || profile.nombre
   const nombreCompleto = [profile.nombre, profile.apellidos].filter(Boolean).join(' ')
   const tipo = TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil
   const ubicacion = [profile.ciudad, profile.region, profile.pais].filter(Boolean).join(' · ')
+
+  const hasDirectorContent = perfilDirector && (
+    perfilDirector.biografia || perfilDirector.trayectoria || perfilDirector.formacion
+  )
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,6 +89,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
       </nav>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
+
         {/* Cabecera */}
         <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
           <div className="flex items-start gap-6">
@@ -114,12 +130,53 @@ export default async function PerfilPublicoPage({ params }: Props) {
           )}
         </div>
 
+        {/* Director — información profesional */}
+        {hasDirectorContent && (
+          <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
+
+            {perfilDirector?.biografia && (
+              <div className="mb-8">
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                  Biografía profesional
+                </h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {perfilDirector.biografia}
+                </p>
+              </div>
+            )}
+
+            {perfilDirector?.trayectoria && (
+              <div className={`${perfilDirector.biografia ? 'pt-6 border-t ' : ''}mb-8`}>
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                  Trayectoria profesional
+                </h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {perfilDirector.trayectoria}
+                </p>
+              </div>
+            )}
+
+            {perfilDirector?.formacion && (
+              <div className={(perfilDirector.biografia || perfilDirector.trayectoria) ? 'pt-6 border-t' : ''}>
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                  Formación académica
+                </h2>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {perfilDirector.formacion}
+                </p>
+              </div>
+            )}
+
+          </div>
+        )}
+
         {/* Footer de perfil */}
         <p className="text-center text-xs text-gray-400">
           Perfil en{' '}
           <Link href="/" className="underline hover:text-gray-600">ObrasDeTeatro.com</Link>
           {' '}— Ecosistema del teatro en español
         </p>
+
       </main>
     </div>
   )
