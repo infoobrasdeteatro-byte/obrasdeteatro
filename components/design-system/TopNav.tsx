@@ -50,7 +50,7 @@ export default function TopNav({ heroMode = false }: Props) {
           <Link href="/auth/login" className="nav-btn-login">
             Iniciar sesión
           </Link>
-          <Link href="/auth/registro" className="nav-btn-cta">
+          <Link href="/auth/registro" className="nav-btn-cta nav-btn-cta--pulse">
             Registrarse
           </Link>
           <button
