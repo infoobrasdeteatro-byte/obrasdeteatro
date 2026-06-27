@@ -3,6 +3,17 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+const OBRAS_CATEGORIAS = [
+  'Drama', 'Comedia', 'Tragicomedia', 'Teatro clásico',
+  'Teatro contemporáneo', 'Teatro infantil', 'Teatro juvenil',
+  'Teatro musical', 'Monólogos', 'Microteatro',
+  'Teatro experimental', 'Teatro físico', 'Teatro gestual',
+  'Teatro documental', 'Teatro de calle', 'Teatro inclusivo',
+  'Teatro universitario', 'Teatro amateur', 'Teatro profesional',
+  'Teatro leído', 'Radioteatro', 'Adaptaciones',
+  'Teatro histórico', 'Teatro religioso', 'Teatro social',
+]
+
 interface Props {
   heroMode?: boolean
 }
@@ -45,7 +56,33 @@ export default function TopNav({ heroMode = false }: Props) {
         <div className="nav-divider" />
         <div className="nav-links">
           <Link href="/directorio" className="nav-link">Profesionales</Link>
+
+          <div className="nav-dropdown">
+            <button className="nav-dropdown-trigger" aria-haspopup="true">
+              Obras
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="1.5,3.5 5.5,7.5 9.5,3.5" />
+              </svg>
+            </button>
+            <div className="nav-dropdown-panel" role="menu">
+              <div className="nav-dropdown-heading">Géneros y categorías</div>
+              <div className="nav-dropdown-grid">
+                {OBRAS_CATEGORIAS.map(cat => (
+                  <a
+                    key={cat}
+                    href="#"
+                    className="nav-dropdown-item"
+                    role="menuitem"
+                    onClick={e => e.preventDefault()}
+                  >
+                    {cat}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
+
         <div className="nav-right">
           <Link href="/auth/login" className="nav-btn-login">
             Iniciar sesión
@@ -74,6 +111,9 @@ export default function TopNav({ heroMode = false }: Props) {
           <Link href="/directorio" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Directorio de profesionales
           </Link>
+          <a href="#" className="nav-mobile-link" onClick={e => e.preventDefault()}>
+            Obras de teatro
+          </a>
           <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Cuenta</span>
           <Link href="/auth/login" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
