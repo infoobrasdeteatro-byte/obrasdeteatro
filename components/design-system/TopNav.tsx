@@ -3,15 +3,43 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-const OBRAS_CATEGORIAS = [
-  'Drama', 'Comedia', 'Tragicomedia', 'Teatro clásico',
-  'Teatro contemporáneo', 'Teatro infantil', 'Teatro juvenil',
-  'Teatro musical', 'Monólogos', 'Microteatro',
-  'Teatro experimental', 'Teatro físico', 'Teatro gestual',
-  'Teatro documental', 'Teatro de calle', 'Teatro inclusivo',
-  'Teatro universitario', 'Teatro amateur', 'Teatro profesional',
-  'Teatro leído', 'Radioteatro', 'Adaptaciones',
-  'Teatro histórico', 'Teatro religioso', 'Teatro social',
+const OBRAS_TAXONOMIA: { section: string; items: string[] }[] = [
+  {
+    section: 'Teatro Dramático',
+    items: ['Drama', 'Comedia', 'Tragicomedia', 'Melodrama', 'Teatro psicológico', 'Teatro social', 'Teatro político', 'Teatro histórico', 'Teatro religioso'],
+  },
+  {
+    section: 'Teatro Clásico y Literario',
+    items: ['Teatro clásico', 'Teatro contemporáneo', 'Teatro costumbrista', 'Teatro del absurdo', 'Adaptaciones', 'Teatro poético'],
+  },
+  {
+    section: 'Formatos Escénicos',
+    items: ['Monólogos', 'Microteatro', 'Teatro breve', 'Teatro leído', 'Radioteatro', 'Performance escénica'],
+  },
+  {
+    section: 'Teatro Musical y Expresivo',
+    items: ['Teatro musical', 'Zarzuela', 'Ópera', 'Teatro gestual', 'Teatro físico', 'Teatro de improvisación'],
+  },
+  {
+    section: 'Público y Contexto',
+    items: ['Teatro infantil', 'Teatro juvenil', 'Teatro familiar', 'Teatro educativo', 'Teatro universitario', 'Teatro amateur', 'Teatro profesional'],
+  },
+  {
+    section: 'Nuevos Lenguajes',
+    items: ['Teatro experimental', 'Teatro documental', 'Teatro inmersivo', 'Teatro de calle', 'Teatro inclusivo', 'Teatro de marionetas', 'Teatro de objetos'],
+  },
+  {
+    section: 'Tradición Escénica',
+    items: ['Auto sacramental', 'Entremés', 'Sainete', 'Vodevil', "Commedia dell'arte"],
+  },
+  {
+    section: 'Nuevas Tendencias',
+    items: ['Teatro digital', 'Teatro interactivo', 'Teatro multimedia', 'Teatro comunitario', 'Teatro foro', 'Teatro testimonial', 'Teatro verbatim'],
+  },
+  {
+    section: 'Especializados',
+    items: ['Teatro científico', 'Teatro terapéutico', 'Teatro penitenciario', 'Teatro sensorial', 'Teatro de sombras', 'Teatro de títeres'],
+  },
 ]
 
 interface Props {
@@ -65,18 +93,22 @@ export default function TopNav({ heroMode = false }: Props) {
               </svg>
             </button>
             <div className="nav-dropdown-panel" role="menu">
-              <div className="nav-dropdown-heading">Géneros y categorías</div>
-              <div className="nav-dropdown-grid">
-                {OBRAS_CATEGORIAS.map(cat => (
-                  <a
-                    key={cat}
-                    href="#"
-                    className="nav-dropdown-item"
-                    role="menuitem"
-                    onClick={e => e.preventDefault()}
-                  >
-                    {cat}
-                  </a>
+              <div className="nav-dropdown-sections">
+                {OBRAS_TAXONOMIA.map(({ section, items }) => (
+                  <div key={section} className="nav-dropdown-section">
+                    <div className="nav-dropdown-section-title">{section}</div>
+                    {items.map(item => (
+                      <a
+                        key={item}
+                        href="#"
+                        className="nav-dropdown-item"
+                        role="menuitem"
+                        onClick={e => e.preventDefault()}
+                      >
+                        {item}
+                      </a>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
