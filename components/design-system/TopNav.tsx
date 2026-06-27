@@ -85,54 +85,7 @@ export default function TopNav({ heroMode = false }: Props) {
         <div className="nav-links">
           <Link href="/directorio" className="nav-link">Profesionales</Link>
 
-          <div className="nav-dropdown">
-            <button className="nav-dropdown-trigger" aria-haspopup="true">
-              Obras
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="1.5,3.5 5.5,7.5 9.5,3.5" />
-              </svg>
-            </button>
-            <div className="nav-dropdown-panel" role="menu">
-              <div className="nav-mp-head">
-                <span className="nav-mp-title">Biblioteca de Obras</span>
-                <span className="nav-mp-sub">Géneros y categorías</span>
-              </div>
-              <div className="nav-mp-grid">
-                {OBRAS_TAXONOMIA.slice(0, 8).map(({ section, items }) => (
-                  <div key={section} className="nav-dropdown-section">
-                    <div className="nav-dropdown-section-title">{section}</div>
-                    {items.map(item => (
-                      <a
-                        key={item}
-                        href="#"
-                        className="nav-dropdown-item"
-                        role="menuitem"
-                        onClick={e => e.preventDefault()}
-                      >
-                        {item}
-                      </a>
-                    ))}
-                  </div>
-                ))}
-              </div>
-              <div className="nav-mp-foot">
-                <span className="nav-mp-foot-label">{OBRAS_TAXONOMIA[8].section}</span>
-                <div className="nav-mp-foot-items">
-                  {OBRAS_TAXONOMIA[8].items.map(item => (
-                    <a
-                      key={item}
-                      href="#"
-                      className="nav-mp-foot-item"
-                      role="menuitem"
-                      onClick={e => e.preventDefault()}
-                    >
-                      {item}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <Link href="/obras" className="nav-link">Obras</Link>
         </div>
 
         <div className="nav-right">
@@ -163,9 +116,9 @@ export default function TopNav({ heroMode = false }: Props) {
           <Link href="/directorio" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Directorio de profesionales
           </Link>
-          <a href="#" className="nav-mobile-link" onClick={e => e.preventDefault()}>
+          <Link href="/obras" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Obras de teatro
-          </a>
+          </Link>
           <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Cuenta</span>
           <Link href="/auth/login" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
