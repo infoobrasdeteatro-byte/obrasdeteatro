@@ -114,15 +114,32 @@ body {
 }
 .nav--hero .nav-btn-cta:hover { background: rgba(255,255,255,0.20); }
 
-@keyframes nav-cta-pulse {
-  0%, 10%, 100% { transform: scale(1); }
-  5%            { transform: scale(1.04); }
+@keyframes nav-cta-shimmer {
+  0%   { transform: translateX(-100%); }
+  17%  { transform: translateX(200%); }
+  100% { transform: translateX(200%); }
 }
 .nav-btn-cta--pulse {
-  animation: nav-cta-pulse 8s ease-in-out infinite;
-  transform-origin: center;
+  position: relative;
+  overflow: hidden;
 }
-.nav-btn-cta--pulse:hover { animation-play-state: paused; }
+.nav-btn-cta--pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.10) 38%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.10) 62%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  animation: nav-cta-shimmer 5s linear infinite;
+  pointer-events: none;
+}
+.nav-btn-cta--pulse:hover::after { animation-play-state: paused; }
 
 /* ═══════════════════════════════════════════════════
    HERO SECTION
