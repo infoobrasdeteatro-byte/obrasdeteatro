@@ -93,8 +93,12 @@ export default function TopNav({ heroMode = false }: Props) {
               </svg>
             </button>
             <div className="nav-dropdown-panel" role="menu">
-              <div className="nav-dropdown-sections">
-                {OBRAS_TAXONOMIA.map(({ section, items }) => (
+              <div className="nav-mp-head">
+                <span className="nav-mp-title">Biblioteca de Obras</span>
+                <span className="nav-mp-sub">Géneros y categorías</span>
+              </div>
+              <div className="nav-mp-grid">
+                {OBRAS_TAXONOMIA.slice(0, 8).map(({ section, items }) => (
                   <div key={section} className="nav-dropdown-section">
                     <div className="nav-dropdown-section-title">{section}</div>
                     {items.map(item => (
@@ -110,6 +114,22 @@ export default function TopNav({ heroMode = false }: Props) {
                     ))}
                   </div>
                 ))}
+              </div>
+              <div className="nav-mp-foot">
+                <span className="nav-mp-foot-label">{OBRAS_TAXONOMIA[8].section}</span>
+                <div className="nav-mp-foot-items">
+                  {OBRAS_TAXONOMIA[8].items.map(item => (
+                    <a
+                      key={item}
+                      href="#"
+                      className="nav-mp-foot-item"
+                      role="menuitem"
+                      onClick={e => e.preventDefault()}
+                    >
+                      {item}
+                    </a>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
