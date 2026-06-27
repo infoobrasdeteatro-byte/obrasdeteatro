@@ -116,7 +116,7 @@ body {
 
 @keyframes nav-cta-shimmer {
   0%   { transform: translateX(-100%); }
-  12%  { transform: translateX(200%); }
+  17%  { transform: translateX(200%); }
   100% { transform: translateX(200%); }
 }
 .nav-btn-cta--pulse {
@@ -136,7 +136,7 @@ body {
     transparent 80%
   );
   transform: translateX(-100%);
-  animation: nav-cta-shimmer 7s linear infinite;
+  animation: nav-cta-shimmer 5s linear infinite;
   pointer-events: none;
 }
 .nav-btn-cta--pulse:hover::after { animation-play-state: paused; }
