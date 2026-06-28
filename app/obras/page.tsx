@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import TopNav from '@/components/design-system/TopNav'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Biblioteca de Obras | ObrasDeTeatro®',
@@ -47,15 +48,6 @@ const TAXONOMIA: { section: string; items: string[] }[] = [
   },
 ]
 
-const OBRAS_PLACEHOLDER = [
-  { titulo: 'La casa de Bernarda Alba', autor: 'Federico García Lorca',       genero: 'Drama',          año: '1936' },
-  { titulo: 'La vida es sueño',         autor: 'Pedro Calderón de la Barca', genero: 'Teatro clásico', año: '1636' },
-  { titulo: 'Bodas de sangre',          autor: 'Federico García Lorca',       genero: 'Tragedia',       año: '1932' },
-  { titulo: 'Luces de Bohemia',         autor: 'Ramón del Valle-Inclán',      genero: 'Esperpento',     año: '1924' },
-  { titulo: 'Yerma',                    autor: 'Federico García Lorca',       genero: 'Tragicomedia',   año: '1934' },
-  { titulo: 'Fuenteovejuna',            autor: 'Lope de Vega',                genero: 'Drama histórico',año: '1619' },
-]
-
 const AUTORES_PLACEHOLDER = [
   { nombre: 'Federico García Lorca',      pais: 'España', obras: 12,  iniciales: 'FL' },
   { nombre: 'Pedro Calderón de la Barca', pais: 'España', obras: 47,  iniciales: 'PB' },
@@ -64,7 +56,6 @@ const AUTORES_PLACEHOLDER = [
 ]
 
 const PROXIMAS_FUNCIONALIDADES = [
-  'Fichas de obras',
   'Guiones descargables',
   'Derechos de representación',
   'ScenaIA',
@@ -72,7 +63,19 @@ const PROXIMAS_FUNCIONALIDADES = [
   'Buscador avanzado',
 ]
 
-export default function ObrasPage() {
+export default async function ObrasPage() {
+  const supabase = await createClient()
+
+  const { data: obras } = await supabase
+    .from('works')
+    .select('id, title, author, slug, genre, year')
+    .eq('is_published', true)
+    .is('deleted_at', null)
+    .order('year', { ascending: true })
+
+  const obrasData = obras ?? []
+  const recientes = [...obrasData].reverse().slice(0, 4)
+
   return (
     <>
       <TopNav />
@@ -153,16 +156,16 @@ export default function ObrasPage() {
               <h2 className="bib-section-title" id="destacadas-heading">Obras destacadas</h2>
             </header>
             <div className="bib-cards-grid">
-              {OBRAS_PLACEHOLDER.map(obra => (
-                <article key={obra.titulo} className="bib-card">
-                  <div className="bib-card-genero">{obra.genero}</div>
-                  <h3 className="bib-card-titulo">{obra.titulo}</h3>
-                  <p className="bib-card-autor">{obra.autor}</p>
+              {obrasData.map(obra => (
+                <Link key={obra.id} href={`/obras/${obra.slug}`} className="bib-card">
+                  <div className="bib-card-genero">{obra.genre}</div>
+                  <h3 className="bib-card-titulo">{obra.title}</h3>
+                  <p className="bib-card-autor">{obra.author}</p>
                   <div className="bib-card-footer">
-                    <span className="bib-card-año">{obra.año}</span>
+                    <span className="bib-card-año">{obra.year ?? ''}</span>
                     <span className="bib-card-action">Ver ficha →</span>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           </div>
@@ -178,10 +181,12 @@ export default function ObrasPage() {
                   <h2 className="bib-section-title">Últimas incorporaciones</h2>
                 </header>
                 <ul className="bib-recientes-list">
-                  {OBRAS_PLACEHOLDER.slice(0, 4).map(obra => (
-                    <li key={obra.titulo + '-r'} className="bib-reciente-item">
-                      <div className="bib-reciente-titulo">{obra.titulo}</div>
-                      <div className="bib-reciente-meta">{obra.autor} · {obra.genero}</div>
+                  {recientes.map(obra => (
+                    <li key={obra.id + '-r'} className="bib-reciente-item">
+                      <Link href={`/obras/${obra.slug}`} className="bib-reciente-link">
+                        <div className="bib-reciente-titulo">{obra.title}</div>
+                        <div className="bib-reciente-meta">{obra.author} · {obra.genre}</div>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -218,7 +223,7 @@ export default function ObrasPage() {
             </h2>
             <p className="bib-pronto-text">
               Estamos construyendo el repositorio de referencia del teatro en español.
-              Fichas completas, guiones, derechos de representación y herramientas
+              Guiones, derechos de representación y herramientas
               para profesionales de la escena llegarán próximamente.
             </p>
             <div className="bib-pronto-features">
