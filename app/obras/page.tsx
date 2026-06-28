@@ -83,15 +83,13 @@ export default function ObrasPage() {
           <div className="bib-container">
             <div className="bib-hero-eyebrow">
               <span className="bib-eyebrow-dot" aria-hidden="true" />
-              Biblioteca Oficial · 59 géneros · Teatro en español
+              BIBLIOTECA OFICIAL · <span style={{ color: 'var(--red)' }}>PATRIMONIO TEATRAL</span>
             </div>
             <h1 className="bib-hero-title">
               Biblioteca de <em>Obras</em>
             </h1>
             <p className="bib-hero-desc">
-              El repositorio de referencia del teatro en español. Obras dramáticas, géneros,
-              dramaturgos y colecciones organizadas para profesionales, investigadores
-              y amantes de la escena en los 20 países de habla hispana.
+              Un espacio para conservar el patrimonio dramático en lengua española.
             </p>
             <div className="bib-hero-stats" role="list">
               {[

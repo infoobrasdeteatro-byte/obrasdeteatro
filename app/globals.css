@@ -1277,12 +1277,12 @@ body {
 .bib-stat { padding-right: 40px; margin-right: 40px; border-right: 1px solid var(--border); }
 .bib-stat:last-child { border-right: none; margin-right: 0; padding-right: 0; }
 .bib-stat-value {
-  font-family: var(--serif); font-size: 34px; font-weight: 400;
-  color: var(--black); line-height: 1; display: block; letter-spacing: -1px;
+  font-family: var(--serif); font-size: 44px; font-weight: 400;
+  color: var(--black); line-height: 1; display: block; letter-spacing: -1.5px;
 }
 .bib-stat-label {
-  font-family: var(--sans); font-size: 11px; font-weight: 500;
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: block; margin-top: 4px;
+  font-family: var(--sans); font-size: 10px; font-weight: 400;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-top: 5px;
 }
 
 /* Search */
