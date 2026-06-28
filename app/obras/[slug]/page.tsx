@@ -39,7 +39,7 @@ export default async function ObraPublicaPage({ params }: Props) {
   const { data: obra } = await supabase
     .from('works')
     .select(
-      'id, title, author, synopsis, genre, duration_minutes, min_age, cast_size_min, cast_size_max, language, is_published, deleted_at, created_at, profile_id'
+      'id, title, author, synopsis, genre, duration_minutes, min_age, cast_size_min, cast_size_max, language, is_published, deleted_at, created_at, profile_id, institution_id, year'
     )
     .eq('slug', slug)
     .single()
@@ -48,6 +48,10 @@ export default async function ObraPublicaPage({ params }: Props) {
 
   const { data: perfil } = obra.profile_id
     ? await supabase.from('profiles').select('nombre, nombre_artistico, slug').eq('id', obra.profile_id).single()
+    : { data: null }
+
+  const { data: institution } = obra.institution_id
+    ? await supabase.from('institutions').select('name').eq('id', obra.institution_id).single()
     : { data: null }
 
   const creadorNombre = perfil?.nombre_artistico ?? perfil?.nombre ?? '—'
@@ -134,8 +138,12 @@ export default async function ObraPublicaPage({ params }: Props) {
 
           <div className="mt-10 pt-6 border-t flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Ficha creada por</p>
-              {perfil?.slug ? (
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                {institution ? 'Biblioteca' : 'Ficha creada por'}
+              </p>
+              {institution ? (
+                <span className="text-sm font-medium text-gray-900">{institution.name}</span>
+              ) : perfil?.slug ? (
                 <Link
                   href={`/perfil/${perfil.slug}`}
                   className="text-sm font-medium text-gray-900 hover:underline"
@@ -147,12 +155,14 @@ export default async function ObraPublicaPage({ params }: Props) {
               )}
             </div>
             <p className="text-xs text-gray-400">
-              {obra.created_at
-                ? new Date(obra.created_at).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                  })
-                : ''}
+              {obra.year
+                ? obra.year
+                : obra.created_at
+                  ? new Date(obra.created_at).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                    })
+                  : ''}
             </p>
           </div>
         </div>
