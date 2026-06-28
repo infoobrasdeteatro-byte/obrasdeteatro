@@ -85,26 +85,9 @@ export default function ObrasPage() {
               <span className="bib-eyebrow-dot" aria-hidden="true" />
               BIBLIOTECA OFICIAL · <span style={{ color: 'var(--red)' }}>PATRIMONIO TEATRAL</span>
             </div>
-            <h1 className="bib-hero-title">
-              Biblioteca<br />
-              de <span style={{ color: 'var(--red)' }}>OBRAS</span>
-            </h1>
             <p className="bib-hero-desc">
               Un espacio para conservar el patrimonio dramático en lengua española.
             </p>
-            <div className="bib-hero-stats" role="list">
-              {[
-                { value: '+4.000', label: 'Obras' },
-                { value: '59',     label: 'Géneros' },
-                { value: '20',     label: 'Países' },
-                { value: '500 M.', label: 'Hablantes' },
-              ].map(stat => (
-                <div key={stat.label} className="bib-stat" role="listitem">
-                  <span className="bib-stat-value">{stat.value}</span>
-                  <span className="bib-stat-label">{stat.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
