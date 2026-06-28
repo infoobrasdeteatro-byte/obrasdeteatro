@@ -85,21 +85,9 @@ export default function ObrasPage() {
               <span className="bib-eyebrow-dot" aria-hidden="true" />
               BIBLIOTECA OFICIAL · <span style={{ color: 'var(--red)' }}>PATRIMONIO TEATRAL</span>
             </div>
-            <svg
-              className="bib-hero-seal"
-              viewBox="0 0 100 100"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <circle cx="50" cy="50" r="50" style={{ fill: 'var(--red)' }} />
-              <path d="M25 18 C25 18, 38 28, 35 50 C32 72, 25 82, 25 82 L43 82 C43 82, 50 65, 50 50 C50 35, 43 18, 43 18 Z" fill="white" opacity="0.95" />
-              <path d="M75 18 C75 18, 62 28, 65 50 C68 72, 75 82, 75 82 L57 82 C57 82, 50 65, 50 50 C50 35, 57 18, 57 18 Z" fill="white" opacity="0.95" />
-              <polygon points="50,10 57,22 50,30 43,22" fill="white" opacity="0.6" />
-              <rect x="20" y="84" width="60" height="4" rx="2" fill="white" opacity="0.4" />
-            </svg>
             <h1 className="bib-hero-title">
-              Biblioteca de <em>Obras</em>
+              Biblioteca<br />
+              de <span style={{ color: 'var(--red)' }}>OBRAS</span>
             </h1>
             <p className="bib-hero-desc">
               Un espacio para conservar el patrimonio dramático en lengua española.
