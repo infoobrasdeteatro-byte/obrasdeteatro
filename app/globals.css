@@ -1262,6 +1262,7 @@ body {
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px;
 }
 .bib-eyebrow-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+.bib-hero-seal { display: block; width: 48px; height: 48px; margin: 0 auto 20px; }
 .bib-hero-title {
   font-family: var(--serif);
   font-size: clamp(44px, 6vw, 80px);
