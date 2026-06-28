@@ -46,11 +46,9 @@ export default async function ObraPublicaPage({ params }: Props) {
 
   if (!obra || !obra.is_published || obra.deleted_at) notFound()
 
-  const { data: perfil } = await supabase
-    .from('profiles')
-    .select('nombre, nombre_artistico, slug')
-    .eq('id', obra.profile_id)
-    .single()
+  const { data: perfil } = obra.profile_id
+    ? await supabase.from('profiles').select('nombre, nombre_artistico, slug').eq('id', obra.profile_id).single()
+    : { data: null }
 
   const creadorNombre = perfil?.nombre_artistico ?? perfil?.nombre ?? '—'
   const idioma = obra.language ? (IDIOMA_LABEL[obra.language] ?? obra.language) : null

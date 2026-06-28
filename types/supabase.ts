@@ -469,6 +469,42 @@ export type Database = {
           },
         ]
       }
+      institutions: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_public: boolean
+          name: string
+          slug: string
+          type: string
+          website: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          name: string
+          slug: string
+          type: string
+          website?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_public?: boolean
+          name?: string
+          slug?: string
+          type?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -2178,66 +2214,115 @@ export type Database = {
       }
       works: {
         Row: {
+          access_type: string | null
           author: string | null
           cast_size_max: number | null
           cast_size_min: number | null
+          cover_image_url: string | null
+          country_code: string | null
           created_at: string | null
           deleted_at: string | null
           duration_minutes: number | null
           genre: string | null
           id: string
+          institution_id: string | null
           is_featured: boolean | null
+          is_library_work: boolean
           is_published: boolean | null
           language: string | null
           min_age: number | null
-          profile_id: string
+          profile_id: string | null
+          rights_manager: string | null
+          rights_status: string | null
+          secondary_genres: string[] | null
           slug: string | null
+          source_name: string | null
+          source_url: string | null
+          subtitle: string | null
           synopsis: string | null
+          synopsis_full: string | null
+          synopsis_short: string | null
           title: string
           updated_at: string | null
           view_count: number | null
+          year: number | null
         }
         Insert: {
+          access_type?: string | null
           author?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
+          cover_image_url?: string | null
+          country_code?: string | null
           created_at?: string | null
           deleted_at?: string | null
           duration_minutes?: number | null
           genre?: string | null
           id?: string
+          institution_id?: string | null
           is_featured?: boolean | null
+          is_library_work?: boolean
           is_published?: boolean | null
           language?: string | null
           min_age?: number | null
-          profile_id: string
+          profile_id?: string | null
+          rights_manager?: string | null
+          rights_status?: string | null
+          secondary_genres?: string[] | null
           slug?: string | null
+          source_name?: string | null
+          source_url?: string | null
+          subtitle?: string | null
           synopsis?: string | null
+          synopsis_full?: string | null
+          synopsis_short?: string | null
           title: string
           updated_at?: string | null
           view_count?: number | null
+          year?: number | null
         }
         Update: {
+          access_type?: string | null
           author?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
+          cover_image_url?: string | null
+          country_code?: string | null
           created_at?: string | null
           deleted_at?: string | null
           duration_minutes?: number | null
           genre?: string | null
           id?: string
+          institution_id?: string | null
           is_featured?: boolean | null
+          is_library_work?: boolean
           is_published?: boolean | null
           language?: string | null
           min_age?: number | null
-          profile_id?: string
+          profile_id?: string | null
+          rights_manager?: string | null
+          rights_status?: string | null
+          secondary_genres?: string[] | null
           slug?: string | null
+          source_name?: string | null
+          source_url?: string | null
+          subtitle?: string | null
           synopsis?: string | null
+          synopsis_full?: string | null
+          synopsis_short?: string | null
           title?: string
           updated_at?: string | null
           view_count?: number | null
+          year?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "works_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "works_profile_id_fkey"
             columns: ["profile_id"]
