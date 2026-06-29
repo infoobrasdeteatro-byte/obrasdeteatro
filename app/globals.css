@@ -1609,3 +1609,83 @@ body {
   .obra-body { gap: 32px; }
   .obra-related-grid { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════
+   BIBLIOTECA MODULAR — navegación lateral
+═══════════════════════════════════════════════════ */
+
+.bib-modular {
+  display: grid;
+  grid-template-columns: 196px 1fr;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 32px;
+  align-items: start;
+  border-bottom: 1px solid var(--border);
+}
+.bib-nav-lateral {
+  position: sticky;
+  top: var(--nav-h);
+  padding: 28px 0;
+  border-right: 1px solid var(--border);
+  min-height: 60vh;
+}
+.bib-nav-lateral-item {
+  display: block;
+  width: 100%;
+  padding: 9px 20px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.12s, background 0.12s;
+}
+.bib-nav-lateral-item:hover {
+  color: var(--black);
+  background: var(--off);
+}
+.bib-nav-lateral-item--active {
+  color: var(--black);
+  font-weight: 600;
+  background: var(--off);
+  border-left-color: var(--red);
+}
+.bib-contenido {
+  padding: 48px 48px 80px;
+  min-height: 60vh;
+}
+
+@media (max-width: 768px) {
+  .bib-modular {
+    grid-template-columns: 1fr;
+    padding: 0;
+  }
+  .bib-nav-lateral {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .bib-nav-lateral-item {
+    white-space: nowrap;
+    padding: 12px 16px;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    flex-shrink: 0;
+  }
+  .bib-nav-lateral-item--active {
+    border-left: none;
+    border-bottom-color: var(--red);
+    background: none;
+  }
+  .bib-contenido { padding: 28px 20px 60px; }
+}
