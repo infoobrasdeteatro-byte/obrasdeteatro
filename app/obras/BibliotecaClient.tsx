@@ -63,10 +63,10 @@ type ObraCard = {
 }
 
 const SECCIONES = [
-  { id: 'catalogo',        label: 'Catálogo' },
-  { id: 'generos',         label: 'Géneros y categorías' },
-  { id: 'incorporaciones', label: 'Últimas incorporaciones' },
-  { id: 'dramaturgos',     label: 'Dramaturgos' },
+  { id: 'catalogo',        num: '01', label: 'Catálogo' },
+  { id: 'generos',         num: '02', label: 'Géneros y categorías' },
+  { id: 'incorporaciones', num: '03', label: 'Últimas incorporaciones' },
+  { id: 'dramaturgos',     num: '04', label: 'Dramaturgos' },
 ] as const
 
 type SeccionId = (typeof SECCIONES)[number]['id']
@@ -84,8 +84,9 @@ export default function BibliotecaClient({ obrasData }: Props) {
   return (
     <div className="bib-modular">
 
-      {/* Navegación lateral */}
-      <nav className="bib-nav-lateral" aria-label="Secciones de la Biblioteca">
+      {/* Índice lateral */}
+      <nav className="bib-nav-lateral" aria-label="Índice de la Biblioteca">
+        <span className="bib-nav-lateral-title" aria-hidden="true">Índice</span>
         {SECCIONES.map(s => (
           <button
             key={s.id}
@@ -93,7 +94,9 @@ export default function BibliotecaClient({ obrasData }: Props) {
             onClick={() => setActiva(s.id)}
             aria-current={activa === s.id ? 'true' : undefined}
           >
-            {s.label}
+            <span className="bib-nav-num">{s.num}</span>
+            <span className="bib-nav-sep" aria-hidden="true">·</span>
+            <span className="bib-nav-label">{s.label}</span>
           </button>
         ))}
       </nav>

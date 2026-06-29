@@ -1630,8 +1630,22 @@ body {
   border-right: 1px solid var(--border);
   min-height: 60vh;
 }
-.bib-nav-lateral-item {
+.bib-nav-lateral-title {
   display: block;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 20px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.bib-nav-lateral-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   width: 100%;
   padding: 9px 20px;
   font-family: var(--sans);
@@ -1651,10 +1665,27 @@ body {
 }
 .bib-nav-lateral-item--active {
   color: var(--black);
-  font-weight: 600;
+  font-weight: 500;
   background: var(--off);
   border-left-color: var(--red);
 }
+.bib-nav-num {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--muted);
+  min-width: 20px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.bib-nav-sep {
+  font-size: 11px;
+  color: var(--border);
+  flex-shrink: 0;
+  user-select: none;
+}
+.bib-nav-label { font-size: 13px; }
+.bib-nav-lateral-item--active .bib-nav-num { color: var(--red); font-weight: 400; }
 .bib-contenido {
   padding: 48px 48px 80px;
   min-height: 60vh;
@@ -1675,6 +1706,7 @@ body {
     padding: 0;
     -webkit-overflow-scrolling: touch;
   }
+  .bib-nav-lateral-title { display: none; }
   .bib-nav-lateral-item {
     white-space: nowrap;
     padding: 12px 16px;
