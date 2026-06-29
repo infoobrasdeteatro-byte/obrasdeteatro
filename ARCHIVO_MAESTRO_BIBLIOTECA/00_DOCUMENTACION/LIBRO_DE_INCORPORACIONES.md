@@ -74,3 +74,75 @@ Las siguientes incidencias documentales quedan registradas sin bloquear la incor
 
 *Inauguración oficial de la Biblioteca Oficial ObrasDeTeatro®*  
 *Sprint ETS P2.2.6 — 2026-06-28*
+
+---
+
+## Incorporación Nº 002
+
+**Fecha de incorporación:** 2026-06-29
+
+**Autor**
+
+Lope de Vega  
+*(Madrid, 1562 – Madrid, 1635)*
+
+**Colección**
+
+Colección Fundacional
+
+**Lote**
+
+Lote_002_Lope
+
+**Obras incorporadas**
+
+| Obra | Año | Género | Supabase ID |
+|---|---|---|---|
+| Fuente Ovejuna | 1614 | Drama de honor | `4ff1e163-30ea-4a05-b3ca-35b06823e3c9` |
+| El perro del hortelano | 1613 | Comedia de enredo | `ea4abd51-2956-406a-a524-b56c7c5a3353` |
+| La dama boba | 1613 | Comedia | `2f5de386-85e4-4659-8d69-151e92cf94b6` |
+| El caballero de Olmedo | 1641 | Tragicomedia | `a47b87c4-3cf6-4eea-9c1f-2dd9f86932c8` |
+| Peribáñez y el Comendador de Ocaña | 1610 | Drama de honor | `7bdcd0d5-7ea5-4976-a370-396e8729c1f7` |
+
+**Fuente documental**
+
+Biblioteca Virtual Miguel de Cervantes  
+https://www.cervantesvirtual.com/portales/lope_de_vega/
+
+**Estado de derechos**
+
+Dominio público — obras anteriores a 1900 con autor fallecido en 1635.
+
+**Estado técnico**
+
+Incorporadas oficialmente a la Biblioteca Oficial de ObrasDeTeatro®.
+
+- institution_id: `d0a54895-ac1a-4dc4-9286-9ff84c9841ee` (Biblioteca Oficial ObrasDeTeatro®)
+- profile_id: NULL (obras institucionales — Modelo de Propiedad Dual)
+- is_library_work: true
+- is_published: true
+- rights_status: public_domain
+- access_type: public_download
+
+Validaciones completadas:
+- ✅ 5 obras presentes en Supabase bajo la institución correcta
+- ✅ Catálogo total Biblioteca Oficial: 10 obras (5 Calderón + 5 Lope de Vega)
+- ✅ Constraint `works_single_owner` activo — ninguna obra puede tener propietario ambiguo
+- ✅ 0 regresiones sobre obras de usuario
+- ✅ Fichas públicas `/obras/[slug]` disponibles para las 5 nuevas obras
+- ✅ Contador del Catálogo en el Índice Editorial actualizado automáticamente: 5 → 10
+
+**Observaciones**
+
+Las siguientes incidencias documentales quedan registradas sin bloquear la incorporación:
+
+1. *El caballero de Olmedo* — La fecha de composición se sitúa entre 1620 y 1625 según la crítica. Se registra 1641 como año de primera edición impresa verificada. Verificar frente a ediciones críticas antes de la próxima revisión del catálogo.
+
+2. *Peribáñez y el Comendador de Ocaña* — Fecha de composición estimada (c. 1605-1612). Se usa 1610 como año más citado en la bibliografía académica. Pendiente confirmación de año exacto.
+
+3. URLs individuales de edición — Las `source_url` apuntan al portal general de Lope de Vega en Cervantes Virtual. Localizar y registrar las URLs específicas de cada edición antes de la incorporación de archivos PDF.
+
+---
+
+*Segundo dramaturgo oficial de la Biblioteca Oficial ObrasDeTeatro®*  
+*Sprint ETS LI-002 — 2026-06-29*
