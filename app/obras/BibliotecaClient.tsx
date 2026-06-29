@@ -107,7 +107,7 @@ export default function BibliotecaClient({ obrasData }: Props) {
             <span className="bib-nav-sep" aria-hidden="true">·</span>
             <span className="bib-nav-label">{s.label}</span>
             <span className="bib-nav-count" aria-hidden="true">
-              {String(counts[s.id]).padStart(3, '0')}
+              {counts[s.id]}
             </span>
           </button>
         ))}
