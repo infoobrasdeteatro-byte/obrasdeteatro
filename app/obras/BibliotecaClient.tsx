@@ -71,6 +71,8 @@ const SECCIONES = [
 
 type SeccionId = (typeof SECCIONES)[number]['id']
 
+const GENRES_TOTAL = TAXONOMIA.reduce((acc, { items }) => acc + items.length, 0)
+
 interface Props {
   obrasData: ObraCard[]
 }
@@ -80,6 +82,13 @@ interface Props {
 export default function BibliotecaClient({ obrasData }: Props) {
   const [activa, setActiva] = useState<SeccionId>('catalogo')
   const recientes = [...obrasData].reverse().slice(0, 4)
+
+  const counts: Record<SeccionId, number> = {
+    catalogo:        obrasData.length,
+    generos:         GENRES_TOTAL,
+    incorporaciones: recientes.length,
+    dramaturgos:     AUTORES_PLACEHOLDER.length,
+  }
 
   return (
     <div className="bib-modular">
@@ -97,6 +106,9 @@ export default function BibliotecaClient({ obrasData }: Props) {
             <span className="bib-nav-num">{s.num}</span>
             <span className="bib-nav-sep" aria-hidden="true">·</span>
             <span className="bib-nav-label">{s.label}</span>
+            <span className="bib-nav-count" aria-hidden="true">
+              {String(counts[s.id]).padStart(3, '0')}
+            </span>
           </button>
         ))}
       </nav>
