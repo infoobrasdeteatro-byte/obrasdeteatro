@@ -146,3 +146,74 @@ Las siguientes incidencias documentales quedan registradas sin bloquear la incor
 
 *Segundo dramaturgo oficial de la Biblioteca Oficial ObrasDeTeatro®*  
 *Sprint ETS LI-002 — 2026-06-29*
+
+---
+
+## Fase LI-002A — Digitalización de la Colección Fundacional
+
+**Fecha:** 2026-06-29  
+**Alcance:** Lotes LI-001 (Calderón) y LI-002 (Lope de Vega) — digitalización completa
+
+### Recursos digitales incorporados
+
+Fuente única: **Biblioteca Virtual Miguel de Cervantes** — institución pública dependiente de la Universidad de Alicante, de acceso libre y abierto.
+
+| Obra | Autor | URL Cervantes Virtual | work_files ID |
+|---|---|---|---|
+| La vida es sueño | Calderón | [/obra-visor/la-vida-es-sueno--0/html/](https://www.cervantesvirtual.com/obra-visor/la-vida-es-sueno--0/html/) | `9695ac71-b386-43a7-a941-7bfec9cc605c` |
+| El alcalde de Zalamea | Calderón | [/obra-visor/el-alcalde-de-zalamea-0/html/](https://www.cervantesvirtual.com/obra-visor/el-alcalde-de-zalamea-0/html/) | `1e4c5b8f-0b93-41f4-89a7-9cbed4f21a86` |
+| El gran teatro del mundo | Calderón | [/obra-visor/el-gran-teatro-del-mundo--0/html/](https://www.cervantesvirtual.com/obra-visor/el-gran-teatro-del-mundo--0/html/) | `f9ab09cb-ff1f-44b7-a5e1-94134d6adaf2` |
+| La dama duende | Calderón | [/obra-visor/la-dama-duende--0/html/](https://www.cervantesvirtual.com/obra-visor/la-dama-duende--0/html/) | `f66a7edc-7963-4f13-95ff-853c2e1f859c` |
+| Casa con dos puertas | Calderón | [/obra-visor/casa-con-dos-puertas-mala-es-de-guardar--0/html/](https://www.cervantesvirtual.com/obra-visor/casa-con-dos-puertas-mala-es-de-guardar--0/html/) | `8e641475-016e-47d5-b0aa-edb1c07a65c4` |
+| Fuente Ovejuna | Lope de Vega | [/obra-visor/fuente-ovejuna--1/html/](https://www.cervantesvirtual.com/obra-visor/fuente-ovejuna--1/html/) | `b1d7bd6c-c3b4-477d-ac73-564e56571f7a` |
+| El perro del hortelano | Lope de Vega | [/obra-visor/el-perro-del-hortelano--0/html/](https://www.cervantesvirtual.com/obra-visor/el-perro-del-hortelano--0/html/) | `272fe2af-a6da-4a61-b336-d2e06ead2266` |
+| La dama boba | Lope de Vega | [/obra-visor/la-dama-boba--0/html/](https://www.cervantesvirtual.com/obra-visor/la-dama-boba--0/html/) | `d5082fd8-b3e2-4a55-9d7d-56a8679fa073` |
+| El caballero de Olmedo | Lope de Vega | [/obra-visor/el-caballero-de-olmedo--0/html/](https://www.cervantesvirtual.com/obra-visor/el-caballero-de-olmedo--0/html/) | `d5af7326-b692-492d-ba76-8c60362a5b57` |
+| Peribáñez y el Comendador de Ocaña | Lope de Vega | [/obra-visor/peribanez-y-el-comendador-de-ocana--0/html/](https://www.cervantesvirtual.com/obra-visor/peribanez-y-el-comendador-de-ocana--0/html/) | `fa653ecc-6c43-4426-8cc9-1ec0cec4131d` |
+
+### Verificación jurídica
+
+- **Calderón de la Barca** — fallecido en 1681. Dominio público en toda la UE (70 años post mortem). ✅
+- **Lope de Vega** — fallecido en 1635. Dominio público en toda la UE y jurisdicción internacional. ✅
+- **Cervantes Virtual** — institución pública, Universidad de Alicante. Acceso libre y abierto. Las ediciones digitalizadas son reproducciones de impresos históricos (siglos XVII-XVIII), sin restricciones de distribución sobre el texto de las obras. ✅
+- **Naturaleza del recurso** — enlace de lectura a interfaz externa (obra-visor). La plataforma no aloja ni distribuye ningún archivo. La responsabilidad documental del contenido recae sobre Cervantes Virtual. ✅
+- **Nota sobre aparato editorial moderno** — algunas ediciones incluyen introducciones o notas de edición de los siglos XX-XXI (de dominio de sus autores respectivos). Únicamente el texto de las obras —definitivamente en dominio público— se hace accesible.
+
+### Corrección de datos — min_age Calderón (Lote 001)
+
+El campo `min_age` no fue poblado en la importación inicial (LI-001). Corregido en esta fase:
+
+| Obra | min_age |
+|---|---|
+| La vida es sueño | 14 |
+| El alcalde de Zalamea | 14 |
+| El gran teatro del mundo | 12 |
+| La dama duende | 12 |
+| Casa con dos puertas mala es de guardar | 12 |
+
+### Validaciones completadas
+
+- ✅ 10/10 obras con `work_files` públicos (`is_public = true`, `file_type = 'script'`)
+- ✅ 10/10 fichas con `min_age` completo
+- ✅ Bloque "Recursos" activado automáticamente en todas las fichas públicas
+- ✅ URLs verificadas individualmente en Cervantes Virtual antes de la inserción
+- ✅ Verificación jurídica completada — dominio público sin excepciones
+- ✅ 0 modificaciones de código — activación exclusivamente por datos
+
+### Estado de la Colección Fundacional tras LI-002A
+
+| Campo | Estado |
+|---|---|
+| Obras en catálogo | 10 (5 Calderón + 5 Lope de Vega) |
+| Obras con ficha completa | 10/10 |
+| Obras con recurso digital | 10/10 |
+| work_files públicos | 10/10 |
+| min_age poblado | 10/10 |
+| cover_image_url | 0/10 (pendiente — no autorizado) |
+
+La Colección Fundacional queda **oficialmente completada** como Biblioteca Digital.  
+Condición cumplida para autorizar el inicio del **LI-003**.
+
+---
+
+*Fase de digitalización — Sprint ETS LI-002A — 2026-06-29*
