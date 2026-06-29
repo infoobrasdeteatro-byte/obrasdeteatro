@@ -1696,7 +1696,7 @@ body {
   flex-shrink: 0;
   padding-right: 2px;
 }
-.bib-nav-lateral-item--active .bib-nav-num { color: var(--red); font-weight: 400; }
+.bib-nav-lateral-item--active .bib-nav-num { color: var(--muted); font-weight: 400; }
 .bib-contenido {
   padding: 48px 48px 80px;
   min-height: 60vh;
