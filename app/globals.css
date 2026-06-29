@@ -1435,3 +1435,177 @@ body {
   .bib-stat { border-right: none; padding-right: 0; margin-right: 0; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
   .bib-stat:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 }
+
+/* ═══════════════════════════════════════════════════
+   PÁGINA EDITORIAL DE OBRA — obra-* prefix
+═══════════════════════════════════════════════════ */
+
+.obra-page { max-width: 1160px; margin: 0 auto; padding: 32px 40px 100px; }
+
+/* Breadcrumb */
+.obra-breadcrumb {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--sans); font-size: 12px; color: var(--muted);
+  padding-bottom: 28px;
+}
+.obra-breadcrumb a { color: var(--muted); text-decoration: none; }
+.obra-breadcrumb a:hover { color: var(--black); text-decoration: underline; }
+.obra-breadcrumb-sep { color: var(--border); user-select: none; }
+
+/* Cabecera */
+.obra-header { padding-bottom: 40px; border-bottom: 1px solid var(--border); }
+.obra-header-eyebrow {
+  font-family: var(--sans); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--red); margin-bottom: 18px;
+}
+.obra-titulo {
+  font-family: var(--serif); font-size: clamp(30px, 5vw, 52px);
+  font-weight: 400; color: var(--black);
+  line-height: 1.1; letter-spacing: -0.5px; margin: 0 0 10px;
+}
+.obra-subtitulo {
+  font-family: var(--serif); font-size: clamp(15px, 2vw, 19px);
+  font-weight: 400; font-style: italic; color: var(--muted);
+  margin: 0 0 18px; letter-spacing: -0.1px;
+}
+.obra-meta-line {
+  font-family: var(--sans); font-size: 14px; font-weight: 300;
+  color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.obra-meta-author { color: var(--black); font-weight: 400; text-decoration: none; }
+.obra-meta-author:hover { text-decoration: underline; }
+.obra-meta-sep { color: var(--border); }
+
+/* Cuerpo — dos columnas */
+.obra-body {
+  display: grid; grid-template-columns: 1fr 340px;
+  gap: 64px; padding-top: 48px; align-items: start;
+}
+
+/* Columna principal */
+.obra-main { min-width: 0; }
+.obra-section-label {
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 14px; margin-top: 0;
+}
+.obra-sinopsis {
+  font-family: var(--sans); font-size: 16px; line-height: 1.75;
+  color: var(--text); font-weight: 300; margin: 0;
+}
+.obra-sinopsis-full {
+  margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border);
+  font-family: var(--sans); font-size: 15px; line-height: 1.8;
+  color: var(--text); font-weight: 300; margin-bottom: 0;
+}
+.obra-cover { width: 100%; border-radius: var(--radius-lg); display: block; margin-top: 36px; }
+.obra-tags-section { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--border); }
+.obra-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.obra-tag {
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  color: var(--muted); background: var(--off);
+  border: 1px solid var(--border); border-radius: 20px; padding: 3px 12px;
+}
+
+/* Sidebar */
+.obra-sidebar {
+  position: sticky; top: calc(var(--nav-h) + 24px);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.obra-sidebar-block {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px 22px;
+}
+.obra-sidebar-block-title {
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px; margin-top: 0;
+}
+
+/* Ficha técnica */
+.obra-data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 8px; }
+.obra-data-label {
+  font-family: var(--sans); font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; margin-top: 0;
+}
+.obra-data-value {
+  font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--black); margin: 0;
+}
+
+/* Derechos */
+.obra-rights { display: flex; align-items: flex-start; gap: 10px; }
+.obra-rights-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 5px;
+}
+.obra-rights-dot--green  { background: #16a34a; }
+.obra-rights-dot--yellow { background: #ca8a04; }
+.obra-rights-dot--red    { background: var(--red); }
+.obra-rights-dot--gray   { background: var(--muted); }
+.obra-rights-status { font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--black); margin: 0 0 2px; }
+.obra-rights-detail { font-family: var(--sans); font-size: 11px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
+
+/* Recursos */
+.obra-btn-download {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 11px 16px; background: var(--black);
+  color: var(--white); font-family: var(--sans); font-size: 13px;
+  font-weight: 500; border-radius: 8px; text-decoration: none;
+  transition: background 0.15s;
+}
+.obra-btn-download:hover { background: var(--red); }
+.obra-access-note {
+  font-family: var(--sans); font-size: 11px; color: var(--muted);
+  text-align: center; margin: 8px 0 12px; line-height: 1.4;
+}
+.obra-source { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 4px; }
+.obra-source-lbl {
+  font-family: var(--sans); font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 4px;
+}
+.obra-source-a {
+  font-family: var(--sans); font-size: 12px; color: var(--black);
+  text-decoration: none; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+}
+.obra-source-a:hover { text-decoration: underline; }
+
+/* Obras relacionadas */
+.obra-related {
+  margin-top: 64px; padding-top: 48px; border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 40px;
+}
+.obra-related-section-title {
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); margin: 0 0 16px;
+}
+.obra-related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.obra-related-card {
+  display: flex; flex-direction: column; gap: 5px; padding: 16px 18px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); text-decoration: none; color: inherit;
+  transition: border-color 0.15s;
+}
+.obra-related-card:hover { border-color: rgba(10,10,10,0.25); }
+.obra-related-genre {
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.10em; text-transform: uppercase; color: var(--red);
+}
+.obra-related-title {
+  font-family: var(--serif); font-size: 16px; font-weight: 400;
+  color: var(--black); line-height: 1.25; letter-spacing: -0.2px;
+}
+.obra-related-meta { font-family: var(--sans); font-size: 12px; color: var(--muted); }
+
+/* Obra — responsive */
+@media (max-width: 900px) {
+  .obra-body { grid-template-columns: 1fr; gap: 40px; }
+  .obra-sidebar { position: static; top: auto; }
+  .obra-related-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .obra-page { padding: 24px 20px 60px; }
+  .obra-body { gap: 32px; }
+  .obra-related-grid { grid-template-columns: 1fr; }
+}
