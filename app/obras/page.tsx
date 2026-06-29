@@ -81,23 +81,14 @@ export default async function ObrasPage() {
       <TopNav />
 
       <main>
-        {/* ── HERO EDITORIAL ── */}
-        <section className="bib-hero">
+        {/* ── CABECERA + BUSCADOR (bloque compacto unificado) ── */}
+        <section className="bib-hero" aria-label="Cabecera de la biblioteca">
           <div className="bib-container">
             <div className="bib-hero-eyebrow">
               <span className="bib-eyebrow-dot" aria-hidden="true" />
               BIBLIOTECA OFICIAL · <span style={{ color: 'var(--red)' }}>PATRIMONIO TEATRAL</span>
             </div>
-            <p className="bib-hero-desc">
-              Un espacio para conservar el patrimonio dramático en lengua española.
-            </p>
-          </div>
-        </section>
-
-        {/* ── BUSCADOR ── */}
-        <section className="bib-search" aria-label="Buscador de la biblioteca">
-          <div className="bib-container">
-            <div className="bib-search-wrap">
+            <div className="bib-search-wrap" role="search" aria-label="Buscador de la biblioteca">
               <svg
                 className="bib-search-icon"
                 width="16" height="16" viewBox="0 0 24 24"
@@ -125,29 +116,6 @@ export default async function ObrasPage() {
           </div>
         </section>
 
-        {/* ── EXPLORAR POR GÉNEROS ── */}
-        <section className="bib-section bib-section--alt" aria-labelledby="generos-heading">
-          <div className="bib-container">
-            <header className="bib-section-head">
-              <div className="bib-section-eyebrow">Explorar</div>
-              <h2 className="bib-section-title" id="generos-heading">Géneros y categorías</h2>
-              <p className="bib-section-sub">59 géneros teatrales organizados en 9 bloques temáticos</p>
-            </header>
-            <div className="bib-generos-grid">
-              {TAXONOMIA.map(({ section, items }) => (
-                <div key={section} className="bib-genero-bloque">
-                  <h3 className="bib-genero-bloque-title">{section}</h3>
-                  <div className="bib-genero-tags">
-                    {items.map(item => (
-                      <span key={item} className="bib-genero-tag">{item}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ── OBRAS DESTACADAS ── */}
         <section className="bib-section" aria-labelledby="destacadas-heading">
           <div className="bib-container">
@@ -171,8 +139,31 @@ export default async function ObrasPage() {
           </div>
         </section>
 
+        {/* ── EXPLORAR POR GÉNEROS ── */}
+        <section className="bib-section bib-section--alt" aria-labelledby="generos-heading">
+          <div className="bib-container">
+            <header className="bib-section-head">
+              <div className="bib-section-eyebrow">Explorar</div>
+              <h2 className="bib-section-title" id="generos-heading">Géneros y categorías</h2>
+              <p className="bib-section-sub">59 géneros teatrales organizados en 9 bloques temáticos</p>
+            </header>
+            <div className="bib-generos-grid">
+              {TAXONOMIA.map(({ section, items }) => (
+                <div key={section} className="bib-genero-bloque">
+                  <h3 className="bib-genero-bloque-title">{section}</h3>
+                  <div className="bib-genero-tags">
+                    {items.map(item => (
+                      <span key={item} className="bib-genero-tag">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ── ÚLTIMAS INCORPORACIONES + AUTORES DESTACADOS ── */}
-        <section className="bib-section bib-section--alt">
+        <section className="bib-section">
           <div className="bib-container">
             <div className="bib-two-col">
               <div>

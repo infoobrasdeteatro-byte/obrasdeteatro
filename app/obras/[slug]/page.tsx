@@ -126,7 +126,7 @@ export default async function ObraPublicaPage({ params }: Props) {
     RIGHTS_DOT[obra.rights_status ?? ''] ?? 'obra-rights-dot--gray'
 
   const scriptFile = scriptFiles?.[0] ?? null
-  const hasResources = !!(scriptFile || obra.source_url)
+  const hasResources = !!scriptFile
   const hasRelated =
     (obrasMismoAutor?.length ?? 0) > 0 || (obrasMismoGenero?.length ?? 0) > 0
 
@@ -323,29 +323,6 @@ export default async function ObraPublicaPage({ params }: Props) {
                     </>
                   )}
 
-                  {obra.source_url && (
-                    <div className={scriptFile ? 'obra-source' : ''}>
-                      <p className="obra-source-lbl">Fuente documental</p>
-                      <a
-                        href={obra.source_url}
-                        className="obra-source-a"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {obra.source_name ?? obra.source_url}
-                        <svg
-                          width="11" height="11" viewBox="0 0 24 24"
-                          fill="none" stroke="currentColor"
-                          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                          <polyline points="15 3 21 3 21 9"/>
-                          <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                      </a>
-                    </div>
-                  )}
                 </div>
               )}
 
