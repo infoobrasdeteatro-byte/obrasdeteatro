@@ -19,6 +19,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [acceptPrivacy, setAcceptPrivacy] = useState(false)
   const [acceptRenewal, setAcceptRenewal] = useState(false)
+  const [exploringOther, setExploringOther] = useState(false)
   const legalAccepted = acceptTerms && acceptPrivacy && acceptRenewal
 
   const handleSubscribe = async (planId: string) => {
@@ -82,7 +83,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
         )}
 
         {/* Tarjetas de planes */}
-        <div className="precios-plan-grid">
+        <div className="precios-plan-grid" onMouseLeave={() => setExploringOther(false)}>
           {PLANES.map((plan) => {
             const isCurrent = currentPlan === plan.id
             const isLoading = loadingPlan === plan.id
@@ -91,7 +92,8 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
             return (
               <div
                 key={plan.id}
-                className={`precios-card${plan.recomendado ? ' precios-card--highlighted' : ''}`}
+                className={`precios-card${plan.recomendado ? ' precios-card--highlighted' : ''}${plan.recomendado && exploringOther ? ' precios-card--dimmed' : ''}`}
+                onMouseEnter={() => setExploringOther(!plan.recomendado)}
               >
                 {plan.recomendado && (
                   <span className="precios-badge">Más popular</span>

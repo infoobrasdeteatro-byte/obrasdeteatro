@@ -975,7 +975,7 @@ body {
   box-shadow: 0 16px 48px rgba(0,0,0,0.36);
   border-color: var(--black);
 }
-.precios-plan-grid:has(.precios-card:not(.precios-card--highlighted):hover) .precios-card--highlighted {
+.precios-card--highlighted.precios-card--dimmed {
   opacity: 0.7;
   transform: scale(0.985);
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
