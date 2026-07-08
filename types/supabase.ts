@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -1735,6 +1735,173 @@ export type Database = {
           },
         ]
       }
+      professional_experience: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          en_curso: boolean
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          organizacion: string | null
+          profile_id: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          en_curso?: boolean
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          organizacion?: string | null
+          profile_id: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          en_curso?: boolean
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          organizacion?: string | null
+          profile_id?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_experience_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_availability: {
+        Row: {
+          alcance: string
+          created_at: string
+          estado: string
+          id: string
+          nota: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          alcance?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nota?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          alcance?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          nota?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_availability_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_awards: {
+        Row: {
+          anio: number | null
+          created_at: string
+          descripcion: string | null
+          entidad: string | null
+          id: string
+          nombre: string
+          profile_id: string
+        }
+        Insert: {
+          anio?: number | null
+          created_at?: string
+          descripcion?: string | null
+          entidad?: string | null
+          id?: string
+          nombre: string
+          profile_id: string
+        }
+        Update: {
+          anio?: number | null
+          created_at?: string
+          descripcion?: string | null
+          entidad?: string | null
+          id?: string
+          nombre?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_awards_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_gallery: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          id: string
+          posicion: number
+          profile_id: string
+          tipo: string
+          titulo: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          posicion?: number
+          profile_id: string
+          tipo: string
+          titulo?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          posicion?: number
+          profile_id?: string
+          tipo?: string
+          titulo?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_gallery_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_roles: {
         Row: {
           created_at: string | null
@@ -1757,6 +1924,85 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profile_roles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_specialties: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          profile_id: string
+          specialty: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          profile_id: string
+          specialty: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          profile_id?: string
+          specialty?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_specialties_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_training: {
+        Row: {
+          created_at: string
+          descripcion: string | null
+          en_curso: boolean
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          institucion: string | null
+          profile_id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descripcion?: string | null
+          en_curso?: boolean
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          institucion?: string | null
+          profile_id: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descripcion?: string | null
+          en_curso?: boolean
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          institucion?: string | null
+          profile_id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_training_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1796,9 +2042,11 @@ export type Database = {
           scenaia_analisis: boolean
           scenaia_recomendaciones: boolean
           slug: string | null
+          social_links: Json | null
           tipo_perfil: Database["public"]["Enums"]["tipo_perfil"]
           updated_at: string
           verificado: boolean
+          website_url: string | null
         }
         Insert: {
           acepta_privacidad?: boolean
@@ -1831,9 +2079,11 @@ export type Database = {
           scenaia_analisis?: boolean
           scenaia_recomendaciones?: boolean
           slug?: string | null
+          social_links?: Json | null
           tipo_perfil?: Database["public"]["Enums"]["tipo_perfil"]
           updated_at?: string
           verificado?: boolean
+          website_url?: string | null
         }
         Update: {
           acepta_privacidad?: boolean
@@ -1866,9 +2116,11 @@ export type Database = {
           scenaia_analisis?: boolean
           scenaia_recomendaciones?: boolean
           slug?: string | null
+          social_links?: Json | null
           tipo_perfil?: Database["public"]["Enums"]["tipo_perfil"]
           updated_at?: string
           verificado?: boolean
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -1977,7 +2229,7 @@ export type Database = {
           {
             foreignKeyName: "subscriptions_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -2218,8 +2470,8 @@ export type Database = {
           author: string | null
           cast_size_max: number | null
           cast_size_min: number | null
-          cover_image_url: string | null
           country_code: string | null
+          cover_image_url: string | null
           created_at: string | null
           deleted_at: string | null
           duration_minutes: number | null
@@ -2252,8 +2504,8 @@ export type Database = {
           author?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
-          cover_image_url?: string | null
           country_code?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           deleted_at?: string | null
           duration_minutes?: number | null
@@ -2286,8 +2538,8 @@ export type Database = {
           author?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
-          cover_image_url?: string | null
           country_code?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           deleted_at?: string | null
           duration_minutes?: number | null
@@ -2497,4 +2749,3 @@ export const Constants = {
     },
   },
 } as const
-
