@@ -1,20 +1,27 @@
 import type { Metadata } from "next"
-import { DM_Serif_Display, DM_Sans } from "next/font/google"
+import { Newsreader, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
 import CookieBanner from "@/components/CookieBanner"
 
-const dmSerif = DM_Serif_Display({
-  weight: ["400"],
+const newsreader = Newsreader({
+  weight: ["300", "400", "500", "600"],
   style: ["normal", "italic"],
   subsets: ["latin"],
-  variable: "--font-dm-serif",
+  variable: "--font-newsreader",
   display: "swap",
 })
 
-const dmSans = DM_Sans({
+const ibmPlexSans = IBM_Plex_Sans({
   weight: ["300", "400", "500", "600"],
   subsets: ["latin"],
-  variable: "--font-dm-sans",
+  variable: "--font-ibm-plex-sans",
+  display: "swap",
+})
+
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  variable: "--font-ibm-plex-mono",
   display: "swap",
 })
 
@@ -31,7 +38,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${dmSerif.variable} ${dmSans.variable}`}
+      className={`${newsreader.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
     >
       <body>
         {children}

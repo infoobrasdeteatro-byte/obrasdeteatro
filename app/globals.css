@@ -14,8 +14,9 @@
   --red:        #c8001a;
   --red-h:      #a00015;
   --red-light:  rgba(200, 0, 26, 0.08);
-  --serif:      var(--font-dm-serif), Georgia, 'Times New Roman', serif;
-  --sans:       var(--font-dm-sans), system-ui, -apple-system, sans-serif;
+  --serif:      var(--font-newsreader), Georgia, 'Times New Roman', serif;
+  --sans:       var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
+  --mono:       var(--font-ibm-plex-mono), 'Courier New', monospace;
   --radius:     10px;
   --radius-lg:  14px;
   --shadow:     0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
