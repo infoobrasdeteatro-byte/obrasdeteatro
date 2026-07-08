@@ -162,7 +162,7 @@ export default function Home() {
                     /mes
                   </div>
                   <div style={{ fontSize: '13px', color: isRecomendado ? 'rgba(255,255,255,0.65)' : 'var(--muted)', lineHeight: '1.7', marginBottom: '20px' }}>
-                    {plan.caracteristicas.slice(0, 3).join(' · ')}
+                    {plan.bloques.flatMap(b => b.items).slice(0, 3).join(' · ')}
                   </div>
                   <Link
                     href="/precios"

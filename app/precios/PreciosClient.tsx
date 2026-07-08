@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { PLANES } from '@/lib/plans'
+import { PLANES, TABLA_COMPARATIVA } from '@/lib/plans'
+import type { CellValue } from '@/lib/plans'
 import TopNav from '@/components/design-system/TopNav'
 import NavAutenticado from '@/components/NavAutenticado'
 
@@ -19,6 +20,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [acceptPrivacy, setAcceptPrivacy] = useState(false)
   const [acceptRenewal, setAcceptRenewal] = useState(false)
+  const [exploringOther, setExploringOther] = useState(false)
   const legalAccepted = acceptTerms && acceptPrivacy && acceptRenewal
 
   const handleSubscribe = async (planId: string) => {
@@ -53,6 +55,12 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
 
   const isAuthenticated = !!userId
 
+  const renderCell = (val: CellValue, highlighted: boolean) => {
+    if (val === true)  return <span className={`precios-compare-check${highlighted ? ' precios-compare-check--inv' : ''}`} aria-label="incluido">✓</span>
+    if (val === false) return <span className="precios-compare-dash" aria-label="no incluido">—</span>
+    return <span className={`precios-compare-value${highlighted ? ' precios-compare-value--inv' : ''}`}>{val}</span>
+  }
+
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
       {isAuthenticated ? <NavAutenticado /> : <TopNav />}
@@ -61,6 +69,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
 
         {/* Encabezado */}
         <div className="precios-header">
+          <p className="precios-eyebrow">Membresías profesionales</p>
           <h1 className="precios-headline">Planes y precios</h1>
           <p className="precios-sub">
             Elige el plan que mejor se adapta a tu actividad profesional en el teatro.
@@ -82,7 +91,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
         )}
 
         {/* Tarjetas de planes */}
-        <div className="precios-plan-grid">
+        <div className="precios-plan-grid" onMouseLeave={() => setExploringOther(false)}>
           {PLANES.map((plan) => {
             const isCurrent = currentPlan === plan.id
             const isLoading = loadingPlan === plan.id
@@ -91,7 +100,8 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
             return (
               <div
                 key={plan.id}
-                className={`precios-card${plan.recomendado ? ' precios-card--highlighted' : ''}`}
+                className={`precios-card${plan.recomendado ? ' precios-card--highlighted' : ''}${plan.recomendado && exploringOther ? ' precios-card--dimmed' : ''}`}
+                onMouseEnter={() => setExploringOther(!plan.recomendado)}
               >
                 {plan.recomendado && (
                   <span className="precios-badge">Más popular</span>
@@ -110,16 +120,29 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                 )}
                 {plan.precio === 0 && <div className="precios-card-period">Para siempre</div>}
 
-                <ul className="precios-card-features">
-                  {plan.caracteristicas.map(feat => (
-                    <li key={feat} className="precios-card-feature">
-                      <svg className="precios-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                        <path d="M5 13l4 4L19 7" />
-                      </svg>
-                      {feat}
-                    </li>
+                <p className="precios-card-tagline">{plan.tagline}</p>
+
+                {/* Bloques de funcionalidades */}
+                <div className="precios-bloques">
+                  {plan.bloques.map((bloque) => (
+                    <div key={bloque.titulo} className="precios-bloque">
+                      <div className={`precios-bloque-titulo${bloque.proximamente ? ' precios-bloque-titulo--soon' : ''}`}>
+                        <span>{bloque.titulo}</span>
+                        {bloque.proximamente && <span className="precios-soon-badge">próx.</span>}
+                      </div>
+                      <ul className="precios-bloque-items">
+                        {bloque.items.map((item) => (
+                          <li key={item} className="precios-bloque-item">
+                            <svg className="precios-bloque-check" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ))}
-                </ul>
+                </div>
 
                 {isCurrent ? (
                   <div className="precios-card-current">Plan actual</div>
@@ -146,6 +169,51 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
             )
           })}
         </div>
+
+        {/* Tabla comparativa */}
+        <section className="precios-compare">
+          <h2 className="precios-compare-titulo">Comparativa completa</h2>
+          <div className="precios-compare-wrapper">
+            <table className="precios-compare-table">
+              <thead>
+                <tr>
+                  <th scope="col" className="precios-compare-th precios-compare-th--feature">Funcionalidad</th>
+                  {PLANES.map((p) => (
+                    <th scope="col" key={p.id} className={`precios-compare-th${p.recomendado ? ' precios-compare-th--highlighted' : ''}`}>
+                      <span className="precios-compare-plan-name">{p.nombre}</span>
+                      <span className="precios-compare-plan-price">
+                        {p.precio === 0 ? 'Gratis' : `${p.precio.toFixed(2).replace('.', ',')} €/mes`}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {TABLA_COMPARATIVA.flatMap((section) => [
+                  <tr key={`s-${section.titulo}`}>
+                    <td colSpan={5} className="precios-compare-section-label">
+                      {section.titulo}
+                      {section.proximamente && <span className="precios-compare-soon"> · próx.</span>}
+                    </td>
+                  </tr>,
+                  ...section.filas.map((fila) => (
+                    <tr key={`${section.titulo}-${fila.label}`} className="precios-compare-row">
+                      <td className="precios-compare-label">{fila.label}</td>
+                      {fila.values.map((val, i) => (
+                        <td
+                          key={i}
+                          className={`precios-compare-cell${PLANES[i]?.recomendado ? ' precios-compare-cell--highlighted' : ''}`}
+                        >
+                          {renderCell(val, !!PLANES[i]?.recomendado)}
+                        </td>
+                      ))}
+                    </tr>
+                  )),
+                ])}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {/* Aceptación legal — solo para usuarios autenticados */}
         {isAuthenticated && (

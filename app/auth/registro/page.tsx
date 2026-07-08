@@ -24,8 +24,9 @@ export default function RegistroPage() {
       email,
       password,
       options: {
-        data: { nombre }
-      }
+        data: { nombre },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
 
     if (error) {
