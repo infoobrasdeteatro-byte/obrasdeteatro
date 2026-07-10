@@ -204,10 +204,10 @@ export default async function PerfilPage() {
                   {nombrePublico}
                 </h1>
                 {tipoLabel && (
-                  <p style={{ fontSize: '14px', color: 'var(--muted)', fontFamily: 'var(--sans)', marginBottom: '8px' }}>{tipoLabel}</p>
+                  <p style={{ fontSize: '14px', color: '#444444', fontFamily: 'var(--sans)', marginBottom: '8px' }}>{tipoLabel}</p>
                 )}
                 {locationFull && (
-                  <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)', marginBottom: '10px' }}>
+                  <p style={{ fontSize: '13px', color: '#444444', fontFamily: 'var(--sans)', marginBottom: '10px' }}>
                     {flag && <span style={{ marginRight: '6px' }}>{flag}</span>}
                     {locationFull}
                   </p>
@@ -223,7 +223,7 @@ export default async function PerfilPage() {
                   )}
                 </div>
                 {updatedAt && (
-                  <p style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--sans)' }}>
+                  <p style={{ fontSize: '11px', color: '#555555', fontFamily: 'var(--sans)' }}>
                     Actualizado el {updatedAt}
                   </p>
                 )}
@@ -233,10 +233,10 @@ export default async function PerfilPage() {
             {/* Progress */}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)' }}>
+                <span style={{ fontSize: '12px', color: '#444444', fontFamily: 'var(--sans)' }}>
                   {completedCount} de {applicable.length} bloque{applicable.length !== 1 ? 's' : ''} completado{completedCount !== 1 ? 's' : ''}
                   {soonCount > 0 && (
-                    <span style={{ color: 'var(--border)', marginLeft: '8px' }}>· {soonCount} próximamente</span>
+                    <span style={{ color: 'var(--muted)', marginLeft: '8px' }}>· {soonCount} próximamente</span>
                   )}
                 </span>
                 <span style={{ fontSize: '16px', fontWeight: 700, color: barColor, fontFamily: 'var(--sans)' }}>
@@ -264,7 +264,7 @@ export default async function PerfilPage() {
                 <p style={{ fontFamily: 'var(--serif)', fontSize: '16px', color: 'var(--black)', letterSpacing: '-0.2px', marginBottom: '2px' }}>
                   B{nextBlock.n} · {nextBlock.title}
                 </p>
-                <p style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)' }}>
+                <p style={{ fontSize: '12px', color: '#444444', fontFamily: 'var(--sans)' }}>
                   {nextBlock.description}
                 </p>
               </div>

@@ -75,9 +75,9 @@ export default function BlockCard({ number, title, description, status, href, fi
 
       {/* Description */}
       <p style={{
-        fontSize: '12px', color: 'var(--muted)',
+        fontSize: '12px', color: '#444444',
         lineHeight: '1.5', fontFamily: 'var(--sans)',
-        fontWeight: 300, flex: 1,
+        fontWeight: 400, flex: 1,
       }}>
         {description}
       </p>
@@ -97,7 +97,7 @@ export default function BlockCard({ number, title, description, status, href, fi
               borderRadius: '2px',
             }} />
           </div>
-          <span style={{ fontSize: '10px', color: 'var(--muted)', fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '10px', color: '#555555', fontFamily: 'var(--sans)', whiteSpace: 'nowrap' }}>
             {fields.done}/{fields.total}
           </span>
         </div>
