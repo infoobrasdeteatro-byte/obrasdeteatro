@@ -38,7 +38,7 @@ const FILTROS = [
 const TIPOS_VALIDOS = FILTROS.filter(f => f.value !== 'todos').map(f => f.value)
 
 export const metadata: Metadata = {
-  title: 'Directorio de Profesionales del Teatro | ObrasDeTeatro',
+  title: 'Directorio de Profesionales del Teatro | ObrasDeTeatro®',
   description: 'Encuentra actores, directores, compañías, dramaturgos y profesionales del teatro en español.',
 }
 
@@ -64,7 +64,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
 
   let query = supabase
     .from('profiles')
-    .select('nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, country_code, pais, bio, slug, avatar_url, verificado')
+    .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, country_code, pais, bio, slug, avatar_url, verificado, plan')
     .eq('perfil_publico', true)
     .is('deleted_at', null)
     .not('slug', 'is', null)
@@ -74,15 +74,49 @@ export default async function DirectorioPage({ searchParams }: Props) {
   if (regionValida) query = query.eq('region', regionValida)
   if (busqueda) {
     query = query.or(
-      `nombre.ilike.%${busqueda}%,nombre_artistico.ilike.%${busqueda}%,slug.ilike.%${busqueda}%`
+      `nombre.ilike.%${busqueda}%,nombre_artistico.ilike.%${busqueda}%,bio.ilike.%${busqueda}%`
     )
   }
 
-  const { data: perfiles } = await query
+  const { data: perfilesRaw } = await query
     .order('nombre', { ascending: true })
-    .limit(60)
+    .limit(500)
 
-  const total = perfiles?.length ?? 0
+  // Batch enrichment — especialidades primarias + disponibilidad (3 queries total, sin N+1)
+  const profileIds = (perfilesRaw ?? []).map(p => p.id)
+  const specMap = new Map<string, string>()
+  const availMap = new Map<string, { estado: string; nota: string | null }>()
+
+  if (profileIds.length > 0) {
+    const [specsResult, availResult] = await Promise.all([
+      supabase
+        .from('profile_specialties')
+        .select('profile_id, specialty')
+        .eq('is_primary', true)
+        .in('profile_id', profileIds),
+      supabase
+        .from('profile_availability')
+        .select('profile_id, estado, nota')
+        .in('profile_id', profileIds),
+    ])
+    for (const s of (specsResult.data ?? [])) specMap.set(s.profile_id, s.specialty)
+    for (const a of (availResult.data ?? [])) {
+      availMap.set(a.profile_id, { estado: a.estado as string, nota: a.nota as string | null })
+    }
+  }
+
+  // Sort editorial: plan prioritario (moderado) → verificado → nombre
+  const sorted = [...(perfilesRaw ?? [])].sort((a, b) => {
+    const tA = (a.plan === 'destacado' || a.plan === 'empresas') ? 0 : 1
+    const tB = (b.plan === 'destacado' || b.plan === 'empresas') ? 0 : 1
+    if (tA !== tB) return tA - tB
+    const vA = a.verificado ? 0 : 1
+    const vB = b.verificado ? 0 : 1
+    if (vA !== vB) return vA - vB
+    return (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es', { sensitivity: 'base' })
+  })
+
+  const total = sorted.length
 
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
@@ -110,15 +144,15 @@ export default async function DirectorioPage({ searchParams }: Props) {
 
         {/* Buscador */}
         <form method="GET" action="/directorio" style={{ marginBottom: '20px' }}>
-          {tipoValido  && <input type="hidden" name="tipo"   value={tipoValido} />}
-          {paisValido  && <input type="hidden" name="pais"   value={paisValido} />}
+          {tipoValido   && <input type="hidden" name="tipo"   value={tipoValido} />}
+          {paisValido   && <input type="hidden" name="pais"   value={paisValido} />}
           {regionValida && <input type="hidden" name="region" value={regionValida} />}
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               name="q"
               defaultValue={busqueda}
-              placeholder="Buscar por nombre o nombre artístico..."
+              placeholder="Buscar por nombre, especialidad..."
               style={{
                 flex: 1,
                 border: '1px solid var(--border)',
@@ -129,7 +163,6 @@ export default async function DirectorioPage({ searchParams }: Props) {
                 color: 'var(--text)',
                 background: 'var(--white)',
                 outline: 'none',
-                transition: 'border-color 0.15s',
               }}
             />
             <button
@@ -139,9 +172,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
                 padding: '10px 20px', borderRadius: 'var(--radius)',
                 fontSize: '13px', fontWeight: 500,
                 fontFamily: 'var(--sans)',
-                border: 'none', cursor: 'pointer',
-                transition: 'background 0.2s',
-                flexShrink: 0,
+                border: 'none', cursor: 'pointer', flexShrink: 0,
               }}
             >
               Buscar
@@ -155,7 +186,6 @@ export default async function DirectorioPage({ searchParams }: Props) {
                   color: 'var(--muted)',
                   padding: '10px 16px', borderRadius: 'var(--radius)',
                   fontSize: '13px', flexShrink: 0, textDecoration: 'none',
-                  transition: 'background 0.15s',
                 }}
               >
                 Limpiar
@@ -218,14 +248,15 @@ export default async function DirectorioPage({ searchParams }: Props) {
           </div>
         ) : (
           <div className="dir-profile-grid">
-            {perfiles!.map(perfil => {
+            {sorted.map(perfil => {
               const nombrePublico = perfil.nombre_artistico || perfil.nombre
-              const inicial = nombrePublico.charAt(0).toUpperCase()
+              const inicial = (nombrePublico ?? '?').charAt(0).toUpperCase()
               const label = TIPO_PERFIL_LABEL[perfil.tipo_perfil] ?? perfil.tipo_perfil
               const ubicacion = [perfil.ciudad, perfil.pais].filter(Boolean).join(', ')
               const bioCorta = perfil.bio && perfil.bio.length > 110
                 ? perfil.bio.slice(0, 110) + '…'
                 : perfil.bio
+              const especialidad = specMap.get(perfil.id) ?? null
 
               return (
                 <Link
@@ -237,7 +268,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
                     {perfil.avatar_url ? (
                       <Image
                         src={perfil.avatar_url}
-                        alt={nombrePublico}
+                        alt={nombrePublico ?? ''}
                         width={44}
                         height={44}
                         style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
@@ -245,11 +276,9 @@ export default async function DirectorioPage({ searchParams }: Props) {
                     ) : (
                       <div style={{
                         width: '44px', height: '44px', borderRadius: '50%',
-                        background: 'var(--subtle)',
-                        border: '1px solid var(--border)',
+                        background: 'var(--subtle)', border: '1px solid var(--border)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'var(--serif)',
-                        fontSize: '18px', color: 'var(--muted)',
+                        fontFamily: 'var(--serif)', fontSize: '18px', color: 'var(--muted)',
                         flexShrink: 0,
                       }}>
                         {inicial}
@@ -265,22 +294,21 @@ export default async function DirectorioPage({ searchParams }: Props) {
                           <span title="Perfil verificado" style={{ color: '#2563eb', fontSize: '11px', flexShrink: 0 }} aria-label="Verificado">✓</span>
                         )}
                       </div>
-                      {perfil.nombre_artistico && (
-                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {perfil.nombre}
-                        </p>
-                      )}
                       <span style={{
-                        display: 'inline-block', marginTop: '6px',
+                        display: 'inline-block', marginTop: '4px',
                         fontSize: '11px', fontWeight: 500,
-                        background: 'var(--subtle)',
-                        color: 'var(--muted)',
+                        background: 'var(--subtle)', color: 'var(--muted)',
                         padding: '2px 10px', borderRadius: '20px',
                       }}>
                         {label}
                       </span>
+                      {especialidad && (
+                        <p style={{ fontSize: '12px', color: 'var(--text)', marginTop: '4px', fontWeight: 500 }}>
+                          {especialidad}
+                        </p>
+                      )}
                       {ubicacion && (
-                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {ubicacion}
                         </p>
                       )}
@@ -297,7 +325,6 @@ export default async function DirectorioPage({ searchParams }: Props) {
             })}
           </div>
         )}
-
 
       </main>
 
