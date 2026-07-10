@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: '/login',         destination: '/auth/login',    permanent: true },
+      { source: '/registro',      destination: '/auth/registro', permanent: true },
+      { source: '/profesionales', destination: '/directorio',    permanent: true },
+    ]
+  },
 };
 
 export default nextConfig;

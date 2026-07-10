@@ -3,24 +3,90 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
+import TopNav from '@/components/design-system/TopNav'
+import BioExpander from './BioExpander'
+import EspecialidadesChips from './EspecialidadesChips'
+import TrayectoriaExpander from './TrayectoriaExpander'
+import FormacionExpander from './FormacionExpander'
+import PremiosExpander from './PremiosExpander'
+import FollowButton from './FollowButton'
+
+// ── Constants ──────────────────────────────────────────────────────────────
+
+type SocialKey = 'instagram' | 'linkedin' | 'twitter' | 'facebook' | 'tiktok' | 'youtube'
+type SocialLinks = Partial<Record<SocialKey, string>>
 
 const TIPO_PERFIL_LABEL: Record<string, string> = {
-  actor:        'Actor / Actriz',
-  director:     'Director/a',
-  dramaturgo:   'Dramaturgo/a',
-  compania:     'Compañía de teatro',
-  productora:   'Productora',
-  teatro:       'Teatro / Sala',
-  festival:     'Festival',
-  escuela:      'Escuela de artes escénicas',
-  institucion:  'Institución pública',
-  profesional:  'Profesional escénico',
-  publico:      'Público general',
+  actor:       'Actor / Actriz',
+  director:    'Director/a',
+  dramaturgo:  'Dramaturgo/a',
+  compania:    'Compañía de teatro',
+  productora:  'Productora',
+  teatro:      'Teatro / Sala',
+  festival:    'Festival',
+  escuela:     'Escuela de artes escénicas',
+  institucion: 'Institución pública',
+  profesional: 'Profesional escénico',
+  publico:     'Público general',
 }
 
-type Props = {
-  params: Promise<{ slug: string }>
+const SOCIAL_ORDER: SocialKey[] = ['instagram', 'linkedin', 'twitter', 'youtube', 'tiktok', 'facebook']
+const SOCIAL_LABEL: Record<SocialKey, string> = {
+  instagram: 'Instagram',
+  linkedin:  'LinkedIn',
+  twitter:   'X / Twitter',
+  youtube:   'YouTube',
+  tiktok:    'TikTok',
+  facebook:  'Facebook',
 }
+
+const AVAIL_MENSAJE: Record<string, string> = {
+  disponible:              'Disponible para nuevos proyectos',
+  parcialmente_disponible: 'Disponible de forma puntual',
+  no_disponible:           'Actualmente en producción',
+  buscando_trabajo:        'Buscando proyectos activamente',
+  abierto_a_propuestas:    'Abierto/a a propuestas',
+}
+
+interface AvailStyle { bg: string; color: string; dot: string }
+const AVAIL_STYLE: Record<string, AvailStyle> = {
+  disponible:              { bg: '#dcfce7', color: '#166534', dot: '#22c55e' },
+  buscando_trabajo:        { bg: '#dcfce7', color: '#166534', dot: '#22c55e' },
+  parcialmente_disponible: { bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
+  abierto_a_propuestas:    { bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
+  no_disponible:           { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' },
+}
+const AVAIL_FALLBACK: AvailStyle = { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' }
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function getFlag(code: string | null | undefined): string {
+  if (!code || code.length !== 2) return ''
+  return Array.from(code.toUpperCase())
+    .map(c => String.fromCodePoint(127397 + c.charCodeAt(0)))
+    .join('')
+}
+
+function extractHero(bio: string | null | undefined): string | null {
+  if (!bio?.trim()) return null
+  const text = bio.trim()
+  const m = text.match(/^.{30,160}?[.!?](?=\s|$)/)
+  if (m) return m[0]
+  if (text.length <= 120) return text
+  const cut = text.slice(0, 120).lastIndexOf(' ')
+  return text.slice(0, cut > 40 ? cut : 120) + '…'
+}
+
+function safeHref(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.startsWith('https://') || url.startsWith('http://') ? url : null
+}
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+type Props = { params: Promise<{ slug: string }> }
+
+// ── Metadata ───────────────────────────────────────────────────────────────
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
@@ -28,156 +94,460 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data } = await supabase
     .from('profiles')
-    .select('nombre, nombre_artistico, tipo_perfil, bio')
-    .eq('slug', slug)
-    .eq('perfil_publico', true)
-    .single()
-
-  if (!data) return { title: 'Perfil no encontrado — ObrasDeTeatro' }
-
-  const nombre = data.nombre_artistico || data.nombre
-  const tipo = TIPO_PERFIL_LABEL[data.tipo_perfil] ?? data.tipo_perfil
-
-  return {
-    title: `${nombre} · ${tipo} — ObrasDeTeatro`,
-    description: data.bio ?? `Perfil profesional de ${nombre} en ObrasDeTeatro.com`,
-  }
-}
-
-export default async function PerfilPublicoPage({ params }: Props) {
-  const { slug } = await params
-  const supabase = await createClient()
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, pais, bio, avatar_url, created_at')
+    .select('nombre, nombre_artistico, tipo_perfil, bio, avatar_url')
     .eq('slug', slug)
     .eq('perfil_publico', true)
     .is('deleted_at', null)
     .single()
 
-  if (!profile) {
-    notFound()
+  if (!data) return { title: 'Perfil no encontrado | ObrasDeTeatro®' }
+
+  const nombre = data.nombre_artistico || data.nombre
+  const tipo = TIPO_PERFIL_LABEL[data.tipo_perfil] ?? data.tipo_perfil
+  const bio = data.bio?.trim() ?? ''
+  const description = bio
+    ? bio.slice(0, 155) + (bio.length > 155 ? '…' : '')
+    : `Perfil profesional de ${nombre} — ${tipo} en ObrasDeTeatro.com`
+
+  return {
+    title: `${nombre} — ${tipo} | ObrasDeTeatro®`,
+    description,
+    alternates: { canonical: `/perfil/${slug}` },
+    openGraph: {
+      title: `${nombre} — ${tipo} | ObrasDeTeatro®`,
+      description,
+      images: data.avatar_url ? [{ url: data.avatar_url }] : [],
+    },
+  }
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────
+
+export default async function PerfilPublicoPage({ params }: Props) {
+  const { slug } = await params
+  const supabase = await createClient()
+
+  // Perfil + sesión en paralelo — sin waterfall
+  const [{ data: profile }, authResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, ciudad, pais, country_code, plan, verificado, website_url, social_links, slug')
+      .eq('slug', slug)
+      .eq('perfil_publico', true)
+      .is('deleted_at', null)
+      .single(),
+    supabase.auth.getUser(),
+  ])
+
+  if (!profile) notFound()
+
+  const user = authResult.data.user
+  const isOwner = user?.id === profile.id
+
+  type MaybeFollow = { data: { id: string } | null; error: unknown }
+
+  const [
+    { data: specialties },
+    { data: experience },
+    { data: training },
+    { data: awards },
+    { data: availability },
+    followResult,
+  ] = await Promise.all([
+    supabase
+      .from('profile_specialties')
+      .select('specialty, is_primary')
+      .eq('profile_id', profile.id)
+      .order('is_primary', { ascending: false })
+      .order('specialty', { ascending: true }),
+    supabase
+      .from('professional_experience')
+      .select('tipo, titulo, organizacion, fecha_inicio, fecha_fin, en_curso, descripcion')
+      .eq('profile_id', profile.id)
+      .order('en_curso', { ascending: false })
+      .order('fecha_inicio', { ascending: false, nullsFirst: false }),
+    supabase
+      .from('profile_training')
+      .select('titulo, institucion, fecha_inicio, fecha_fin, en_curso')
+      .eq('profile_id', profile.id)
+      .order('fecha_inicio', { ascending: false, nullsFirst: false }),
+    supabase
+      .from('profile_awards')
+      .select('nombre, entidad, anio, descripcion')
+      .eq('profile_id', profile.id)
+      .order('anio', { ascending: false, nullsFirst: false }),
+    supabase
+      .from('profile_availability')
+      .select('estado, nota')
+      .eq('profile_id', profile.id)
+      .maybeSingle(),
+    (user && !isOwner)
+      ? supabase.from('profile_follows').select('id').eq('follower_id', user.id).eq('following_id', profile.id).maybeSingle()
+      : Promise.resolve({ data: null, error: null } as MaybeFollow),
+  ])
+
+  const siguiendoEstePerfil = followResult.data !== null
+
+  // ── Derived values ─────────────────────────────────────────────────────
+
+  const safeSpecialties = specialties ?? []
+  const safeExperience  = experience  ?? []
+  const safeTraining    = training    ?? []
+  const safeAwards      = awards      ?? []
+
+  const nombrePublico    = profile.nombre_artistico || profile.nombre
+  const tipoLabel        = TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil
+  const primarySpecialty = safeSpecialties.find(s => s.is_primary)?.specialty ?? null
+  const flag             = getFlag(profile.country_code)
+  const ubicacion        = [profile.ciudad, profile.pais].filter(Boolean).join(', ')
+  const ubicacionDisplay = flag ? `${flag} ${ubicacion}` : ubicacion
+  const isPremiumPlus    = profile.plan !== 'gratuito'
+  const planBadge        = profile.plan === 'destacado' ? 'Destacado' : profile.plan === 'empresas' ? 'Empresa' : null
+  const isVerificado     = profile.verificado === true
+
+  const heroText = extractHero(profile.bio)
+  const showHero = (profile.bio?.length ?? 0) > 280 && heroText !== null
+
+  const safeWebsite = safeHref(profile.website_url)
+
+  const socialLinks: SocialLinks = {}
+  if (profile.social_links && typeof profile.social_links === 'object' && !Array.isArray(profile.social_links)) {
+    const raw = profile.social_links as Record<string, unknown>
+    for (const key of SOCIAL_ORDER) {
+      if (typeof raw[key] === 'string' && raw[key]) socialLinks[key] = raw[key] as string
+    }
+  }
+  const visibleSocials = isPremiumPlus ? SOCIAL_ORDER.filter(k => socialLinks[k]) : []
+
+  const availMessage = availability
+    ? (availability.nota?.trim() || AVAIL_MENSAJE[availability.estado] || availability.estado)
+    : null
+  const availStyle = availability ? (AVAIL_STYLE[availability.estado] ?? AVAIL_FALLBACK) : null
+
+  const hasExperience = safeExperience.length > 0
+  const hasFormacion  = safeTraining.length   > 0
+  const hasPremios    = safeAwards.length     > 0
+  const hasEZone      = hasFormacion || hasPremios
+
+  // ── JSON-LD ────────────────────────────────────────────────────────────
+
+  const canonicalUrl = `https://www.obrasdeteatro.com/perfil/${profile.slug}`
+
+  const jsonLdPerson = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: nombrePublico,
+    jobTitle: tipoLabel,
+    url: canonicalUrl,
+    ...(profile.avatar_url ? { image: profile.avatar_url } : {}),
+    ...(profile.ciudad ? {
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: profile.ciudad,
+        ...(profile.country_code ? { addressCountry: profile.country_code } : {}),
+      },
+    } : {}),
+    ...(safeWebsite ? { sameAs: safeWebsite } : {}),
   }
 
-  let perfilDirector: { biografia: string | null; trayectoria: string | null; formacion: string | null } | null = null
-
-  if (profile.tipo_perfil === 'director') {
-    const { data } = await supabase
-      .from('perfil_director')
-      .select('biografia, trayectoria, formacion')
-      .eq('user_id', profile.id)
-      .maybeSingle()
-    perfilDirector = data
+  const jsonLdBreadcrumb = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio',     item: 'https://www.obrasdeteatro.com' },
+      { '@type': 'ListItem', position: 2, name: 'Directorio', item: 'https://www.obrasdeteatro.com/directorio' },
+      { '@type': 'ListItem', position: 3, name: tipoLabel,    item: `https://www.obrasdeteatro.com/directorio?tipo=${profile.tipo_perfil}` },
+      { '@type': 'ListItem', position: 4, name: nombrePublico },
+    ],
   }
 
-  const nombrePublico = profile.nombre_artistico || profile.nombre
-  const nombreCompleto = [profile.nombre, profile.apellidos].filter(Boolean).join(' ')
-  const tipo = TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil
-  const ubicacion = [profile.ciudad, profile.region, profile.pais].filter(Boolean).join(' · ')
-
-  const hasDirectorContent = perfilDirector && (
-    perfilDirector.biografia || perfilDirector.trayectoria || perfilDirector.formacion
-  )
+  // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b px-8 py-4">
-        <Link href="/" className="text-sm text-gray-500 hover:text-black">
-          ← ObrasDeTeatro.com
-        </Link>
-      </nav>
+    <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdPerson) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }} />
 
-      <main className="max-w-3xl mx-auto px-6 py-12">
+      <TopNav />
 
-        {/* Cabecera */}
-        <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
-          <div className="flex items-start gap-6">
-            <div className="shrink-0">
+      <main style={{ maxWidth: '860px', margin: '0 auto', padding: '32px 24px 80px' }}>
+
+        {/* ── Breadcrumb ── */}
+        <nav aria-label="Ruta de navegación" style={{ marginBottom: '28px' }}>
+          <ol style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px', listStyle: 'none', padding: 0, margin: 0 }}>
+            <li>
+              <Link href="/" style={{ fontSize: '12px', color: 'var(--muted)', textDecoration: 'none', fontFamily: 'var(--sans)' }}>
+                Inicio
+              </Link>
+            </li>
+            <li aria-hidden="true" style={{ fontSize: '12px', color: 'var(--border)', padding: '0 2px' }}>›</li>
+            <li>
+              <Link href="/directorio" style={{ fontSize: '12px', color: 'var(--muted)', textDecoration: 'none', fontFamily: 'var(--sans)' }}>
+                Directorio
+              </Link>
+            </li>
+            <li aria-hidden="true" style={{ fontSize: '12px', color: 'var(--border)', padding: '0 2px' }}>›</li>
+            <li>
+              <Link href={`/directorio?tipo=${profile.tipo_perfil}`} style={{ fontSize: '12px', color: 'var(--muted)', textDecoration: 'none', fontFamily: 'var(--sans)' }}>
+                {tipoLabel}
+              </Link>
+            </li>
+            <li aria-hidden="true" style={{ fontSize: '12px', color: 'var(--border)', padding: '0 2px' }}>›</li>
+            <li aria-current="page" style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'var(--sans)' }}>
+              {nombrePublico}
+            </li>
+          </ol>
+        </nav>
+
+        {/* ── ZONA A — Cabecera ── */}
+        <header style={{
+          background: 'var(--white)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)', padding: '32px',
+          boxShadow: 'var(--shadow)', marginBottom: '40px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+
+            {/* Avatar */}
+            <div style={{ flexShrink: 0 }}>
               {profile.avatar_url ? (
                 <Image
                   src={profile.avatar_url}
-                  alt={`Foto de perfil de ${nombrePublico}`}
-                  width={80}
-                  height={80}
-                  sizes="80px"
-                  style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid #e5e7eb', display: 'block' }}
+                  alt={`Foto de ${nombrePublico}`}
+                  width={96}
+                  height={96}
+                  sizes="(max-width: 720px) 72px, 96px"
+                  style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)', display: 'block' }}
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400" aria-label={`Inicial de ${nombrePublico}`}>
+                <div className="prof-avatar-initial" aria-hidden="true">
                   {nombrePublico.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-gray-900 leading-tight">{nombrePublico}</h1>
-              {profile.nombre_artistico && nombreCompleto !== nombrePublico && (
-                <p className="text-sm text-gray-400 mt-0.5">{nombreCompleto}</p>
+
+            {/* Identity */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{
+                fontFamily: 'var(--serif)',
+                fontSize: 'clamp(22px, 3vw, 30px)',
+                color: 'var(--black)', lineHeight: 1.15,
+                letterSpacing: '-0.5px', margin: 0,
+              }}>
+                {nombrePublico}
+              </h1>
+
+              <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '5px', marginBottom: 0, fontFamily: 'var(--sans)' }}>
+                {tipoLabel}
+              </p>
+
+              {primarySpecialty && (
+                <p style={{ fontSize: '13px', color: 'var(--text)', marginTop: '3px', marginBottom: 0, fontFamily: 'var(--sans)' }}>
+                  {primarySpecialty}
+                </p>
               )}
-              <span className="inline-block mt-2 text-xs font-medium bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                {tipo}
-              </span>
-              {ubicacion && (
-                <p className="text-sm text-gray-500 mt-2">{ubicacion}</p>
+
+              {ubicacionDisplay && (
+                <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '4px', marginBottom: 0, fontFamily: 'var(--sans)' }}>
+                  {ubicacionDisplay}
+                </p>
+              )}
+
+              {availMessage && availStyle && (
+                <div style={{ marginTop: '12px' }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '4px 12px', borderRadius: '20px',
+                    fontSize: '12px', fontFamily: 'var(--sans)',
+                    background: availStyle.bg, color: availStyle.color,
+                  }}>
+                    <span style={{
+                      width: '6px', height: '6px', borderRadius: '50%',
+                      background: availStyle.dot, flexShrink: 0,
+                    }} aria-hidden="true" />
+                    {availMessage}
+                  </span>
+                </div>
+              )}
+
+              {(isVerificado || planBadge) && (
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
+                  {isVerificado && (
+                    <span style={{
+                      fontSize: '11px', fontWeight: 600, fontFamily: 'var(--sans)',
+                      color: '#1d4ed8', background: '#eff6ff',
+                      padding: '2px 10px', borderRadius: '20px',
+                    }}>
+                      ✓ Verificado
+                    </span>
+                  )}
+                  {planBadge && (
+                    <span style={{
+                      fontSize: '11px', fontWeight: 600, fontFamily: 'var(--sans)',
+                      color: 'var(--black)', background: 'var(--subtle)',
+                      border: '1px solid var(--border)',
+                      padding: '2px 10px', borderRadius: '20px',
+                    }}>
+                      {planBadge}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
 
-          {profile.bio && (
-            <div className="mt-6 pt-6 border-t">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
+          {/* CTA principal */}
+          {safeWebsite && (
+            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+              <a
+                href={safeWebsite}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 20px', borderRadius: 'var(--radius)',
+                  background: 'var(--black)', color: 'var(--white)',
+                  fontSize: '13px', fontWeight: 500, fontFamily: 'var(--sans)',
+                  textDecoration: 'none',
+                }}
+              >
+                Ver web profesional →
+              </a>
             </div>
           )}
-        </div>
+        </header>
 
-        {/* Director — información profesional */}
-        {hasDirectorContent && (
-          <div className="bg-white rounded-xl shadow-sm p-8 mb-6">
+        {/* ── ZONA HERO — Extracto editorial ── */}
+        {showHero && heroText && (
+          <section style={{ marginBottom: '32px' }}>
+            <p style={{
+              fontFamily: 'var(--serif)',
+              fontSize: 'clamp(17px, 2.2vw, 20px)',
+              color: 'var(--text)', lineHeight: 1.7,
+              fontStyle: 'italic', letterSpacing: '-0.1px', margin: 0,
+            }}>
+              {heroText}
+            </p>
+            <div style={{ height: '1px', background: 'var(--border)', marginTop: '24px' }} aria-hidden="true" />
+          </section>
+        )}
 
-            {perfilDirector?.biografia && (
-              <div className="mb-8">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                  Biografía profesional
-                </h2>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {perfilDirector.biografia}
-                </p>
-              </div>
+        {/* ── ZONA B — Bio ── */}
+        {profile.bio && (
+          <section style={{ marginBottom: '40px' }}>
+            <BioExpander bio={profile.bio} />
+          </section>
+        )}
+
+        {/* ── ZONA C — Especialidades ── */}
+        {safeSpecialties.length > 0 && (
+          <section style={{ marginBottom: '48px' }}>
+            <h2 className="prof-eyebrow">Especialidades</h2>
+            <EspecialidadesChips specialties={safeSpecialties} />
+          </section>
+        )}
+
+        {/* ── ZONAS D + E — Trayectoria | Formación y Reconocimientos ── */}
+        {(hasExperience || hasEZone) && (
+          <div
+            className={hasExperience && hasEZone ? 'prof-split' : undefined}
+            style={{ marginBottom: '48px' }}
+          >
+            {hasExperience && (
+              <section>
+                <h2 className="prof-eyebrow">Trayectoria</h2>
+                <TrayectoriaExpander entries={safeExperience} />
+              </section>
             )}
-
-            {perfilDirector?.trayectoria && (
-              <div className={`${perfilDirector.biografia ? 'pt-6 border-t ' : ''}mb-8`}>
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                  Trayectoria profesional
-                </h2>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {perfilDirector.trayectoria}
-                </p>
-              </div>
+            {hasEZone && (
+              <section>
+                {hasFormacion && (
+                  <>
+                    <h2 className="prof-eyebrow">Formación</h2>
+                    <FormacionExpander items={safeTraining} />
+                  </>
+                )}
+                {hasPremios && (
+                  <>
+                    <h2 className="prof-eyebrow" style={{ marginTop: hasFormacion ? '32px' : 0 }}>
+                      Reconocimientos
+                    </h2>
+                    <PremiosExpander items={safeAwards} />
+                  </>
+                )}
+              </section>
             )}
-
-            {perfilDirector?.formacion && (
-              <div className={(perfilDirector.biografia || perfilDirector.trayectoria) ? 'pt-6 border-t' : ''}>
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                  Formación académica
-                </h2>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {perfilDirector.formacion}
-                </p>
-              </div>
-            )}
-
           </div>
         )}
 
-        {/* Footer de perfil */}
-        <p className="text-center text-xs text-gray-400">
-          Perfil en{' '}
-          <Link href="/" className="underline hover:text-gray-600">ObrasDeTeatro.com</Link>
-          {' '}— Ecosistema del teatro en español
-        </p>
+        {/* ── ZONA OE — Obras relacionadas — RESERVADO PP2-C ── */}
+
+        {/* ── ZONA F — Contacto ── */}
+        {(safeWebsite || visibleSocials.length > 0 || (user !== null && !isOwner)) && (
+          <section style={{ marginBottom: '48px' }}>
+            <h2 className="prof-eyebrow">Contacto</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {safeWebsite && (
+                <a
+                  href={safeWebsite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)',
+                    textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  }}
+                >
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--muted)', letterSpacing: '0.08em', minWidth: '32px' }}>
+                    WEB
+                  </span>
+                  {safeWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                  <span style={{ color: 'var(--muted)', fontSize: '11px' }}>↗</span>
+                </a>
+              )}
+              {visibleSocials.map(key => {
+                const url = socialLinks[key]
+                const href = safeHref(url ?? null)
+                if (!href) return null
+                return (
+                  <a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)',
+                      textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--muted)', letterSpacing: '0.08em', minWidth: '32px' }}>
+                      {key.slice(0, 3).toUpperCase()}
+                    </span>
+                    {SOCIAL_LABEL[key]}
+                    <span style={{ color: 'var(--muted)', fontSize: '11px' }}>↗</span>
+                  </a>
+                )
+              })}
+              {user && !isOwner && (
+                <div style={{
+                  paddingTop: (safeWebsite || visibleSocials.length > 0) ? '14px' : 0,
+                  borderTop: (safeWebsite || visibleSocials.length > 0) ? '1px solid var(--border)' : 'none',
+                }}>
+                  <FollowButton profileId={profile.id} siguiendo={siguiendoEstePerfil} />
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
       </main>
+
+      <footer style={{
+        borderTop: '1px solid var(--border)', background: 'var(--white)',
+        padding: '20px 24px', textAlign: 'center',
+      }}>
+        <Link href="/" style={{ fontSize: '12px', color: 'var(--muted)', textDecoration: 'none', fontFamily: 'var(--sans)' }}>
+          ObrasDeTeatro.com — Ecosistema del teatro en español
+        </Link>
+      </footer>
     </div>
   )
 }
