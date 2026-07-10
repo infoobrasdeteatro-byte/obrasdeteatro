@@ -354,6 +354,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
             </div>
           </div>
         ) : (
+          <>
           <div className="dir-profile-grid">
             {perfilesPagina.map(perfil => {
               const nombrePublico = perfil.nombre_artistico || perfil.nombre
@@ -463,6 +464,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
               Página {pageNum} de {totalPages} · {total} profesionales
             </p>
           )}
+          </>
         )}
 
       </main>
