@@ -5,7 +5,7 @@
 
 ## ÚLTIMA ACTUALIZACIÓN — 2026-07-10
 
-### Sprint PP2-B — Editor Profesional — CERRADO Y CONGELADO
+### Sprint PP2-C — Perfil Público Profesional — CERRADO Y CONGELADO
 
 | Sprint | Estado | Commit | Fecha |
 |--------|--------|--------|-------|
@@ -13,21 +13,35 @@
 | PP2-B — Editor Profesional modular (5 editores) | ✅ **CERRADO Y CONGELADO** | `46b701d` | 2026-07-10 |
 | fix(a11y) — contraste panel perfil WCAG AA+ | ✅ CERRADO | `de4bf3f` | 2026-07-10 |
 | UX-001A — estado Próximamente sin opacity | ✅ CERRADO | `f7e3700` | 2026-07-10 |
+| PP2-C — Perfil Público (divulgación progresiva) | ✅ **CERRADO Y CONGELADO** | `1b02293` | 2026-07-10 |
 
-**PP2-B — Alcance implementado:**
-- B2 Formación y Premios — `profile_training` + `profile_awards`
-- B3 Especialidades — `profile_specialties` (gate: 3 gratuito / ilimitado premium)
-- B4 Experiencia Profesional — `professional_experience` (gate: 5 gratuito / ilimitado premium)
-- B6 Redes y Contacto — `profiles.website_url` + `profiles.social_links` JSONB
-- B7 Disponibilidad — `profile_availability` (1-to-1 con upsert)
+**PP2-C — Alcance implementado:**
+- Ruta `/perfil/[slug]` — Server Component, render dinámico (`ƒ`)
+- Zona A: Cabecera (avatar, nombre h1 serif, profesión, especialidad primaria, ubicación+bandera, disponibilidad con mensaje humano y color semántico, badges verificado/plan, CTA web)
+- Zona Hero: extracto editorial en serif itálico (condicional: solo si bio > 280 chars)
+- Zona B: Bio con divulgación progresiva 280 chars — `BioExpander.tsx`
+- Zona C: Especialidades chips max 4 + "+N más" — `EspecialidadesChips.tsx`
+- Zona D: Trayectoria 3 entradas + expand + chevron por descripción — `TrayectoriaExpander.tsx`
+- Zona E: Formación (2+expand) + Reconocimientos (2+expand) en columna derecha — `FormacionExpander.tsx`, `PremiosExpander.tsx`
+- Layout D+E: dos columnas 62/38 en desktop, columna única en móvil (720px breakpoint)
+- Zona OE: reservada (no renderiza en PP2-C)
+- Zona F: Contacto — website (todos los planes) + social links (premium/destacado/empresas)
+- Breadcrumb: Inicio → Directorio → tipo_perfil → nombre
+- SEO: `generateMetadata` con title `Nombre — Profesión | ObrasDeTeatro®`, description (bio 155 chars), og:image (avatar), canonical
+- JSON-LD: `Person` + `BreadcrumbList`
+- Plan gate: `social_links` visible solo para premium, destacado, empresas
+- Disponibilidad: mensaje humano (nota o mapa de estados) + color semántico verde/ámbar/gris
+- CSS `.prof-*` en `globals.css`
+- TypeScript 0 errores. Build limpio. Auditoría visual APROBADA.
 
-**PP2-B — Restricciones permanentes:**
-El Editor Profesional está congelado. No modificar tipografía, colores, espaciados, estructura, componentes, responsive, lógica de negocio ni gate por plan sin incidencia autorizada expresamente.
+**PP2-C — Restricciones permanentes (CONGELADO 2026-07-10):**
+El Perfil Público está congelado. No modificar arquitectura, tipografía, colores, espaciados, componentes, responsive, SEO, jerarquía visual ni divulgación progresiva sin incidencia autorizada expresamente.
 
 **Auditoría visual:** APROBADA — 2026-07-10
-**develop HEAD:** `f7e3700` — branch limpio, build limpio, TypeScript 0 errores
-**Vercel preview:** `obrasdeteatro-k5uyrth20-obrasdeteatro-s-projects.vercel.app` READY
-**Próximo sprint:** PP2-C (Perfil Público) — PENDIENTE DE AUTORIZACIÓN EXPRESA
+**develop HEAD:** `1b02293` — branch limpio, build limpio, TypeScript 0 errores
+**Vercel preview:** `obrasdeteatro-aphszuq4k-obrasdeteatro-s-projects.vercel.app` READY
+**Alias estable:** `https://obrasdeteatro-git-develop-obrasdeteatro-s-projects.vercel.app`
+**Próximo sprint:** PP2-D — PENDIENTE DE AUTORIZACIÓN EXPRESA
 
 ---
 
