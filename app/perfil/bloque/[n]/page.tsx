@@ -5,26 +5,27 @@ import type { ReactNode } from 'react'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import PerfilForm from '@/app/perfil/PerfilForm'
-import DirectorProSection from '@/app/perfil/DirectorProSection'
+import FormacionPremiosEditor from '@/app/perfil/FormacionPremiosEditor'
+import EspecialidadesEditor from '@/app/perfil/EspecialidadesEditor'
+import ExperienciaEditor from '@/app/perfil/ExperienciaEditor'
+import RedesEditor from '@/app/perfil/RedesEditor'
+import DisponibilidadEditor from '@/app/perfil/DisponibilidadEditor'
+
+// ── Block metadata ────────────────────────────────────────────────────────────
 
 const BLOCK_META: Record<string, { title: string; description: string }> = {
-  '1': { title: 'Información Personal',    description: 'Nombre, avatar, biografía breve y ubicación geográfica'       },
-  '2': { title: 'Información Profesional', description: 'Biografía extensa, trayectoria y formación académica'          },
-  '3': { title: 'Especialidades',          description: 'Géneros y áreas de especialización escénica'                   },
-  '4': { title: 'Experiencia y Obras',     description: 'Producciones y obras publicadas en la plataforma'              },
-  '5': { title: 'Material Audiovisual',    description: 'Foto de perfil, portada y galería de imágenes'                 },
-  '6': { title: 'Redes y Contacto',        description: 'Redes sociales y contacto profesional'                         },
-  '7': { title: 'Disponibilidad',          description: 'Disponibilidad para proyectos, giras y colaboraciones'         },
-  '8': { title: 'Documentación',           description: 'CV descargable y dossier artístico profesional'                },
-  '9': { title: 'Perfil Verificado',       description: 'Solicitar verificación de identidad profesional'               },
+  '1': { title: 'Información Personal',    description: 'Nombre, avatar, biografía breve y ubicación geográfica'           },
+  '2': { title: 'Formación y Premios',     description: 'Estudios, cursos, talleres y reconocimientos profesionales'        },
+  '3': { title: 'Especialidades',          description: 'Géneros y áreas de especialización escénica'                       },
+  '4': { title: 'Experiencia Profesional', description: 'Trayectoria y experiencia en el sector escénico'                   },
+  '5': { title: 'Material Audiovisual',    description: 'Foto de perfil, portada y galería de imágenes'                     },
+  '6': { title: 'Redes y Contacto',        description: 'Web profesional y redes sociales'                                  },
+  '7': { title: 'Disponibilidad',          description: 'Disponibilidad para proyectos, giras y colaboraciones'              },
+  '8': { title: 'Documentación',           description: 'CV descargable y dossier artístico profesional'                    },
+  '9': { title: 'Perfil Verificado',       description: 'Solicitar verificación de identidad profesional'                   },
 }
 
-const TIPO_PERFIL_LABEL: Record<string, string> = {
-  actor: 'Actor / Actriz', director: 'Director/a', dramaturgo: 'Dramaturgo/a',
-  compania: 'Compañía de teatro', productora: 'Productora', teatro: 'Teatro / Sala',
-  festival: 'Festival', escuela: 'Escuela de artes escénicas',
-  institucion: 'Institución pública', profesional: 'Profesional escénico', publico: 'Público general',
-}
+type SocialLinks = Partial<Record<'instagram' | 'linkedin' | 'twitter' | 'facebook' | 'tiktok' | 'youtube', string>>
 
 type Props = { params: Promise<{ n: string }> }
 
@@ -40,7 +41,7 @@ export default async function BloqueEditorPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, nombre, apellidos, nombre_artistico, bio, pais, ciudad, country_code, region, postal_code, tipo_perfil, perfil_publico, slug, avatar_url, plan')
+    .select('id, nombre, apellidos, nombre_artistico, bio, pais, ciudad, country_code, region, postal_code, tipo_perfil, perfil_publico, slug, avatar_url, plan, website_url, social_links')
     .eq('id', user.id)
     .single()
 
@@ -70,7 +71,7 @@ export default async function BloqueEditorPage({ params }: Props) {
     )
   }
 
-  // ── Block 1: Información Personal ──────────────────────────────────────
+  // ── B1: Información Personal ──────────────────────────────────────────────
   if (n === '1') {
     return (
       <Layout>
@@ -79,35 +80,103 @@ export default async function BloqueEditorPage({ params }: Props) {
     )
   }
 
-  // ── Block 2: Información Profesional ───────────────────────────────────
+  // ── B2: Formación y Premios ───────────────────────────────────────────────
   if (n === '2') {
-    if (profile?.tipo_perfil !== 'director') {
-      const tipo = profile?.tipo_perfil ? (TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil) : 'tu tipo de perfil'
-      return (
-        <Layout>
-          <div className="account-card">
-            <p style={{ fontSize: '14px', color: 'var(--muted)', fontFamily: 'var(--sans)', lineHeight: '1.6' }}>
-              La información profesional para <strong>{tipo}</strong> estará disponible próximamente como parte del rollout del Dashboard Profesional.
-            </p>
-          </div>
-        </Layout>
-      )
-    }
-
-    const { data: directorData } = await supabase
-      .from('perfil_director')
-      .select('id, biografia, trayectoria, formacion')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const [{ data: training }, { data: awards }] = await Promise.all([
+      supabase
+        .from('profile_training')
+        .select('id, titulo, institucion, fecha_inicio, fecha_fin, en_curso, descripcion')
+        .eq('profile_id', user.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('profile_awards')
+        .select('id, nombre, entidad, anio, descripcion')
+        .eq('profile_id', user.id)
+        .order('anio', { ascending: false, nullsFirst: false }),
+    ])
 
     return (
       <Layout>
-        <DirectorProSection profileId={profile.id} initialData={directorData} />
+        <FormacionPremiosEditor
+          profileId={user.id}
+          initialTraining={training ?? []}
+          initialAwards={awards ?? []}
+        />
       </Layout>
     )
   }
 
-  // ── Block 8: Documentación (plan-gated) ────────────────────────────────
+  // ── B3: Especialidades ────────────────────────────────────────────────────
+  if (n === '3') {
+    const { data: specialties } = await supabase
+      .from('profile_specialties')
+      .select('id, specialty, is_primary')
+      .eq('profile_id', user.id)
+      .order('is_primary', { ascending: false })
+
+    return (
+      <Layout>
+        <EspecialidadesEditor
+          profileId={user.id}
+          plan={profile?.plan ?? 'gratuito'}
+          initialData={specialties ?? []}
+        />
+      </Layout>
+    )
+  }
+
+  // ── B4: Experiencia Profesional ───────────────────────────────────────────
+  if (n === '4') {
+    const { data: experience } = await supabase
+      .from('professional_experience')
+      .select('id, tipo, titulo, organizacion, descripcion, fecha_inicio, fecha_fin, en_curso')
+      .eq('profile_id', user.id)
+      .order('created_at', { ascending: false })
+
+    return (
+      <Layout>
+        <ExperienciaEditor
+          profileId={user.id}
+          plan={profile?.plan ?? 'gratuito'}
+          initialData={experience ?? []}
+        />
+      </Layout>
+    )
+  }
+
+  // ── B6: Redes y Contacto ──────────────────────────────────────────────────
+  if (n === '6') {
+    return (
+      <Layout>
+        <RedesEditor
+          profileId={user.id}
+          plan={profile?.plan ?? 'gratuito'}
+          initialWebsite={profile?.website_url ?? null}
+          initialSocial={profile?.social_links as SocialLinks | null}
+        />
+      </Layout>
+    )
+  }
+
+  // ── B7: Disponibilidad ────────────────────────────────────────────────────
+  if (n === '7') {
+    const { data: availability } = await supabase
+      .from('profile_availability')
+      .select('id, estado, alcance, nota')
+      .eq('profile_id', user.id)
+      .maybeSingle()
+
+    return (
+      <Layout>
+        <DisponibilidadEditor
+          profileId={user.id}
+          initialData={availability ?? null}
+        />
+      </Layout>
+    )
+  }
+
+  // ── B8: Documentación (plan-gated) ────────────────────────────────────────
   if (n === '8' && profile?.plan === 'gratuito') {
     return (
       <Layout>
@@ -126,7 +195,7 @@ export default async function BloqueEditorPage({ params }: Props) {
     )
   }
 
-  // ── Blocks 3–9 (not yet implemented) ──────────────────────────────────
+  // ── Resto: próximamente ───────────────────────────────────────────────────
   return (
     <Layout>
       <div className="account-card">
@@ -137,7 +206,7 @@ export default async function BloqueEditorPage({ params }: Props) {
           {meta.description}
         </p>
         <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '16px', fontFamily: 'var(--sans)' }}>
-          Este bloque forma parte del Dashboard Profesional y estará disponible en la próxima fase de desarrollo.
+          Este bloque estará disponible en una próxima fase de desarrollo.
         </p>
       </div>
     </Layout>
