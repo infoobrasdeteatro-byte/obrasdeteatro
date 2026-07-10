@@ -57,15 +57,36 @@ function extracto(bio: string | null): string | null {
   return bio.length > 120 ? bio.slice(0, 120).trimEnd() + '…' : bio
 }
 
-export const metadata: Metadata = {
-  title: 'Directorio de Profesionales del Teatro | ObrasDeTeatro®',
-  description: 'Encuentra actores, directores, compañías, dramaturgos y profesionales del teatro en español.',
-}
-
 const PER_PAGE = 24
 
 type Props = {
   searchParams: Promise<{ tipo?: string; q?: string; pais?: string; region?: string; disponible?: string; page?: string }>
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { tipo, pais: paisParam } = await searchParams
+  const tipoValido = TIPOS_VALIDOS.includes(tipo as typeof TIPOS_VALIDOS[number]) ? tipo : null
+  const countryValido = COUNTRIES.find(c => c.code === (paisParam ?? '')) ?? null
+  const tipoLabel = tipoValido ? TIPO_PERFIL_LABEL[tipoValido] : null
+  const paisLabel = countryValido?.name ?? null
+
+  let title = 'Directorio de Profesionales del Teatro'
+  if (tipoLabel && paisLabel) title = `${tipoLabel} en ${paisLabel}`
+  else if (tipoLabel) title = `${tipoLabel} de Teatro`
+  else if (paisLabel) title = `Profesionales del Teatro en ${paisLabel}`
+
+  const description = tipoLabel
+    ? `Directorio de ${tipoLabel.toLowerCase()} del teatro en español. Perfiles con trayectoria, especialidad y disponibilidad en ObrasDeTeatro®.`
+    : 'Encuentra actores, directores, compañías y profesionales del teatro en español. El catálogo editorial del talento teatral hispanohablante.'
+
+  return {
+    title: `${title} | ObrasDeTeatro®`,
+    description,
+    openGraph: {
+      title: `${title} | ObrasDeTeatro®`,
+      description,
+    },
+  }
 }
 
 export default async function DirectorioPage({ searchParams }: Props) {
@@ -161,6 +182,31 @@ export default async function DirectorioPage({ searchParams }: Props) {
   const offset = (pageNum - 1) * PER_PAGE
   const perfilesPagina = sorted.slice(offset, offset + PER_PAGE)
 
+  // H1 dinámico según filtros activos
+  const tipoLabel = tipoValido ? TIPO_PERFIL_LABEL[tipoValido] : null
+  const paisLabel = countryValido?.name ?? null
+  let h1 = 'Directorio de profesionales del teatro'
+  if (tipoLabel && paisLabel) h1 = `${tipoLabel} en ${paisLabel}`
+  else if (tipoLabel) h1 = `${tipoLabel} de teatro`
+  else if (paisLabel) h1 = `Profesionales del teatro en ${paisLabel}`
+
+  // JSON-LD ItemList
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: h1,
+    numberOfItems: total,
+    itemListElement: perfilesPagina.map((p, i) => ({
+      '@type': 'ListItem',
+      position: offset + i + 1,
+      item: {
+        '@type': 'Person',
+        name: p.nombre_artistico || p.nombre,
+        url: `https://www.obrasdeteatro.com/perfil/${p.slug}`,
+      },
+    })),
+  }
+
   // Helper: construye URL conservando todos los filtros activos
   const buildPagUrl = (p: number) => {
     const qs = new URLSearchParams()
@@ -176,6 +222,11 @@ export default async function DirectorioPage({ searchParams }: Props) {
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
       <TopNav />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       <main style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px' }}>
 
