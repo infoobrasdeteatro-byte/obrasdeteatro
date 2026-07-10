@@ -37,6 +37,25 @@ const FILTROS = [
 
 const TIPOS_VALIDOS = FILTROS.filter(f => f.value !== 'todos').map(f => f.value)
 
+const AVAIL_DISPLAY: Record<string, { label: string; color: string; dot: string }> = {
+  disponible:              { label: 'Disponible',             color: '#166534', dot: '#22c55e' },
+  buscando_trabajo:        { label: 'Buscando trabajo',       color: '#166534', dot: '#22c55e' },
+  abierto_a_propuestas:    { label: 'Abierto a propuestas',   color: '#166534', dot: '#4ade80' },
+  parcialmente_disponible: { label: 'Disponibilidad parcial', color: '#92400e', dot: '#f59e0b' },
+}
+
+function getFlag(countryCode: string | null): string {
+  if (!countryCode || countryCode.length !== 2) return ''
+  return countryCode.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('')
+}
+
+function extracto(bio: string | null): string | null {
+  if (!bio || bio.trim().length < 25) return null
+  const m = bio.match(/^.{25,120}?[.!?](?=\s|$)/)
+  if (m) return m[0]
+  return bio.length > 120 ? bio.slice(0, 120).trimEnd() + '…' : bio
+}
+
 export const metadata: Metadata = {
   title: 'Directorio de Profesionales del Teatro | ObrasDeTeatro®',
   description: 'Encuentra actores, directores, compañías, dramaturgos y profesionales del teatro en español.',
@@ -252,73 +271,74 @@ export default async function DirectorioPage({ searchParams }: Props) {
               const nombrePublico = perfil.nombre_artistico || perfil.nombre
               const inicial = (nombrePublico ?? '?').charAt(0).toUpperCase()
               const label = TIPO_PERFIL_LABEL[perfil.tipo_perfil] ?? perfil.tipo_perfil
-              const ubicacion = [perfil.ciudad, perfil.pais].filter(Boolean).join(', ')
-              const bioCorta = perfil.bio && perfil.bio.length > 110
-                ? perfil.bio.slice(0, 110) + '…'
-                : perfil.bio
+              const flag = getFlag(perfil.country_code)
+              const ubicacion = perfil.ciudad
+                ? `${flag ? flag + ' ' : ''}${perfil.ciudad}`
+                : flag || null
               const especialidad = specMap.get(perfil.id) ?? null
+              const avail = availMap.get(perfil.id) ?? null
+              const availDisplay = avail ? (AVAIL_DISPLAY[avail.estado] ?? null) : null
+              const bioExtracto = extracto(perfil.bio)
+              const isPlan = perfil.plan === 'destacado' || perfil.plan === 'empresas'
 
               return (
                 <Link
                   key={perfil.slug}
                   href={`/perfil/${perfil.slug}`}
-                  className="dir-profile-card"
+                  className="dir2-card"
                 >
+                  {/* Cabecera: avatar + identidad */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
                     {perfil.avatar_url ? (
                       <Image
                         src={perfil.avatar_url}
                         alt={nombrePublico ?? ''}
-                        width={44}
-                        height={44}
-                        style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                        width={64}
+                        height={64}
+                        className="dir2-avatar"
                       />
                     ) : (
-                      <div style={{
-                        width: '44px', height: '44px', borderRadius: '50%',
-                        background: 'var(--subtle)', border: '1px solid var(--border)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: 'var(--serif)', fontSize: '18px', color: 'var(--muted)',
-                        flexShrink: 0,
-                      }}>
+                      <div className="dir2-avatar-initial" aria-hidden="true">
                         {inicial}
                       </div>
                     )}
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <h2 style={{ fontFamily: 'var(--serif)', fontSize: '18px', color: 'var(--black)', letterSpacing: '-0.3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {nombrePublico}
-                        </h2>
-                        {perfil.verificado && (
-                          <span title="Perfil verificado" style={{ color: '#2563eb', fontSize: '11px', flexShrink: 0 }} aria-label="Verificado">✓</span>
-                        )}
-                      </div>
-                      <span style={{
-                        display: 'inline-block', marginTop: '4px',
-                        fontSize: '11px', fontWeight: 500,
-                        background: 'var(--subtle)', color: 'var(--muted)',
-                        padding: '2px 10px', borderRadius: '20px',
-                      }}>
-                        {label}
-                      </span>
-                      {especialidad && (
-                        <p style={{ fontSize: '12px', color: 'var(--text)', marginTop: '4px', fontWeight: 500 }}>
-                          {especialidad}
-                        </p>
-                      )}
-                      {ubicacion && (
-                        <p style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {ubicacion}
-                        </p>
+                      <p className="dir2-tipo">{label}</p>
+                      <h2 className="dir2-name">{nombrePublico}</h2>
+                      {especialidad && <p className="dir2-spec">{especialidad}</p>}
+                      {ubicacion   && <p className="dir2-loc">{ubicacion}</p>}
+
+                      {(perfil.verificado || isPlan) && (
+                        <div className="dir2-badges">
+                          {perfil.verificado && (
+                            <span className="dir2-badge dir2-badge--verificado">✓ Verificado</span>
+                          )}
+                          {perfil.plan === 'destacado' && (
+                            <span className="dir2-badge dir2-badge--plan">Destacado</span>
+                          )}
+                          {perfil.plan === 'empresas' && (
+                            <span className="dir2-badge dir2-badge--plan">Empresa</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {bioCorta && (
-                    <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '12px', lineHeight: '1.65', fontWeight: 300 }}>
-                      {bioCorta}
-                    </p>
+                  {/* Disponibilidad */}
+                  {availDisplay && (
+                    <>
+                      <div className="dir2-divider" />
+                      <div className="dir2-avail">
+                        <span className="dir2-avail-dot" style={{ background: availDisplay.dot }} />
+                        <span style={{ color: availDisplay.color }}>{availDisplay.label}</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Extracto editorial */}
+                  {bioExtracto && (
+                    <p className="dir2-excerpt">{bioExtracto}</p>
                   )}
                 </Link>
               )
