@@ -4,7 +4,7 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import type { Database } from '@/types/supabase'
 import { COUNTRIES } from '@/lib/geo/countries'
-import FiltrosGeo from './FiltrosGeo'
+import FiltrosDirectorio from './FiltrosDirectorio'
 import TopNav from '@/components/design-system/TopNav'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
@@ -62,16 +62,17 @@ export const metadata: Metadata = {
 }
 
 type Props = {
-  searchParams: Promise<{ tipo?: string; q?: string; pais?: string; region?: string }>
+  searchParams: Promise<{ tipo?: string; q?: string; pais?: string; region?: string; disponible?: string }>
 }
 
 export default async function DirectorioPage({ searchParams }: Props) {
-  const { tipo, q, pais: paisParam, region: regionParam } = await searchParams
+  const { tipo, q, pais: paisParam, region: regionParam, disponible } = await searchParams
 
   const tipoValido: TipoPerfil | null = TIPOS_VALIDOS.includes(tipo as typeof TIPOS_VALIDOS[number])
     ? (tipo as TipoPerfil)
     : null
   const busqueda = (q?.trim() ?? '').slice(0, 100)
+  const soloDisponibles = disponible === '1'
 
   const countryValido = COUNTRIES.find(c => c.code === (paisParam ?? '')) ?? null
   const paisValido = countryValido?.code ?? null
@@ -80,6 +81,19 @@ export default async function DirectorioPage({ searchParams }: Props) {
     : null
 
   const supabase = await createClient()
+
+  // Pre-query disponibilidad si el filtro está activo
+  let disponibleIds: string[] | null = null
+  if (soloDisponibles) {
+    const { data: availIds } = await supabase
+      .from('profile_availability')
+      .select('profile_id')
+      .in('estado', ['disponible', 'buscando_trabajo', 'abierto_a_propuestas', 'parcialmente_disponible'])
+    disponibleIds = availIds?.map(a => a.profile_id) ?? []
+  }
+
+  // Cortocircuito: filtro activo sin perfiles disponibles
+  const noDisponibles = disponibleIds !== null && disponibleIds.length === 0
 
   let query = supabase
     .from('profiles')
@@ -96,13 +110,16 @@ export default async function DirectorioPage({ searchParams }: Props) {
       `nombre.ilike.%${busqueda}%,nombre_artistico.ilike.%${busqueda}%,bio.ilike.%${busqueda}%`
     )
   }
+  if (disponibleIds !== null && disponibleIds.length > 0) query = query.in('id', disponibleIds)
 
-  const { data: perfilesRaw } = await query
+  const { data: rawData } = noDisponibles ? { data: null } : await query
     .order('nombre', { ascending: true })
     .limit(500)
 
+  const perfilesRaw = rawData ?? []
+
   // Batch enrichment — especialidades primarias + disponibilidad (3 queries total, sin N+1)
-  const profileIds = (perfilesRaw ?? []).map(p => p.id)
+  const profileIds = perfilesRaw.map(p => p.id)
   const specMap = new Map<string, string>()
   const availMap = new Map<string, { estado: string; nota: string | null }>()
 
@@ -153,65 +170,14 @@ export default async function DirectorioPage({ searchParams }: Props) {
           </p>
         </div>
 
-        {/* Filtros geográficos */}
-        <FiltrosGeo
+        {/* Filtros — búsqueda + geo + disponibilidad */}
+        <FiltrosDirectorio
           paisActivo={paisValido}
           regionActiva={regionValida}
           tipoActivo={tipoValido}
           busqueda={busqueda}
+          soloDisponibles={soloDisponibles}
         />
-
-        {/* Buscador */}
-        <form method="GET" action="/directorio" style={{ marginBottom: '20px' }}>
-          {tipoValido   && <input type="hidden" name="tipo"   value={tipoValido} />}
-          {paisValido   && <input type="hidden" name="pais"   value={paisValido} />}
-          {regionValida && <input type="hidden" name="region" value={regionValida} />}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input
-              type="text"
-              name="q"
-              defaultValue={busqueda}
-              placeholder="Buscar por nombre, especialidad..."
-              style={{
-                flex: 1,
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius)',
-                padding: '10px 14px',
-                fontSize: '13px',
-                fontFamily: 'var(--sans)',
-                color: 'var(--text)',
-                background: 'var(--white)',
-                outline: 'none',
-              }}
-            />
-            <button
-              type="submit"
-              style={{
-                background: 'var(--black)', color: 'var(--white)',
-                padding: '10px 20px', borderRadius: 'var(--radius)',
-                fontSize: '13px', fontWeight: 500,
-                fontFamily: 'var(--sans)',
-                border: 'none', cursor: 'pointer', flexShrink: 0,
-              }}
-            >
-              Buscar
-            </button>
-            {(busqueda || tipoValido || paisValido) && (
-              <Link
-                href="/directorio"
-                style={{
-                  border: '1px solid var(--border)',
-                  background: 'var(--white)',
-                  color: 'var(--muted)',
-                  padding: '10px 16px', borderRadius: 'var(--radius)',
-                  fontSize: '13px', flexShrink: 0, textDecoration: 'none',
-                }}
-              >
-                Limpiar
-              </Link>
-            )}
-          </div>
-        </form>
 
         {/* Filtros tipo */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '28px' }}>
@@ -220,8 +186,9 @@ export default async function DirectorioPage({ searchParams }: Props) {
             const qs = new URLSearchParams()
             if (filtro.value !== 'todos') qs.set('tipo', filtro.value)
             if (busqueda) qs.set('q', busqueda)
-            if (paisValido)   qs.set('pais', paisValido)
-            if (regionValida) qs.set('region', regionValida)
+            if (paisValido)    qs.set('pais', paisValido)
+            if (regionValida)  qs.set('region', regionValida)
+            if (soloDisponibles) qs.set('disponible', '1')
             const href = `/directorio${qs.toString() ? `?${qs.toString()}` : ''}`
             return (
               <Link
@@ -249,10 +216,11 @@ export default async function DirectorioPage({ searchParams }: Props) {
           {total === 0
             ? 'Sin resultados'
             : `${total} perfil${total === 1 ? '' : 'es'} encontrado${total === 1 ? '' : 's'}`}
-          {tipoValido   && ` · ${TIPO_PERFIL_LABEL[tipoValido] ?? tipoValido}`}
-          {paisValido   && ` · ${countryValido?.name ?? paisValido}`}
-          {regionValida && ` · ${regionValida}`}
-          {busqueda     && ` · "${busqueda}"`}
+          {tipoValido      && ` · ${TIPO_PERFIL_LABEL[tipoValido] ?? tipoValido}`}
+          {paisValido      && ` · ${countryValido?.name ?? paisValido}`}
+          {regionValida    && ` · ${regionValida}`}
+          {busqueda        && ` · "${busqueda}"`}
+          {soloDisponibles && ` · Solo disponibles`}
         </p>
 
         {/* Estado vacío */}
