@@ -8,8 +8,9 @@ const NAV_SECTIONS = [
     label: 'Mi cuenta',
     items: [
       { href: '/dashboard', label: 'Inicio',    icon: '⊞' },
-      { href: '/perfil',    label: 'Mi perfil', icon: '◎' },
-      { href: '/mis-obras', label: 'Mis obras', icon: '▣' },
+      { href: '/perfil',        label: 'Mi perfil',          icon: '◎' },
+      { href: '/perfil/centro', label: 'Centro Profesional', icon: '⊙' },
+      { href: '/mis-obras',     label: 'Mis obras',          icon: '▣' },
     ],
   },
   {
