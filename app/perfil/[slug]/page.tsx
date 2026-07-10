@@ -9,6 +9,7 @@ import EspecialidadesChips from './EspecialidadesChips'
 import TrayectoriaExpander from './TrayectoriaExpander'
 import FormacionExpander from './FormacionExpander'
 import PremiosExpander from './PremiosExpander'
+import FollowButton from './FollowButton'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -126,15 +127,24 @@ export default async function PerfilPublicoPage({ params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, ciudad, pais, country_code, plan, verificado, website_url, social_links, slug')
-    .eq('slug', slug)
-    .eq('perfil_publico', true)
-    .is('deleted_at', null)
-    .single()
+  // Perfil + sesión en paralelo — sin waterfall
+  const [{ data: profile }, authResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, ciudad, pais, country_code, plan, verificado, website_url, social_links, slug')
+      .eq('slug', slug)
+      .eq('perfil_publico', true)
+      .is('deleted_at', null)
+      .single(),
+    supabase.auth.getUser(),
+  ])
 
   if (!profile) notFound()
+
+  const user = authResult.data.user
+  const isOwner = user?.id === profile.id
+
+  type MaybeFollow = { data: { id: string } | null; error: unknown }
 
   const [
     { data: specialties },
@@ -142,6 +152,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: training },
     { data: awards },
     { data: availability },
+    followResult,
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -170,7 +181,12 @@ export default async function PerfilPublicoPage({ params }: Props) {
       .select('estado, nota')
       .eq('profile_id', profile.id)
       .maybeSingle(),
+    (user && !isOwner)
+      ? supabase.from('profile_follows').select('id').eq('follower_id', user.id).eq('following_id', profile.id).maybeSingle()
+      : Promise.resolve({ data: null, error: null } as MaybeFollow),
   ])
+
+  const siguiendoEstePerfil = followResult.data !== null
 
   // ── Derived values ─────────────────────────────────────────────────────
 
@@ -466,7 +482,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
         {/* ── ZONA OE — Obras relacionadas — RESERVADO PP2-C ── */}
 
         {/* ── ZONA F — Contacto ── */}
-        {(safeWebsite || visibleSocials.length > 0) && (
+        {(safeWebsite || visibleSocials.length > 0 || (user !== null && !isOwner)) && (
           <section style={{ marginBottom: '48px' }}>
             <h2 className="prof-eyebrow">Contacto</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -510,6 +526,14 @@ export default async function PerfilPublicoPage({ params }: Props) {
                   </a>
                 )
               })}
+              {user && !isOwner && (
+                <div style={{
+                  paddingTop: (safeWebsite || visibleSocials.length > 0) ? '14px' : 0,
+                  borderTop: (safeWebsite || visibleSocials.length > 0) ? '1px solid var(--border)' : 'none',
+                }}>
+                  <FollowButton profileId={profile.id} siguiendo={siguiendoEstePerfil} />
+                </div>
+              )}
             </div>
           </section>
         )}
