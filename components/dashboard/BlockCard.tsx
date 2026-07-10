@@ -26,6 +26,7 @@ export default function BlockCard({ number, title, description, status, href, fi
   const s = STATUS[status]
   const isClickable = status !== 'soon'
   const isNeutral = NEUTRAL.has(status)
+  const isSoon = status === 'soon'
 
   const inner = (
     <div style={{
@@ -36,7 +37,7 @@ export default function BlockCard({ number, title, description, status, href, fi
       display: 'flex',
       flexDirection: 'column',
       gap: '10px',
-      opacity: status === 'soon' ? 0.5 : 1,
+      opacity: 1,
       height: '100%',
       boxSizing: 'border-box',
     }}>
@@ -57,7 +58,7 @@ export default function BlockCard({ number, title, description, status, href, fi
           </span>
           <span style={{
             fontFamily: 'var(--serif)', fontSize: '14px',
-            color: 'var(--black)', letterSpacing: '-0.15px', lineHeight: 1.2,
+            color: isSoon ? '#6b7280' : 'var(--black)', letterSpacing: '-0.15px', lineHeight: 1.2,
           }}>
             {title}
           </span>
@@ -75,7 +76,7 @@ export default function BlockCard({ number, title, description, status, href, fi
 
       {/* Description */}
       <p style={{
-        fontSize: '12px', color: '#444444',
+        fontSize: '12px', color: isSoon ? '#6b7280' : '#444444',
         lineHeight: '1.5', fontFamily: 'var(--sans)',
         fontWeight: 400, flex: 1,
       }}>
