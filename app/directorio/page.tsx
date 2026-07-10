@@ -230,13 +230,26 @@ export default async function DirectorioPage({ searchParams }: Props) {
 
       <main style={{ maxWidth: '1060px', margin: '0 auto', padding: '48px 24px' }}>
 
-        {/* Cabecera */}
-        <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(24px,3vw,36px)', color: 'var(--black)', letterSpacing: '-0.6px', marginBottom: '8px' }}>
-            Directorio de profesionales
+        {/* Hero editorial */}
+        <div style={{ marginBottom: '40px' }}>
+          <p style={{
+            fontFamily: 'var(--mono)', fontSize: '10px', fontWeight: 600,
+            letterSpacing: '0.18em', textTransform: 'uppercase',
+            color: 'var(--red)', marginBottom: '12px',
+          }}>
+            ObrasDeTeatro® · Directorio Profesional
+          </p>
+          <h1 style={{
+            fontFamily: 'var(--serif)',
+            fontSize: 'clamp(26px, 3.5vw, 40px)',
+            color: 'var(--black)', letterSpacing: '-0.6px',
+            lineHeight: 1.1, marginBottom: '12px',
+            textTransform: 'capitalize',
+          }}>
+            {h1}
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--muted)', fontWeight: 300 }}>
-            Actores, directores, compañías y profesionales del teatro en español · 20 países
+          <p style={{ fontSize: '14px', color: 'var(--muted)', fontWeight: 300, lineHeight: 1.65 }}>
+            El escaparate del talento del teatro en español · Actores, directores, dramaturgos, compañías y más.
           </p>
         </div>
 
@@ -293,15 +306,52 @@ export default async function DirectorioPage({ searchParams }: Props) {
           {soloDisponibles && ` · Solo disponibles`}
         </p>
 
-        {/* Estado vacío */}
+        {/* Estado vacío / Grid */}
         {total === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
-            <p style={{ color: 'var(--muted)', fontSize: '15px', marginBottom: '16px' }}>
-              No hay perfiles que coincidan con tu búsqueda
+          <div style={{
+            textAlign: 'center', padding: '64px 24px',
+            background: 'var(--white)', borderRadius: '12px',
+            border: '1px solid var(--border)',
+          }}>
+            <p style={{
+              fontFamily: 'var(--serif)', fontSize: '22px', color: 'var(--black)',
+              letterSpacing: '-0.2px', marginBottom: '12px',
+            }}>
+              Sin profesionales en esta búsqueda
             </p>
-            <Link href="/directorio" style={{ fontSize: '13px', color: 'var(--red)', textDecoration: 'none', fontWeight: 500 }}>
-              Ver todos los perfiles
-            </Link>
+            <p style={{
+              fontSize: '14px', color: 'var(--muted)', lineHeight: 1.75,
+              maxWidth: '380px', margin: '0 auto 24px',
+            }}>
+              No hemos encontrado profesionales que coincidan con tu búsqueda.
+              Prueba a modificar los filtros o descubre otras especialidades del directorio.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link href="/directorio" style={{
+                fontSize: '13px', color: 'var(--red)', fontWeight: 500,
+                padding: '8px 20px', border: '1px solid rgba(200,0,26,0.25)',
+                borderRadius: '20px', textDecoration: 'none',
+              }}>
+                Ver todos los perfiles
+              </Link>
+              {(tipoValido || busqueda || soloDisponibles) && (
+                <Link
+                  href={(() => {
+                    const qs = new URLSearchParams()
+                    if (paisValido)   qs.set('pais', paisValido)
+                    if (regionValida) qs.set('region', regionValida)
+                    return `/directorio${qs.toString() ? `?${qs.toString()}` : ''}`
+                  })()}
+                  style={{
+                    fontSize: '13px', color: 'var(--muted)',
+                    padding: '8px 20px', border: '1px solid var(--border)',
+                    borderRadius: '20px', textDecoration: 'none',
+                  }}
+                >
+                  Limpiar búsqueda
+                </Link>
+              )}
+            </div>
           </div>
         ) : (
           <div className="dir-profile-grid">
