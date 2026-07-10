@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -61,18 +62,21 @@ export const metadata: Metadata = {
   description: 'Encuentra actores, directores, compañías, dramaturgos y profesionales del teatro en español.',
 }
 
+const PER_PAGE = 24
+
 type Props = {
-  searchParams: Promise<{ tipo?: string; q?: string; pais?: string; region?: string; disponible?: string }>
+  searchParams: Promise<{ tipo?: string; q?: string; pais?: string; region?: string; disponible?: string; page?: string }>
 }
 
 export default async function DirectorioPage({ searchParams }: Props) {
-  const { tipo, q, pais: paisParam, region: regionParam, disponible } = await searchParams
+  const { tipo, q, pais: paisParam, region: regionParam, disponible, page } = await searchParams
 
   const tipoValido: TipoPerfil | null = TIPOS_VALIDOS.includes(tipo as typeof TIPOS_VALIDOS[number])
     ? (tipo as TipoPerfil)
     : null
   const busqueda = (q?.trim() ?? '').slice(0, 100)
   const soloDisponibles = disponible === '1'
+  const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1)
 
   const countryValido = COUNTRIES.find(c => c.code === (paisParam ?? '')) ?? null
   const paisValido = countryValido?.code ?? null
@@ -153,6 +157,21 @@ export default async function DirectorioPage({ searchParams }: Props) {
   })
 
   const total = sorted.length
+  const totalPages = Math.ceil(total / PER_PAGE)
+  const offset = (pageNum - 1) * PER_PAGE
+  const perfilesPagina = sorted.slice(offset, offset + PER_PAGE)
+
+  // Helper: construye URL conservando todos los filtros activos
+  const buildPagUrl = (p: number) => {
+    const qs = new URLSearchParams()
+    if (tipoValido)    qs.set('tipo', tipoValido)
+    if (busqueda)      qs.set('q', busqueda)
+    if (paisValido)    qs.set('pais', paisValido)
+    if (regionValida)  qs.set('region', regionValida)
+    if (soloDisponibles) qs.set('disponible', '1')
+    if (p > 1)         qs.set('page', String(p))
+    return `/directorio${qs.toString() ? `?${qs.toString()}` : ''}`
+  }
 
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
@@ -235,7 +254,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
           </div>
         ) : (
           <div className="dir-profile-grid">
-            {sorted.map(perfil => {
+            {perfilesPagina.map(perfil => {
               const nombrePublico = perfil.nombre_artistico || perfil.nombre
               const inicial = (nombrePublico ?? '?').charAt(0).toUpperCase()
               const label = TIPO_PERFIL_LABEL[perfil.tipo_perfil] ?? perfil.tipo_perfil
@@ -312,6 +331,37 @@ export default async function DirectorioPage({ searchParams }: Props) {
               )
             })}
           </div>
+
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <nav
+              aria-label="Paginación del directorio"
+              style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '48px', flexWrap: 'wrap' }}
+            >
+              {pageNum > 1 && (
+                <Link href={buildPagUrl(pageNum - 1)} style={paginationStyle(false)}>
+                  ← Anterior
+                </Link>
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <Link key={p} href={buildPagUrl(p)} style={paginationStyle(p === pageNum)} aria-current={p === pageNum ? 'page' : undefined}>
+                  {p}
+                </Link>
+              ))}
+              {pageNum < totalPages && (
+                <Link href={buildPagUrl(pageNum + 1)} style={paginationStyle(false)}>
+                  Siguiente →
+                </Link>
+              )}
+            </nav>
+          )}
+
+          {/* Info paginación */}
+          {totalPages > 1 && (
+            <p style={{ textAlign: 'center', fontSize: '11px', color: 'var(--muted)', marginTop: '16px', fontFamily: 'var(--mono)', letterSpacing: '0.05em' }}>
+              Página {pageNum} de {totalPages} · {total} profesionales
+            </p>
+          )}
         )}
 
       </main>
@@ -324,4 +374,16 @@ export default async function DirectorioPage({ searchParams }: Props) {
       </footer>
     </div>
   )
+}
+
+function paginationStyle(isActive: boolean): CSSProperties {
+  return {
+    fontSize: '13px', fontWeight: isActive ? 600 : 400,
+    padding: '6px 14px', borderRadius: '20px',
+    border: `1px solid ${isActive ? 'var(--black)' : 'var(--border)'}`,
+    background: isActive ? 'var(--black)' : 'var(--white)',
+    color: isActive ? 'var(--white)' : 'var(--muted)',
+    textDecoration: 'none', fontFamily: 'var(--sans)',
+    transition: 'all 0.15s',
+  }
 }
