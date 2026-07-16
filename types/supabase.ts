@@ -2620,12 +2620,117 @@ export type Database = {
           },
         ]
       }
+      credit_reservations: {
+        Row: {
+          authorized_limit_snapshot: number
+          created_at: string
+          estimated_cost: number
+          expires_at: string
+          id: string
+          profile_id: string
+          request_id: string | null
+          settled_at: string | null
+          settled_cost: number | null
+          status: string
+        }
+        Insert: {
+          authorized_limit_snapshot: number
+          created_at?: string
+          estimated_cost: number
+          expires_at: string
+          id?: string
+          profile_id: string
+          request_id?: string | null
+          settled_at?: string | null
+          settled_cost?: number | null
+          status?: string
+        }
+        Update: {
+          authorized_limit_snapshot?: number
+          created_at?: string
+          estimated_cost?: number
+          expires_at?: string
+          id?: string
+          profile_id?: string
+          request_id?: string | null
+          settled_at?: string | null
+          settled_cost?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_reservations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accounting_expire_stale_reservations: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      accounting_release_reservation: {
+        Args: {
+          p_reservation_id: string
+        }
+        Returns: {
+          authorized_limit_snapshot: number
+          created_at: string
+          estimated_cost: number
+          expires_at: string
+          id: string
+          profile_id: string
+          request_id: string | null
+          settled_at: string | null
+          settled_cost: number | null
+          status: string
+        }
+      }
+      accounting_settle_reservation: {
+        Args: {
+          p_real_cost: number
+          p_reservation_id: string
+        }
+        Returns: {
+          authorized_limit_snapshot: number
+          created_at: string
+          estimated_cost: number
+          expires_at: string
+          id: string
+          profile_id: string
+          request_id: string | null
+          settled_at: string | null
+          settled_cost: number | null
+          status: string
+        }
+      }
+      accounting_verify_and_reserve: {
+        Args: {
+          p_authorized_limit: number
+          p_estimated_cost: number
+          p_profile_id: string
+          p_request_id?: string
+          p_ttl_seconds: number
+        }
+        Returns: {
+          authorized: boolean
+          authorized_limit_snapshot: number
+          created_at: string | null
+          current_consumption: number
+          denial_reason: string | null
+          estimated_cost: number
+          expires_at: string | null
+          reservation_id: string | null
+          status: string | null
+        }[]
+      }
     }
     Enums: {
       plan_suscripcion: "gratuito" | "premium" | "destacado" | "empresas"

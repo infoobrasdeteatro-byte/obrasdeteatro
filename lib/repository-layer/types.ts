@@ -52,3 +52,31 @@ export interface Organization {
   website: string | null
   slug: string
 }
+
+export type ReservationStatus = 'active' | 'settled' | 'released' | 'expired'
+
+export interface CreditReservation {
+  id: string
+  profileId: string
+  requestId: string | null
+  status: ReservationStatus
+  estimatedCost: number
+  settledCost: number | null
+  authorizedLimitSnapshot: number
+  expiresAt: string
+  createdAt: string
+  settledAt: string | null
+}
+
+export interface ReservationAuthorized {
+  authorized: true
+  reservation: CreditReservation
+}
+
+export interface ReservationDenied {
+  authorized: false
+  currentConsumption: number
+  denialReason: string
+}
+
+export type ReservationOutcome = ReservationAuthorized | ReservationDenied
