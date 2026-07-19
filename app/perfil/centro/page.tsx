@@ -504,16 +504,19 @@ export default async function CentroProfesionalPage() {
           </ModuleCard>
 
           {/* ═══════════════════════════════════════════════════════════════
-              MÓDULO VI — SCENAIA (RESERVADO)
+              MÓDULO VI — SCENAIA (primer ensayo funcional, Bloque III)
           ══════════════════════════════════════════════════════════════════ */}
-          <div
+          <Link
+            href="/scenaia"
             style={{
+              display: 'block',
               background: 'var(--white)',
-              border: '1px dashed var(--border)',
+              border: '1px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
               padding: '24px',
               marginBottom: '12px',
-              opacity: 0.65,
+              textDecoration: 'none',
+              transition: 'border-color 0.15s',
             }}
           >
             <p style={{
@@ -521,15 +524,18 @@ export default async function CentroProfesionalPage() {
               textTransform: 'uppercase', color: '#5b21b6',
               fontFamily: 'var(--mono)', marginBottom: '6px',
             }}>
-              Módulo VI · ScenaIA · Fase 4
+              Módulo VI · ScenaIA
             </p>
             <h2 style={{ fontFamily: 'var(--serif)', fontSize: '20px', color: 'var(--black)', letterSpacing: '-0.4px', marginBottom: '8px' }}>
               Recomendaciones inteligentes
             </h2>
-            <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)', lineHeight: 1.7, maxWidth: '560px' }}>
-              ScenaIA está aprendiendo del ecosistema. Pronto tendrá recomendaciones específicas para tu perfil basadas en el grafo de relaciones profesionales, los patrones de actividad del sector y los datos de casting.
+            <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)', lineHeight: 1.7, maxWidth: '560px', marginBottom: '10px' }}>
+              ScenaIA está aprendiendo del ecosistema. Todavía interpreta únicamente patrones de uso ya observados, no toda tu trayectoria profesional.
             </p>
-          </div>
+            <span style={{ fontSize: '12px', color: 'var(--black)', fontFamily: 'var(--sans)', fontWeight: 600 }}>
+              Probar ScenaIA →
+            </span>
+          </Link>
 
         </main>
       </div>
