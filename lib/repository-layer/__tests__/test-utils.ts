@@ -10,6 +10,7 @@ export function createFakeSupabaseClient(result: FakeQueryResult) {
     select: vi.fn((_columns: string) => builder),
     eq: vi.fn((_column: string, _value: unknown) => builder),
     is: vi.fn((_column: string, _value: unknown) => builder),
+    order: vi.fn((_column: string, _options?: { ascending: boolean }) => builder),
     limit: vi.fn((_count: number) => Promise.resolve(result)),
     single: vi.fn(() => Promise.resolve(result)),
     maybeSingle: vi.fn(() => Promise.resolve(result)),
@@ -32,4 +33,24 @@ export function createFakeSupabaseRpcClient(result: FakeQueryResult) {
   const rpc = vi.fn((_fn: string, _args?: Record<string, unknown>) => rpcResult)
   const client = { rpc }
   return { client, rpc, rpcResult }
+}
+
+/** Fake para `.from(table).insert(row)`, que se resuelve directamente al await, sin encadenar `.select()`. */
+export function createFakeSupabaseInsertClient(result: FakeQueryResult) {
+  const insert = vi.fn((_row: Record<string, unknown>) => Promise.resolve(result))
+  const builder = { insert }
+  const from = vi.fn((_table: string) => builder)
+  const client = { from }
+  return { client, from, insert }
+}
+
+/** Fake para `.from(table).update(row).eq(...).is(...)`, resuelto al await tras la última cláusula encadenada. */
+export function createFakeSupabaseUpdateClient(result: FakeQueryResult) {
+  const eqResult = { is: vi.fn((_column: string, _value: unknown) => Promise.resolve(result)) }
+  const eq = vi.fn((_column: string, _value: unknown) => eqResult)
+  const update = vi.fn((_row: Record<string, unknown>) => ({ eq }))
+  const builder = { update }
+  const from = vi.fn((_table: string) => builder)
+  const client = { from }
+  return { client, from, update, eq, isFn: eqResult.is }
 }

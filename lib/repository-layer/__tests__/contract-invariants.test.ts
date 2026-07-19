@@ -8,8 +8,10 @@ const READ_ONLY_SOURCE = READ_ONLY_MODULES.map((file) => readFileSync(join(__dir
 )
 
 const ACCOUNTING_SOURCE = readFileSync(join(__dirname, '..', 'accounting.ts'), 'utf-8')
+const ACTIVITY_LOG_SOURCE = readFileSync(join(__dirname, '..', 'activity-log.ts'), 'utf-8')
+const TELEMETRY_SOURCE = readFileSync(join(__dirname, '..', 'telemetry.ts'), 'utf-8')
 
-const MODULE_SOURCE = [READ_ONLY_SOURCE, ACCOUNTING_SOURCE].join('\n')
+const MODULE_SOURCE = [READ_ONLY_SOURCE, ACCOUNTING_SOURCE, ACTIVITY_LOG_SOURCE, TELEMETRY_SOURCE].join('\n')
 
 describe('Repository Layer — invariantes de integración (SC-005.1)', () => {
   it('usa exclusivamente el cliente ya existente de lib/supabase/server, sin instanciar otro', () => {
@@ -41,5 +43,39 @@ describe('Repository Layer — accounting.ts (invariante de componente, aprobado
     expect(ACCOUNTING_SOURCE).toMatch(
       /\.rpc\('accounting_verify_and_reserve'|\.rpc\('accounting_settle_reservation'|\.rpc\('accounting_release_reservation'|\.rpc\('accounting_expire_stale_reservations'/
     )
+  })
+})
+
+describe('Repository Layer — activity-log.ts (invariante de componente, ampliado 2026-07-17)', () => {
+  it('expone exactamente una operación de escritura y una de actualización, nombradas y no genéricas -- nunca UPSERT/DELETE/RPC', () => {
+    expect(ACTIVITY_LOG_SOURCE).not.toMatch(/\.upsert\(|\.delete\(|\.rpc\(/)
+    const insertMatches = ACTIVITY_LOG_SOURCE.match(/\.insert\(/g) ?? []
+    const updateMatches = ACTIVITY_LOG_SOURCE.match(/\.update\(/g) ?? []
+    expect(insertMatches).toHaveLength(1)
+    expect(updateMatches).toHaveLength(1)
+  })
+
+  it('toda operación está acotada a nucleo_activity_log', () => {
+    const fromMatches = ACTIVITY_LOG_SOURCE.match(/\.from\('([^']+)'\)/g) ?? []
+    expect(fromMatches.length).toBeGreaterThan(0)
+    for (const match of fromMatches) {
+      expect(match).toBe(".from('nucleo_activity_log')")
+    }
+  })
+})
+
+describe('Repository Layer — telemetry.ts (invariante de componente, 2026-07-18)', () => {
+  it('expone exactamente una operación de escritura, nombrada y no genérica -- nunca UPDATE/UPSERT/DELETE/RPC (hechos inmutables, sin semántica de cola)', () => {
+    expect(TELEMETRY_SOURCE).not.toMatch(/\.update\(|\.upsert\(|\.delete\(|\.rpc\(/)
+    const insertMatches = TELEMETRY_SOURCE.match(/\.insert\(/g) ?? []
+    expect(insertMatches).toHaveLength(1)
+  })
+
+  it('toda operación está acotada a telemetry_metrics', () => {
+    const fromMatches = TELEMETRY_SOURCE.match(/\.from\('([^']+)'\)/g) ?? []
+    expect(fromMatches.length).toBeGreaterThan(0)
+    for (const match of fromMatches) {
+      expect(match).toBe(".from('telemetry_metrics')")
+    }
   })
 })

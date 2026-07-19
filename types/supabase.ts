@@ -2667,6 +2667,76 @@ export type Database = {
           },
         ]
       }
+      nucleo_activity_log: {
+        Row: {
+          id: string
+          occurred_at: string
+          processed_at: string | null
+          profile_id: string | null
+          response_type: string
+        }
+        Insert: {
+          id?: string
+          occurred_at?: string
+          processed_at?: string | null
+          profile_id?: string | null
+          response_type: string
+        }
+        Update: {
+          id?: string
+          occurred_at?: string
+          processed_at?: string | null
+          profile_id?: string | null
+          response_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nucleo_activity_log_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telemetry_metrics: {
+        Row: {
+          id: string
+          metric_name: string
+          metric_unit: string | null
+          metric_value: number
+          profile_id: string | null
+          recorded_at: string
+          tags: Json | null
+        }
+        Insert: {
+          id?: string
+          metric_name: string
+          metric_unit?: string | null
+          metric_value: number
+          profile_id?: string | null
+          recorded_at?: string
+          tags?: Json | null
+        }
+        Update: {
+          id?: string
+          metric_name?: string
+          metric_unit?: string | null
+          metric_value?: number
+          profile_id?: string | null
+          recorded_at?: string
+          tags?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telemetry_metrics_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

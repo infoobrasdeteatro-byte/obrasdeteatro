@@ -20,3 +20,7 @@ export {
   releaseReservation,
   expireStaleReservations,
 } from './accounting'
+export type { ActivityLogEntry } from './activity-log'
+export { recordActivity, listPendingActivity, listActivityHistory, markActivityProcessed } from './activity-log'
+export type { MetricInput, MetricEntry, MetricFilter } from './telemetry'
+export { recordMetric, listMetrics } from './telemetry'
