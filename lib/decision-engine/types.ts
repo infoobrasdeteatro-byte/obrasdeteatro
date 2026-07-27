@@ -6,10 +6,11 @@ export type ExecutionMode = 'DIRECTO' | 'IA'
 export type PriorityLevel = EstimatedComplexity
 
 /**
- * RecommendedAgent/RecommendedProvider/ExecutionPolicy siempre `null` en
- * esta version: ningun documento congelado enumera agentes, proveedores ni
- * politicas de ejecucion concretas -- inventarlos repetiria el error ya
- * corregido de RequestType en Request Interpreter.
+ * RecommendedAgent/ExecutionPolicy siguen siempre `null`: ningun documento
+ * congelado los define, fuera del alcance de IA-006. RecommendedProvider
+ * se selecciona exclusivamente del catalogo oficial de proveedores de IA
+ * (Decision de Direccion, cierre de IA-006) -- ver recommended-provider.ts;
+ * `null` hoy porque el catalogo esta vacio.
  */
 export interface ExecutionStrategy {
   readonly executionMode: ExecutionMode
@@ -20,9 +21,10 @@ export interface ExecutionStrategy {
 }
 
 /**
- * estimatedCost siempre `null` en esta version -- IA-004, sin politica
- * oficial de estimacion de coste definida en ningun documento (resolucion
- * expresa de la Direccion, 2026-07-16: "no disponible", no una heuristica).
+ * estimatedCost: unidad interna ScenaIA, estrategia inicial fija de IA-004
+ * (Complemento al Plan Tecnico, aprobado por Decision de Direccion
+ * 2026-07-21) -- ver estimated-cost.ts. `null` unicamente cuando
+ * needsAI=false (no aplica ninguna operacion economica).
  */
 export interface DecisionContext {
   readonly executionStrategy: ExecutionStrategy

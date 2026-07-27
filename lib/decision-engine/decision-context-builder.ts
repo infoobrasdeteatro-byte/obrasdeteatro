@@ -5,6 +5,8 @@ import type { DecisionContext } from './types'
 import { needsAI } from './needs-ai'
 import { derivePriorityLevel } from './priority'
 import { estimateDecisionConfidence } from './confidence'
+import { estimateCost } from './estimated-cost'
+import { selectRecommendedProvider } from './recommended-provider'
 import { buildDecisionRationale } from './rationale'
 
 /**
@@ -32,18 +34,19 @@ export function buildDecisionContext(
     normalizedRequest.interpretationConfidence,
     knowledgeContext.knowledgeConfidence
   )
+  const estimatedCost = estimateCost(aiNeeded)
 
   return {
     executionStrategy: {
       executionMode,
       recommendedAgent: null,
-      recommendedProvider: null,
+      recommendedProvider: selectRecommendedProvider(),
       priorityLevel,
       executionPolicy: null,
     },
     needsAI: aiNeeded,
-    estimatedCost: null,
+    estimatedCost,
     decisionConfidence,
-    decisionRationale: buildDecisionRationale(executionMode, priorityLevel, decisionConfidence),
+    decisionRationale: buildDecisionRationale(executionMode, priorityLevel, decisionConfidence, estimatedCost),
   }
 }

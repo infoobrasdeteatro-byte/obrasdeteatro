@@ -4,17 +4,23 @@ import type { ExecutionMode, PriorityLevel } from './types'
 export function buildDecisionRationale(
   executionMode: ExecutionMode,
   priorityLevel: PriorityLevel,
-  decisionConfidence: number
+  decisionConfidence: number,
+  estimatedCost: number | null
 ): string {
   const aiPart =
     executionMode === 'IA'
       ? 'IA necesaria: el conocimiento recuperado no cubre completamente los dominios solicitados'
       : 'IA no necesaria: el conocimiento recuperado cubre completamente los dominios solicitados'
 
+  const costPart =
+    estimatedCost === null
+      ? 'Coste estimado: no aplica (no se requiere IA).'
+      : `Coste estimado: ${estimatedCost} unidad(es) ScenaIA (estrategia inicial IA-004).`
+
   return (
     `${aiPart}. ` +
     `Prioridad: ${priorityLevel} (heredada de la complejidad estimada de la peticion). ` +
-    `Coste estimado: no disponible (IA-004, sin politica oficial de estimacion de coste). ` +
+    `${costPart} ` +
     `Confianza de la decision: ${decisionConfidence} (minimo entre confianza de interpretacion y confianza de conocimiento).`
   )
 }
