@@ -31,7 +31,9 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
   const coveredDomains = requestedDomains.filter(isDomainCovered)
   const notCoveredDomains = requestedDomains.filter((domain) => !isDomainCovered(domain))
 
-  const entitiesByDomain = await Promise.all(coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain)))
+  const entitiesByDomain = await Promise.all(
+    coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain, normalizedRequest.normalizedIntent))
+  )
   const knowledgeEntities = entitiesByDomain.flat()
 
   const knowledgeLimitations = notCoveredDomains.map(

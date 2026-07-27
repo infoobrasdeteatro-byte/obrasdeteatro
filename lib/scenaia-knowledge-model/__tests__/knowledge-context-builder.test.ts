@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { listWorkKnowledge, listOrganizationKnowledge } from '@/lib/knowledge-assets'
+import { retrieveRelevantKnowledge } from '@/lib/knowledge-assets'
 import type { NormalizedRequest } from '@/lib/request-interpreter'
 import { buildKnowledgeContext } from '../knowledge-context-builder'
 
 vi.mock('@/lib/knowledge-assets', () => ({
-  listWorkKnowledge: vi.fn(),
-  listOrganizationKnowledge: vi.fn(),
+  retrieveRelevantKnowledge: vi.fn(),
 }))
 
+function mockRetrieval(byDomain: Record<string, unknown[]>) {
+  vi.mocked(retrieveRelevantKnowledge).mockImplementation(async (domain: string) => (byDomain[domain] ?? []) as never)
+}
+
 beforeEach(() => {
-  vi.mocked(listWorkKnowledge).mockReset()
-  vi.mocked(listOrganizationKnowledge).mockReset()
+  vi.mocked(retrieveRelevantKnowledge).mockReset()
 })
 
 function fakeRequest(domains: NormalizedRequest['requestedKnowledgeDomains']): NormalizedRequest {
@@ -33,8 +35,7 @@ const ORG_ITEM = { domain: 'Organizaciones' as const, data: { name: 'Teatro Espa
 
 describe('buildKnowledgeContext', () => {
   it('completo: todos los dominios solicitados están cubiertos', async () => {
-    vi.mocked(listWorkKnowledge).mockResolvedValue([WORK_ITEM])
-    vi.mocked(listOrganizationKnowledge).mockResolvedValue([ORG_ITEM])
+    mockRetrieval({ Obras: [WORK_ITEM], Organizaciones: [ORG_ITEM] })
 
     const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Organizaciones']))
 
@@ -47,10 +48,12 @@ describe('buildKnowledgeContext', () => {
       'los dominios cubiertos se enumeran sin relevancia ni relacion con el texto de la peticion -- sin motor de busqueda (IA-003)',
     ])
     expect(typeof result.knowledgeTimestamp).toBe('string')
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'texto de prueba')
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Organizaciones', 'texto de prueba')
   })
 
   it('parcial: solo parte de los dominios solicitados están cubiertos', async () => {
-    vi.mocked(listWorkKnowledge).mockResolvedValue([WORK_ITEM])
+    mockRetrieval({ Obras: [WORK_ITEM] })
 
     const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Personas']))
 
@@ -60,7 +63,7 @@ describe('buildKnowledgeContext', () => {
     expect(result.knowledgeLimitations).toContain(
       'dominio Personas solicitado pero no cubierto por Knowledge Assets en esta version'
     )
-    expect(listOrganizationKnowledge).not.toHaveBeenCalled()
+    expect(retrieveRelevantKnowledge).not.toHaveBeenCalledWith('Organizaciones', expect.anything())
   })
 
   it('vacío: ningún dominio solicitado (petición no reconocida)', async () => {
@@ -70,8 +73,7 @@ describe('buildKnowledgeContext', () => {
     expect(result.knowledgeConfidence).toBe(0)
     expect(result.knowledgeEntities).toEqual([])
     expect(result.knowledgeLimitations).toEqual([])
-    expect(listWorkKnowledge).not.toHaveBeenCalled()
-    expect(listOrganizationKnowledge).not.toHaveBeenCalled()
+    expect(retrieveRelevantKnowledge).not.toHaveBeenCalled()
   })
 
   it('vacío: todos los dominios solicitados están fuera de cobertura', async () => {
@@ -86,11 +88,19 @@ describe('buildKnowledgeContext', () => {
   })
 
   it('deduplica dominios repetidos sin invocar Knowledge Assets dos veces', async () => {
-    vi.mocked(listWorkKnowledge).mockResolvedValue([WORK_ITEM])
+    mockRetrieval({ Obras: [WORK_ITEM] })
 
     const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Obras']))
 
     expect(result.knowledgeDomains).toEqual(['Obras'])
-    expect(listWorkKnowledge).toHaveBeenCalledTimes(1)
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledTimes(1)
+  })
+
+  it('transporta normalizedIntent como query hasta Knowledge Assets (IA-003)', async () => {
+    mockRetrieval({ Obras: [WORK_ITEM] })
+
+    await buildKnowledgeContext({ ...fakeRequest(['Obras']), normalizedIntent: 'texto distinto' })
+
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'texto distinto')
   })
 })

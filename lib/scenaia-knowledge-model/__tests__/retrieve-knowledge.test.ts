@@ -1,40 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { listWorkKnowledge, listOrganizationKnowledge } from '@/lib/knowledge-assets'
+import { retrieveRelevantKnowledge } from '@/lib/knowledge-assets'
 import { retrieveKnowledgeForDomain } from '../retrieve-knowledge'
 
 vi.mock('@/lib/knowledge-assets', () => ({
-  listWorkKnowledge: vi.fn(),
-  listOrganizationKnowledge: vi.fn(),
+  retrieveRelevantKnowledge: vi.fn(),
 }))
 
 beforeEach(() => {
-  vi.mocked(listWorkKnowledge).mockReset()
-  vi.mocked(listOrganizationKnowledge).mockReset()
+  vi.mocked(retrieveRelevantKnowledge).mockReset()
 })
 
 describe('retrieveKnowledgeForDomain', () => {
-  it('delega en listWorkKnowledge para Obras', async () => {
+  it('delega en retrieveRelevantKnowledge, transportando el texto de la petición (IA-003)', async () => {
     const items = [{ domain: 'Obras' as const, data: { id: 'w1' } as never }]
-    vi.mocked(listWorkKnowledge).mockResolvedValue(items)
+    vi.mocked(retrieveRelevantKnowledge).mockResolvedValue(items)
 
-    const result = await retrieveKnowledgeForDomain('Obras')
-
-    expect(result).toBe(items)
-    expect(listOrganizationKnowledge).not.toHaveBeenCalled()
-  })
-
-  it('delega en listOrganizationKnowledge para Organizaciones', async () => {
-    const items = [{ domain: 'Organizaciones' as const, data: { id: 'o1' } as never }]
-    vi.mocked(listOrganizationKnowledge).mockResolvedValue(items)
-
-    const result = await retrieveKnowledgeForDomain('Organizaciones')
+    const result = await retrieveKnowledgeForDomain('Obras', 'una petición de prueba')
 
     expect(result).toBe(items)
-    expect(listWorkKnowledge).not.toHaveBeenCalled()
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'una petición de prueba')
   })
 
-  it('devuelve lista vacía para un dominio todavía no cubierto, sin lanzar excepción', async () => {
-    const result = await retrieveKnowledgeForDomain('Personas')
+  it('devuelve lo que Knowledge Assets devuelva para un dominio todavía no cubierto, sin lanzar excepción', async () => {
+    vi.mocked(retrieveRelevantKnowledge).mockResolvedValue([])
+
+    const result = await retrieveKnowledgeForDomain('Personas', 'texto')
 
     expect(result).toEqual([])
   })
