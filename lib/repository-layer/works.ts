@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { withCache } from '@/lib/verified/sistemas-cache'
 import type { Work } from './types'
 
 const WORK_COLUMNS = 'id, title, subtitle, author, genre, synopsis, language, year, slug'
+const CACHE_TTL_MS = 60_000
 
 function toWork(row: {
   id: string
@@ -28,32 +30,36 @@ function toWork(row: {
 }
 
 export async function getPublishedWorkById(workId: string): Promise<Work | null> {
-  const supabase = await createClient()
+  return withCache(`work:${workId}`, CACHE_TTL_MS, async () => {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('works')
-    .select(WORK_COLUMNS)
-    .eq('id', workId)
-    .eq('is_published', true)
-    .is('deleted_at', null)
-    .single()
+    const { data, error } = await supabase
+      .from('works')
+      .select(WORK_COLUMNS)
+      .eq('id', workId)
+      .eq('is_published', true)
+      .is('deleted_at', null)
+      .single()
 
-  if (error || !data) return null
+    if (error || !data) return null
 
-  return toWork(data)
+    return toWork(data)
+  })
 }
 
 export async function listPublishedWorks(limit = 20): Promise<Work[]> {
-  const supabase = await createClient()
+  return withCache(`works:published:${limit}`, CACHE_TTL_MS, async () => {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('works')
-    .select(WORK_COLUMNS)
-    .eq('is_published', true)
-    .is('deleted_at', null)
-    .limit(limit)
+    const { data, error } = await supabase
+      .from('works')
+      .select(WORK_COLUMNS)
+      .eq('is_published', true)
+      .is('deleted_at', null)
+      .limit(limit)
 
-  if (error || !data) return []
+    if (error || !data) return []
 
-  return data.map(toWork)
+    return data.map(toWork)
+  })
 }

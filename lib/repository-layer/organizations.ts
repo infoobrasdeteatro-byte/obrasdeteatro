@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { withCache } from '@/lib/verified/sistemas-cache'
 import type { Organization } from './types'
 
 const ORGANIZATION_COLUMNS = 'id, name, type, country_code, website, slug'
+const CACHE_TTL_MS = 60_000
 
 function toOrganization(row: {
   id: string
@@ -22,32 +24,36 @@ function toOrganization(row: {
 }
 
 export async function getPublicOrganizationById(organizationId: string): Promise<Organization | null> {
-  const supabase = await createClient()
+  return withCache(`org:${organizationId}`, CACHE_TTL_MS, async () => {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('institutions')
-    .select(ORGANIZATION_COLUMNS)
-    .eq('id', organizationId)
-    .eq('is_public', true)
-    .eq('is_active', true)
-    .single()
+    const { data, error } = await supabase
+      .from('institutions')
+      .select(ORGANIZATION_COLUMNS)
+      .eq('id', organizationId)
+      .eq('is_public', true)
+      .eq('is_active', true)
+      .single()
 
-  if (error || !data) return null
+    if (error || !data) return null
 
-  return toOrganization(data)
+    return toOrganization(data)
+  })
 }
 
 export async function listPublicOrganizations(limit = 20): Promise<Organization[]> {
-  const supabase = await createClient()
+  return withCache(`orgs:public:${limit}`, CACHE_TTL_MS, async () => {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('institutions')
-    .select(ORGANIZATION_COLUMNS)
-    .eq('is_public', true)
-    .eq('is_active', true)
-    .limit(limit)
+    const { data, error } = await supabase
+      .from('institutions')
+      .select(ORGANIZATION_COLUMNS)
+      .eq('is_public', true)
+      .eq('is_active', true)
+      .limit(limit)
 
-  if (error || !data) return []
+    if (error || !data) return []
 
-  return data.map(toOrganization)
+    return data.map(toOrganization)
+  })
 }

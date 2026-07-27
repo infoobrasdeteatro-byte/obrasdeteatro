@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createClient } from '@/lib/supabase/server'
+import { __resetCacheForTests } from '@/lib/verified/sistemas-cache/with-cache'
 import { getPublishedWorkById, listPublishedWorks } from '../works'
 import { createFakeSupabaseClient } from './test-utils'
 
@@ -22,6 +23,7 @@ const SAMPLE_WORK_ROW = {
 describe('getPublishedWorkById', () => {
   beforeEach(() => {
     vi.mocked(createClient).mockReset()
+    __resetCacheForTests()
   })
 
   it('maps a found work row to the Work contract', async () => {
@@ -54,11 +56,23 @@ describe('getPublishedWorkById', () => {
 
     expect(result).toBeNull()
   })
+
+  it('en una segunda llamada con el mismo id, no vuelve a invocar a Supabase (caché activa)', async () => {
+    const { client } = createFakeSupabaseClient({ data: SAMPLE_WORK_ROW, error: null })
+    vi.mocked(createClient).mockResolvedValue(client as never)
+
+    const first = await getPublishedWorkById('work-1')
+    const second = await getPublishedWorkById('work-1')
+
+    expect(first).toEqual(second)
+    expect(createClient).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('listPublishedWorks', () => {
   beforeEach(() => {
     vi.mocked(createClient).mockReset()
+    __resetCacheForTests()
   })
 
   it('maps a list of work rows to the Work contract', async () => {

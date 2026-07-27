@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createClient } from '@/lib/supabase/server'
+import { __resetCacheForTests } from '@/lib/verified/sistemas-cache/with-cache'
 import { getPublicOrganizationById, listPublicOrganizations } from '../organizations'
 import { createFakeSupabaseClient } from './test-utils'
 
@@ -19,6 +20,7 @@ const SAMPLE_ORG_ROW = {
 describe('getPublicOrganizationById', () => {
   beforeEach(() => {
     vi.mocked(createClient).mockReset()
+    __resetCacheForTests()
   })
 
   it('maps a found organization row to the Organization contract', async () => {
@@ -48,11 +50,23 @@ describe('getPublicOrganizationById', () => {
 
     expect(result).toBeNull()
   })
+
+  it('en una segunda llamada con el mismo id, no vuelve a invocar a Supabase (caché activa)', async () => {
+    const { client } = createFakeSupabaseClient({ data: SAMPLE_ORG_ROW, error: null })
+    vi.mocked(createClient).mockResolvedValue(client as never)
+
+    const first = await getPublicOrganizationById('org-1')
+    const second = await getPublicOrganizationById('org-1')
+
+    expect(first).toEqual(second)
+    expect(createClient).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('listPublicOrganizations', () => {
   beforeEach(() => {
     vi.mocked(createClient).mockReset()
+    __resetCacheForTests()
   })
 
   it('maps a list of organization rows to the Organization contract', async () => {
