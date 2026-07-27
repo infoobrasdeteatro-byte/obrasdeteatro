@@ -30,7 +30,8 @@ describe('Professional Context Engine — invariantes de integración (SC-004.1,
     )
   })
 
-  it('la sección Subscription nunca consulta la base de datos (IA-001 diferida, sin accessor parcial)', () => {
+  it('la sección Subscription obtiene el dato exclusivamente vía Repository Layer (IA-001 resuelta), nunca accede a Supabase directamente', () => {
+    expect(SUBSCRIPTION_SECTION_SOURCE).toMatch(/getSubscription/)
     expect(SUBSCRIPTION_SECTION_SOURCE).not.toMatch(/\.from\(|\.select\(|\.eq\(|\.rpc\(|supabase/i)
   })
 

@@ -3,9 +3,14 @@ import { parseAuthorizedLimit } from '../parse-authorized-limit'
 
 describe('parseAuthorizedLimit', () => {
   it('interpreta una cadena numerica plana como limite valido', () => {
-    expect(parseAuthorizedLimit('30')).toBe(30)
-    expect(parseAuthorizedLimit('0')).toBe(0)
-    expect(parseAuthorizedLimit(' 30 ')).toBe(30)
+    expect(parseAuthorizedLimit('30')).toEqual({ kind: 'LIMITADO', value: 30 })
+    expect(parseAuthorizedLimit('0')).toEqual({ kind: 'LIMITADO', value: 0 })
+    expect(parseAuthorizedLimit(' 30 ')).toEqual({ kind: 'LIMITADO', value: 30 })
+  })
+
+  it('interpreta el literal ILIMITADO como plan sin control de cuota (IA-AUTH-001, PRD-001)', () => {
+    expect(parseAuthorizedLimit('ILIMITADO')).toEqual({ kind: 'ILIMITADO' })
+    expect(parseAuthorizedLimit(' ILIMITADO ')).toEqual({ kind: 'ILIMITADO' })
   })
 
   it('devuelve null para null', () => {

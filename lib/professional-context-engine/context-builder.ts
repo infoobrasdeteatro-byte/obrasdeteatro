@@ -15,14 +15,17 @@ export async function buildProfessionalContext(
   userId: string,
   session: SessionInput
 ): Promise<ProfessionalContext> {
-  const [identity, professionalProfile] = await Promise.all([
+  const [identity, subscription] = await Promise.all([
     buildIdentitySection(userId),
-    buildProfessionalProfileSection(userId),
+    buildSubscriptionSection(userId),
   ])
+  // profileType determina la tabla especializada a consultar (IA-002) --
+  // no puede resolverse en paralelo con identity, depende de su resultado.
+  const professionalProfile = await buildProfessionalProfileSection(userId, identity.profileType)
 
   return {
     identity,
-    subscription: buildSubscriptionSection(),
+    subscription,
     professionalProfile,
     session: buildSessionSection(session),
   }

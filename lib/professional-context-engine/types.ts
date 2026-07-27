@@ -17,9 +17,11 @@ export interface IdentitySection {
 }
 
 /**
- * v1: siempre "no disponible" en las 4 propiedades -- IA-001 (fuente
- * autoritativa de Subscription/plan) permanece abierta y diferida, sin
- * introducir ningun accessor parcial.
+ * plan/status: fuente autoritativa subscriptions.plan/status (IA-001
+ * resuelta). usageLimits: fuente autoritativa Repository Layer, mapeo
+ * plan->limite (IA-AUTH-001 resuelta, 2026-07-23) -- 'ILIMITADO' para
+ * planes sin cuota, cadena numerica para el resto, `null` si no hay plan.
+ * availableCapabilities permanece "no disponible", fuera de alcance.
  */
 export interface SubscriptionSection {
   readonly plan: string | null
@@ -29,8 +31,11 @@ export interface SubscriptionSection {
 }
 
 /**
- * specialty/disciplines/experience: siempre "no disponible" -- IA-002
- * (contrato de perfiles especializados) permanece abierta.
+ * specialty/disciplines/experience: derivados del contrato de familia
+ * (Individual u Organizacional) de Repository Layer (IA-002 resuelta,
+ * 2026-07-22) -- ver professional-profile-section.ts. `null` cuando no
+ * existe fila especializada o el tipo de perfil no pertenece a ninguna
+ * de las dos familias (institucion/profesional/publico).
  */
 export interface ProfessionalProfileSection {
   readonly specialty: string | null

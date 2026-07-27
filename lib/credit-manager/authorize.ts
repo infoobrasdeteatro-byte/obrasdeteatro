@@ -55,10 +55,21 @@ export async function buildAuthorizationContext(
     }
   }
 
-  const outcome = await verifyAndReserve(professionalContext.identity.userId, authorizedLimit, estimatedCost)
+  if (authorizedLimit.kind === 'ILIMITADO') {
+    return {
+      authorizationStatus: 'AUTHORIZED',
+      authorizationReason: formatReason('VERIFICADO', 'plan sin control de cuota (IA-AUTH-001)'),
+      availableCredits: null,
+      estimatedCost,
+      remainingQuota: null,
+      timestamp,
+    }
+  }
+
+  const outcome = await verifyAndReserve(professionalContext.identity.userId, authorizedLimit.value, estimatedCost)
 
   if (!outcome.authorized) {
-    const available = Math.max(authorizedLimit - outcome.currentConsumption, 0)
+    const available = Math.max(authorizedLimit.value - outcome.currentConsumption, 0)
     return {
       authorizationStatus: 'DENIED',
       authorizationReason: formatReason('VERIFICACION_NEGATIVA', outcome.denialReason),
@@ -76,9 +87,9 @@ export async function buildAuthorizationContext(
   return {
     authorizationStatus: 'AUTHORIZED',
     authorizationReason: formatReason('VERIFICADO', 'reserva de credito confirmada'),
-    availableCredits: authorizedLimit,
+    availableCredits: authorizedLimit.value,
     estimatedCost: outcome.reservation.estimatedCost,
-    remainingQuota: authorizedLimit - outcome.reservation.estimatedCost,
+    remainingQuota: authorizedLimit.value - outcome.reservation.estimatedCost,
     timestamp,
   }
 }

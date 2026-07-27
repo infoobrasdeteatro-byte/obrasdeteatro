@@ -4,6 +4,10 @@ export type {
   ProfileType,
   Work,
   Organization,
+  Subscription,
+  IndividualProfileData,
+  OrganizationalProfileData,
+  ResponsibleContact,
   ReservationStatus,
   CreditReservation,
   ReservationOutcome,
@@ -14,6 +18,9 @@ export { getIdentity } from './identity'
 export { getProfessionalProfilePublic } from './professional-profile'
 export { getPublishedWorkById, listPublishedWorks } from './works'
 export { getPublicOrganizationById, listPublicOrganizations } from './organizations'
+export { getSubscription, getUsageLimit } from './subscription'
+export { getIndividualProfileData } from './individual-profile'
+export { getOrganizationalProfileData } from './organizational-profile'
 export {
   verifyAndReserve,
   settleReservation,

@@ -2,7 +2,14 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
-const READ_ONLY_MODULES = ['identity.ts', 'professional-profile.ts', 'works.ts', 'organizations.ts']
+const READ_ONLY_MODULES = [
+  'identity.ts',
+  'professional-profile.ts',
+  'works.ts',
+  'organizations.ts',
+  'individual-profile.ts',
+  'organizational-profile.ts',
+]
 const READ_ONLY_SOURCE = READ_ONLY_MODULES.map((file) => readFileSync(join(__dirname, '..', file), 'utf-8')).join(
   '\n'
 )
@@ -10,6 +17,9 @@ const READ_ONLY_SOURCE = READ_ONLY_MODULES.map((file) => readFileSync(join(__dir
 const ACCOUNTING_SOURCE = readFileSync(join(__dirname, '..', 'accounting.ts'), 'utf-8')
 const ACTIVITY_LOG_SOURCE = readFileSync(join(__dirname, '..', 'activity-log.ts'), 'utf-8')
 const TELEMETRY_SOURCE = readFileSync(join(__dirname, '..', 'telemetry.ts'), 'utf-8')
+const SUBSCRIPTION_SOURCE = readFileSync(join(__dirname, '..', 'subscription.ts'), 'utf-8')
+const INDIVIDUAL_PROFILE_SOURCE = readFileSync(join(__dirname, '..', 'individual-profile.ts'), 'utf-8')
+const ORGANIZATIONAL_PROFILE_SOURCE = readFileSync(join(__dirname, '..', 'organizational-profile.ts'), 'utf-8')
 
 const MODULE_SOURCE = [READ_ONLY_SOURCE, ACCOUNTING_SOURCE, ACTIVITY_LOG_SOURCE, TELEMETRY_SOURCE].join('\n')
 
@@ -77,5 +87,64 @@ describe('Repository Layer — telemetry.ts (invariante de componente, 2026-07-1
     for (const match of fromMatches) {
       expect(match).toBe(".from('telemetry_metrics')")
     }
+  })
+})
+
+describe('Repository Layer — subscription.ts (invariante de componente, IA-001 resuelta 2026-07-21)', () => {
+  it('es de solo lectura -- nunca insert/update/upsert/delete/rpc', () => {
+    expect(SUBSCRIPTION_SOURCE).not.toMatch(/\.insert\(|\.update\(|\.upsert\(|\.delete\(|\.rpc\(/)
+  })
+
+  it('toda operación está acotada a subscriptions', () => {
+    const fromMatches = SUBSCRIPTION_SOURCE.match(/\.from\('([^']+)'\)/g) ?? []
+    expect(fromMatches.length).toBeGreaterThan(0)
+    for (const match of fromMatches) {
+      expect(match).toBe(".from('subscriptions')")
+    }
+  })
+
+  it('es el único módulo autorizado a exponer datos del dominio Subscription', () => {
+    expect(READ_ONLY_SOURCE).not.toMatch(/subscriptions|stripe/i)
+  })
+})
+
+describe('Repository Layer — individual-profile.ts y organizational-profile.ts (invariante de componente, IA-002 resuelta 2026-07-22)', () => {
+  it('ambos son de solo lectura -- nunca insert/update/upsert/delete/rpc', () => {
+    expect(INDIVIDUAL_PROFILE_SOURCE).not.toMatch(/\.insert\(|\.update\(|\.upsert\(|\.delete\(|\.rpc\(/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).not.toMatch(/\.insert\(|\.update\(|\.upsert\(|\.delete\(|\.rpc\(/)
+  })
+
+  it('nunca usan select(\'*\'): mismo defecto que origino RA-001/IA-002, no debe reintroducirse', () => {
+    expect(INDIVIDUAL_PROFILE_SOURCE).not.toMatch(/\.select\('\*'\)/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).not.toMatch(/\.select\('\*'\)/)
+  })
+
+  it('individual-profile.ts solo consulta las tablas perfil_actor/perfil_director/perfil_dramaturgo', () => {
+    expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/\.from\(TABLE_BY_TYPE\[profileType\]\)/)
+    expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/perfil_actor/)
+    expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/perfil_director/)
+    expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/perfil_dramaturgo/)
+    expect(INDIVIDUAL_PROFILE_SOURCE).not.toMatch(/perfil_compania|perfil_productora|perfil_teatro|perfil_festival|perfil_escuela/)
+  })
+
+  it('organizational-profile.ts solo consulta las 5 tablas organizacionales', () => {
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).toMatch(/perfil_compania/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).toMatch(/perfil_productora/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).toMatch(/perfil_teatro/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).toMatch(/perfil_festival/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).toMatch(/perfil_escuela/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).not.toMatch(/perfil_actor|perfil_director|perfil_dramaturgo/)
+  })
+
+  it('nunca exponen nif_cif (identificador administrativo/fiscal excluido por la Decisión de Dirección)', () => {
+    expect(INDIVIDUAL_PROFILE_SOURCE).not.toMatch(/nif_cif/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).not.toMatch(/nif_cif/)
+  })
+
+  it('ningún dato de contacto se expone sin comprobar antes su mostrar_* correspondiente', () => {
+    expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/mostrar_email/)
+    expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/mostrar_telefono/)
+    expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/mostrar_redes/)
+    expect(ORGANIZATIONAL_PROFILE_SOURCE).toMatch(/mostrar_contacto/)
   })
 })

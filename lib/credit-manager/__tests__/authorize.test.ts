@@ -97,6 +97,16 @@ describe('buildAuthorizationContext', () => {
     expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 30, 5)
   })
 
+  it('VERIFICADO (ILIMITADO): autoriza directamente sin invocar verifyAndReserve cuando el plan es sin control de cuota (IA-AUTH-001, PRD-001)', async () => {
+    const result = await buildAuthorizationContext(fakeProfessionalContext('ILIMITADO'), fakeDecisionContext())
+
+    expect(result.authorizationStatus).toBe('AUTHORIZED')
+    expect(result.authorizationReason).toBe('VERIFICADO: plan sin control de cuota (IA-AUTH-001)')
+    expect(result.availableCredits).toBeNull()
+    expect(result.remainingQuota).toBeNull()
+    expect(verifyAndReserve).not.toHaveBeenCalled()
+  })
+
   it('VERIFICADO: autoriza cuando Accounting Engine confirma la reserva', async () => {
     vi.mocked(verifyAndReserve).mockResolvedValue({
       authorized: true,

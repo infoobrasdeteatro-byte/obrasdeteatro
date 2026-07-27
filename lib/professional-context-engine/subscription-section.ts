@@ -1,16 +1,21 @@
+import { getSubscription, getUsageLimit } from '@/lib/repository-layer'
 import type { SubscriptionSection } from './types'
 
 /**
- * v1: seccion completa "no disponible" -- IA-001 permanece abierta y
- * diferida (decision aprobada por la Direccion del Proyecto: no introducir
- * ningun accessor parcial mientras la fuente autoritativa de Subscription/
- * plan no este resuelta).
+ * IA-001 resuelta (Decision de Direccion, 2026-07-21): subscriptions.plan/
+ * status son la fuente autoritativa, expuesta exclusivamente via
+ * Repository Layer. usageLimits resuelto por IA-AUTH-001 (2026-07-23):
+ * tambien transportado desde Repository Layer (getUsageLimit), sin
+ * interpretacion propia -- mismo patron ya aplicado a plan/status.
+ * availableCapabilities permanece "no disponible", fuera de alcance.
  */
-export function buildSubscriptionSection(): SubscriptionSection {
+export async function buildSubscriptionSection(userId: string): Promise<SubscriptionSection> {
+  const subscription = await getSubscription(userId)
+
   return {
-    plan: null,
-    status: null,
+    plan: subscription?.plan ?? null,
+    status: subscription?.status ?? null,
     availableCapabilities: null,
-    usageLimits: null,
+    usageLimits: getUsageLimit(subscription?.plan ?? null),
   }
 }
