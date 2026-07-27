@@ -5,10 +5,12 @@ import { buildKnowledgeContext } from '@/lib/scenaia-knowledge-model'
 import { buildDecisionContext } from '@/lib/decision-engine'
 import { buildAuthorizationContext } from '@/lib/credit-manager'
 import { executeAIRequest } from '@/lib/ai-gateway'
+import type { NormalizedAIRequest } from '@/lib/ai-gateway'
 import { composeResponse } from '@/lib/response-composer'
 import type { ResponseContext } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
-import { recordExecutionTrace } from '@/lib/verified/observabilidad'
+import { distributeExecutionAudit } from '@/lib/execution-audit-router'
+import { buildDirectContent } from '@/lib/direct-content-builder'
 
 /**
  * Unico punto de entrada del Orquestador (Plan Tecnico aprobado, Acta de
@@ -23,17 +25,37 @@ import { recordExecutionTrace } from '@/lib/verified/observabilidad'
  * oficial de SC-003 (PAO-06), sin introducir una optimizacion de paralelismo
  * no autorizada por ningun criterio de calidad del Plan Tecnico.
  *
- * Los pasos de observacion (recordActivity/recordExecutionTrace) se
+ * Los pasos de observacion (recordActivity/distributeExecutionAudit) se
  * invocan solo despues de tener ya el ResponseContext final, nunca antes
  * -- no pueden interferir con la produccion de la respuesta (PAO-02 a
  * PAO-05). Ninguno de los dos lanza excepcion por contrato propio; se
  * esperan de forma simple y secuencial, sin ejecucion en segundo plano no
- * solicitada.
+ * solicitada. distributeExecutionAudit (IA-007, Plan Tecnico aprobado
+ * 2026-07-22) reemplaza la llamada directa que antes iba solo a
+ * Observabilidad -- mismo destino y comportamiento, ahora vía el
+ * mecanismo de distribucion transversal.
  *
  * "Mi Trayectoria(R)" (paso final condicional del diagrama historico de
  * SC-003) no aparece aqui -- omision deliberada: DT-003 ya reinterpreto ese
  * paso como observacion pasiva via Procesos Asincronos, nunca invocacion
  * directa desde el flujo que produce la respuesta.
+ *
+ * buildDirectContent (IA-008, Plan Tecnico aprobado 2026-07-22) se invoca
+ * siempre, con el mismo knowledgeContext ya construido para Decision
+ * Engine -- nunca condicionalmente por needsAI, para no duplicar aqui una
+ * decision que ya toma Decision Engine/Response Composer (mismo criterio
+ * de PAO-01 aplicado al resto de pasos). Su resultado se enhebra como
+ * cuarto argumento de composeResponse(), reapertura minima autorizada de
+ * su contrato de entrada; Response Composer sigue siendo el unico que
+ * decide si ese valor se usa (rama RESPONSE_DIRECT).
+ *
+ * normalizedAIRequest (IA-OPENAI-002, Aprobacion de Direccion 2026-07-23):
+ * unico punto del sistema donde se construye -- reutiliza el
+ * `normalizedRequest` que este mismo Orquestador ya tiene en su ambito
+ * local (paso 1), sin que ningun objeto intermedio del Nucleo lo
+ * transporte. Se construye siempre, no solo cuando needsAI es true (mismo
+ * criterio ya aplicado a buildDirectContent): decidir condicionalmente
+ * aqui duplicaria una decision que ya toma Decision Engine.
  */
 export async function coordinateFlow(
   userId: string,
@@ -45,14 +67,16 @@ export async function coordinateFlow(
   const knowledgeContext = await buildKnowledgeContext(normalizedRequest)
   const decisionContext = buildDecisionContext(normalizedRequest, professionalContext, knowledgeContext)
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
-  const { result, audit } = await executeAIRequest(decisionContext, authorizationContext)
-  const responseContext = composeResponse(decisionContext, authorizationContext, result)
+  const normalizedAIRequest: NormalizedAIRequest = { userPrompt: normalizedRequest.normalizedIntent }
+  const { result, audit } = await executeAIRequest({ decisionContext, authorizationContext, normalizedAIRequest })
+  const directContent = buildDirectContent(knowledgeContext)
+  const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)
 
   await recordActivity({
     profileId: professionalContext.identity.userId,
     responseType: responseContext.responseType,
   })
-  await recordExecutionTrace(professionalContext.identity.userId, audit)
+  await distributeExecutionAudit(professionalContext.identity.userId, audit)
 
   return responseContext
 }

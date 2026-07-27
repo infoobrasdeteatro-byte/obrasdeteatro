@@ -1,3 +1,6 @@
+import type { DecisionContext } from '@/lib/decision-engine'
+import type { AuthorizationContext } from '@/lib/credit-manager'
+
 /**
  * Alcanzables en esta version (todas describen por que NO se ejecuto nada):
  *   - NO_AUTORIZADO: AuthorizationStatus distinto de AUTHORIZED.
@@ -37,4 +40,28 @@ export interface ExecutionAudit {
   readonly tokensConsumed: number | null
   readonly realExecutionCost: number | null
   readonly technicalMetadata: string | null
+}
+
+/**
+ * Ampliacion controlada del contrato de entrada (Aprobacion de Direccion,
+ * IA-OPENAI-002, 2026-07-23). Construido exclusivamente por el Orquestador,
+ * reutilizando el `NormalizedRequest` ya existente en su ambito local --
+ * ningun objeto intermedio del Nucleo lo transporta ni lo modifica.
+ * Completamente agnostico de proveedor: ningun identificador de proveedor,
+ * modelo, SDK ni estructura especifica de ningun proveedor concreto.
+ */
+export interface NormalizedAIRequest {
+  readonly userPrompt: string
+}
+
+/**
+ * Unico parametro de entrada de `executeAIRequest()` (Aprobacion de
+ * Direccion, IA-OPENAI-002). `decisionContext` y `authorizationContext`
+ * mantienen exactamente su semantica ya congelada -- esta ampliacion no la
+ * modifica, solo agrupa las tres entradas en un unico objeto.
+ */
+export interface AIExecutionInput {
+  readonly decisionContext: DecisionContext
+  readonly authorizationContext: AuthorizationContext
+  readonly normalizedAIRequest: NormalizedAIRequest
 }

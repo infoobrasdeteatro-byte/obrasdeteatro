@@ -97,17 +97,47 @@ describe('buildDecisionContext', () => {
     expect(result.decisionConfidence).toBe(0.5)
   })
 
-  it('recommendedAgent, recommendedProvider, executionPolicy y estimatedCost siempre null', () => {
+  it('recommendedAgent y executionPolicy siempre null', () => {
     const result = buildDecisionContext(fakeNormalizedRequest(), FAKE_PROFESSIONAL_CONTEXT, fakeKnowledgeContext())
 
     expect(result.executionStrategy.recommendedAgent).toBeNull()
-    expect(result.executionStrategy.recommendedProvider).toBeNull()
     expect(result.executionStrategy.executionPolicy).toBeNull()
+  })
+
+  it('recommendedProvider es el primer proveedor del catalogo oficial (IA-OPENAI-001: openai)', () => {
+    const result = buildDecisionContext(fakeNormalizedRequest(), FAKE_PROFESSIONAL_CONTEXT, fakeKnowledgeContext())
+
+    expect(result.executionStrategy.recommendedProvider).toBe('openai')
+  })
+
+  it('estimatedCost es 1 unidad ScenaIA cuando needsAI=true (estrategia inicial IA-004)', () => {
+    const result = buildDecisionContext(
+      fakeNormalizedRequest(),
+      FAKE_PROFESSIONAL_CONTEXT,
+      fakeKnowledgeContext({ knowledgeCompleteness: 'parcial' })
+    )
+
+    expect(result.needsAI).toBe(true)
+    expect(result.estimatedCost).toBe(1)
+  })
+
+  it('estimatedCost es null cuando needsAI=false (no aplica ninguna operacion economica)', () => {
+    const result = buildDecisionContext(
+      fakeNormalizedRequest(),
+      FAKE_PROFESSIONAL_CONTEXT,
+      fakeKnowledgeContext({ knowledgeCompleteness: 'completo' })
+    )
+
+    expect(result.needsAI).toBe(false)
     expect(result.estimatedCost).toBeNull()
   })
 
   it('decisionRationale es una explicación no vacía y trazable a las señales usadas', () => {
-    const result = buildDecisionContext(fakeNormalizedRequest(), FAKE_PROFESSIONAL_CONTEXT, fakeKnowledgeContext())
+    const result = buildDecisionContext(
+      fakeNormalizedRequest(),
+      FAKE_PROFESSIONAL_CONTEXT,
+      fakeKnowledgeContext({ knowledgeCompleteness: 'parcial' })
+    )
 
     expect(result.decisionRationale.length).toBeGreaterThan(0)
     expect(result.decisionRationale).toContain('IA-004')

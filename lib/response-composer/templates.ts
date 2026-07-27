@@ -2,7 +2,10 @@
  * Plantillas fijas y deterministas -- nunca texto compuesto a partir de
  * DecisionRationale/AuthorizationReason (esos son diagnosticos tecnicos,
  * preservados solo en ResponseMetadata, nunca mostrados directamente).
- * RESPONSE_DIRECT no tiene plantilla: su contenido no existe (IA-008).
+ * RESPONSE_DIRECT no tiene plantilla propia: su contenido, cuando existe,
+ * llega ya producido desde fuera de Response Composer (IA-008, Plan
+ * Tecnico aprobado 2026-07-22) -- este valor solo se usa como valor por
+ * defecto cuando ese contenido no esta disponible.
  */
 export const RESPONSE_TEMPLATES = {
   RESPONSE_DIRECT: null,

@@ -1,9 +1,9 @@
 /**
  * Alcanzables en esta version:
  *   - RESPONSE_DENIED: AuthorizationContext.authorizationStatus === 'DENIED'.
- *   - RESPONSE_DIRECT: DecisionContext.needsAI === false (contenido no
- *     disponible, IA-008 -- ningun componente produce todavia el contenido
- *     interpretado de una respuesta directa).
+ *   - RESPONSE_DIRECT: DecisionContext.needsAI === false. `responseContent`
+ *     es el `directContent` recibido (IA-008, Plan Tecnico aprobado
+ *     2026-07-22) -- `null` solo cuando ese contenido no esta disponible.
  *   - RESPONSE_ERROR: AIExecutionResult en cualquier estado de "no
  *     ejecutado", o ningun caso anterior aplica (degradacion segura por
  *     defecto, nunca una excepcion).

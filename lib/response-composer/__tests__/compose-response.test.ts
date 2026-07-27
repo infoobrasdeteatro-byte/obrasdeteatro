@@ -56,12 +56,29 @@ describe('composeResponse', () => {
     expect(result.responseMetadata.authorizationReason).toBe('SIN_DATOS_VERIFICABLES: X')
   })
 
-  it('RESPONSE_DIRECT cuando needsAI es false, sin contenido disponible (IA-008)', () => {
+  it('RESPONSE_DIRECT cuando needsAI es false y no se proporciona directContent (valor por defecto null)', () => {
     const result = composeResponse(fakeDecisionContext({ needsAI: false }), null, null)
 
     expect(result.responseType).toBe('RESPONSE_DIRECT')
     expect(result.responseContent).toBeNull()
     expect(result.responseWarnings).toContain('contenido no disponible (IA-008)')
+  })
+
+  it('RESPONSE_DIRECT con directContent explicito null: mismo comportamiento que si se omite (IA-008)', () => {
+    const result = composeResponse(fakeDecisionContext({ needsAI: false }), null, null, null)
+
+    expect(result.responseType).toBe('RESPONSE_DIRECT')
+    expect(result.responseContent).toBeNull()
+    expect(result.responseWarnings).toContain('contenido no disponible (IA-008)')
+  })
+
+  it('RESPONSE_DIRECT con directContent no nulo: se propaga sin transformar y sin advertencia (IA-008)', () => {
+    const result = composeResponse(fakeDecisionContext({ needsAI: false }), null, null, 'Resultados encontrados: Obra A.')
+
+    expect(result.responseType).toBe('RESPONSE_DIRECT')
+    expect(result.responseContent).toBe('Resultados encontrados: Obra A.')
+    expect(result.responseWarnings).not.toContain('contenido no disponible (IA-008)')
+    expect(result.responseWarnings).toEqual([])
   })
 
   it('RESPONSE_ERROR cuando AIExecutionResult indica que no se ejecuto nada', () => {

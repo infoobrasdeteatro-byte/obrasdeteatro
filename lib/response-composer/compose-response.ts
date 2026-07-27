@@ -36,11 +36,20 @@ function buildResponse(
  * `authorizationContext` y `aiExecutionResult` son `null` cuando el flujo
  * real nunca paso por Credit Manager o AI Gateway (flujo de respuesta
  * directa, segun el propio diagrama oficial de SC-004.6).
+ *
+ * `directContent` (IA-008, Plan Tecnico aprobado 2026-07-22): cuarto
+ * parametro, opcional con valor por defecto `null` -- reapertura minima del
+ * contrato autorizada por la Aclaracion de Direccion de IA-008. Response
+ * Composer no lo calcula ni lo interpreta, solo lo coloca sin transformar
+ * en la rama RESPONSE_DIRECT. El valor por defecto preserva sin ningun
+ * cambio el comportamiento de todo llamador existente que no lo
+ * proporcione (lib/spo/process-request.ts).
  */
 export function composeResponse(
   decisionContext: DecisionContext,
   authorizationContext: AuthorizationContext | null,
-  aiExecutionResult: AIExecutionResult | null
+  aiExecutionResult: AIExecutionResult | null,
+  directContent: string | null = null
 ): ResponseContext {
   if (authorizationContext !== null && authorizationContext.authorizationStatus === 'DENIED') {
     return buildResponse(
@@ -54,9 +63,9 @@ export function composeResponse(
   if (!decisionContext.needsAI) {
     return buildResponse(
       'RESPONSE_DIRECT',
-      RESPONSE_TEMPLATES.RESPONSE_DIRECT,
+      directContent,
       { decisionRationale: decisionContext.decisionRationale },
-      ['contenido no disponible (IA-008)']
+      directContent === null ? ['contenido no disponible (IA-008)'] : []
     )
   }
 

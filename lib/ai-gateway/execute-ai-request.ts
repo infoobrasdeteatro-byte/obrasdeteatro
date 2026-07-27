@@ -1,11 +1,11 @@
-import type { DecisionContext } from '@/lib/decision-engine'
-import type { AuthorizationContext } from '@/lib/credit-manager'
-import type { AIExecutionResult, ExecutionAudit, ExecutionStatus } from './types'
+import type { AIExecutionInput, AIExecutionResult, ExecutionAudit, ExecutionStatus } from './types'
+import { findProviderAdapter } from './provider-registry'
+import { ProviderAdapterError } from './provider-adapter'
 
-function buildResult(status: ExecutionStatus, warnings: string[]): AIExecutionResult {
+function buildResult(status: ExecutionStatus, content: string | null, warnings: string[]): AIExecutionResult {
   return {
     executionStatus: status,
-    generatedContent: null,
+    generatedContent: content,
     executionWarnings: warnings,
     executionTimestamp: new Date().toISOString(),
   }
@@ -21,52 +21,89 @@ const EMPTY_AUDIT: ExecutionAudit = {
 }
 
 /**
- * Unico punto de entrada de AI Gateway (SC-004.7). No decide proveedor (eso
- * es exclusivo de Decision Engine, via ExecutionStrategy.RecommendedProvider),
- * no accede directamente a Credit Manager, Decision Engine, PCE ni SKM --
- * recibe unicamente las dos salidas ya construidas que su contrato declara.
- * `ProfessionalContext` nunca llega a este componente: no es uno de sus dos
- * parametros, por lo que su inmutabilidad queda garantizada de forma
- * estructural, no solo por disciplina de implementacion.
+ * Unico punto de entrada de AI Gateway (SC-004.7, ampliado por Aprobacion
+ * de Direccion IA-OPENAI-002). No decide proveedor (eso es exclusivo de
+ * Decision Engine, via ExecutionStrategy.RecommendedProvider) -- solo
+ * ejecuta contra el adaptador ya registrado para ese proveedor
+ * (`findProviderAdapter`), nunca contiene su propio catalogo ni logica de
+ * decision. No accede directamente a Credit Manager, Decision Engine, PCE
+ * ni SKM. `ProfessionalContext` nunca llega a este componente.
  *
- * No modifica `decisionContext` ni `authorizationContext`: ambos se leen
- * exclusivamente por sus campos (nunca se les asigna nada), y sus tipos ya
- * son `readonly` en origen -- el compilador impide cualquier mutacion.
+ * No modifica `decisionContext` ni `authorizationContext`: se leen
+ * exclusivamente por sus campos, con tipos `readonly` en origen.
+ *
+ * `normalizedAIRequest` (IA-OPENAI-002): construido exclusivamente por el
+ * Orquestador, agnostico de proveedor. AI Gateway nunca reconstruye el
+ * contenido de la peticion a partir de otros objetos del flujo -- si
+ * `needsAI` es true y `userPrompt` esta vacio, es un error explicito del
+ * flujo (fallo de construccion en el Orquestador, no un caso de negocio),
+ * y se lanza como excepcion en vez de degradarse en silencio.
  *
  * Termina su responsabilidad al producir AIExecutionResult + ExecutionAudit
  * -- nunca invoca a Accounting Engine (IA-007, sin asignacion documental).
- *
- * v1 nunca ejecuta una llamada real a un proveedor de IA (IA-006: sin
- * proveedor recomendado ni integracion tecnica en el repositorio). Toda
- * rama de esta version produce un ExecutionAudit con los 6 campos tecnicos
- * en `null` -- se produce siempre, en paralelo, incluso sin ejecucion real.
+ * `ExecutionAudit.technicalMetadata` nunca almacena el contenido del
+ * prompt, ni completo ni parcial.
  */
 export async function executeAIRequest(
-  decisionContext: DecisionContext,
-  authorizationContext: AuthorizationContext
+  input: AIExecutionInput
 ): Promise<{ result: AIExecutionResult; audit: ExecutionAudit }> {
+  const { decisionContext, authorizationContext, normalizedAIRequest } = input
+
   if (authorizationContext.authorizationStatus !== 'AUTHORIZED') {
     return {
-      result: buildResult('NO_AUTORIZADO', ['autorizacion no concedida por Credit Manager']),
+      result: buildResult('NO_AUTORIZADO', null, ['autorizacion no concedida por Credit Manager']),
       audit: EMPTY_AUDIT,
     }
   }
 
   if (!decisionContext.needsAI) {
     return {
-      result: buildResult('NO_REQUERIDO', ['esta peticion no requiere ejecucion de IA (Decision Engine)']),
+      result: buildResult('NO_REQUERIDO', null, ['esta peticion no requiere ejecucion de IA (Decision Engine)']),
       audit: EMPTY_AUDIT,
     }
   }
 
-  const recommendedProvider = decisionContext.executionStrategy.recommendedProvider
-  const providerWarning =
-    recommendedProvider === null
-      ? 'sin proveedor de IA recomendado (Decision Engine no lo determino)'
-      : `proveedor recomendado (${recommendedProvider}) sin integracion tecnica configurada`
+  if (normalizedAIRequest.userPrompt.trim().length === 0) {
+    throw new Error(
+      'NormalizedAIRequest.userPrompt es obligatorio cuando DecisionContext.needsAI es true (error explicito del flujo, IA-OPENAI-002)'
+    )
+  }
 
-  return {
-    result: buildResult('SIN_PROVEEDOR', [providerWarning, 'ver incidencia IA-006']),
-    audit: EMPTY_AUDIT,
+  const recommendedProvider = decisionContext.executionStrategy.recommendedProvider
+  const adapter = recommendedProvider === null ? null : findProviderAdapter(recommendedProvider)
+
+  if (adapter === null) {
+    const providerWarning =
+      recommendedProvider === null
+        ? 'sin proveedor de IA recomendado (Decision Engine no lo determino)'
+        : `proveedor recomendado (${recommendedProvider}) sin adaptador registrado`
+
+    return {
+      result: buildResult('SIN_PROVEEDOR', null, [providerWarning]),
+      audit: EMPTY_AUDIT,
+    }
+  }
+
+  try {
+    const outcome = await adapter.execute(normalizedAIRequest.userPrompt)
+
+    return {
+      result: buildResult('EJECUTADO', outcome.content, []),
+      audit: {
+        providerIdentifier: adapter.providerId,
+        providerModel: outcome.model,
+        executionLatencyMs: outcome.latencyMs,
+        tokensConsumed: outcome.tokensConsumed,
+        realExecutionCost: null,
+        technicalMetadata: null,
+      },
+    }
+  } catch (error) {
+    const message = error instanceof ProviderAdapterError ? error.message : 'fallo de comunicacion con el proveedor'
+
+    return {
+      result: buildResult('ERROR_COMUNICACION', null, [message]),
+      audit: EMPTY_AUDIT,
+    }
   }
 }
