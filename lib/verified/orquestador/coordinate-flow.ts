@@ -11,6 +11,7 @@ import type { ResponseContext } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
 import { buildDirectContent } from '@/lib/direct-content-builder'
+import { composePrompt } from '@/lib/prompt-composer'
 
 /**
  * Unico punto de entrada del Orquestador (Plan Tecnico aprobado, Acta de
@@ -56,6 +57,14 @@ import { buildDirectContent } from '@/lib/direct-content-builder'
  * transporte. Se construye siempre, no solo cuando needsAI es true (mismo
  * criterio ya aplicado a buildDirectContent): decidir condicionalmente
  * aqui duplicaria una decision que ya toma Decision Engine.
+ *
+ * userPrompt (SCENAIA-002A, Plan Tecnico aprobado): deja de ser el texto
+ * normalizado a secas -- composePrompt() (lib/prompt-composer/) combina el
+ * texto original de la peticion con el resumen de conocimiento ya
+ * calculado por knowledgeContext (mismo objeto, ya en ambito, sin nueva
+ * dependencia de datos). AIExecutionInput, ProviderAdapter, AI Gateway y
+ * el SDK de OpenAI no cambian: userPrompt sigue siendo un unico string,
+ * solo cambia como se compone su contenido.
  */
 export async function coordinateFlow(
   userId: string,
@@ -67,7 +76,7 @@ export async function coordinateFlow(
   const knowledgeContext = await buildKnowledgeContext(normalizedRequest)
   const decisionContext = buildDecisionContext(normalizedRequest, professionalContext, knowledgeContext)
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
-  const normalizedAIRequest: NormalizedAIRequest = { userPrompt: normalizedRequest.normalizedIntent }
+  const normalizedAIRequest: NormalizedAIRequest = { userPrompt: composePrompt(normalizedRequest, knowledgeContext) }
   const { result, audit } = await executeAIRequest({ decisionContext, authorizationContext, normalizedAIRequest })
   const directContent = buildDirectContent(knowledgeContext)
   const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)

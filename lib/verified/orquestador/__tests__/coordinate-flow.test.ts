@@ -9,6 +9,7 @@ import { composeResponse } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
 import { buildDirectContent } from '@/lib/direct-content-builder'
+import { composePrompt } from '@/lib/prompt-composer'
 import { coordinateFlow } from '../coordinate-flow'
 
 vi.mock('@/lib/request-interpreter', () => ({ normalizeRequest: vi.fn() }))
@@ -21,6 +22,7 @@ vi.mock('@/lib/response-composer', () => ({ composeResponse: vi.fn() }))
 vi.mock('@/lib/procesos-asincronos', () => ({ recordActivity: vi.fn() }))
 vi.mock('@/lib/execution-audit-router', () => ({ distributeExecutionAudit: vi.fn() }))
 vi.mock('@/lib/direct-content-builder', () => ({ buildDirectContent: vi.fn() }))
+vi.mock('@/lib/prompt-composer', () => ({ composePrompt: vi.fn() }))
 
 const normalizedRequest = { requestId: 'req-1', originalRequest: 'hola', normalizedIntent: 'hola' } as never
 const professionalContext = { identity: { userId: 'profile-1' } } as never
@@ -32,6 +34,7 @@ const audit = { providerIdentifier: null, executionLatencyMs: null } as never
 const responseContext = { responseType: 'RESPONSE_SUCCESS', responseContent: 'ok' } as never
 const session = { currentRoute: '/x' } as never
 const directContent = 'Resultados encontrados: Obra A.'
+const composedPrompt = 'Instrucciones + conocimiento + peticion del usuario.'
 
 beforeEach(() => {
   vi.mocked(normalizeRequest).mockReset().mockReturnValue(normalizedRequest)
@@ -44,6 +47,7 @@ beforeEach(() => {
   vi.mocked(recordActivity).mockReset().mockResolvedValue(true)
   vi.mocked(distributeExecutionAudit).mockReset().mockResolvedValue(undefined)
   vi.mocked(buildDirectContent).mockReset().mockReturnValue(directContent)
+  vi.mocked(composePrompt).mockReset().mockReturnValue(composedPrompt)
 })
 
 describe('coordinateFlow', () => {
@@ -55,10 +59,11 @@ describe('coordinateFlow', () => {
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest)
     expect(buildDecisionContext).toHaveBeenCalledWith(normalizedRequest, professionalContext, knowledgeContext)
     expect(buildAuthorizationContext).toHaveBeenCalledWith(professionalContext, decisionContext)
+    expect(composePrompt).toHaveBeenCalledWith(normalizedRequest, knowledgeContext)
     expect(executeAIRequest).toHaveBeenCalledWith({
       decisionContext,
       authorizationContext,
-      normalizedAIRequest: { userPrompt: 'hola' },
+      normalizedAIRequest: { userPrompt: composedPrompt },
     })
     expect(buildDirectContent).toHaveBeenCalledWith(knowledgeContext)
     expect(composeResponse).toHaveBeenCalledWith(decisionContext, authorizationContext, aiExecutionResult, directContent)

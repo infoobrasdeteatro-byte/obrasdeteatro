@@ -18,6 +18,7 @@ const AUTHORIZED_IMPORTS = [
   "from '@/lib/procesos-asincronos'",
   "from '@/lib/execution-audit-router'",
   "from '@/lib/direct-content-builder'",
+  "from '@/lib/prompt-composer'",
 ]
 
 describe('Orquestador (lib/verified) — invariantes de integración (Plan Técnico aprobado, Acta de Autorización 2026-07-19)', () => {
@@ -26,7 +27,7 @@ describe('Orquestador (lib/verified) — invariantes de integración (Plan Técn
     expect(MODULE_SOURCE).not.toMatch(/from '@\/lib\/repository-layer'/)
   })
 
-  it('depende exclusivamente de los 10 contratos autorizados por el Plan Técnico, ningún otro', () => {
+  it('depende exclusivamente de los 11 contratos autorizados por el Plan Técnico (10 + Prompt Composer, SCENAIA-002A), ningún otro', () => {
     const importLines = MODULE_SOURCE.match(/from '@\/lib\/[^']+'/g) ?? []
     for (const importLine of importLines) {
       expect(AUTHORIZED_IMPORTS.some((authorized) => importLine === authorized)).toBe(true)
