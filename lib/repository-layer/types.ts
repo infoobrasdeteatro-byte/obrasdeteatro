@@ -42,6 +42,29 @@ export interface Work {
   language: string | null
   year: number | null
   slug: string | null
+  minAge: number | null
+  durationMinutes: number | null
+  castSizeMax: number | null
+}
+
+/**
+ * Criterio de busqueda estructurado del dominio Obras (SCENAIA-002C, ADR
+ * SCENAIA-002C.1). Todos los campos opcionales -- su ausencia significa
+ * "sin filtrar por ese atributo", nunca un valor por defecto inventado.
+ * Repository Layer es quien lo traduce a una consulta real; nunca lo
+ * construye ni lo interpreta (esa responsabilidad es de Knowledge Assets).
+ * Contrato de combinacion cuando varios campos se establecen a la vez:
+ * documentado en detalle en interpretRules(), lib/knowledge-assets/
+ * interpret-work-query.ts -- unico lugar que construye este objeto.
+ */
+export interface WorkSearchCriteria {
+  readonly author?: string
+  readonly genre?: string
+  readonly maxAge?: number
+  readonly maxDurationMinutes?: number
+  readonly minDurationMinutes?: number
+  readonly yearFrom?: number
+  readonly maxCastSize?: number
 }
 
 export interface Organization {

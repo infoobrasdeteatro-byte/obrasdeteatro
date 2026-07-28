@@ -3,6 +3,7 @@ export type {
   ProfessionalProfilePublic,
   ProfileType,
   Work,
+  WorkSearchCriteria,
   Organization,
   Subscription,
   IndividualProfileData,
@@ -16,7 +17,7 @@ export type {
 } from './types'
 export { getIdentity } from './identity'
 export { getProfessionalProfilePublic } from './professional-profile'
-export { getPublishedWorkById, listPublishedWorks } from './works'
+export { getPublishedWorkById, listPublishedWorks, listPublishedWorkAuthors } from './works'
 export { getPublicOrganizationById, listPublicOrganizations } from './organizations'
 export { getSubscription, getUsageLimit } from './subscription'
 export { getIndividualProfileData } from './individual-profile'

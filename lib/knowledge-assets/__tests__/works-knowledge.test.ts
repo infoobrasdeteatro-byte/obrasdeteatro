@@ -17,6 +17,9 @@ const SAMPLE_WORK = {
   language: 'es',
   year: 1936,
   slug: 'la-casa-de-bernarda-alba',
+  minAge: 14,
+  durationMinutes: 100,
+  castSizeMax: 9,
 }
 
 describe('getWorkKnowledge', () => {
@@ -50,10 +53,18 @@ describe('listWorkKnowledge', () => {
   it('tags every work in the list with the Obras domain', async () => {
     vi.mocked(listPublishedWorks).mockResolvedValue([SAMPLE_WORK])
 
-    const result = await listWorkKnowledge(10)
+    const result = await listWorkKnowledge({}, 10)
 
     expect(result).toEqual([{ domain: 'Obras', data: SAMPLE_WORK }])
-    expect(listPublishedWorks).toHaveBeenCalledWith(10)
+    expect(listPublishedWorks).toHaveBeenCalledWith({}, 10)
+  })
+
+  it('traslada el criterio ya resuelto a Repository Layer sin interpretarlo (SCENAIA-002C)', async () => {
+    vi.mocked(listPublishedWorks).mockResolvedValue([SAMPLE_WORK])
+
+    await listWorkKnowledge({ author: 'Lorca' }, 5)
+
+    expect(listPublishedWorks).toHaveBeenCalledWith({ author: 'Lorca' }, 5)
   })
 
   it('returns an empty array when there is nothing to list', async () => {

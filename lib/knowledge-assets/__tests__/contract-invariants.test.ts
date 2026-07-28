@@ -2,9 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
-const MODULE_FILES = ['works-knowledge.ts', 'organizations-knowledge.ts', 'structured-knowledge.ts', 'semantic-retriever.ts']
+const MODULE_FILES = [
+  'works-knowledge.ts',
+  'organizations-knowledge.ts',
+  'structured-knowledge.ts',
+  'semantic-retriever.ts',
+  'interpret-work-query.ts',
+]
 const MODULE_SOURCE = MODULE_FILES.map((file) => readFileSync(join(__dirname, '..', file), 'utf-8')).join('\n')
 const SEMANTIC_RETRIEVER_SOURCE = readFileSync(join(__dirname, '..', 'semantic-retriever.ts'), 'utf-8')
+const INTERPRET_WORK_QUERY_SOURCE = readFileSync(join(__dirname, '..', 'interpret-work-query.ts'), 'utf-8')
 const INDEX_SOURCE = readFileSync(join(__dirname, '..', 'index.ts'), 'utf-8')
 
 function readComponentSource(componentDir: string): string {
@@ -54,5 +61,28 @@ describe('Knowledge Assets — semantic-retriever.ts (invariante de componente, 
     ]) {
       expect(readComponentSource(componentDir)).not.toMatch(/semantic-retriever/)
     }
+  })
+})
+
+describe('Knowledge Assets — interpret-work-query.ts (invariante de componente, SCENAIA-002C, ADR SCENAIA-002C.1)', () => {
+  it('es puro y síncrono: sin async/await, sin I/O', () => {
+    expect(INTERPRET_WORK_QUERY_SOURCE).not.toMatch(/\basync\b|\bawait\b/)
+  })
+
+  it('nunca accede a Supabase; su única referencia a Repository Layer es el tipo WorkSearchCriteria, en una importación de solo tipo', () => {
+    expect(INTERPRET_WORK_QUERY_SOURCE).not.toMatch(/supabase|createClient/i)
+    expect(INTERPRET_WORK_QUERY_SOURCE).toMatch(/import type \{ WorkSearchCriteria \} from '@\/lib\/repository-layer'/)
+  })
+
+  it('no depende de ninguna tecnología de IA/embeddings (interpretación por reglas, no semántica real)', () => {
+    expect(INTERPRET_WORK_QUERY_SOURCE).not.toMatch(
+      /pinecone|weaviate|qdrant|milvus|pgvector|openai|anthropic|embedding[s]?-api|neo4j/i
+    )
+  })
+
+  it('no importa ningún componente del Núcleo', () => {
+    expect(INTERPRET_WORK_QUERY_SOURCE).not.toMatch(
+      /decision-engine|credit-manager|ai-gateway|response-composer|request-interpreter/i
+    )
   })
 })

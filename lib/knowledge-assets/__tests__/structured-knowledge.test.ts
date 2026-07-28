@@ -17,6 +17,9 @@ const SAMPLE_WORK = {
   language: 'es',
   year: 1936,
   slug: 'la-casa-de-bernarda-alba',
+  minAge: 14,
+  durationMinutes: 100,
+  castSizeMax: 9,
 }
 
 const SAMPLE_ORG = {
@@ -44,7 +47,7 @@ describe('listStructuredKnowledge (integración entre dominios Obras + Organizac
       { domain: 'Obras', data: SAMPLE_WORK },
       { domain: 'Organizaciones', data: SAMPLE_ORG },
     ])
-    expect(listPublishedWorks).toHaveBeenCalledWith(10)
+    expect(listPublishedWorks).toHaveBeenCalledWith({}, 10)
     expect(listPublicOrganizations).toHaveBeenCalledWith(10)
   })
 

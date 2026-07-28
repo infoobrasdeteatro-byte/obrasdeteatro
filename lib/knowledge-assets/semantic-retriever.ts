@@ -1,5 +1,7 @@
+import { listPublishedWorkAuthors } from '@/lib/repository-layer'
 import { listWorkKnowledge } from './works-knowledge'
 import { listOrganizationKnowledge } from './organizations-knowledge'
+import { interpretWorkQuery } from './interpret-work-query'
 import type { KnowledgeDomain, StructuredKnowledgeItem } from './types'
 
 /**
@@ -16,20 +18,26 @@ export interface SemanticRetriever {
 
 /**
  * Implementacion base (v1): sin tecnologia de recuperacion semantica real
- * -- degrada a la misma enumeracion por dominio ya existente, ignorando
- * `query` (ningun motor real capaz de usarla todavia). Nunca lanza
- * excepcion. Sustituible en el futuro por una implementacion tecnologica
- * real sin cambiar esta interfaz (independencia tecnologica, Decision de
- * Direccion, Puntos 2 y 3).
+ * (embeddings/vectores/RAG). Para Obras, `query` ya se usa desde
+ * SCENAIA-002C -- se interpreta mediante reglas declarativas sobre el
+ * modelo relacional existente (ADR SCENAIA-002C.1), nunca mediante IA.
+ * Organizaciones sigue degradando a la misma enumeracion de siempre,
+ * ignorando `query` (sin motor propio todavia). Nunca lanza excepcion.
+ * Sustituible en el futuro por una implementacion tecnologica real sin
+ * cambiar esta interfaz (independencia tecnologica, Decision de Direccion,
+ * Puntos 2 y 3).
  */
 async function baseRetrieve(
   domain: KnowledgeDomain,
-  _query: string,
+  query: string,
   limit?: number
 ): Promise<StructuredKnowledgeItem[]> {
   switch (domain) {
-    case 'Obras':
-      return listWorkKnowledge(limit)
+    case 'Obras': {
+      const knownAuthors = await listPublishedWorkAuthors()
+      const criteria = interpretWorkQuery(query, knownAuthors)
+      return listWorkKnowledge(criteria, limit)
+    }
     case 'Organizaciones':
       return listOrganizationKnowledge(limit)
     default:
