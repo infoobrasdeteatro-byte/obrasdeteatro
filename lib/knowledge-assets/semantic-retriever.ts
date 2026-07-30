@@ -35,8 +35,16 @@ async function baseRetrieve(
   switch (domain) {
     case 'Obras': {
       const knownAuthors = await listPublishedWorkAuthors()
+      console.log('[DIAG-CASO2] query:', JSON.stringify(query))
+      console.log('[DIAG-CASO2] knownAuthors:', JSON.stringify(knownAuthors))
       const criteria = interpretWorkQuery(query, knownAuthors)
-      return listWorkKnowledge(criteria, limit)
+      console.log('[DIAG-CASO2] criteria:', JSON.stringify(criteria))
+      const items = await listWorkKnowledge(criteria, limit)
+      console.log(
+        '[DIAG-CASO2] items:',
+        JSON.stringify(items.map((item) => ({ title: item.data.title, author: item.data.author })))
+      )
+      return items
     }
     case 'Organizaciones':
       return listOrganizationKnowledge(limit)
