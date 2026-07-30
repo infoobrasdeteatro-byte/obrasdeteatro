@@ -16,11 +16,11 @@ export default async function ScenaiaPage() {
       <div className="app-layout">
         <Sidebar />
         <main className="app-main">
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--sans)', marginBottom: '4px' }}>
               Módulo VI · Centro Profesional
             </p>
-            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(22px, 3vw, 28px)', color: 'var(--black)', letterSpacing: '-0.5px', lineHeight: 1.1, marginBottom: '4px' }}>
+            <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(20px, 2.6vw, 26px)', color: 'var(--black)', letterSpacing: '-0.5px', lineHeight: 1.1, marginBottom: '4px' }}>
               ScenaIA
             </h1>
             <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)' }}>

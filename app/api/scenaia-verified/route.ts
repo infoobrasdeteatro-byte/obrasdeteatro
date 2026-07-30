@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { coordinateFlow } from '@/lib/verified/orquestador'
+import type { ConversationTurn } from '@/lib/verified/orquestador'
 
 /**
  * Unico punto de entrada HTTP hacia el Orquestador del Flujo Completo
@@ -14,6 +15,25 @@ import { coordinateFlow } from '@/lib/verified/orquestador'
  * trazabilidad todavia abierto, sin modificar) -- mismo criterio de
  * ubicacion ya aplicado a `lib/verified/`.
  */
+
+/**
+ * UX-001A (Sprint aprobado): valida `body.history` de forma defensiva --
+ * nunca se confia en la forma del cuerpo recibido. Cualquier entrada que
+ * no sea exactamente `{ role: 'user' | 'assistant', content: string }` se
+ * descarta en silencio (degradacion segura, mismo criterio ya aplicado en
+ * el resto de este adaptador), nunca lanza excepcion. Sin persistencia:
+ * el historial vive solo en el cuerpo de esta peticion.
+ */
+function parseHistory(value: unknown): ConversationTurn[] {
+  if (!Array.isArray(value)) return []
+
+  return value.filter((item): item is ConversationTurn => {
+    if (typeof item !== 'object' || item === null) return false
+    const turn = item as Record<string, unknown>
+    return (turn.role === 'user' || turn.role === 'assistant') && typeof turn.content === 'string'
+  })
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const {
@@ -36,8 +56,9 @@ export async function POST(req: NextRequest) {
     module: typeof body.module === 'string' ? body.module : null,
     locale: typeof body.locale === 'string' ? body.locale : 'es',
   }
+  const conversationHistory = parseHistory(body.history)
 
-  const responseContext = await coordinateFlow(user.id, session, originalRequest)
+  const responseContext = await coordinateFlow(user.id, session, originalRequest, conversationHistory)
 
   return NextResponse.json(responseContext)
 }

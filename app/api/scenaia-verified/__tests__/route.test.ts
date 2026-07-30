@@ -59,7 +59,8 @@ describe('POST /api/scenaia-verified', () => {
     expect(coordinateFlow).toHaveBeenCalledWith(
       'profile-1',
       { route: null, module: null, locale: 'es' },
-      'hola ScenaIA'
+      'hola ScenaIA',
+      []
     )
   })
 
@@ -72,8 +73,49 @@ describe('POST /api/scenaia-verified', () => {
     expect(coordinateFlow).toHaveBeenCalledWith(
       'profile-1',
       { route: '/perfil', module: 'perfil', locale: 'en' },
-      'hola'
+      'hola',
+      []
     )
+  })
+
+  it('UX-001A: propaga un historial valido tal cual', async () => {
+    mockAuthenticatedUser('profile-1')
+    vi.mocked(coordinateFlow).mockResolvedValue({ responseType: 'RESPONSE_DIRECT' } as never)
+    const history = [
+      { role: 'user', content: 'obras de lope de vega' },
+      { role: 'assistant', content: 'Resultados encontrados: El caballero de Olmedo.' },
+    ]
+
+    await POST(buildRequest({ message: 'hola', history }))
+
+    expect(coordinateFlow).toHaveBeenCalledWith('profile-1', { route: null, module: null, locale: 'es' }, 'hola', history)
+  })
+
+  it('UX-001A: descarta en silencio entradas de historial con forma invalida, sin lanzar excepcion', async () => {
+    mockAuthenticatedUser('profile-1')
+    vi.mocked(coordinateFlow).mockResolvedValue({ responseType: 'RESPONSE_DIRECT' } as never)
+    const history = [
+      { role: 'user', content: 'valido' },
+      { role: 'otro', content: 'rol invalido' },
+      { role: 'assistant' },
+      'no es un objeto',
+      42,
+    ]
+
+    await POST(buildRequest({ message: 'hola', history }))
+
+    expect(coordinateFlow).toHaveBeenCalledWith('profile-1', { route: null, module: null, locale: 'es' }, 'hola', [
+      { role: 'user', content: 'valido' },
+    ])
+  })
+
+  it('UX-001A: historial ausente o de forma incorrecta degrada a array vacío, nunca lanza', async () => {
+    mockAuthenticatedUser('profile-1')
+    vi.mocked(coordinateFlow).mockResolvedValue({ responseType: 'RESPONSE_DIRECT' } as never)
+
+    await POST(buildRequest({ message: 'hola', history: 'no es un array' }))
+
+    expect(coordinateFlow).toHaveBeenCalledWith('profile-1', { route: null, module: null, locale: 'es' }, 'hola', [])
   })
 
   it('devuelve el ResponseContext producido por coordinateFlow', async () => {

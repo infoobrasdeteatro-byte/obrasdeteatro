@@ -1944,3 +1944,207 @@ body {
   }
   .bib-contenido { padding: 28px 20px 60px; }
 }
+
+/* ═══════════════════════════════════════════════════
+   SCENAIA — CHAT CONVERSACIONAL (UX-001B / ID-001)
+   Identidad visual oficial (ID-001): paleta exclusivamente
+   corporativa (rojo/negro/blanco) -- sustituye al acento violeta
+   provisional de UX-001B, que no formaba parte de la identidad
+   aprobada. ScenaIA no tiene color propio: usa el rojo del
+   ecosistema, para reforzar pertenencia, no diferenciación.
+═══════════════════════════════════════════════════ */
+:root {
+  --scenaia-accent:        var(--red);
+  --scenaia-accent-bg:     var(--red-light);
+  --scenaia-accent-border: rgba(200, 0, 26, 0.18);
+}
+
+.scenaia-shell {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--nav-h) - 190px);
+  min-height: 440px;
+  max-height: 760px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.scenaia-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.scenaia-welcome {
+  margin: auto;
+  text-align: center;
+  max-width: 420px;
+  padding: 32px 24px;
+}
+.scenaia-welcome-badge {
+  /* ID-001: contenedor circular limpio y neutro (blanco + borde sutil) con
+     el isotipo oficial dentro, en rojo -- ver ObrasIsotype.tsx. */
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 22px;
+}
+.scenaia-welcome-badge svg { width: 30px; height: 30px; }
+.scenaia-welcome-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--black);
+  letter-spacing: -0.4px;
+  margin-bottom: 8px;
+}
+.scenaia-welcome-text {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.scenaia-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 80%;
+  animation: revealUp 0.32s ease both;
+}
+.scenaia-msg--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+.scenaia-msg--assistant {
+  align-self: flex-start;
+  max-width: 88%;
+}
+
+.scenaia-avatar {
+  /* ID-001: mismo tratamiento que .scenaia-welcome-badge, a escala de
+     mensaje -- contenedor circular neutro con el isotipo oficial dentro. */
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--red);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.scenaia-avatar svg { width: 15px; height: 15px; }
+
+.scenaia-bubble-col { display: flex; flex-direction: column; min-width: 0; }
+.scenaia-name-tag {
+  font-family: var(--serif);
+  font-size: 11px;
+  color: var(--scenaia-accent);
+  margin: 0 0 4px 2px;
+}
+.scenaia-bubble {
+  padding: 11px 15px;
+  border-radius: var(--radius);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.scenaia-bubble--user {
+  background: var(--black);
+  color: var(--white);
+  border-bottom-right-radius: 4px;
+}
+.scenaia-bubble--assistant {
+  background: var(--subtle);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+
+.scenaia-typing {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 13px 16px;
+  background: var(--subtle);
+  border-radius: var(--radius);
+  border-bottom-left-radius: 4px;
+  width: fit-content;
+}
+.scenaia-typing span {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--scenaia-accent);
+  opacity: 0.4;
+  animation: scenaiaTypingBounce 1.1s infinite ease-in-out;
+}
+.scenaia-typing span:nth-child(2) { animation-delay: 0.15s; }
+.scenaia-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+.scenaia-input-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--white);
+  flex-shrink: 0;
+}
+.scenaia-input-bar textarea {
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 10px 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  max-height: 140px;
+  transition: border-color 0.15s;
+}
+.scenaia-input-bar textarea:focus { outline: none; border-color: var(--scenaia-accent); }
+.scenaia-input-bar textarea:disabled { background: var(--off); color: var(--muted); }
+
+.scenaia-send-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.scenaia-send-btn:hover:not(:disabled) { transform: scale(1.06); }
+.scenaia-send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.scenaia-error-banner {
+  margin: 0 20px 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--red-light);
+  color: var(--red-h);
+  font-size: 13px;
+  font-family: var(--sans);
+}
+
+@keyframes scenaiaTypingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%            { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .scenaia-shell { border-radius: 0; border-left: none; border-right: none; }
+  .scenaia-thread { padding: 20px 16px; }
+  .scenaia-msg, .scenaia-msg--assistant { max-width: 92%; }
+  .scenaia-input-bar { padding: 12px; }
+}

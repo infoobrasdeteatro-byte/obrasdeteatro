@@ -59,7 +59,7 @@ describe('coordinateFlow', () => {
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest)
     expect(buildDecisionContext).toHaveBeenCalledWith(normalizedRequest, professionalContext, knowledgeContext)
     expect(buildAuthorizationContext).toHaveBeenCalledWith(professionalContext, decisionContext)
-    expect(composePrompt).toHaveBeenCalledWith(normalizedRequest, knowledgeContext)
+    expect(composePrompt).toHaveBeenCalledWith(normalizedRequest, knowledgeContext, [])
     expect(executeAIRequest).toHaveBeenCalledWith({
       decisionContext,
       authorizationContext,
@@ -105,5 +105,32 @@ describe('coordinateFlow', () => {
     const result = await coordinateFlow('profile-1', session, 'hola')
 
     expect(result).toBe(responseContext)
+  })
+
+  it('UX-001A: transporta el historial recibido hasta composePrompt sin modificarlo, y con array vacío por defecto si no se proporciona', async () => {
+    const history = [
+      { role: 'user' as const, content: 'obras de lope de vega' },
+      { role: 'assistant' as const, content: 'Resultados encontrados: El caballero de Olmedo.' },
+    ]
+
+    await coordinateFlow('profile-1', session, 'hola', history)
+
+    expect(composePrompt).toHaveBeenCalledWith(normalizedRequest, knowledgeContext, history)
+  })
+
+  it('UX-001A: ningún paso del Núcleo (PCE, SKM, Decision Engine, Credit Manager, AI Gateway, Response Composer) recibe el historial', async () => {
+    const history = [{ role: 'user' as const, content: 'texto' }]
+
+    await coordinateFlow('profile-1', session, 'hola', history)
+
+    expect(buildProfessionalContext).toHaveBeenCalledWith('profile-1', session)
+    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest)
+    expect(buildDecisionContext).toHaveBeenCalledWith(normalizedRequest, professionalContext, knowledgeContext)
+    expect(buildAuthorizationContext).toHaveBeenCalledWith(professionalContext, decisionContext)
+    expect(executeAIRequest).toHaveBeenCalledWith({
+      decisionContext,
+      authorizationContext,
+      normalizedAIRequest: { userPrompt: composedPrompt },
+    })
   })
 })

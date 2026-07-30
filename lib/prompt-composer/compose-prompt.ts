@@ -2,6 +2,18 @@ import type { NormalizedRequest } from '@/lib/request-interpreter'
 import type { KnowledgeContext } from '@/lib/scenaia-knowledge-model'
 
 /**
+ * UX-001A (Sprint aprobado): un turno ya cerrado de la conversacion --
+ * `content` es siempre el texto final ya mostrado al usuario (la pregunta
+ * tal cual la escribio, o el `responseContent` ya resuelto de ScenaIA).
+ * Vive en Prompt Composer porque es su unico consumidor real; el
+ * Orquestador y la ruta HTTP solo lo transportan, sin interpretarlo.
+ */
+export interface ConversationTurn {
+  readonly role: 'user' | 'assistant'
+  readonly content: string
+}
+
+/**
  * Ultima frase anadida en la revision funcional post-cierre de SCENAIA-002
  * (Caso 1): cuando el motor de interpretacion (SCENAIA-002C) no reconoce
  * ningun criterio en la peticion -- p.ej. un autor mencionado que no existe
@@ -36,24 +48,52 @@ function formatKnowledgeSection(knowledgeContext: KnowledgeContext): string | nu
 }
 
 /**
- * Unico punto de entrada del Prompt Composer (SCENAIA-002A, Plan Tecnico
- * aprobado). Funcion pura y determinista: misma entrada, misma salida,
- * siempre -- sin I/O, sin acceso a persistencia, sin variables de entorno,
- * sin conocer proveedor ni modelo. Transforma exclusivamente datos ya calculados por
- * Request Interpreter y ScenaIA Knowledge Model, ambos ya disponibles en
- * el ambito del Orquestador antes de esta llamada.
- *
- * Degradacion elegante (regla explicita del expediente): si no hay ninguna
- * entidad real recuperada para ningun dominio, la seccion de conocimiento
- * se omite por completo -- nunca se rellena con datos inventados.
+ * Formatea el historial ya cerrado de la conversacion (UX-001A) -- cada
+ * turno tal cual se muestra al usuario, nunca reinterpretado. Ausencia de
+ * historial (array vacio, primera pregunta de la sesion) se trata igual
+ * que ausencia de conocimiento: la seccion se omite por completo.
  */
-export function composePrompt(normalizedRequest: NormalizedRequest, knowledgeContext: KnowledgeContext): string {
+function formatHistory(conversationHistory: readonly ConversationTurn[]): string | null {
+  if (conversationHistory.length === 0) return null
+
+  return conversationHistory.map((turn) => `${turn.role === 'user' ? 'Usuario' : 'ScenaIA'}: ${turn.content}`).join('\n')
+}
+
+/**
+ * Unico punto de entrada del Prompt Composer (SCENAIA-002A, Plan Tecnico
+ * aprobado; tercer parametro anadido en UX-001A, Sprint aprobado --
+ * reapertura minima, mismo patron ya usado antes en composeResponse()
+ * (IA-008) y en el contrato de entrada de AI Gateway (IA de integracion
+ * del proveedor, 002). Funcion pura y determinista: misma
+ * entrada, misma salida, siempre -- sin I/O, sin acceso a persistencia,
+ * sin variables de entorno, sin conocer proveedor ni modelo. Transforma
+ * exclusivamente datos ya calculados por Request Interpreter y ScenaIA
+ * Knowledge Model, mas el historial ya construido por el cliente y
+ * transportado sin interpretar por el Orquestador -- ninguno de los 7
+ * componentes del Nucleo conoce ni necesita conocer este historial.
+ *
+ * Degradacion elegante (regla explicita del expediente, extendida a
+ * historial): si no hay ninguna entidad real recuperada para ningun
+ * dominio, o no hay historial previo (primera pregunta), la seccion
+ * correspondiente se omite por completo -- nunca se rellena con datos
+ * inventados.
+ */
+export function composePrompt(
+  normalizedRequest: NormalizedRequest,
+  knowledgeContext: KnowledgeContext,
+  conversationHistory: readonly ConversationTurn[] = []
+): string {
   const knowledgeSection = formatKnowledgeSection(knowledgeContext)
+  const historySection = formatHistory(conversationHistory)
 
   const parts = [SYSTEM_INSTRUCTIONS]
 
   if (knowledgeSection !== null) {
     parts.push(`Conocimiento real disponible del ecosistema:\n${knowledgeSection}`)
+  }
+
+  if (historySection !== null) {
+    parts.push(`Historial de la conversacion (turnos anteriores, para mantener continuidad):\n${historySection}`)
   }
 
   parts.push(`Peticion del usuario: ${normalizedRequest.originalRequest}`)

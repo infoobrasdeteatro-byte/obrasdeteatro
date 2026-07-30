@@ -12,6 +12,7 @@ import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
+import type { ConversationTurn } from '@/lib/prompt-composer'
 
 /**
  * Unico punto de entrada del Orquestador (Plan Tecnico aprobado, Acta de
@@ -65,18 +66,33 @@ import { composePrompt } from '@/lib/prompt-composer'
  * dependencia de datos). AIExecutionInput, ProviderAdapter, AI Gateway y
  * el SDK de OpenAI no cambian: userPrompt sigue siendo un unico string,
  * solo cambia como se compone su contenido.
+ *
+ * conversationHistory (UX-001A, Sprint aprobado, parametro cuarto con
+ * valor por defecto `[]` -- preserva sin ningun cambio el comportamiento
+ * de cualquier llamador existente que no lo proporcione): el cliente
+ * construye y mantiene el historial completo de la sesion (sin
+ * persistencia, sin base de datos, sin sincronizacion entre dispositivos
+ * -- fuera del alcance de este bloque); el Orquestador se limita a
+ * transportarlo, sin interpretarlo, unicamente hasta composePrompt().
+ * Ninguno de los 7 componentes del Nucleo (Request Interpreter, PCE, SKM,
+ * Decision Engine, Credit Manager, AI Gateway, Response Composer) recibe
+ * ni conoce este historial -- cada uno sigue operando exclusivamente
+ * sobre `originalRequest`, exactamente igual que antes de este bloque.
  */
 export async function coordinateFlow(
   userId: string,
   session: SessionInput,
-  originalRequest: string
+  originalRequest: string,
+  conversationHistory: readonly ConversationTurn[] = []
 ): Promise<ResponseContext> {
   const normalizedRequest = normalizeRequest(originalRequest)
   const professionalContext = await buildProfessionalContext(userId, session)
   const knowledgeContext = await buildKnowledgeContext(normalizedRequest)
   const decisionContext = buildDecisionContext(normalizedRequest, professionalContext, knowledgeContext)
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
-  const normalizedAIRequest: NormalizedAIRequest = { userPrompt: composePrompt(normalizedRequest, knowledgeContext) }
+  const normalizedAIRequest: NormalizedAIRequest = {
+    userPrompt: composePrompt(normalizedRequest, knowledgeContext, conversationHistory),
+  }
   const { result, audit } = await executeAIRequest({ decisionContext, authorizationContext, normalizedAIRequest })
   const directContent = buildDirectContent(knowledgeContext)
   const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)

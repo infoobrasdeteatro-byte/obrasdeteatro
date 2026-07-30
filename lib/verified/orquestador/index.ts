@@ -1,2 +1,2 @@
-export type { SessionInput } from './types'
+export type { SessionInput, ConversationTurn } from './types'
 export { coordinateFlow } from './coordinate-flow'

@@ -141,4 +141,37 @@ describe('composePrompt', () => {
     expect(result).toContain('¿Qué OBRAS hay?')
     expect(result).not.toContain('que obras hay?')
   })
+
+  it('UX-001A: sin historial (parametro omitido), no incluye ninguna seccion de historial -- comportamiento previo preservado', () => {
+    const result = composePrompt(fakeNormalizedRequest(), fakeKnowledgeContext())
+
+    expect(result).not.toContain('Historial de la conversacion')
+  })
+
+  it('UX-001A: con historial, lo incluye formateado por turno, antes de la peticion actual', () => {
+    const result = composePrompt(fakeNormalizedRequest(), fakeKnowledgeContext(), [
+      { role: 'user', content: 'obras de lope de vega' },
+      { role: 'assistant', content: 'Resultados encontrados: El caballero de Olmedo.' },
+    ])
+
+    expect(result).toContain('Historial de la conversacion')
+    expect(result).toContain('Usuario: obras de lope de vega')
+    expect(result).toContain('ScenaIA: Resultados encontrados: El caballero de Olmedo.')
+    expect(result.indexOf('Historial de la conversacion')).toBeLessThan(result.indexOf('Peticion del usuario'))
+  })
+
+  it('UX-001A: un historial vacío se comporta igual que ausencia de historial', () => {
+    const withEmptyArray = composePrompt(fakeNormalizedRequest(), fakeKnowledgeContext(), [])
+    const withoutParam = composePrompt(fakeNormalizedRequest(), fakeKnowledgeContext())
+
+    expect(withEmptyArray).toBe(withoutParam)
+  })
+
+  it('UX-001A: nunca reinterpreta el contenido de los turnos -- los transporta tal cual, sin normalizar ni recortar', () => {
+    const result = composePrompt(fakeNormalizedRequest(), fakeKnowledgeContext(), [
+      { role: 'user', content: '¿Y de Federico García Lorca?' },
+    ])
+
+    expect(result).toContain('Usuario: ¿Y de Federico García Lorca?')
+  })
 })
