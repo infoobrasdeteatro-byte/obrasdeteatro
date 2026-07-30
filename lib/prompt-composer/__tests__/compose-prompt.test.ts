@@ -125,6 +125,13 @@ describe('composePrompt', () => {
     expect(first).toBe(second)
   })
 
+  it('instruye explicitamente a no presentar un listado sin filtrar como si respondiera a un criterio especifico (revision funcional post-cierre SCENAIA-002, Caso 1)', () => {
+    const result = composePrompt(fakeNormalizedRequest(), fakeKnowledgeContext())
+
+    expect(result).toContain('indicalo explicitamente en tu respuesta')
+    expect(result).toContain('nunca presentes la lista general como si respondiera a ese criterio')
+  })
+
   it('usa el texto original de la peticion (con mayusculas y tildes), no la version normalizada', () => {
     const result = composePrompt(
       fakeNormalizedRequest({ originalRequest: '¿Qué OBRAS hay?', normalizedIntent: 'que obras hay?' }),

@@ -2,13 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { retrieveRelevantKnowledge } from '@/lib/knowledge-assets'
 import type { NormalizedRequest } from '@/lib/request-interpreter'
 import { buildKnowledgeContext } from '../knowledge-context-builder'
+import { unfilteredCriteriaNote } from '../unfiltered-note'
 
 vi.mock('@/lib/knowledge-assets', () => ({
   retrieveRelevantKnowledge: vi.fn(),
 }))
 
-function mockRetrieval(byDomain: Record<string, unknown[]>) {
-  vi.mocked(retrieveRelevantKnowledge).mockImplementation(async (domain: string) => (byDomain[domain] ?? []) as never)
+function mockRetrieval(byDomain: Record<string, { items: unknown[]; requestWasNarrowed?: boolean }>) {
+  vi.mocked(retrieveRelevantKnowledge).mockImplementation(
+    async (domain: string) => (byDomain[domain] ? { requestWasNarrowed: true, ...byDomain[domain] } : { items: [], requestWasNarrowed: false }) as never
+  )
 }
 
 beforeEach(() => {
@@ -35,7 +38,7 @@ const ORG_ITEM = { domain: 'Organizaciones' as const, data: { name: 'Teatro Espa
 
 describe('buildKnowledgeContext', () => {
   it('completo: todos los dominios solicitados están cubiertos', async () => {
-    mockRetrieval({ Obras: [WORK_ITEM], Organizaciones: [ORG_ITEM] })
+    mockRetrieval({ Obras: { items: [WORK_ITEM] }, Organizaciones: { items: [ORG_ITEM] } })
 
     const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Organizaciones']))
 
@@ -53,7 +56,7 @@ describe('buildKnowledgeContext', () => {
   })
 
   it('parcial: solo parte de los dominios solicitados están cubiertos', async () => {
-    mockRetrieval({ Obras: [WORK_ITEM] })
+    mockRetrieval({ Obras: { items: [WORK_ITEM] } })
 
     const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Personas']))
 
@@ -88,7 +91,7 @@ describe('buildKnowledgeContext', () => {
   })
 
   it('deduplica dominios repetidos sin invocar Knowledge Assets dos veces', async () => {
-    mockRetrieval({ Obras: [WORK_ITEM] })
+    mockRetrieval({ Obras: { items: [WORK_ITEM] } })
 
     const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Obras']))
 
@@ -97,10 +100,26 @@ describe('buildKnowledgeContext', () => {
   })
 
   it('transporta normalizedIntent como query hasta Knowledge Assets (IA-003)', async () => {
-    mockRetrieval({ Obras: [WORK_ITEM] })
+    mockRetrieval({ Obras: { items: [WORK_ITEM] } })
 
     await buildKnowledgeContext({ ...fakeRequest(['Obras']), normalizedIntent: 'texto distinto' })
 
     expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'texto distinto')
+  })
+
+  it('SCENAIA-002, correccion definitiva de Caso 1: cuando Obras devuelve requestWasNarrowed=false, anade la nota exacta a knowledgeLimitations', async () => {
+    mockRetrieval({ Obras: { items: [WORK_ITEM], requestWasNarrowed: false } })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Obras']))
+
+    expect(result.knowledgeLimitations).toContain(unfilteredCriteriaNote('Obras'))
+  })
+
+  it('cuando Obras devuelve requestWasNarrowed=true, no anade ninguna nota de "sin criterio reconocido"', async () => {
+    mockRetrieval({ Obras: { items: [WORK_ITEM], requestWasNarrowed: true } })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Obras']))
+
+    expect(result.knowledgeLimitations).not.toContain(unfilteredCriteriaNote('Obras'))
   })
 })

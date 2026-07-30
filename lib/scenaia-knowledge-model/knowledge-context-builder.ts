@@ -3,6 +3,7 @@ import type { KnowledgeCompleteness, KnowledgeContext } from './types'
 import { isDomainCovered } from './domain-coverage'
 import { retrieveKnowledgeForDomain } from './retrieve-knowledge'
 import { buildKnowledgeSummary } from './summary'
+import { unfilteredCriteriaNote } from './unfiltered-note'
 
 function estimateCompleteness(requestedCount: number, coveredCount: number): KnowledgeCompleteness {
   if (requestedCount === 0 || coveredCount === 0) return 'vacio'
@@ -31,10 +32,10 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
   const coveredDomains = requestedDomains.filter(isDomainCovered)
   const notCoveredDomains = requestedDomains.filter((domain) => !isDomainCovered(domain))
 
-  const entitiesByDomain = await Promise.all(
+  const resultsByDomain = await Promise.all(
     coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain, normalizedRequest.normalizedIntent))
   )
-  const knowledgeEntities = entitiesByDomain.flat()
+  const knowledgeEntities = resultsByDomain.flatMap((result) => result.items)
 
   const knowledgeLimitations = notCoveredDomains.map(
     (domain) => `dominio ${domain} solicitado pero no cubierto por Knowledge Assets en esta version`
@@ -44,6 +45,19 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
       'los dominios cubiertos se enumeran sin relevancia ni relacion con el texto de la peticion -- sin motor de busqueda (IA-003)'
     )
   }
+  /**
+   * SCENAIA-002, correccion definitiva de Caso 1: transporta, sin
+   * reconstruirlo, el mismo `requestWasNarrowed` real ya calculado por el
+   * motor de interpretacion de cada dominio. Cuando es false, el dominio
+   * devolvio resultados sin haber reconocido ningun criterio explicito de
+   * la peticion -- direct-content-builder.ts la usa para no presentar ese
+   * listado como si cumpliera un criterio que en realidad no aplico.
+   */
+  coveredDomains.forEach((domain, index) => {
+    if (!resultsByDomain[index].requestWasNarrowed) {
+      knowledgeLimitations.push(unfilteredCriteriaNote(domain))
+    }
+  })
 
   const knowledgeCompleteness = estimateCompleteness(requestedDomains.length, coveredDomains.length)
 

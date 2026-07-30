@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { KnowledgeContext } from '@/lib/scenaia-knowledge-model'
+import { unfilteredCriteriaNote } from '@/lib/scenaia-knowledge-model'
 import { buildDirectContent } from '../build-direct-content'
 
 function fakeKnowledgeContext(overrides: Partial<KnowledgeContext> = {}): KnowledgeContext {
@@ -68,5 +69,43 @@ describe('buildDirectContent', () => {
 
   it('nunca lanza excepcion, incluso ante un KnowledgeContext vacio en todos sus campos', () => {
     expect(() => buildDirectContent(fakeKnowledgeContext())).not.toThrow()
+  })
+
+  it('SCENAIA-002, correccion definitiva de Caso 1: marca explicitamente un dominio como catalogo sin filtrar cuando knowledgeLimitations contiene su nota exacta', () => {
+    const result = buildDirectContent(
+      fakeKnowledgeContext({
+        knowledgeDomains: ['Obras'],
+        knowledgeSummary: {
+          domainsRequested: ['Obras'],
+          domainsCovered: ['Obras'],
+          domainsNotCovered: [],
+          entryLabelsByDomain: { Obras: ['Obra A', 'Obra B'] },
+        },
+        knowledgeLimitations: [unfilteredCriteriaNote('Obras')],
+      })
+    )
+
+    expect(result).toBe(
+      'Resultados encontrados: Obra A, Obra B (no se ha podido aplicar el criterio solicitado; catalogo general sin filtrar).'
+    )
+  })
+
+  it('con multiples dominios, la aclaracion de "sin filtrar" solo se aplica al dominio afectado', () => {
+    const result = buildDirectContent(
+      fakeKnowledgeContext({
+        knowledgeDomains: ['Obras', 'Organizaciones'],
+        knowledgeSummary: {
+          domainsRequested: ['Obras', 'Organizaciones'],
+          domainsCovered: ['Obras', 'Organizaciones'],
+          domainsNotCovered: [],
+          entryLabelsByDomain: { Obras: ['Obra A'], Organizaciones: ['Compania X'] },
+        },
+        knowledgeLimitations: [unfilteredCriteriaNote('Obras')],
+      })
+    )
+
+    expect(result).toBe(
+      'Resultados encontrados: Obra A (no se ha podido aplicar el criterio solicitado; catalogo general sin filtrar); Compania X.'
+    )
   })
 })
