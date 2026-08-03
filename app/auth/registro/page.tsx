@@ -1,51 +1,116 @@
 'use client'
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useRef, useState } from 'react'
+import Script from 'next/script'
 import Link from 'next/link'
 import { translateAuthError } from '@/lib/auth-errors'
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (container: HTMLElement, options: Record<string, unknown>) => string
+      reset: (widgetId: string) => void
+      remove: (widgetId: string) => void
+    }
+  }
+}
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ''
 
 export default function RegistroPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nombre, setNombre] = useState('')
+  const [website, setWebsite] = useState('')
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileScriptReady, setTurnstileScriptReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
+
+  const turnstileContainer = useRef<HTMLDivElement>(null)
+  const turnstileWidgetId = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!turnstileScriptReady || !turnstileContainer.current || !window.turnstile) return
+    if (turnstileWidgetId.current) return
+
+    turnstileWidgetId.current = window.turnstile.render(turnstileContainer.current, {
+      sitekey: TURNSTILE_SITE_KEY,
+      callback: (token: string) => setTurnstileToken(token),
+      'expired-callback': () => setTurnstileToken(''),
+      'error-callback': () => setTurnstileToken(''),
+    })
+  }, [turnstileScriptReady])
+
+  const resetTurnstile = () => {
+    setTurnstileToken('')
+    if (window.turnstile && turnstileWidgetId.current) {
+      window.turnstile.reset(turnstileWidgetId.current)
+    }
+  }
 
   const handleRegistro = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
 
-    const supabase = createClient()
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { nombre },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (error) {
-      setMessage(translateAuthError(error.message))
-      setIsSuccess(false)
-    } else {
-      fetch('/api/auth/welcome-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, nombre }),
-      }).catch(() => {})
+    // SEC-001 Fase 2: campo honeypot. Un humano nunca lo rellena; si llega
+    // relleno, se simula el mismo éxito sin llamar al endpoint de registro.
+    if (website.trim() !== '') {
       setMessage('¡Revisa tu email para confirmar tu cuenta!')
       setIsSuccess(true)
+      setLoading(false)
+      return
+    }
+
+    if (!turnstileToken) {
+      setMessage('Confirma que no eres un robot antes de continuar.')
+      setIsSuccess(false)
+      setLoading(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/auth/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, nombre, website, turnstileToken }),
+      })
+      const data = await res.json()
+
+      if (!res.ok || !data.ok) {
+        setMessage(
+          data.code === 'turnstile_failed'
+            ? 'No se pudo verificar que no eres un robot. Inténtalo de nuevo.'
+            : translateAuthError(data.message ?? '')
+        )
+        setIsSuccess(false)
+        resetTurnstile()
+      } else {
+        fetch('/api/auth/welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, nombre }),
+        }).catch(() => {})
+        setMessage('¡Revisa tu email para confirmar tu cuenta!')
+        setIsSuccess(true)
+      }
+    } catch {
+      setMessage('No se pudo completar el registro. Inténtalo de nuevo.')
+      setIsSuccess(false)
+      resetTurnstile()
     }
     setLoading(false)
   }
 
   return (
     <div className="auth-page">
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        strategy="afterInteractive"
+        onLoad={() => setTurnstileScriptReady(true)}
+      />
       <Link href="/" className="auth-logo">
         obras<span>de</span>teatro.com
       </Link>
@@ -53,6 +118,18 @@ export default function RegistroPage() {
         <h1 className="auth-title">Crear cuenta</h1>
         <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
         <form onSubmit={handleRegistro} className="auth-form">
+          <div className="hp-field" aria-hidden="true">
+            <label htmlFor="website">No rellenar este campo</label>
+            <input
+              type="text"
+              id="website"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              value={website}
+              onChange={e => setWebsite(e.target.value)}
+            />
+          </div>
           <input
             type="email"
             placeholder="Email"
@@ -77,6 +154,7 @@ export default function RegistroPage() {
             required
             className="ds-input"
           />
+          <div ref={turnstileContainer} />
           <button
             type="submit"
             disabled={loading}

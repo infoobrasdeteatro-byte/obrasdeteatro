@@ -810,6 +810,9 @@ body {
   font-weight: 300; margin-bottom: 20px;
 }
 .auth-form { display: flex; flex-direction: column; gap: 12px; }
+/* SEC-001 Fase 2: campo honeypot -- oculto fuera del viewport, no display:none,
+   para no penalizar a lectores de pantalla ni a autocompletado real. */
+.hp-field { position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .auth-footer {
   margin-top: 18px; text-align: center;
   font-size: 13px; color: var(--muted);
