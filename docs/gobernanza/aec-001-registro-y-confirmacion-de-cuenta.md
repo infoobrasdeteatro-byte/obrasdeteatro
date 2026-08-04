@@ -3,7 +3,7 @@
 **Expediente:** AEC-001 (Arquitectura del Ecosistema de Cuentas)
 **Ámbito:** flujo de registro (`app/auth/registro`, `app/api/auth/registro`), confirmación de email (`app/auth/callback`), servicio de correo de bienvenida.
 **Explícitamente fuera de ámbito:** Núcleo de ScenaIA (Request Interpreter, PCE, SKM, Decision Engine, Credit Manager, AI Gateway, Response Composer) — sin cambios, verificado.
-**Estado:** Implementado y validado localmente. Migración preparada, no aplicada. Sin commit todavía — pendiente de autorización expresa.
+**Estado:** CERRADO. Migración aplicada, commit realizado, push a `develop` completado, Auditoría de Verificación superada. Acta Oficial de Cierre a continuación, pendiente de revisión final de Dirección.
 **Precede a este expediente:** AEC-000 — Inventario del Ecosistema de Cuentas (análisis, sin archivo propio).
 
 ---
@@ -59,7 +59,7 @@ La comprobación de "email ya existente" se sitúa **después** de Turnstile, no
 
 **Archivos nuevos:**
 - `lib/email/welcome-email.ts` — servicio único de envío del correo de bienvenida (HTML + Resend), extraído del antiguo endpoint público. Es ahora el único lugar del código capaz de enviarlo.
-- `supabase/migrations/20260804090000_aec001_welcome_email_sent_at.sql` — `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS welcome_email_sent_at timestamptz;`. **No aplicada todavía.**
+- `supabase/migrations/20260804090000_aec001_welcome_email_sent_at.sql` — `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS welcome_email_sent_at timestamptz;`. **Aplicada sobre `pnsirwtiiurczjwrayza` el 2026-08-04.**
 
 **Archivos eliminados:**
 - `app/api/auth/welcome-email/route.ts` — endpoint público independiente. Su eliminación completa la Fase 4 de SEC-001, que había quedado pendiente; se ejecuta ahora porque el punto 2 del alcance de AEC-001 exige exactamente este cambio (mover el disparo del correo del momento de registro al momento de confirmación), y mantener las dos rutas en paralelo habría dejado dos caminos divergentes para el mismo correo.
@@ -76,10 +76,47 @@ La comprobación de "email ya existente" se sitúa **después** de Turnstile, no
 - `npx vitest run`: 84/84 archivos, 407/407 pruebas en verde.
 - `npm run build`: correcto, 29/29 páginas; `/api/auth/welcome-email` ya no aparece como ruta; `/api/auth/registro` compila sin errores.
 - Validación funcional (servidor de desarrollo, sin aplicar todavía la migración): contraseña débil → `weak_password` sin llamar a Turnstile ni a Supabase; contraseña válida + token de Turnstile inválido → `turnstile_failed`, confirmando que la comprobación de email existente sigue protegida detrás de Turnstile. La lógica de coincidencia `ILIKE` de la comprobación de email existente se verificó por separado con una consulta de solo lectura contra una cuenta real conocida.
-- No se verificó en vivo el disparo del correo de bienvenida en `app/auth/callback` porque depende de la columna `welcome_email_sent_at`, que todavía no existe en la base de datos real — se hará en cuanto se autorice y aplique la migración.
+- No se verificó en vivo el disparo del correo de bienvenida en `app/auth/callback`, porque esa verificación requiere completar un registro real de extremo a extremo (registro → clic en el enlace de confirmación → recepción del correo). La columna `welcome_email_sent_at` ya existe en la base de datos real desde la aplicación de la migración; queda como observación abierta en la sección siguiente, no como bloqueo de esta validación.
 
-## Pendiente antes del cierre
+## Acta Oficial de Cierre — AEC-001
 
-1. Autorización expresa para aplicar la migración `20260804090000_aec001_welcome_email_sent_at.sql`.
-2. Tras aplicarla, verificación funcional real del flujo completo de confirmación (registro → confirmación de email → correo de bienvenida recibido una sola vez).
-3. Autorización expresa de commit y push a `develop`, y Preview Deployment para auditoría, siguiendo la misma disciplina de SEC-001.
+**Fecha:** 2026-08-04
+**Expediente:** AEC-001 — Registro y Confirmación de Cuenta
+**Estado final:** CERRADO
+
+### Hitos del expediente, en orden
+
+1. AEC-000 — Inventario del Ecosistema de Cuentas (análisis exclusivo, sin archivo propio).
+2. Estudio de arquitectura AEC-001 (análisis, sin código).
+3. Decisión Arquitectónica Oficial AEC-001 (DA-001 a DA-006), emitida por Dirección Técnica el 2026-08-04.
+4. Plan de ejecución e implementación completa de los 6 puntos de alcance.
+5. Validación en worktree limpio desde `main`: `tsc --noEmit` sin errores, `vitest` 84/84 archivos y 407/407 pruebas en verde, `build` correcto (29/29 páginas).
+6. Auditoría de Verificación de AEC-001: resultado **✅ Cumple íntegramente la Decisión Arquitectónica Oficial AEC-001**, punto por punto (DA-001 a DA-006 y restricciones), verificada contra el código real y el estado real de Supabase.
+7. Migración `20260804090000_aec001_welcome_email_sent_at.sql` aplicada sobre `pnsirwtiiurczjwrayza` — columna `welcome_email_sent_at` (`timestamptz`, nullable) confirmada en `public.profiles`.
+8. Commit `da00e25` en `scenaia-bloque-3`, con exactamente los 7 archivos del expediente (ninguno del material ajeno "Conjunto B" incluido).
+9. Push a `develop` en fast-forward desde `7d98e02` (SEC-001), verificado como ancestro antes de empujar.
+
+### Estado de despliegue
+
+`develop` en `da00e25`. **`main` no modificado** — el paso a producción no ha sido solicitado ni autorizado en este expediente; queda pendiente de una autorización explícita separada, siguiendo la misma disciplina que en SEC-001.
+
+### Decisiones arquitectónicas certificadas (DA-001 a DA-006)
+
+Las seis decisiones de la Decisión Arquitectónica Oficial quedan implementadas, validadas y verificadas — ver tabla de cobertura y el resultado íntegro de la Auditoría de Verificación más arriba en este documento.
+
+### Restricciones respetadas, verificadas dos veces (plan y auditoría)
+
+- Núcleo Conversacional (SC-001 a SC-004): sin cambios.
+- Comportamiento certificado de SEC-001: intacto, incluida la política RLS `verificado = true` sin modificar.
+- Ningún nuevo estado de confianza introducido.
+- Significado del campo `verificado`: no redefinido.
+- Arquitectura PKCE: sin alterar.
+
+### Deuda y observaciones abiertas, no bloqueantes para este cierre
+
+- No se realizó verificación funcional en vivo del envío real de correo de bienvenida a través del flujo completo navegador → confirmación → Resend, dado que esa verificación requiere un registro real de extremo a extremo; el mecanismo de idempotencia y el punto de disparo quedan verificados por código y por la atomicidad de la operación SQL.
+- El paso a `main`/producción de AEC-001 no forma parte de este cierre y requiere autorización explícita separada.
+
+### Declaración
+
+**El expediente AEC-001 — Registro y Confirmación de Cuenta queda CERRADO en `develop`**, con las seis Decisiones Arquitectónicas Oficiales implementadas, validadas y auditadas con resultado positivo. Pendiente de la revisión final y ratificación de Dirección Técnica.
