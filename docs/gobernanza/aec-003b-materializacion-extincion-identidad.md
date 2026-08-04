@@ -2,7 +2,7 @@
 
 **Expediente:** AEC-003B (deriva de AEC-003 Fase 5)
 **Ámbito:** implementación técnica de la arquitectura congelada en `docs/gobernanza/aec-003-fase5-especificacion-arquitectonica.md` (PA-001, DA-001 a DA-006).
-**Estado:** Plan de Implementación aprobado (6 fases). Fase 1 implementada, validada y con migración aplicada sobre `pnsirwtiiurczjwrayza` — pendiente de autorización de commit.
+**Estado:** Fases 1 y 2 CERRADAS (`a87496b`, en `develop`; Fase 2 pendiente de commit en este mismo ciclo). Fase 3 (verificación de condiciones previas, solo lectura) pendiente de autorización de inicio.
 
 ---
 
@@ -71,3 +71,33 @@ Su anonimización queda pendiente para una fase posterior de este mismo expedien
 - `npm run build`: correcto.
 - Núcleo (SC-001–SC-004): sin cambios.
 - Migración aplicada sobre `pnsirwtiiurczjwrayza`, verificada: ambas columnas presentes (`timestamptz`, nullable) y la función `extinguish_personal_identity` presente y `SECURITY DEFINER`. No invocada todavía desde ningún endpoint, trigger ni prueba.
+
+**Cierre Fase 1:** commit `a87496b` en `scenaia-bloque-3`, fast-forward a `develop` desde `3f2a253`, push a `origin/develop` confirmado. Aprobada por Dirección Técnica sin condiciones adicionales.
+
+---
+
+## Fase 2 — Transición reversible: solicitar / cancelar (DA-004)
+
+**Alcance implementado, estrictamente el autorizado:** únicamente la marca `profiles.extincion_solicitada_at`. Ningún otro campo, tabla, plano ni sistema externo tocado.
+
+**Archivos nuevos:**
+- `app/api/cuenta/eliminar/solicitar/route.ts` — `POST`, requiere sesión, establece `extincion_solicitada_at = now()` solo si estaba `NULL` (idempotente).
+- `app/api/cuenta/eliminar/cancelar/route.ts` — `POST`, requiere sesión, establece `extincion_solicitada_at = NULL` incondicionalmente.
+- `app/cuenta/eliminar/EliminarCuentaForm.tsx` — componente cliente con los dos botones y el estado correspondiente.
+
+**Archivos modificados:**
+- `app/cuenta/eliminar/page.tsx` — sustituye el aviso "próximamente" por el formulario real; lee `extincion_solicitada_at` del perfil.
+
+**Restricción arquitectónica de DA-004 — sin efecto residual tras cancelar:** verificado por construcción, no solo probado: esta fase no escribe en ningún campo salvo `extincion_solicitada_at`. Cancelar lo devuelve a `NULL`, que es exactamente su valor antes de cualquier solicitud — no existe ningún otro campo que esta fase pueda haber dejado alterado.
+
+**Validación:**
+- Worktree limpio desde `develop` (`a87496b`).
+- `npx tsc --noEmit`: sin errores.
+- `npx vitest run`: 84/84 archivos, 407/407 pruebas en verde.
+- `npm run build`: correcto, 37/37 rutas; `/cuenta/eliminar` pasa de 1.44 kB (stub) a 2.01 kB.
+- Funcional: `/cuenta/eliminar` sin sesión → `307` a `/auth/login`; ambos endpoints sin sesión → `401`. Verificado en vivo contra el servidor de desarrollo.
+- Núcleo (SC-001–SC-004): sin cambios. Sin migraciones nuevas, sin cambios de Supabase, sin Stripe, sin reautenticación, sin anonimización, sin tocar Plano 1 ni patrimonio compartido — exactamente el alcance autorizado.
+
+**Nota documental:** la Fase 2 no introduce nuevos estados del ciclo de vida; únicamente materializa el estado "Cuenta Activa con Extinción Programada" mediante la persistencia exclusiva del campo `extincion_solicitada_at`, conforme a DA-004.
+
+**Cierre Fase 2:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
