@@ -33,7 +33,7 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setMessage(translateAuthError(error.message))
+      setMessage(translateAuthError(error.message, error.code))
     } else {
       router.push('/dashboard')
     }

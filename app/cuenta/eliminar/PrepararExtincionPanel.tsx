@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * AEC-003B Fase 4 (DA-005). Reautenticación y consentimiento informado se
@@ -15,6 +17,12 @@ import { useState } from 'react'
  * el Evento Arquitectónico Atómico. Ambas llamadas reenvían la misma
  * contraseña, consistente con que la reautenticación debe tomarse en el
  * mismo momento, no heredarse de una verificación anterior.
+ *
+ * UX-012 (UX-001): tras una extinción correcta, el mensaje de éxito se
+ * mantiene visible 3 segundos y despues se cierra la sesión localmente
+ * (mismo patrón que SesionesPanel) y se redirige a /auth/login. Es solo
+ * limpieza de la sesión del navegador -- la cuenta ya quedó inaccesible
+ * en el servidor durante el Evento Arquitectónico Atómico.
  */
 type ResultadoPreparar =
   | { estado: 'idle' }
@@ -49,10 +57,23 @@ const MENSAJES_EJECUTAR: Record<string, string> = {
 }
 
 export default function PrepararExtincionPanel() {
+  const router = useRouter()
   const [consentimiento, setConsentimiento] = useState(false)
   const [password, setPassword] = useState('')
   const [preparar, setPreparar] = useState<ResultadoPreparar>({ estado: 'idle' })
   const [ejecutar, setEjecutar] = useState<ResultadoEjecutar>({ estado: 'idle' })
+
+  useEffect(() => {
+    if (ejecutar.estado !== 'extinguida') return
+
+    const timer = setTimeout(async () => {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/auth/login')
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [ejecutar.estado, router])
 
   const verificar = async () => {
     setPreparar({ estado: 'cargando' })

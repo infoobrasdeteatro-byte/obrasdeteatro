@@ -18,7 +18,22 @@ const ERROR_MAP: Array<[string, string]> = [
   ['invalid_credentials', 'Correo o contraseña incorrectos.'],
 ]
 
-export function translateAuthError(message: string): string {
+// UX-012 (UX-002): comprobado antes que ERROR_MAP -- 'user_banned' es un
+// codigo tipado y oficial de GoTrue (no un texto de mensaje interpretado),
+// propagado por el SDK para cualquier intento de autenticacion, incluido
+// signInWithPassword. El mensaje no revela si la cuenta existe, fue
+// eliminada o suspendida.
+const CODE_MAP: Array<[string, string]> = [
+  ['user_banned', 'No ha sido posible iniciar sesión con esta cuenta.'],
+]
+
+export function translateAuthError(message: string, code?: string): string {
+  if (code) {
+    for (const [key, value] of CODE_MAP) {
+      if (code === key) return value
+    }
+  }
+
   const lower = message.toLowerCase()
   for (const [key, value] of ERROR_MAP) {
     if (lower.includes(key.toLowerCase())) return value
