@@ -4,7 +4,7 @@
 **Ámbito:** área de cuenta (`app/cuenta`), seguridad, sesiones, cambio de correo, eliminación de cuenta.
 **Explícitamente fuera de ámbito:** Núcleo de ScenaIA (SC-001 a SC-004), Credit Manager, SEC-001, AEC-001 — sin cambios.
 **Precede a este expediente:** AEC-000 (inventario general), AEC-001 (registro y confirmación, CERRADO), AEC-003 — Inventario del Ciclo de Vida de la Cuenta (análisis, sin archivo propio).
-**Estado:** Fases 1, 2 y 3 CERRADAS (`50e6cc5`, `2dccabe`, `4be5dc2`, en `develop`). Fase 4 implementada y validada localmente — pendiente de autorización de commit y de aplicación de migración.
+**Estado:** Fases 1 a 4 CERRADAS (`50e6cc5`, `2dccabe`, `4be5dc2`, `64f1c7e`, en `develop`). Fase 5 (DA-001, eliminación de cuenta) pendiente — requiere primero el diseño 5a, no iniciado.
 
 ---
 
@@ -134,3 +134,24 @@ Dirección aprobó el plan con una modificación: **Fases 3 y 4 intercambiadas**
 - Funcional: `/cuenta/correo` sin sesión → `307` a `/auth/login`; `/auth/callback/email-change` sin `code` → `307` a `/cuenta/correo?expirado=true`. Ambos verificados en vivo.
 - No se verificó en vivo el ciclo completo de confirmación (requiere la migración aplicada y un cambio de correo real de extremo a extremo).
 - Núcleo (SC-001–SC-004): sin cambios. Ningún archivo de SEC-001/AEC-001 modificado (decisión de diseño del callback dedicado, ver arriba).
+
+**Migración aplicada:** `20260804140000_aec003_sync_email_on_change.sql`, aplicada sobre `pnsirwtiiurczjwrayza` el 2026-08-04, verificada por `pg_get_triggerdef`.
+
+**Commit provisional `64f1c7e`:** comiteado y empujado a `develop` exclusivamente para generar el Preview Deployment necesario para la validación manual — autorizado expresamente con ese único fin, sin constituir aceptación definitiva en ese momento.
+
+**Investigación técnica intermedia (solo lectura, sin cambios de código):** la primera validación manual de Dirección mostró que `auth.users.email` no cambiaba tras confirmar. Investigación con evidencia real (consultas de solo lectura + logs de runtime del Preview) identificó dos causas simultáneas: (1) el proyecto exige confirmación doble (correo actual y correo nuevo) — `email_change_confirm_status=1` tras solo una confirmación lo demuestra directamente; (2) cero peticiones a `/auth/callback/email-change` en los logs del Preview durante toda la ventana de la prueba, consistente con que la URL de Preview (dinámica, por despliegue) probablemente no está en la lista de Redirect URLs permitidos de Supabase, haciendo que el enlace de confirmación no la usara. El trigger y la sincronización no se dispararon porque `auth.users.email` nunca llegó a cambiar en esa primera prueba — no por ningún fallo del código.
+
+**Validación final, con las dos confirmaciones completas (correo actual y correo nuevo):**
+- ✅ Cambio de correo efectivo.
+- ✅ Login con el correo antiguo dejó de funcionar.
+- ✅ Login con el correo nuevo pasó a funcionar.
+- ✅ Identidad, nombre y perfil profesional sin alteración — únicamente cambió el correo.
+- ✅ DA-002, el trigger y la sincronización `auth.users` → `profiles` confirmados correctos con evidencia real de extremo a extremo.
+
+**Conclusión de Dirección, registrada tal cual:** la incidencia observada en la primera validación no fue un fallo de implementación, sino una validación manual incompleta (faltaba la segunda confirmación exigida por la configuración del proyecto). La investigación técnica se considera correctamente ejecutada y sus conclusiones, coherentes con la evidencia disponible en ese momento.
+
+**Mejora de UX registrada para el futuro, fuera de alcance de este cierre:** el mensaje actual ("Puede que necesites confirmar tanto desde tu correo actual como desde el nuevo") pasa fácilmente desapercibido. Dirección propone, como expediente independiente futuro, hacer mucho más explícito el estado de las dos confirmaciones pendientes. No implementado — no autorizado en este cierre.
+
+**Observación técnica no bloqueante, relacionada:** el hallazgo de la investigación intermedia sobre `/auth/callback/email-change` sin peticiones registradas en el Preview sigue sin resolver — es plausible que el flujo en Producción sí use el callback (dominio fijo, más probable que esté en la lista de Redirect URLs permitidos), pero no se ha confirmado. Queda anotado junto a la mejora de UX anterior, por si se quiere abordar en el mismo expediente futuro.
+
+**Cierre Fase 4:** validada funcionalmente por Dirección Técnica, con las dos confirmaciones completas, sobre el Preview Deployment de `develop`. Sin necesidad de nuevo commit — el código ya está en `develop` desde el commit provisional `64f1c7e`, ahora confirmado como definitivo.
