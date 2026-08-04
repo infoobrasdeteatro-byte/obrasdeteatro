@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import PrepararExtincionPanel from './PrepararExtincionPanel'
 
 /**
- * AEC-003B Fase 2: transición reversible únicamente. Sin advertencias de
- * consecuencias (Fase 4), sin reautenticación (Fase 4), sin comprobaciones
- * de DA-005 (Fase 3) -- solo el estado "Cuenta Activa con Extinción
- * Programada" de DA-004.
+ * AEC-003B Fase 2: transición reversible (solicitar/cancelar).
+ * AEC-003B Fase 4: cuando ya existe una solicitud, se añade el panel de
+ * reautenticación y consentimiento informado -- ver PrepararExtincionPanel.
  */
 interface Props {
   extincionSolicitadaAt: string | null
@@ -54,6 +54,7 @@ export default function EliminarCuentaForm({ extincionSolicitadaAt }: Props) {
           {loading ? 'Cancelando...' : 'Cancelar solicitud'}
         </button>
         {message && <p className="auth-message auth-message--error" style={{ marginTop: '12px' }}>{message}</p>}
+        <PrepararExtincionPanel />
       </div>
     )
   }
