@@ -11,6 +11,7 @@ const NAV_SECTIONS = [
       { href: '/perfil',        label: 'Mi perfil',          icon: '◎' },
       { href: '/perfil/centro', label: 'Centro Profesional', icon: '⊙' },
       { href: '/mis-obras',     label: 'Mis obras',          icon: '▣' },
+      { href: '/cuenta',        label: 'Gestión de cuenta',  icon: '⚙' },
     ],
   },
   {

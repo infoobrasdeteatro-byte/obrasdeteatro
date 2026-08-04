@@ -37,6 +37,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/perfil') ||
     pathname.startsWith('/mis-obras') ||
+    pathname.startsWith('/cuenta') ||
     pathname.startsWith('/obras/nueva') ||
     (pathname.startsWith('/obras/') && pathname.endsWith('/editar'))
 
