@@ -2060,7 +2060,9 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           email: string
+          extincion_solicitada_at: string | null
           id: string
+          identidad_extinguida_at: string | null
           idioma: string
           info_veraz: boolean
           is_premium: boolean
@@ -2098,7 +2100,9 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           email: string
+          extincion_solicitada_at?: string | null
           id: string
+          identidad_extinguida_at?: string | null
           idioma?: string
           info_veraz?: boolean
           is_premium?: boolean
@@ -2136,7 +2140,9 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           email?: string
+          extincion_solicitada_at?: string | null
           id?: string
+          identidad_extinguida_at?: string | null
           idioma?: string
           info_veraz?: boolean
           is_premium?: boolean
