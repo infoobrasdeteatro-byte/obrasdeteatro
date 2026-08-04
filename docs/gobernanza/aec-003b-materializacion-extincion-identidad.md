@@ -2,7 +2,7 @@
 
 **Expediente:** AEC-003B (deriva de AEC-003 Fase 5)
 **Ámbito:** implementación técnica de la arquitectura congelada en `docs/gobernanza/aec-003-fase5-especificacion-arquitectonica.md` (PA-001, DA-001 a DA-006).
-**Estado:** Fases 1 y 2 CERRADAS (`a87496b`, en `develop`; Fase 2 pendiente de commit en este mismo ciclo). Fase 3 (verificación de condiciones previas, solo lectura) pendiente de autorización de inicio.
+**Estado:** Fases 1 a 3 CERRADAS (`a87496b`, `a68990d`, en `develop`; Fase 3 pendiente de commit en este mismo ciclo). Fase 4 (reautenticación y consentimiento informado) pendiente de autorización de inicio.
 
 ---
 
@@ -100,4 +100,33 @@ Su anonimización queda pendiente para una fase posterior de este mismo expedien
 
 **Nota documental:** la Fase 2 no introduce nuevos estados del ciclo de vida; únicamente materializa el estado "Cuenta Activa con Extinción Programada" mediante la persistencia exclusiva del campo `extincion_solicitada_at`, conforme a DA-004.
 
-**Cierre Fase 2:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
+**Cierre Fase 2:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales. Commit `a68990d`, en `develop`.
+
+---
+
+## Fase 3 — Verificación de condiciones previas (DA-005), motor de solo lectura
+
+**Naturaleza:** exclusivamente diagnóstica. Ninguna función de este módulo escribe en ninguna tabla, cancela nada en Stripe, ni ejecuta ninguna acción correctiva.
+
+**Archivos nuevos:**
+- `lib/cuenta/verificar-condiciones-previas.ts` — módulo compartido, reutilizable por fases posteriores (en particular la Fase 6). Comprueba, para un `profile_id`:
+  1. **`stripe_suscripcion`** — estado local de `subscriptions.status`; cumple si no hay fila o si está `canceled`.
+  2. **`stripe_cobros_pendientes`** — verificación cruzada de solo lectura contra la API real de Stripe (`subscriptions.list`, no solo el reflejo local), cuando existe `stripe_customer_id`. Fail-closed: si Stripe no responde, se trata como impedimento.
+  3. **`credit_reservations`** — cuenta de filas con `status='active'` para ese perfil. Reportada como condición **candidata** (DA-005), nunca resuelta ni escrita aquí.
+- `app/api/cuenta/eliminar/verificar/route.ts` — `GET`, requiere sesión, delega en el módulo anterior y devuelve el diagnóstico completo.
+
+**Decisión de alcance — sin cambios de UI en esta fase:** no he tocado `EliminarCuentaForm.tsx` ni la página. Entiendo que "motor de verificación" se refiere a la lógica de backend, no a su presentación — la superficie de usuario para mostrar este diagnóstico corresponde, en mi lectura del plan, a la Fase 4 (reautenticación y consentimiento informado), donde ya estaba prevista una revisión de la experiencia de confirmación. Si esperabas que el resultado ya fuera visible en `/cuenta/eliminar` en esta misma fase, lo indico para corregirlo.
+
+**Validación cruzada contra datos reales (solo lectura, sin ninguna escritura):** el perfil `a23b30bc-...` tiene, verificado ahora mismo, una suscripción con `status='active'` y 55 reservas de crédito con `status='active'` — es decir, es un caso real que el motor debe reportar como "no cumple todas las condiciones". La lógica implementada, revisada contra este caso, produce exactamente ese resultado.
+
+**Validación técnica:**
+- Worktree limpio desde `develop` (`a68990d`).
+- `npx tsc --noEmit`: sin errores.
+- `npx vitest run`: 84/84 archivos, 407/407 pruebas en verde.
+- `npm run build`: correcto, 38/38 rutas.
+- Funcional: `/api/cuenta/eliminar/verificar` sin sesión → `401`, verificado en vivo.
+- Núcleo (SC-001–SC-004): sin cambios. Ninguna escritura en `profiles`, `subscriptions`, `credit_reservations`, patrimonio compartido, tablas satélite, ni Stripe — exactamente el alcance autorizado.
+
+**Nota documental:** el motor de verificación implementado en esta fase (`lib/cuenta/verificar-condiciones-previas.ts`) constituye la fuente oficial de evaluación de las condiciones previas definidas en DA-005 y deberá reutilizarse por las fases posteriores, evitando duplicidad de lógica.
+
+**Cierre Fase 3:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
