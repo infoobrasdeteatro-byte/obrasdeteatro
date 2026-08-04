@@ -2083,6 +2083,7 @@ export type Database = {
           updated_at: string
           verificado: boolean
           website_url: string | null
+          welcome_email_sent_at: string | null
         }
         Insert: {
           acepta_privacidad?: boolean
@@ -2120,6 +2121,7 @@ export type Database = {
           updated_at?: string
           verificado?: boolean
           website_url?: string | null
+          welcome_email_sent_at?: string | null
         }
         Update: {
           acepta_privacidad?: boolean
@@ -2157,6 +2159,7 @@ export type Database = {
           updated_at?: string
           verificado?: boolean
           website_url?: string | null
+          welcome_email_sent_at?: string | null
         }
         Relationships: []
       }

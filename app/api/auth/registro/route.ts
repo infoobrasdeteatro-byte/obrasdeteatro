@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
  * no llama a supabase.auth.signUp() directamente -- pasa siempre por aquí,
  * donde se valida el honeypot y el token de Turnstile antes de crear la cuenta.
+ *
+ * AEC-001: además valida la política mínima de contraseñas y rechaza
+ * correos ya registrados, sin crear cuenta ni enviar ningún email en ese caso.
  */
+const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+
 async function verifyTurnstile(token: unknown, remoteIp: string | null): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY
   if (!secret || typeof token !== 'string' || token.length === 0) return false
@@ -26,6 +32,20 @@ async function verifyTurnstile(token: unknown, remoteIp: string | null): Promise
   }
 }
 
+async function emailAlreadyRegistered(email: string): Promise<boolean> {
+  const supabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .ilike('email', email)
+    .maybeSingle()
+  return !!data
+}
+
 export async function POST(req: NextRequest) {
   const { email, password, nombre, website, turnstileToken } = await req.json()
 
@@ -38,19 +58,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: 'invalid_input' }, { status: 400 })
   }
 
+  const normalizedEmail = email.trim().toLowerCase()
+
+  if (!PASSWORD_POLICY.test(password)) {
+    return NextResponse.json({ ok: false, code: 'weak_password' }, { status: 400 })
+  }
+
   const remoteIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
 
   // Fail-closed: sin verificación válida de Turnstile, no se crea la cuenta.
+  // Se comprueba antes que la existencia del email para no convertir este
+  // endpoint en un oráculo de enumeración de correos sin fricción.
   const turnstileOk = await verifyTurnstile(turnstileToken, remoteIp)
   if (!turnstileOk) {
     return NextResponse.json({ ok: false, code: 'turnstile_failed' }, { status: 400 })
+  }
+
+  if (await emailAlreadyRegistered(normalizedEmail)) {
+    return NextResponse.json({ ok: false, code: 'email_exists' }, { status: 400 })
   }
 
   const origin = new URL(req.url).origin
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signUp({
-    email,
+    email: normalizedEmail,
     password,
     options: {
       data: { nombre },

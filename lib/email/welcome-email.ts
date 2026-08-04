@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-
+/**
+ * AEC-001: único servicio autorizado para enviar el correo de bienvenida.
+ * Se invoca exclusivamente desde app/auth/callback/route.ts, tras una
+ * confirmación de email real -- nunca desde un endpoint público independiente.
+ */
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -9,12 +12,14 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;')
 }
 
-export async function POST(req: NextRequest) {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) return NextResponse.json({ ok: false })
+export interface WelcomeEmailInput {
+  email: string
+  nombre?: string | null
+}
 
-  const { email, nombre } = await req.json()
-  if (!email) return NextResponse.json({ ok: false })
+export async function sendWelcomeEmail({ email, nombre }: WelcomeEmailInput): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return
 
   const safeNombre = escapeHtml(nombre || email.split('@')[0])
 
@@ -142,8 +147,6 @@ export async function POST(req: NextRequest) {
       }),
     })
   } catch {
-    // Fail silently - welcome email is non-critical
+    // Fail silently -- el correo de bienvenida no es crítico para la sesión del usuario.
   }
-
-  return NextResponse.json({ ok: true })
 }

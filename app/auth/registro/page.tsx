@@ -17,6 +17,18 @@ declare global {
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ''
 
+// AEC-001: política mínima de contraseñas -- 8+ caracteres, una mayúscula,
+// una minúscula y un número. Validación de UX; la autoridad es el servidor.
+const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+const PASSWORD_HINT = 'Mínimo 8 caracteres, con una mayúscula, una minúscula y un número.'
+
+const ERROR_MESSAGES: Record<string, string> = {
+  email_exists: 'Ya existe una cuenta con este correo electrónico.',
+  weak_password: PASSWORD_HINT,
+  turnstile_failed: 'No se pudo verificar que no eres un robot. Inténtalo de nuevo.',
+  invalid_input: 'Revisa los datos del formulario e inténtalo de nuevo.',
+}
+
 export default function RegistroPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -64,6 +76,13 @@ export default function RegistroPage() {
       return
     }
 
+    if (!PASSWORD_POLICY.test(password)) {
+      setMessage(PASSWORD_HINT)
+      setIsSuccess(false)
+      setLoading(false)
+      return
+    }
+
     if (!turnstileToken) {
       setMessage('Confirma que no eres un robot antes de continuar.')
       setIsSuccess(false)
@@ -81,18 +100,13 @@ export default function RegistroPage() {
 
       if (!res.ok || !data.ok) {
         setMessage(
-          data.code === 'turnstile_failed'
-            ? 'No se pudo verificar que no eres un robot. Inténtalo de nuevo.'
-            : translateAuthError(data.message ?? '')
+          ERROR_MESSAGES[data.code] ?? translateAuthError(data.message ?? '')
         )
         setIsSuccess(false)
         resetTurnstile()
       } else {
-        fetch('/api/auth/welcome-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, nombre }),
-        }).catch(() => {})
+        // AEC-001: el correo de bienvenida ya no se dispara aquí -- se envía
+        // desde app/auth/callback/route.ts, tras la confirmación real del email.
         setMessage('¡Revisa tu email para confirmar tu cuenta!')
         setIsSuccess(true)
       }
@@ -152,8 +166,13 @@ export default function RegistroPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
+            minLength={8}
+            aria-describedby="password-hint"
             className="ds-input"
           />
+          <p id="password-hint" className="auth-tagline" style={{ margin: '-6px 0 0', textAlign: 'left', fontSize: '11px' }}>
+            {PASSWORD_HINT}
+          </p>
           <div ref={turnstileContainer} />
           <button
             type="submit"
