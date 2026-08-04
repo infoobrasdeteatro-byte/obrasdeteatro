@@ -2,7 +2,7 @@
 
 **Expediente:** AEC-003B (deriva de AEC-003 Fase 5)
 **Ámbito:** implementación técnica de la arquitectura congelada en `docs/gobernanza/aec-003-fase5-especificacion-arquitectonica.md` (PA-001, DA-001 a DA-006).
-**Estado:** Fases 1 a 4 CERRADAS (`a87496b`, `a68990d`, `e1d76de`, en `develop`; Fase 4 pendiente de commit en este mismo ciclo). Fase 5 (cancelación real de Stripe) pendiente de autorización de inicio.
+**Estado:** Fases 1 a 5 CERRADAS (`a87496b`, `a68990d`, `e1d76de`, `ad57843`, en `develop`; Fase 5 pendiente de commit en este mismo ciclo). Fase 6 (Evento Arquitectónico Atómico) pendiente de autorización de inicio — incluirá la primera validación funcional de extremo a extremo, con Stripe incluido, en una única ejecución controlada.
 
 ---
 
@@ -156,4 +156,42 @@ Su anonimización queda pendiente para una fase posterior de este mismo expedien
 
 **Nota documental:** la Fase 4 constituye la última barrera previa al Evento Arquitectónico Atómico. Su superación no implica la ejecución del evento, sino únicamente que la identidad reúne todas las condiciones necesarias para poder iniciarlo en una fase posterior.
 
-**Cierre Fase 4:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
+**Cierre Fase 4:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales. Commit `ad57843`, en `develop`.
+
+---
+
+## Fase 5 — Cancelación real de Stripe (DA-005, Principio de Integridad Externa)
+
+**Archivo nuevo:** `lib/cuenta/cancelar-suscripcion-stripe.ts` — función de librería, **no expuesta todavía por ningún endpoint ni conectada a la interfaz de usuario**, para no completar la cadena hacia el Evento Arquitectónico Atómico antes de que esa fase esté autorizada.
+
+### Respuesta explícita a los cinco puntos exigidos en la documentación
+
+1. **Qué operación se ejecuta sobre Stripe:** `stripe.subscriptions.retrieve(id)` (lectura, para comprobar el estado real antes de actuar) y, solo si es necesario, `stripe.subscriptions.cancel(id)` (cancelación inmediata, no "cancelar al final del periodo" — coherente con que no puede quedar ninguna obligación abierta antes del evento irreversible).
+2. **Qué estados se consideran correctos:** únicamente `status === 'canceled'` en Stripe se considera el estado final válido. Cualquier otro estado (`active`, `trialing`, `past_due`, `unpaid`, etc.) se trata como pendiente de resolver.
+3. **Comportamiento ante errores:** si falla la consulta o la cancelación en Stripe, la función devuelve `{ ok: false, accion: 'error' }`, registra el error en el log del servidor, y **no realiza ninguna escritura local** — el estado local permanece exactamente como estaba, seguro para reintentar más tarde.
+4. **Comportamiento cuando la suscripción ya está cancelada:** se detecta mediante la consulta previa (`retrieve`) — si Stripe ya reporta `canceled`, la función **no vuelve a llamar a `cancel`**, y se limita a sincronizar el estado local. Es el mecanismo central de idempotencia.
+5. **Comportamiento ante fallos de comunicación posteriores a una respuesta correcta de Stripe:** si la cancelación en Stripe se completó pero la sincronización local o la respuesta nunca llegaron a procesarse (caída de red, proceso interrumpido), un reintento posterior vuelve a consultar el estado real en Stripe, lo encuentra ya `canceled`, y sigue exactamente el camino del punto 4 — completa la sincronización pendiente sin intentar cancelar una segunda vez. No existe ningún escenario, dentro de esta función, en el que se llame a `cancel` sobre una suscripción que Stripe ya reporta como cancelada.
+
+**Trazabilidad:** cada rama de ejecución deja un registro estructurado en el log del servidor (`[AEC-003B Fase 5] ...`), identificable por `profileId` y `stripe_subscription_id`. No se ha creado ninguna tabla nueva de auditoría — se consideró desproporcionado para el alcance de esta fase; el log de Vercel ya es la fuente de trazabilidad usada en el resto del proyecto para este tipo de operación.
+
+**Sincronización local, tras una cancelación real o ya confirmada:** `subscriptions.status = 'canceled'` y `profiles.plan = 'gratuito', is_premium = false` — exactamente los mismos campos que ya actualiza el webhook existente (`handleSubscriptionDeleted`, `app/api/webhooks/stripe/route.ts`) ante `customer.subscription.deleted`. Es una coincidencia deliberada, no una duplicidad problemática: cuando esta función cancele una suscripción real, Stripe disparará ese mismo webhook poco después, y ambos caminos convergerán en el mismo estado final — soportado precisamente porque los dos escriben el mismo estado idempotente, no porque exista coordinación explícita entre ellos.
+
+### Aviso importante — validación realizada, y lo que falta
+
+**No he invocado esta función contra la cuenta real de Stripe del proyecto**, ni siquiera en modo de prueba, incluyendo la suscripción real ya detectada en fases anteriores (`cus_UkbPQMrcxlOxtZ`, perfil `a23b30bc-...`). Cancelar una suscripción real, aunque sea con fines de validación, es una acción externa e irreversible que entiendo requiere su propia autorización explícita, independiente de la autorización de esta fase de implementación.
+
+**Lo que sí he validado:** una suite de pruebas (`lib/cuenta/__tests__/cancelar-suscripcion-stripe.test.ts`, 6 casos) con Stripe y Supabase completamente simulados, cubriendo exactamente los cinco puntos exigidos arriba — incluido el escenario explícito de "fallo de comunicación posterior a una respuesta correcta de Stripe" (probado como una segunda invocación tras una cancelación ya simulada, confirmando que `cancel` no se llama una segunda vez).
+
+**Si quieres una validación funcional real**, necesitaría que me indiques cómo proceder: una suscripción de prueba desechable en el entorno de test de Stripe (si el proyecto tiene uno configurado), o autorización expresa para operar sobre la suscripción real ya existente.
+
+### Validación técnica
+
+- Worktree limpio desde `develop` (`ad57843`).
+- `npx tsc --noEmit`: sin errores.
+- `npx vitest run`: 85/85 archivos, 413/413 pruebas en verde (407 previas + 6 nuevas de esta fase).
+- `npm run build`: correcto — sin rutas nuevas, es una función de librería sin endpoint todavía.
+- Núcleo (SC-001–SC-004): sin cambios. Sin anonimización, sin Plano 1, sin patrimonio compartido, sin tablas satélite, sin Evento Arquitectónico Atómico — exactamente el alcance autorizado.
+
+**Nota documental:** la Dirección Técnica no autoriza todavía una ejecución sobre una suscripción real de Stripe. La validación funcional de extremo a extremo se realizará únicamente cuando la Fase 6 esté implementada y auditada, permitiendo verificar el flujo completo de extinción en una única ejecución controlada. La validación mediante pruebas automatizadas se considera suficiente para el cierre de esta fase.
+
+**Cierre Fase 5:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
