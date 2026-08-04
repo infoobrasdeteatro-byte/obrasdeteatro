@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
+import SesionesPanel from './SesionesPanel'
 
-// AEC-003 Fase 1: andamiaje. La gestión de sesiones llega en la Fase 3.
+// AEC-003 Fase 3 (DA-004): gestión de sesiones.
 export default async function CuentaSesionesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,14 +23,7 @@ export default async function CuentaSesionesPage() {
           <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(22px, 3vw, 28px)', color: 'var(--black)', letterSpacing: '-0.5px', margin: '10px 0 20px' }}>
             Sesiones
           </h1>
-          <div style={{ background: 'var(--subtle)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px' }}>
-            <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: '4px' }}>
-              AEC-003 · Fase 3
-            </p>
-            <p style={{ fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)' }}>
-              El cierre de todas las sesiones estará disponible próximamente. Para cerrar la sesión actual, usa &ldquo;Cerrar sesión&rdquo; en el menú.
-            </p>
-          </div>
+          <SesionesPanel />
         </main>
       </div>
     </div>

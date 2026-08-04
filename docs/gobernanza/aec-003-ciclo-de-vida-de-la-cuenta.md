@@ -4,7 +4,7 @@
 **Ámbito:** área de cuenta (`app/cuenta`), seguridad, sesiones, cambio de correo, eliminación de cuenta.
 **Explícitamente fuera de ámbito:** Núcleo de ScenaIA (SC-001 a SC-004), Credit Manager, SEC-001, AEC-001 — sin cambios.
 **Precede a este expediente:** AEC-000 (inventario general), AEC-001 (registro y confirmación, CERRADO), AEC-003 — Inventario del Ciclo de Vida de la Cuenta (análisis, sin archivo propio).
-**Estado:** Fase 1 CERRADA (commit `50e6cc5`, en `develop`). Fase 2 implementada y validada localmente — pendiente de autorización de commit.
+**Estado:** Fase 1 y Fase 2 CERRADAS (`50e6cc5`, `2dccabe`, en `develop`). Fase 3 implementada y validada localmente — pendiente de autorización de commit.
 
 ---
 
@@ -81,3 +81,27 @@ Dirección aprobó el plan con una modificación: **Fases 3 y 4 intercambiadas**
 - Funcional: `/cuenta/seguridad` sin sesión → `307` a `/auth/login` (protección intacta); `/auth/registro` sigue sirviendo la misma pista de contraseña tras el refactor del import compartido, verificado en vivo. No se pudo verificar por curl la pista en `/auth/update-password` porque esa página solo renderiza el formulario tras confirmar sesión válida en cliente (JS) — el código es idéntico en estructura al ya verificado en `SeguridadForm`, no señala ningún riesgo adicional.
 - Núcleo (SC-001–SC-004): sin cambios.
 - Sin migraciones, sin cambios de Supabase, sin variables de entorno nuevas.
+
+**Cierre Fase 2:** commit `2dccabe` en `scenaia-bloque-3`, fast-forward a `develop` desde `50e6cc5`, push a `origin/develop` confirmado. Aprobada por Dirección; observación sobre reautenticación con contraseña actual registrada expresamente como mejora futura fuera de alcance, no como incidencia.
+
+---
+
+## Fase 3 — Gestión de sesiones (DA-004)
+
+**Decisión de diseño:** se prioriza la capacidad nativa de Supabase Auth `signOut({ scope: 'others' })` — cierra cualquier otra sesión activa del usuario sin afectar a la sesión actual — en vez de `scope: 'global'`. Se eligió `others` porque es la interpretación más útil de "cierre de todas las sesiones" desde la perspectiva de seguridad del usuario (quien lo usa normalmente sospecha de otra sesión, no quiere cerrar la suya propia) y evita duplicar la función que ya cubre "Cerrar sesión" (`scope: local`, ya existente en el menú).
+
+**Estudio de "sesiones activas" (listado):** revisado tal como pedía el plan, priorizando lo nativo antes de construir algo propio. No se encontró en la API pública de `supabase-js` un método sencillo para listar las sesiones activas de un usuario sin construir infraestructura propia (una ruta server-side adicional contra la Admin API, con manejo de `service_role`, y un mapeo de metadatos de sesión). No implementado en esta fase — no es una omisión, es la aplicación literal del criterio "se prioriza lo nativo" del plan aprobado; queda como posible ampliación futura si Dirección quiere autorizar esa infraestructura adicional.
+
+**Archivos nuevos:**
+- `app/cuenta/sesiones/SesionesPanel.tsx` — botón "Cerrar todas las demás sesiones" (`signOut({scope:'others'})`), con mensaje de resultado vía `translateAuthError`.
+
+**Archivos modificados:**
+- `app/cuenta/sesiones/page.tsx` — renderiza `SesionesPanel` en vez del aviso "próximamente".
+
+**Validación:**
+- Worktree limpio desde `develop` (`2dccabe`).
+- `npx tsc --noEmit`: sin errores (confirma que `scope: 'others'` es una opción válida en la versión instalada de `@supabase/supabase-js`).
+- `npx vitest run`: 84/84 archivos, 407/407 pruebas en verde.
+- `npm run build`: correcto, 34/34 rutas; `/cuenta/sesiones` pasa de 1.45 kB (stub) a 2.63 kB, confirmando que el panel real quedó incluido.
+- Funcional: `/cuenta/sesiones` sin sesión → `307` a `/auth/login`, verificado en vivo.
+- Núcleo (SC-001–SC-004): sin cambios. Sin migraciones, sin cambios de Supabase, sin variables de entorno nuevas.
