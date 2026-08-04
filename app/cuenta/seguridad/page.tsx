@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
+import SeguridadForm from './SeguridadForm'
 
-// AEC-003 Fase 1: andamiaje. El cambio de contraseña autenticado llega en la Fase 2.
+// AEC-003 Fase 2 (DA-003): cambio de contraseña desde la cuenta ya autenticada.
 export default async function CuentaSeguridadPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,15 +23,7 @@ export default async function CuentaSeguridadPage() {
           <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(22px, 3vw, 28px)', color: 'var(--black)', letterSpacing: '-0.5px', margin: '10px 0 20px' }}>
             Seguridad
           </h1>
-          <div style={{ background: 'var(--subtle)', border: '1px dashed var(--border)', borderRadius: 'var(--radius)', padding: '16px 20px' }}>
-            <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: '4px' }}>
-              AEC-003 · Fase 2
-            </p>
-            <p style={{ fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)' }}>
-              El cambio de contraseña desde tu cuenta ya iniciada estará disponible próximamente. Mientras tanto, puedes cambiarla desde{' '}
-              <Link href="/auth/recuperar" style={{ color: 'var(--black)', fontWeight: 600 }}>recuperar contraseña</Link>.
-            </p>
-          </div>
+          <SeguridadForm />
         </main>
       </div>
     </div>

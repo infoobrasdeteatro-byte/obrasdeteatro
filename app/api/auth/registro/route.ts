@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
+import { PASSWORD_POLICY } from '@/lib/auth/password-policy'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
@@ -9,8 +10,9 @@ import { createClient } from '@/lib/supabase/server'
  *
  * AEC-001: además valida la política mínima de contraseñas y rechaza
  * correos ya registrados, sin crear cuenta ni enviar ningún email en ese caso.
+ * AEC-003 DA-003: la política de contraseñas pasa a vivir en
+ * lib/auth/password-policy.ts como fuente única -- sin cambio de comportamiento.
  */
-const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
 
 async function verifyTurnstile(token: unknown, remoteIp: string | null): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY

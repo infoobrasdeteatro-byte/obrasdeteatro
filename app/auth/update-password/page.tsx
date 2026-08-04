@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { translateAuthError } from '@/lib/auth-errors'
+import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('')
@@ -37,6 +38,10 @@ export default function UpdatePasswordPage() {
     e.preventDefault()
     if (password !== confirm) {
       setError('Las contraseñas no coinciden.')
+      return
+    }
+    if (!PASSWORD_POLICY.test(password)) {
+      setError(PASSWORD_HINT)
       return
     }
     setLoading(true)
@@ -130,16 +135,20 @@ export default function UpdatePasswordPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            minLength={6}
+            minLength={8}
+            aria-describedby="update-password-hint"
             className="ds-input"
           />
+          <p id="update-password-hint" className="auth-tagline" style={{ margin: '-6px 0 0', textAlign: 'left', fontSize: '11px' }}>
+            {PASSWORD_HINT}
+          </p>
           <input
             type="password"
             placeholder="Confirmar contraseña"
             value={confirm}
             onChange={e => setConfirm(e.target.value)}
             required
-            minLength={6}
+            minLength={8}
             className="ds-input"
           />
           <button

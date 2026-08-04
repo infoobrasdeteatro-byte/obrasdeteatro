@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Script from 'next/script'
 import Link from 'next/link'
 import { translateAuthError } from '@/lib/auth-errors'
+import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
 
 declare global {
   interface Window {
@@ -16,11 +17,6 @@ declare global {
 }
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ''
-
-// AEC-001: política mínima de contraseñas -- 8+ caracteres, una mayúscula,
-// una minúscula y un número. Validación de UX; la autoridad es el servidor.
-const PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
-const PASSWORD_HINT = 'Mínimo 8 caracteres, con una mayúscula, una minúscula y un número.'
 
 const ERROR_MESSAGES: Record<string, string> = {
   email_exists: 'Ya existe una cuenta con este correo electrónico.',
