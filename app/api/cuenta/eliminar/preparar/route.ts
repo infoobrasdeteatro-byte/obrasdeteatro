@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createBrowserlikeClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { verificarCondicionesPrevias } from '@/lib/cuenta/verificar-condiciones-previas'
+import { verificarReautenticacion } from '@/lib/cuenta/verificar-reautenticacion'
 
 /**
  * AEC-003B Fase 4 (DA-005): verifica que un usuario está en condiciones de
@@ -11,7 +11,10 @@ import { verificarCondicionesPrevias } from '@/lib/cuenta/verificar-condiciones-
  *
  * No ejecuta ninguna acción irreversible: ni cancela Stripe, ni anonimiza,
  * ni invalida el Plano 1, ni dispara el Evento Arquitectónico Atómico.
- * Esas piezas llegan en fases posteriores.
+ *
+ * AEC-003B Fase 6: la comprobación de reautenticación se extrajo a
+ * lib/cuenta/verificar-reautenticacion.ts para que el orquestador de la
+ * Fase 6 la reutilice sin duplicarla -- mismo comportamiento, sin cambios.
  */
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -44,21 +47,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Reautenticación inmediata -- comprobación independiente del consentimiento.
-  if (typeof password !== 'string' || password.length === 0) {
-    return NextResponse.json({ ok: false, code: 'reautenticacion_requerida' }, { status: 400 })
-  }
-
-  const reautenticacionClient = createBrowserlikeClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
-  const { error: authError } = await reautenticacionClient.auth.signInWithPassword({
-    email: user.email,
-    password,
-  })
-
-  if (authError) {
+  const reautenticado = await verificarReautenticacion(user.email, password)
+  if (!reautenticado) {
     return NextResponse.json({ ok: false, code: 'contrasena_incorrecta' }, { status: 400 })
   }
 
