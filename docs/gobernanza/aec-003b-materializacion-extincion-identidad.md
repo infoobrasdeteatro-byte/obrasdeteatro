@@ -2,7 +2,7 @@
 
 **Expediente:** AEC-003B (deriva de AEC-003 Fase 5)
 **Ámbito:** implementación técnica de la arquitectura congelada en `docs/gobernanza/aec-003-fase5-especificacion-arquitectonica.md` (PA-001, DA-001 a DA-006).
-**Estado:** Fases 1 a 3 CERRADAS (`a87496b`, `a68990d`, en `develop`; Fase 3 pendiente de commit en este mismo ciclo). Fase 4 (reautenticación y consentimiento informado) pendiente de autorización de inicio.
+**Estado:** Fases 1 a 4 CERRADAS (`a87496b`, `a68990d`, `e1d76de`, en `develop`; Fase 4 pendiente de commit en este mismo ciclo). Fase 5 (cancelación real de Stripe) pendiente de autorización de inicio.
 
 ---
 
@@ -129,4 +129,31 @@ Su anonimización queda pendiente para una fase posterior de este mismo expedien
 
 **Nota documental:** el motor de verificación implementado en esta fase (`lib/cuenta/verificar-condiciones-previas.ts`) constituye la fuente oficial de evaluación de las condiciones previas definidas en DA-005 y deberá reutilizarse por las fases posteriores, evitando duplicidad de lógica.
 
-**Cierre Fase 3:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
+**Cierre Fase 3:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales. Commit `e1d76de`, en `develop`.
+
+---
+
+## Fase 4 — Reautenticación y consentimiento informado (DA-005)
+
+**Principio de separación, aplicado literalmente:** reautenticación y consentimiento se validan como dos comprobaciones independientes dentro del mismo endpoint — cada una con su propio código de error (`consentimiento_no_otorgado` vs. `reautenticacion_requerida`/`contrasena_incorrecta`), y se presentan en la interfaz como dos bloques visualmente separados con encabezado propio ("Consentimiento informado" / "Verificación de identidad"), no como un único paso fusionado.
+
+**Archivos nuevos:**
+- `app/api/cuenta/eliminar/preparar/route.ts` — `POST`. Orden de comprobación: sesión → existe solicitud activa (`extincion_solicitada_at`) → condiciones técnicas de DA-005 (reutilizando `verificarCondicionesPrevias`, sin duplicar lógica) → consentimiento → reautenticación real. La reautenticación se verifica con una llamada real a `signInWithPassword` contra el email de la sesión actual — no una comparación simulada.
+- `app/cuenta/eliminar/PrepararExtincionPanel.tsx` — interfaz con los dos bloques independientes y el resultado (listo / bloqueado por condiciones, con el detalle exacto de cuáles / error).
+
+**Archivos modificados:**
+- `app/cuenta/eliminar/EliminarCuentaForm.tsx` — integra el panel anterior cuando ya existe una solicitud activa.
+
+**Qué ocurre si todo se cumple — explícitamente, ninguna acción irreversible:** el endpoint responde `{ ok: true, listo: true }` y no escribe ni ejecuta nada más. No cancela Stripe, no anonimiza, no toca `auth.users`, no dispara el Evento Arquitectónico Atómico — tal como exigía el alcance autorizado. La interfaz lo comunica explícitamente: "la eliminación definitiva se activará en una fase posterior de este proyecto".
+
+**Validación técnica:**
+- Worktree limpio desde `develop` (`e1d76de`).
+- `npx tsc --noEmit`: sin errores.
+- `npx vitest run`: 84/84 archivos, 407/407 pruebas en verde.
+- `npm run build`: correcto, 39/39 rutas; `/cuenta/eliminar` pasa de 2.01 kB a 3.17 kB.
+- Funcional: `/api/cuenta/eliminar/preparar` sin sesión → `401`, verificado en vivo.
+- Núcleo (SC-001–SC-004): sin cambios. Sin Stripe, sin anonimización, sin Plano 1, sin patrimonio compartido, sin Evento Arquitectónico Atómico — exactamente el alcance autorizado.
+
+**Nota documental:** la Fase 4 constituye la última barrera previa al Evento Arquitectónico Atómico. Su superación no implica la ejecución del evento, sino únicamente que la identidad reúne todas las condiciones necesarias para poder iniciarlo en una fase posterior.
+
+**Cierre Fase 4:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
