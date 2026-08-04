@@ -2,7 +2,7 @@
 
 **Expediente:** AEC-003B (deriva de AEC-003 Fase 5)
 **Ámbito:** implementación técnica de la arquitectura congelada en `docs/gobernanza/aec-003-fase5-especificacion-arquitectonica.md` (PA-001, DA-001 a DA-006).
-**Estado:** Fases 1 a 5 CERRADAS (`a87496b`, `a68990d`, `e1d76de`, `ad57843`, en `develop`; Fase 5 pendiente de commit en este mismo ciclo). Fase 6 (Evento Arquitectónico Atómico) pendiente de autorización de inicio — incluirá la primera validación funcional de extremo a extremo, con Stripe incluido, en una única ejecución controlada.
+**Estado:** Fases 1 a 5 CERRADAS (`a87496b`, `a68990d`, `e1d76de`, `ad57843`, `97c77b6`, en `develop`). Fase 6 implementada y validada mediante pruebas simuladas — pendiente de Auditoría de Dirección Técnica. La validación funcional real de extremo a extremo queda, tal como se acordó, para después de esa auditoría.
 
 ---
 
@@ -194,4 +194,83 @@ Su anonimización queda pendiente para una fase posterior de este mismo expedien
 
 **Nota documental:** la Dirección Técnica no autoriza todavía una ejecución sobre una suscripción real de Stripe. La validación funcional de extremo a extremo se realizará únicamente cuando la Fase 6 esté implementada y auditada, permitiendo verificar el flujo completo de extinción en una única ejecución controlada. La validación mediante pruebas automatizadas se considera suficiente para el cierre de esta fase.
 
-**Cierre Fase 5:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales.
+**Cierre Fase 5:** aprobada por Auditoría de Dirección Técnica sin condiciones de implementación adicionales. Commit `97c77b6`, en `develop`.
+
+---
+
+## Fase 6 — Evento Arquitectónico Atómico (DA-006)
+
+**Naturaleza:** orquestador puro. Ninguna suboperación reimplementa lógica ya propiedad de una fase anterior — cada una delega en la función exacta que ya la implementó (Fase 3, Fase 4, Fase 5, Fase 1). El único código genuinamente nuevo de esta fase es la coordinación y la extinción del Plano 1, que no tenía dueño previo.
+
+**Archivos nuevos:**
+- `app/api/cuenta/eliminar/ejecutar/route.ts` — el orquestador.
+- `lib/cuenta/verificar-reautenticacion.ts` — la comprobación de reautenticación de la Fase 4, extraída a módulo compartido para que esta fase la reutilice sin duplicarla.
+- `app/api/cuenta/eliminar/ejecutar/__tests__/route.test.ts` — 9 pruebas con las cuatro dependencias simuladas.
+
+**Archivo modificado:**
+- `app/api/cuenta/eliminar/preparar/route.ts` — refactor puro: pasa a usar `verificarReautenticacion()` en vez de la misma lógica inline. **Comportamiento idéntico**, verificado porque los tests de la Fase 4 (incluidos en la suite general) siguen en verde sin modificarlos.
+
+### Orden exacto de invocación
+
+1. Sesión (`getUser`) y perfil (`extincion_solicitada_at`, `identidad_extinguida_at`).
+2. **Atajo de idempotencia:** si `identidad_extinguida_at` ya tiene valor → responde `ya_extinguida` sin invocar ninguna otra suboperación.
+3. Si no hay `extincion_solicitada_at` → rechaza.
+4. Consentimiento informado (comprobación propia, independiente).
+5. Reautenticación (`verificarReautenticacion`, Fase 4 reutilizada).
+6. Cancelación real de Stripe (`cancelarSuscripcionStripe`, Fase 5 reutilizada) — resolución activa del Principio de Integridad Externa, no solo su comprobación.
+7. Verificación final de condiciones previas (`verificarCondicionesPrevias`, Fase 3 reutilizada) — repetida tras resolver Stripe, cubre lo que no se autorresuelve (`credit_reservations`).
+8. **Punto de no retorno declarado** — a partir de aquí, todo con el cliente de servicio, no con la sesión del usuario.
+9. Extinción del Plano 2 (`extinguish_personal_identity`, función SQL de la Fase 1, reutilizada sin cambios).
+10. Extinción del Plano 1 (`auth.admin.updateUserById` con `ban_duration`).
+11. Confirmación del Ancla y transición a Identidad Extinguida (`profiles.identidad_extinguida_at`, con guarda `IS NULL`).
+
+**Por qué Stripe se resuelve antes del punto de no retorno, y no como una suboperación de DA-006:** el Plan de Implementación ya aprobado decía explícitamente que la Fase 5 cancela la suscripción "como parte del flujo de confirmación, **antes** de permitir avanzar hacia el evento atómico" — Stripe es una condición previa a satisfacer (DA-005), no uno de los tres planos de DA-006. Por eso se resuelve en el paso 6, todavía dentro de la fase de verificación, no entre las suboperaciones C/D/E.
+
+### Punto exacto de inicio y de finalización del Evento Arquitectónico Atómico
+
+- **Inicio:** inmediatamente después de que las condiciones previas (ya con Stripe resuelto) se confirman satisfechas por segunda vez — el log `INICIO del Evento Arquitectónico Atómico` marca ese instante exacto.
+- **Fin:** cuando `profiles.identidad_extinguida_at` queda escrito con éxito — el log `FIN del Evento Arquitectónico Atómico -- Identidad Extinguida` marca ese instante. Todo lo anterior a "Inicio" es verificación (reversible, no destructivo); todo lo posterior a "Fin" es el estado terminal.
+
+### Comportamiento ante fallos, etapa por etapa
+
+| Fallo en | Qué queda escrito | Qué no |
+|---|---|---|
+| Consentimiento / reautenticación | Nada | Stripe, Plano 2, Plano 1 |
+| Cancelación de Stripe | Nada (la propia función es idempotente y no escribe nada si falla) | Plano 2, Plano 1 |
+| Condiciones previas (p. ej. `credit_reservations`) | Nada, aunque Stripe ya se haya resuelto en este mismo intento | Plano 2, Plano 1 |
+| Extinción del Plano 2 | **Stripe ya cancelado** (real, externo, no revertido por este fallo) | Plano 1 |
+| Extinción del Plano 1 | Stripe cancelado + Plano 2 extinguido | Confirmación final |
+| Confirmación final | Stripe cancelado + Plano 2 + Plano 1 extinguidos | Solo la marca de tiempo final |
+
+### Garantías de atomicidad e idempotencia adoptadas
+
+**No existe una transacción única real entre Stripe, Postgres y el servicio de autenticación de Supabase** — son tres sistemas distintos, y ninguna API los une en una sola operación ACID. La garantía que sí se ofrece es más honesta y, en la práctica, equivalente: **cada suboperación individual es idempotente**, de modo que reintentar el orquestador completo desde el principio, sin importar en qué paso se interrumpió el intento anterior, converge siempre al mismo estado final sin repetir ningún efecto:
+
+- `cancelarSuscripcionStripe` ya era idempotente desde la Fase 5 (comprueba el estado real en Stripe antes de cancelar).
+- `extinguish_personal_identity` es idempotente por construcción: fija valores fijos, no incrementales: ejecutarla dos veces produce el mismo resultado.
+- `updateUserById` con el mismo `ban_duration` es idempotente en efecto.
+- La confirmación final usa `WHERE identidad_extinguida_at IS NULL`, evitando incluso sobrescribir la marca de tiempo en un reintento accidental.
+- El propio orquestador corta en seco ante una `identidad_extinguida_at` ya presente, antes de tocar nada.
+
+**Consistencia observacional:** ningún estado intermedio se comunica al exterior como si fuera definitivo. Un fallo a mitad de camino siempre responde con un error explícito (`error_stripe`, `error_plano2`, `error_plano1`, `error_confirmacion_final`) — nunca con `ok: true` parcial. El usuario nunca ve "Identidad Extinguida" hasta que lo es de verdad.
+
+**Trazabilidad:** cada suboperación deja su propio registro estructurado (`[AEC-003B Fase 6] ...`) en el log del servidor, incluyendo explícitamente, en los mensajes de error, qué fases anteriores ya se completaron y qué implica reintentar — pensado para que una lectura del log baste para saber en qué estado exacto quedó una ejecución interrumpida.
+
+### Corrección hecha durante esta fase, con evidencia — no se escribió código especulativo
+
+Mi diseño inicial (no escrito) contemplaba forzar el cierre de todas las sesiones activas mediante `auth.admin.signOut(userId, 'global')`. Antes de escribirlo, comprobé los tipos de la versión de `@supabase/supabase-js` realmente instalada en este proyecto (`node_modules/@supabase/auth-js/dist/module/GoTrueAdminApi.d.ts`) y confirmé que ese método **exige el JWT de una sesión concreta, no un id de usuario** — no existe ningún método de administración para revocar por id todas las sesiones de un usuario en esta versión. No he escrito esa llamada.
+
+En su lugar, la extinción del Plano 1 se apoya exclusivamente en `banned_until`. Es suficiente en esta aplicación concreta porque `middleware.ts` y todos los componentes de servidor usan `supabase.auth.getUser()` (nunca `getSession()`), que revalida contra el servidor de Supabase Auth en cada petición — una cuenta con `banned_until` activo deja de superar esa validación en la siguiente petición, sin necesidad de revocar sesiones explícitamente.
+
+### Validación técnica
+
+- Worktree limpio desde `develop` (`97c77b6`).
+- `npx tsc --noEmit`: sin errores.
+- `npx vitest run`: 86/86 archivos, 422/422 pruebas en verde (413 previas + 9 nuevas de esta fase, incluida la prueba que verifica el orden exacto Stripe → Plano 2 → Plano 1 → Ancla y las de cada camino de aborto).
+- `npm run build`: correcto, 40/40 rutas.
+- Funcional: `/api/cuenta/eliminar/ejecutar` sin sesión → `401`, verificado en vivo.
+- Núcleo (SC-001–SC-004): sin cambios.
+
+**No se ha realizado ninguna ejecución real contra Stripe ni contra ninguna cuenta real** — la validación de extremo a extremo queda, tal como se acordó, para después de la Auditoría de esta fase.
+
+**Sin commit, sin push — a la espera de la Auditoría de Dirección Técnica.**
