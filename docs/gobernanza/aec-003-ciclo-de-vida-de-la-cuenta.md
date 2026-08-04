@@ -4,7 +4,7 @@
 **Ámbito:** área de cuenta (`app/cuenta`), seguridad, sesiones, cambio de correo, eliminación de cuenta.
 **Explícitamente fuera de ámbito:** Núcleo de ScenaIA (SC-001 a SC-004), Credit Manager, SEC-001, AEC-001 — sin cambios.
 **Precede a este expediente:** AEC-000 (inventario general), AEC-001 (registro y confirmación, CERRADO), AEC-003 — Inventario del Ciclo de Vida de la Cuenta (análisis, sin archivo propio).
-**Estado:** Fase 1 y Fase 2 CERRADAS (`50e6cc5`, `2dccabe`, en `develop`). Fase 3 implementada y validada localmente — pendiente de autorización de commit.
+**Estado:** Fases 1, 2 y 3 CERRADAS (`50e6cc5`, `2dccabe`, `4be5dc2`, en `develop`). Fase 4 implementada y validada localmente — pendiente de autorización de commit y de aplicación de migración.
 
 ---
 
@@ -105,3 +105,32 @@ Dirección aprobó el plan con una modificación: **Fases 3 y 4 intercambiadas**
 - `npm run build`: correcto, 34/34 rutas; `/cuenta/sesiones` pasa de 1.45 kB (stub) a 2.63 kB, confirmando que el panel real quedó incluido.
 - Funcional: `/cuenta/sesiones` sin sesión → `307` a `/auth/login`, verificado en vivo.
 - Núcleo (SC-001–SC-004): sin cambios. Sin migraciones, sin cambios de Supabase, sin variables de entorno nuevas.
+
+**Cierre Fase 3:** commit `4be5dc2` en `scenaia-bloque-3`, fast-forward a `develop` desde `2dccabe`, push a `origin/develop` confirmado. Aprobada por Dirección; evolución hacia listado/revocación individual de sesiones registrada expresamente como posible decisión arquitectónica independiente futura.
+
+---
+
+## Fase 4 — Cambio de correo electrónico (DA-002)
+
+**Decisión de diseño — callback dedicado:** en vez de extender `app/auth/callback/route.ts` (el ya certificado por SEC-001/AEC-001 para registro y usado también, sin cambios, en el flujo de recuperación), se crea `app/auth/callback/email-change/route.ts`, específico para esta confirmación. Motivo: el callback compartido redirige a `/auth/update-password`, correcto para registro pero sin sentido tras confirmar un cambio de correo; y modificar su lógica para distinguir casos habría significado tocar un flujo ya certificado. Un callback propio, siguiendo el mismo patrón ya usado para la recuperación de contraseña (`app/auth/callback/recovery`), evita ese riesgo por completo.
+
+**Sincronización `auth.users.email` → `profiles.email`:** vía un nuevo trigger, `on_auth_user_email_changed`, análogo en estructura a `handle_user_email_confirmed` (SEC-001) pero disparado por `OLD.email IS DISTINCT FROM NEW.email` en vez de por `email_confirmed_at`. Se dispara ante cualquier cambio real de `auth.users.email`, sin depender de que se origine en este formulario concreto — `profiles.email` nunca se escribe desde el cliente ni desde este callback, cumpliendo el requisito de DA-002 de que no exista una segunda fuente de verdad.
+
+**Hecho no verificable desde el repositorio:** si Supabase exige confirmación de un solo lado (correo nuevo) o de los dos (correo actual y nuevo) para un cambio de email depende de la configuración de "Secure email change" del proyecto, ajustable solo desde el panel de Supabase — no visible ni verificable desde el código. El mensaje mostrado al usuario ("puede que necesites confirmar tanto desde tu correo actual como desde el nuevo") queda redactado para ser correcto en ambos casos, sin afirmar cuál aplica.
+
+**Archivos nuevos:**
+- `app/auth/callback/email-change/route.ts` — callback dedicado; redirige a `/cuenta/correo?confirmado=true` o `?expirado=true`.
+- `app/cuenta/correo/CorreoForm.tsx` — formulario de cambio de correo (`updateUser({email})`), con mensajes vía `translateAuthError` y lectura de los parámetros de confirmación/expiración.
+- `supabase/migrations/20260804140000_aec003_sync_email_on_change.sql` — trigger de sincronización. **No aplicada todavía.**
+
+**Archivos modificados:**
+- `app/cuenta/correo/page.tsx` — renderiza `CorreoForm` (envuelto en `Suspense`, requerido por `useSearchParams`) en vez del aviso "próximamente".
+
+**Validación:**
+- Worktree limpio desde `develop` (`4be5dc2`).
+- `npx tsc --noEmit`: sin errores.
+- `npx vitest run`: 84/84 archivos, 407/407 pruebas en verde.
+- `npm run build`: correcto, 35/35 rutas; nuevas: `/auth/callback/email-change`, `/cuenta/correo` (1.44 kB → 2.81 kB, formulario real incluido).
+- Funcional: `/cuenta/correo` sin sesión → `307` a `/auth/login`; `/auth/callback/email-change` sin `code` → `307` a `/cuenta/correo?expirado=true`. Ambos verificados en vivo.
+- No se verificó en vivo el ciclo completo de confirmación (requiere la migración aplicada y un cambio de correo real de extremo a extremo).
+- Núcleo (SC-001–SC-004): sin cambios. Ningún archivo de SEC-001/AEC-001 modificado (decisión de diseño del callback dedicado, ver arriba).
