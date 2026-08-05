@@ -1,6 +1,6 @@
 import TopNav from '@/components/design-system/TopNav'
-import { PLANES } from '@/lib/plans'
 import Link from 'next/link'
+import EcosistemaPulso from '@/components/homepage/EcosistemaPulso'
 
 export default function Home() {
   return (
@@ -114,77 +114,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── PLANES ── */}
-      <section style={{ padding: '80px 40px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ maxWidth: '1060px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(24px,3vw,38px)', color: 'var(--black)', letterSpacing: '-0.5px', marginBottom: '12px' }}>
-              Encuentra tu plan
-            </h2>
-            <p style={{ fontSize: '15px', color: 'var(--muted)', fontWeight: 300 }}>
-              Desde gratuito hasta empresas. Sin permanencias.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
-            {PLANES.map(plan => {
-              const isRecomendado = plan.recomendado
-              const precioStr = plan.precio === 0 ? '0€' : `${plan.precio.toFixed(2).replace('.', ',')}€`
-              return (
-                <div
-                  key={plan.id}
-                  style={{
-                    background: isRecomendado ? 'var(--black)' : 'var(--white)',
-                    border: `1px solid ${isRecomendado ? 'var(--black)' : 'var(--border)'}`,
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '24px',
-                    position: 'relative',
-                    boxShadow: isRecomendado ? '0 8px 32px rgba(0,0,0,0.18)' : 'var(--shadow)',
-                  }}
-                >
-                  {isRecomendado && (
-                    <div style={{
-                      position: 'absolute', top: '-10px', left: '16px',
-                      background: 'var(--red)', color: 'var(--white)',
-                      fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px',
-                      padding: '2px 10px', borderRadius: '20px',
-                    }}>
-                      Recomendado
-                    </div>
-                  )}
-                  <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', color: isRecomendado ? 'rgba(255,255,255,0.5)' : 'var(--muted)', marginBottom: '8px' }}>
-                    {plan.nombre}
-                  </div>
-                  <div style={{ fontFamily: 'var(--serif)', fontSize: '36px', color: isRecomendado ? 'var(--white)' : 'var(--black)', lineHeight: 1, marginBottom: '4px' }}>
-                    {precioStr}
-                  </div>
-                  <div style={{ fontSize: '12px', color: isRecomendado ? 'rgba(255,255,255,0.4)' : 'var(--muted)', marginBottom: '20px' }}>
-                    /mes
-                  </div>
-                  <div style={{ fontSize: '13px', color: isRecomendado ? 'rgba(255,255,255,0.65)' : 'var(--muted)', lineHeight: '1.7', marginBottom: '20px' }}>
-                    {plan.bloques.flatMap(b => b.items).slice(0, 3).join(' · ')}
-                  </div>
-                  <Link
-                    href="/precios"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      fontSize: '13px', fontWeight: 500,
-                      background: isRecomendado ? 'var(--red)' : 'transparent',
-                      color: isRecomendado ? 'var(--white)' : 'var(--black)',
-                      padding: isRecomendado ? '9px 18px' : '9px 0',
-                      borderRadius: isRecomendado ? '8px' : '0',
-                      textDecoration: 'none',
-                      transition: 'background 0.2s',
-                    }}
-                  >
-                    Ver plan →
-                  </Link>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
+      {/* ── EL PULSO DEL ECOSISTEMA (vista previa visual) ── */}
+      <EcosistemaPulso />
 
       {/* ── FOOTER ── */}
       <footer className="app-footer">
