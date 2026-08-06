@@ -155,3 +155,70 @@ Dirección aprobó el plan con una modificación: **Fases 3 y 4 intercambiadas**
 **Observación técnica no bloqueante, relacionada:** el hallazgo de la investigación intermedia sobre `/auth/callback/email-change` sin peticiones registradas en el Preview sigue sin resolver — es plausible que el flujo en Producción sí use el callback (dominio fijo, más probable que esté en la lista de Redirect URLs permitidos), pero no se ha confirmado. Queda anotado junto a la mejora de UX anterior, por si se quiere abordar en el mismo expediente futuro.
 
 **Cierre Fase 4:** validada funcionalmente por Dirección Técnica, con las dos confirmaciones completas, sobre el Preview Deployment de `develop`. Sin necesidad de nuevo commit — el código ya está en `develop` desde el commit provisional `64f1c7e`, ahora confirmado como definitivo.
+
+---
+
+## Acta Oficial de Cierre — AEC-003 (Fases 1-3)
+
+**Fecha:** 2026-08-06
+**Expediente:** AEC-003 — Gestión del Ciclo de Vida de la Cuenta (Fases 1, 2 y 3)
+**Estado final:** CERRADO FUNCIONALMENTE
+
+**Nota de alcance:** esta Acta cubre exclusivamente las Fases 1-3. La Fase 4 (DA-002, cambio de correo) ya tiene Acta de Cierre propia y separada (commit `7aa43fe`) y no forma parte de este documento. La Fase 5 (DA-001, eliminación de cuenta) permanece fuera de este expediente por diseño — su desarrollo continuó por la vía de AEC-003B, ya auditada en expedientes propios.
+
+### Objetivo original del expediente
+
+Construir el área de gestión de cuenta (`/cuenta`) y resolver, dentro de ella, tres de las cinco Decisiones Arquitectónicas Oficiales de AEC-003 (DA-005, DA-003, DA-004), sin modificar el Núcleo, SEC-001, AEC-001 ni el Credit Manager.
+
+### Alcance finalmente implementado
+
+1. **Fase 1 — Área de cuenta (DA-005):** contenedor `/cuenta` con landing y cuatro subsecciones ("próximamente" hasta su propia fase), protegido por middleware, enlazado desde el Sidebar.
+2. **Fase 2 — Cambio de contraseña autenticado + política única (DA-003):** `lib/auth/password-policy.ts` como fuente única de la política, consumida por registro, `/cuenta/seguridad` y `update-password` (que antes solo exigía 6 caracteres).
+3. **Fase 3 — Gestión de sesiones (DA-004):** panel en `/cuenta/sesiones` con cierre de todas las demás sesiones (`signOut({scope:'others'})`), preservando la sesión actual.
+
+Dirección aprobó, además, invertir el orden original entre las Fases 3 y 4, para resolver primero el dominio aislado (sesiones) antes que el de mayor impacto sobre autenticación (correo) — decisión ya reflejada en la secuencia real de implementación.
+
+### Decisiones arquitectónicas relevantes
+
+- **DA-005** satisfecha como andamiaje puro: el contenedor no incorpora lógica funcional hasta que cada subsección llega a su propia fase.
+- **DA-003**: unificación deliberada en una única política de contraseñas para todo el dominio de autenticación — nunca dos políticas coexistiendo.
+- **DA-004**: se prioriza explícitamente la capacidad nativa de Supabase Auth (`scope: 'others'`) frente a construir infraestructura propia; el listado de sesiones activas se evaluó y se dejó fuera por no existir una vía nativa sencilla, no por omisión.
+
+### Validaciones realizadas
+
+Las tres fases, cada una en worktree limpio (Fase 1 desde `main`; Fases 2 y 3 encadenadas desde el `develop` resultante de la fase anterior, coherente con sus dependencias reales):
+- `npx tsc --noEmit`: sin errores en las tres.
+- `npx vitest run`: 84/84 archivos, 407/407 pruebas en verde en las tres.
+- `npm run build`: correcto en las tres (34/34 rutas tras Fase 2 y Fase 3); tamaño de bundle de cada ruta confirmado como evidencia de que el contenido real —no el stub— quedó incluido.
+- Validación funcional en vivo: las cinco rutas de `/cuenta` devuelven `307` hacia `/auth/login` sin sesión, protección de middleware confirmada en las tres fases.
+- Núcleo de ScenaIA (SC-001 a SC-004): `git status` sin salida en las tres fases.
+
+### Evidencia de finalización
+
+- Commits `50e6cc5` (Fase 1), `2dccabe` (Fase 2), `4be5dc2` (Fase 3), cada uno fast-forward a `develop` y empujado a `origin/develop` en su momento.
+- Sin migraciones, sin cambios de Supabase, sin variables de entorno nuevas en ninguna de las tres fases.
+
+### Relación con el resto de la arquitectura
+
+- Cero cambios en el Núcleo, en SEC-001 o en AEC-001, verificado en las tres fases.
+- Fase 2 reutiliza la política de contraseñas ya existente de AEC-001 sin alterar su comportamiento (refactor puro).
+- Es la base directa de la Fase 4 (ya cerrada aparte) y del propio `/cuenta`, contenedor que después alojó AEC-003B.
+
+AEC-003 establece el dominio funcional de gestión ordinaria de la cuenta sobre el que posteriormente se desarrollan la Fase 4 y el expediente AEC-003B, manteniendo la separación entre las funcionalidades de administración de cuenta y los procesos de extinción de identidad.
+
+### Estado final del expediente
+
+Implementado y validado en las tres fases. Desplegado en `develop` y `scenaia-bloque-3` (respaldado en `origin`). **No desplegado en `main`/producción** — misma disciplina que el resto de expedientes.
+
+### Observaciones documentales
+
+- Ninguna. Las tres fases quedaron documentadas en detalle en este mismo documento en el momento de cada cierre, sin vacíos pendientes de registrar.
+
+### Observaciones operativas
+
+- **Fase 2**: el cambio de contraseña autenticado no exige reintroducir la contraseña actual — señalado expresamente en su momento como posible mejora de seguridad futura, fuera del alcance aprobado, no como incidencia.
+- **Fase 3**: no existe listado ni revocación individual de sesiones — evaluado y dejado fuera por ausencia de vía nativa sencilla; queda registrado como posible ampliación futura, no como una carencia de esta fase.
+
+### Declaración
+
+**El expediente AEC-003 (Fases 1-3) queda CERRADO FUNCIONALMENTE en `develop`/`scenaia-bloque-3`**, con sus tres fases implementadas, validadas y verificadas. Ninguna de las observaciones registradas se considera bloqueante para este cierre.
