@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, defaultExclude } from 'vitest/config'
 import path from 'path'
 
 export default defineConfig({
@@ -9,5 +9,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    exclude: [...defaultExclude, '_incidente-trazabilidad-2026-07-19/**'],
   },
 })

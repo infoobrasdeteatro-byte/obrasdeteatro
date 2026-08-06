@@ -37,6 +37,7 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "_incidente-trazabilidad-2026-07-19"
   ]
 }
