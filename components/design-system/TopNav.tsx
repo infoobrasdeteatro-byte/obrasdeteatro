@@ -84,8 +84,13 @@ export default function TopNav({ heroMode = false }: Props) {
         <div className="nav-divider" />
         <div className="nav-links">
           <Link href="/directorio" className="nav-link">Profesionales</Link>
-
           <Link href="/obras" className="nav-link">Obras</Link>
+          <Link href="/directorio?tipo=compania" className="nav-link">Compañías</Link>
+          <Link href="/directorio?tipo=teatro" className="nav-link">Espacios Escénicos</Link>
+          <Link href="/directorio" className="nav-link">Instituciones</Link>
+          <Link href="/directorio" className="nav-link">Servicios</Link>
+          <Link href="/" className="nav-link">Recursos</Link>
+          <Link href="/" className="nav-link">Editorial</Link>
         </div>
 
         <div className="nav-right">
@@ -112,12 +117,30 @@ export default function TopNav({ heroMode = false }: Props) {
 
       {mobileOpen && (
         <div className="nav-mobile-menu">
-          <span className="nav-mobile-section-label">Explorar</span>
+          <span className="nav-mobile-section-label">Ecosistema</span>
           <Link href="/directorio" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
-            Directorio de profesionales
+            Profesionales
           </Link>
           <Link href="/obras" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
-            Obras de teatro
+            Obras
+          </Link>
+          <Link href="/directorio?tipo=compania" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Compañías
+          </Link>
+          <Link href="/directorio?tipo=teatro" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Espacios Escénicos
+          </Link>
+          <Link href="/directorio" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Instituciones
+          </Link>
+          <Link href="/directorio" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Servicios
+          </Link>
+          <Link href="/" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Recursos
+          </Link>
+          <Link href="/" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Editorial
           </Link>
           <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Cuenta</span>

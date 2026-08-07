@@ -29,13 +29,28 @@ export default function NavAutenticado() {
         </Link>
         <div className="nav-divider" />
         <div className="nav-links">
-          <Link href="/dashboard"  className="nav-link">Dashboard</Link>
-          <Link href="/directorio" className="nav-link">Directorio</Link>
-          <Link href="/perfil"     className="nav-link">Mi perfil</Link>
-          <Link href="/mis-obras"  className="nav-link">Mis obras</Link>
-          <Link href="/precios"    className="nav-link">Planes</Link>
+          <Link href="/directorio" className="nav-link">Profesionales</Link>
+          <Link href="/obras" className="nav-link">Obras</Link>
+          <Link href="/directorio?tipo=compania" className="nav-link">Compañías</Link>
+          <Link href="/directorio?tipo=teatro" className="nav-link">Espacios Escénicos</Link>
+          <Link href="/directorio" className="nav-link">Instituciones</Link>
+          <Link href="/directorio" className="nav-link">Servicios</Link>
+          <Link href="/" className="nav-link">Recursos</Link>
+          <Link href="/" className="nav-link">Editorial</Link>
         </div>
         <div className="nav-right">
+          <Link href="/perfil/centro" className="nav-link" style={{ fontWeight: 500 }}>
+            Centro Profesional
+          </Link>
+          {/*
+            RC-001A-003A: "Cerrar sesión" se mantiene aqui de forma temporal y
+            documentada -- es hoy el unico punto de toda la aplicacion donde un
+            usuario puede cerrar su propia sesion (SesionesPanel.tsx solo cierra
+            sesiones ajenas, scope 'others', y remite explicitamente a este
+            boton). Retirarlo sin darle antes un hogar real dentro de Centro
+            Profesional seria una regresion funcional, no una limpieza visual.
+            Pendiente de decision de Direccion sobre su destino definitivo.
+          */}
           <form action="/auth/logout" method="POST">
             <button type="submit" className="nav-btn-logout">
               Cerrar sesión
@@ -58,14 +73,18 @@ export default function NavAutenticado() {
 
       {mobileOpen && (
         <div className="nav-mobile-menu">
-          <span className="nav-mobile-section-label">Mi cuenta</span>
-          <Link href="/dashboard"  className="nav-mobile-link">Inicio</Link>
-          <Link href="/perfil"     className="nav-mobile-link">Mi perfil</Link>
-          <Link href="/mis-obras"  className="nav-mobile-link">Mis obras</Link>
+          <span className="nav-mobile-section-label">Ecosistema</span>
+          <Link href="/directorio" className="nav-mobile-link">Profesionales</Link>
+          <Link href="/obras" className="nav-mobile-link">Obras</Link>
+          <Link href="/directorio?tipo=compania" className="nav-mobile-link">Compañías</Link>
+          <Link href="/directorio?tipo=teatro" className="nav-mobile-link">Espacios Escénicos</Link>
+          <Link href="/directorio" className="nav-mobile-link">Instituciones</Link>
+          <Link href="/directorio" className="nav-mobile-link">Servicios</Link>
+          <Link href="/" className="nav-mobile-link">Recursos</Link>
+          <Link href="/" className="nav-mobile-link">Editorial</Link>
           <hr className="nav-mobile-divider" />
-          <span className="nav-mobile-section-label">Explorar</span>
-          <Link href="/directorio" className="nav-mobile-link">Directorio</Link>
-          <Link href="/precios"    className="nav-mobile-link">Planes</Link>
+          <span className="nav-mobile-section-label">Mi cuenta</span>
+          <Link href="/perfil/centro" className="nav-mobile-link">Centro Profesional</Link>
           <hr className="nav-mobile-divider" />
           <form action="/auth/logout" method="POST">
             <button type="submit" className="nav-mobile-cta" style={{ background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)' }}>
