@@ -1,5 +1,6 @@
 const ERROR_MAP: Array<[string, string]> = [
   ['User already registered', 'Ya existe una cuenta con este correo electrónico.'],
+  ['already been registered', 'Ya existe una cuenta con este correo electrónico.'],
   ['Invalid login credentials', 'Correo o contraseña incorrectos.'],
   ['Email not confirmed', 'Confirma tu dirección de email antes de entrar.'],
   ['Password should be at least 6 characters', 'La contraseña debe tener al menos 6 caracteres.'],
