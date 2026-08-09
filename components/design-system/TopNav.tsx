@@ -59,7 +59,9 @@ export default function TopNav({ heroMode = false }: Props) {
     if (!hero) { setIsHero(false); return }
 
     const update = () => {
-      setIsHero(hero.getBoundingClientRect().bottom > 52)
+      const navHeight =
+        document.querySelector('.top-nav')?.getBoundingClientRect().height ?? 52
+      setIsHero(hero.getBoundingClientRect().bottom > navHeight)
     }
     update()
     window.addEventListener('scroll', update, { passive: true })
