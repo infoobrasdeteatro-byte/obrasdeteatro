@@ -1,7 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+
+// RC-001A (calibracion continua): heroProgress sustituye al umbral booleano
+// que competia contra la duracion fija de la transicion CSS. progress=0
+// reproduce exactamente el aspecto de nav--hero; progress=1, el de
+// nav--solid -- interpolado en cada frame de scroll, sin animacion de
+// tiempo fijo que pueda desincronizarse de la velocidad real del usuario.
+const HERO_RANGE_PX = 96
+
+function lerp(from: number, to: number, t: number): number {
+  return from + (to - from) * t
+}
+
+function lerpRgba(
+  from: [number, number, number, number],
+  to: [number, number, number, number],
+  t: number
+): string {
+  const r = Math.round(lerp(from[0], to[0], t))
+  const g = Math.round(lerp(from[1], to[1], t))
+  const b = Math.round(lerp(from[2], to[2], t))
+  const a = lerp(from[3], to[3], t)
+  return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`
+}
 
 const OBRAS_TAXONOMIA: { section: string; items: string[] }[] = [
   {
@@ -49,25 +72,48 @@ interface Props {
 export default function TopNav({ heroMode = false }: Props) {
   const [isHero, setIsHero] = useState(heroMode)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const navRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!heroMode) {
       setIsHero(false)
       return
     }
+    const nav = navRef.current
     const hero = document.querySelector('.hero')
-    if (!hero) { setIsHero(false); return }
+    const headline = document.querySelector('.hero-headline')
+    if (!nav || !hero) { setIsHero(false); return }
 
-    const update = () => {
-      const navHeight =
-        document.querySelector('.top-nav')?.getBoundingClientRect().height ?? 52
-      const headline = document.querySelector('.hero-headline')
-      const reference = headline ? headline.getBoundingClientRect().top : hero.getBoundingClientRect().bottom
-      setIsHero(reference > navHeight)
+    let rafId: number | null = null
+
+    const applyProgress = () => {
+      rafId = null
+      const navHeight = nav.getBoundingClientRect().height
+      const reference = headline
+        ? headline.getBoundingClientRect().top
+        : hero.getBoundingClientRect().bottom
+      const farEdge = navHeight + HERO_RANGE_PX
+      const progress = Math.min(1, Math.max(0, (farEdge - reference) / HERO_RANGE_PX))
+
+      nav.style.setProperty('--nav-bg', lerpRgba([8, 8, 8, 0.30], [255, 255, 255, 0.97], progress))
+      nav.style.setProperty('--nav-border', lerpRgba([255, 255, 255, 0.32], [10, 10, 10, 0.15], progress))
+      nav.style.setProperty('--nav-blur', `${lerp(12, 20, progress)}px`)
+
+      setIsHero(progress < 1)
     }
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    return () => window.removeEventListener('scroll', update)
+
+    const schedule = () => {
+      if (rafId === null) rafId = requestAnimationFrame(applyProgress)
+    }
+
+    schedule()
+    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule)
+    return () => {
+      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      if (rafId !== null) cancelAnimationFrame(rafId)
+    }
   }, [heroMode])
 
   useEffect(() => {
@@ -81,7 +127,7 @@ export default function TopNav({ heroMode = false }: Props) {
 
   return (
     <>
-      <nav className={`top-nav${isHero ? ' nav--hero' : ' nav--solid'}`}>
+      <nav ref={navRef} className={`top-nav${isHero ? ' nav--hero' : ' nav--solid'}`}>
         <Link href="/" className="nav-logo" onClick={() => setMobileOpen(false)}>
           obras<span>de</span>teatro.com
         </Link>

@@ -42,22 +42,26 @@ body {
   padding: 2px 24px 0 30px;
   display: flex; align-items: center; height: var(--nav-h);
   gap: 8px;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  transition: background 0.5s cubic-bezier(0.4,0,0.2,1),
-              border-color 0.5s cubic-bezier(0.4,0,0.2,1);
+  background: var(--nav-bg, rgba(255,255,255,0.97));
+  backdrop-filter: blur(var(--nav-blur, 20px));
+  -webkit-backdrop-filter: blur(var(--nav-blur, 20px));
+  border-bottom: 1px solid var(--nav-border, var(--border));
 }
+/* RC-001A (calibracion continua): nav--hero/nav--solid siguen controlando
+   todo lo demas (logotipo, enlaces, botones, desplegable, toggle movil) sin
+   cambios. Para background/backdrop-filter/border-color, estas clases solo
+   fijan el valor de referencia -- TopNav.tsx sobrescribe --nav-bg/--nav-blur/
+   --nav-border con estilo inline durante el scroll del Hero, interpolando
+   de forma continua en vez de conmutar entre estos dos extremos. */
 .top-nav.nav--hero {
-  background: rgba(8,8,8,0.30);
-  border-bottom-color: rgba(255,255,255,0.32);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  --nav-bg: rgba(8,8,8,0.30);
+  --nav-border: rgba(255,255,255,0.32);
+  --nav-blur: 12px;
 }
 .top-nav.nav--solid {
-  background: rgba(255,255,255,0.97);
-  border-bottom-color: rgba(10,10,10,0.15);
+  --nav-bg: rgba(255,255,255,0.97);
+  --nav-border: rgba(10,10,10,0.15);
+  --nav-blur: 20px;
 }
 .nav-logo {
   font-family: var(--serif);
