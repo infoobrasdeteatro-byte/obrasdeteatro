@@ -95,7 +95,7 @@ export default function TopNav({ heroMode = false }: Props) {
       const farEdge = navHeight + HERO_RANGE_PX
       const progress = Math.min(1, Math.max(0, (farEdge - reference) / HERO_RANGE_PX))
 
-      nav.style.setProperty('--nav-bg', lerpRgba([8, 8, 8, 0.30], [255, 255, 255, 0.97], progress))
+      nav.style.setProperty('--nav-bg', lerpRgba([8, 8, 8, 0.30], [255, 255, 255, 1], progress))
       nav.style.setProperty('--nav-border', lerpRgba([255, 255, 255, 0.32], [10, 10, 10, 0.15], progress))
       nav.style.setProperty('--nav-blur', `${lerp(12, 20, progress)}px`)
 

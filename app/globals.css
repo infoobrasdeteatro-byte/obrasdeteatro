@@ -59,7 +59,7 @@ body {
   --nav-blur: 12px;
 }
 .top-nav.nav--solid {
-  --nav-bg: rgba(255,255,255,0.97);
+  --nav-bg: rgba(255,255,255,1);
   --nav-border: rgba(10,10,10,0.15);
   --nav-blur: 20px;
 }
