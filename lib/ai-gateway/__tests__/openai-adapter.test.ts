@@ -13,6 +13,7 @@ describe('openaiAdapter', () => {
     vi.resetModules()
     mockCreate.mockReset()
     delete process.env.OPENAI_MODEL
+    process.env.OPENAI_API_KEY = 'test-openai-key'
     const OpenAIConstructor = (await import('openai')).default
     vi.mocked(OpenAIConstructor).mockClear()
   })
@@ -85,5 +86,41 @@ describe('openaiAdapter', () => {
     const outcome = await openaiAdapter.execute('prompt secreto del usuario')
 
     expect(Object.keys(outcome).sort()).toEqual(['content', 'latencyMs', 'model', 'tokensConsumed'])
+  })
+
+  it('lanza ProviderAdapterError cuando OPENAI_API_KEY está ausente, sin construir el cliente', async () => {
+    delete process.env.OPENAI_API_KEY
+
+    const { openaiAdapter } = await import('../openai-adapter')
+    const { ProviderAdapterError } = await import('../provider-adapter')
+    const OpenAIConstructor = (await import('openai')).default
+
+    await expect(openaiAdapter.execute('hola')).rejects.toBeInstanceOf(ProviderAdapterError)
+    expect(OpenAIConstructor).not.toHaveBeenCalled()
+
+    process.env.OPENAI_API_KEY = 'test-openai-key'
+  })
+
+  it('lanza ProviderAdapterError cuando OPENAI_API_KEY está vacía o solo contiene espacios, sin construir el cliente', async () => {
+    process.env.OPENAI_API_KEY = '   '
+
+    const { openaiAdapter } = await import('../openai-adapter')
+    const { ProviderAdapterError } = await import('../provider-adapter')
+    const OpenAIConstructor = (await import('openai')).default
+
+    await expect(openaiAdapter.execute('hola')).rejects.toBeInstanceOf(ProviderAdapterError)
+    expect(OpenAIConstructor).not.toHaveBeenCalled()
+
+    process.env.OPENAI_API_KEY = 'test-openai-key'
+  })
+
+  it('construye el cliente con normalidad cuando OPENAI_API_KEY tiene un valor no vacío', async () => {
+    process.env.OPENAI_API_KEY = 'test-openai-key'
+    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'ok' } }], usage: { total_tokens: 1 } })
+
+    const { openaiAdapter } = await import('../openai-adapter')
+    const outcome = await openaiAdapter.execute('hola')
+
+    expect(outcome.content).toBe('ok')
   })
 })
