@@ -13,6 +13,11 @@ let client: OpenAI | null = null
 
 function getClient(): OpenAI {
   if (client === null) {
+    if (!process.env.OPENAI_API_KEY?.trim()) {
+      throw new ProviderAdapterError(
+        'OPENAI_API_KEY no esta configurada o esta vacia -- no se puede construir el cliente de OpenAI'
+      )
+    }
     client = new OpenAI()
   }
   return client
