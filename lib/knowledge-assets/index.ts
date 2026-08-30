@@ -1,5 +1,7 @@
+export { KNOWLEDGE_DOMAINS } from './types'
 export type {
   KnowledgeDomain,
+  KnowledgeSearchCriteria,
   KnowledgeItem,
   WorkKnowledgeItem,
   OrganizationKnowledgeItem,
@@ -24,7 +26,14 @@ export {
   deriveInstitutionFunctions,
   derivePersonFunctions,
 } from './theatrical-function'
-export { interpretWorkQuery, hasUnresolvedAuthor } from './interpret-work-query'
+export {
+  interpretWorkQuery,
+  hasUnresolvedAuthor,
+  resolveWorkOccupancy,
+  isWorkConcept,
+  isWorkSlot,
+} from './interpret-work-query'
+export type { WorkConcept, WorkSlot, WorkSlotOccupancy } from './interpret-work-query'
 export { interpretOrganizationQuery, hasUnresolvedLocation } from './interpret-organization-query'
 export type { KnowledgeRetrievalResult } from './semantic-retriever'
 export { retrieveRelevantKnowledge } from './semantic-retriever'

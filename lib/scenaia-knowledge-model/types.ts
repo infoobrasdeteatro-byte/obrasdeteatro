@@ -1,4 +1,4 @@
-import type { KnowledgeDomain, StructuredKnowledgeItem } from '@/lib/knowledge-assets'
+import type { KnowledgeDomain, StructuredKnowledgeItem, WorkSlotOccupancy } from '@/lib/knowledge-assets'
 
 /**
  * Mide la propia cobertura del SKM (dominios solicitados vs. efectivamente
@@ -39,5 +39,13 @@ export interface KnowledgeContext {
   readonly knowledgeConfidence: number
   readonly knowledgeCompleteness: KnowledgeCompleteness
   readonly knowledgeLimitations: string[]
+  /**
+   * Ranuras del dominio Obras vigentes tras este turno (Fase 3). Se
+   * transporta hasta el Orquestador, que es quien compone el estado
+   * conversacional; este modulo no lo interpreta ni lo almacena. Un
+   * objeto vacio significa "ninguna dimension acotada", estado real y
+   * explicito, nunca ausencia de dato.
+   */
+  readonly workOccupancy: WorkSlotOccupancy
   readonly knowledgeTimestamp: string
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { coordinateFlow } from '@/lib/verified/orquestador'
 import type { ConversationTurn } from '@/lib/verified/orquestador'
+import { parseConversationState } from '@/lib/conversation-state'
 
 /**
  * Unico punto de entrada HTTP hacia el Orquestador del Flujo Completo
@@ -58,7 +59,35 @@ export async function POST(req: NextRequest) {
   }
   const conversationHistory = parseHistory(body.history)
 
-  const responseContext = await coordinateFlow(user.id, session, originalRequest, conversationHistory)
+  /**
+   * FASE 3 -- contexto conversacional aportado por el cliente.
+   *
+   * VALIDACION TOTAL O DESCARTE TOTAL: `parseConversationState` devuelve
+   * `null` en cuanto cualquier parte del estado no cumple el contrato, y
+   * entonces el turno se resuelve exactamente como se resolvia antes de
+   * esta fase. Nunca se repara un estado ni se acepta a medias -- un
+   * criterio fantasma, vigente sin que el usuario pueda saberlo, es peor
+   * que ningun criterio. Mismo criterio defensivo que ya aplica
+   * `parseHistory` sobre el historial.
+   *
+   * El estado NO es confiable por proceder del cliente. Su validez es
+   * sintactica y semantica -- dominios y conceptos de vocabulario cerrado
+   * --, nunca autenticidad: no autoriza nada, no identifica a nadie y
+   * ningun componente lo consulta para decidir un acceso. Un estado
+   * manipulado solo puede expresar criterios que quien lo envia ya podria
+   * haber pedido escribiendolos.
+   */
+  const conversationState = parseConversationState(body.conversationState)
 
-  return NextResponse.json(responseContext)
+  const { responseContext, conversationState: nextState } = await coordinateFlow(
+    user.id,
+    session,
+    originalRequest,
+    conversationHistory,
+    conversationState
+  )
+
+  // El estado viaja junto a la respuesta, no dentro de ella: `ResponseContext`
+  // no gana ningun campo (PRD-001, ver TurnOutcome en el Orquestador).
+  return NextResponse.json({ ...responseContext, conversationState: nextState })
 }

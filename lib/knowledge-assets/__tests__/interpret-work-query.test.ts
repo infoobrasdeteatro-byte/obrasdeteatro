@@ -186,3 +186,104 @@ describe('hasUnresolvedAuthor — los cuatro estados del criterio en Obras', () 
     expect(hasUnresolvedAuthor('obras de ibsen', criteria)).toBe(true)
   })
 })
+
+/**
+ * FASE 2 — RANURAS SEMANTICAS.
+ *
+ * El texto que llega a `interpretWorkQuery` en un turno de continuacion es
+ * la concatenacion cronologica de los turnos previos con el actual. Estos
+ * tests usan esa forma real, no frases artificiales: es exactamente la
+ * cadena que produjo en produccion la consulta imposible
+ * `duration <= 60 AND duration >= 90`.
+ */
+describe('ranuras semanticas — una dimension, un concepto vigente', () => {
+  it('OBLIGATORIO: comedia -> mas corta -> mas larga deja UNA sola condicion de duracion, la mas reciente', () => {
+    const criteria = interpretWorkQuery('que obras de comedia tienes. y alguna mas corta. y alguna mas larga')
+
+    expect(criteria.minDurationMinutes).toBe(90)
+    expect(criteria.maxDurationMinutes).toBeUndefined()
+    expect(criteria.genre).toBe('comedia')
+  })
+
+  it('la consulta imposible que se produjo en produccion ya no es construible', () => {
+    const criteria = interpretWorkQuery('que obras de comedia tienes. y alguna mas corta. y alguna mas larga')
+
+    // Ambas a la vez significaban cero resultados por aritmetica, nunca por catalogo.
+    expect(criteria.maxDurationMinutes !== undefined && criteria.minDurationMinutes !== undefined).toBe(false)
+  })
+
+  it('SIMETRIA: larga -> corta deja corta, por el mismo motivo', () => {
+    const criteria = interpretWorkQuery('que obras largas tienes. y alguna mas corta')
+
+    expect(criteria.maxDurationMinutes).toBe(60)
+    expect(criteria.minDurationMinutes).toBeUndefined()
+  })
+
+  it('gana la mencion MAS RECIENTE, no la primera ni el orden del codigo', () => {
+    expect(interpretWorkQuery('obras largas. luego cortas. al final largas').minDurationMinutes).toBe(90)
+    expect(interpretWorkQuery('obras cortas. luego largas. al final cortas').maxDurationMinutes).toBe(60)
+  })
+
+  it('RANURAS DISTINTAS SE ACUMULAN: el contrato original sigue intacto', () => {
+    const criteria = interpretWorkQuery('comedias cortas')
+
+    // Genero y duracion son dimensiones distintas: nunca compiten.
+    expect(criteria.genre).toBe('comedia')
+    expect(criteria.maxDurationMinutes).toBe(60)
+  })
+
+  it('acumula todas las dimensiones a la vez sin que ninguna desplace a otra', () => {
+    const criteria = interpretWorkQuery('comedias infantiles contemporaneas cortas para pocos actores')
+
+    expect(criteria.genre).toBe('comedia')
+    expect(criteria.maxAge).toBe(8)
+    expect(criteria.yearFrom).toBe(1950)
+    expect(criteria.maxDurationMinutes).toBe(60)
+    expect(criteria.maxCastSize).toBe(4)
+  })
+
+  it('el GENERO tambien es una ranura: dos generos no coexisten', () => {
+    const criteria = interpretWorkQuery('obras de comedia. mejor un musical')
+
+    expect(criteria.genre).toBe('musical')
+  })
+
+  it('un turno que no menciona la dimension no la altera', () => {
+    const criteria = interpretWorkQuery('que obras de comedia tienes. y alguna mas corta. y de que tratan')
+
+    expect(criteria.genre).toBe('comedia')
+    expect(criteria.maxDurationMinutes).toBe(60)
+  })
+
+  it('los umbrales siguen siendo del motor: el texto nunca aporta una cifra', () => {
+    const criteria = interpretWorkQuery('obras muy muy cortas de menos de 5 minutos')
+
+    // 60 es la politica declarada, no lo que dijo el usuario.
+    expect(criteria.maxDurationMinutes).toBe(60)
+  })
+
+  it('sigue siendo pura y determinista', () => {
+    const consulta = 'que obras de comedia tienes. y alguna mas corta. y alguna mas larga'
+
+    expect(interpretWorkQuery(consulta)).toEqual(interpretWorkQuery(consulta))
+  })
+
+  it('NO REGRESION: una peticion de un solo criterio se comporta igual que antes', () => {
+    expect(interpretWorkQuery('obras cortas')).toEqual({ maxDurationMinutes: 60 })
+    expect(interpretWorkQuery('obras largas')).toEqual({ minDurationMinutes: 90 })
+    expect(interpretWorkQuery('obras de comedia')).toEqual({ genre: 'comedia' })
+    expect(interpretWorkQuery('que obras tienes')).toEqual({})
+  })
+
+  it('NO REGRESION: el autor no es una ranura y convive con cualquier dimension', () => {
+    const criteria = interpretWorkQuery('obras cortas de lope de vega. mejor largas', ['Lope de Vega'])
+
+    expect(criteria.author).toBe('Lope de Vega')
+    expect(criteria.minDurationMinutes).toBe(90)
+    expect(criteria.maxDurationMinutes).toBeUndefined()
+  })
+
+  it('NO REGRESION: el numero explicito de reparto sigue prevaleciendo sobre el umbral generico', () => {
+    expect(interpretWorkQuery('obras para pocos actores para dos actores').maxCastSize).toBe(2)
+  })
+})

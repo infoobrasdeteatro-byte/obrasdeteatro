@@ -19,7 +19,33 @@ interface CanonicalConcepts {
  * lexicas a conceptos canonicos del dominio -- nunca interpreta intencion,
  * nunca construye criterios, nunca accede a datos.
  */
-const CANONICAL_TERMS: Readonly<Record<string, readonly string[]>> = {
+/**
+ * Conceptos canonicos del dominio Obras. Vocabulario CERRADO: es lo unico
+ * que puede ocupar una ranura, y por tanto lo unico que puede sobrevivir de
+ * un turno al siguiente. Ningun umbral numerico forma parte de el -- los
+ * umbrales pertenecen al motor de reglas y nunca salen de este archivo.
+ */
+export type WorkConcept =
+  | 'COMEDIA'
+  | 'MUSICAL'
+  | 'CLASICO'
+  | 'CONTEMPORANEO'
+  | 'INFANTIL'
+  | 'CORTA'
+  | 'LARGA'
+  | 'POCOS_ACTORES'
+
+/** Dimensiones del dominio Obras. Cada una admite un unico concepto vigente. */
+export type WorkSlot = 'genero' | 'duracion' | 'edad' | 'epoca' | 'reparto'
+
+/**
+ * Que concepto ocupa cada dimension. Una ranura ausente significa "sin
+ * criterio en esa dimension", nunca un valor por defecto (PRD-001: el
+ * estado se representa por ausencia explicita, no por un valor magico).
+ */
+export type WorkSlotOccupancy = Partial<Readonly<Record<WorkSlot, WorkConcept>>>
+
+const CANONICAL_TERMS: Readonly<Record<WorkConcept, readonly string[]>> = {
   COMEDIA: ['comedia', 'comedias', 'humoristica', 'humoristicas', 'divertida', 'divertidas'],
   MUSICAL: ['musical', 'musicales'],
   INFANTIL: ['infantil', 'infantiles', 'ninos', 'para ninos'],
@@ -30,10 +56,129 @@ const CANONICAL_TERMS: Readonly<Record<string, readonly string[]>> = {
   POCOS_ACTORES: ['pocos actores', 'reparto reducido', 'pocos personajes'],
 }
 
-function detectCanonicalTerms(normalizedQuery: string): string[] {
-  return Object.keys(CANONICAL_TERMS).filter((canonical) =>
+function detectCanonicalTerms(normalizedQuery: string): WorkConcept[] {
+  return (Object.keys(CANONICAL_TERMS) as WorkConcept[]).filter((canonical) =>
     CANONICAL_TERMS[canonical].some((synonym) => normalizedQuery.includes(synonym))
   )
+}
+
+/**
+ * RANURAS SEMANTICAS (Fase 2, autorizada por Direccion).
+ *
+ * Cada ranura es una DIMENSION del dominio, y admite un unico concepto
+ * vigente. Es la pieza que faltaba en el contrato de combinacion original:
+ * ese contrato protegia contra escribir dos veces el MISMO CAMPO, pero
+ * `CORTA` escribe `maxDurationMinutes` y `LARGA` escribe
+ * `minDurationMinutes` -- campos distintos de la misma dimension. La guarda
+ * era estructural y el conflicto era semantico, de modo que nunca saltaba:
+ * una peticion que hubiera mencionado ambos producia
+ * `duration <= 60 AND duration >= 90`, imposible de satisfacer por
+ * aritmetica, con cero resultados garantizados.
+ *
+ * Al declarar la dimension explicitamente, esa consulta deja de ser
+ * construible. No se prohibe: no se puede expresar.
+ *
+ * Las ranuras de un solo ocupante (`edad`, `epoca`, `reparto`) no pueden
+ * entrar en conflicto hoy; se declaran igualmente para que el modelo este
+ * completo y para que anadir un concepto nuevo obligue a decidir a que
+ * dimension pertenece.
+ */
+/**
+ * Predicados de vocabulario. Existen para que un dato que llega desde
+ * fuera del sistema pueda comprobarse contra el vocabulario real sin que
+ * quien lo comprueba tenga que conocerlo ni duplicarlo. La lista sigue
+ * siendo propiedad exclusiva de este archivo.
+ */
+export function isWorkConcept(value: unknown): value is WorkConcept {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(CANONICAL_TERMS, value)
+}
+
+export function isWorkSlot(value: unknown): value is WorkSlot {
+  return typeof value === 'string' && WORK_SLOTS.includes(value as WorkSlot)
+}
+
+const WORK_SLOTS: readonly WorkSlot[] = ['genero', 'duracion', 'edad', 'epoca', 'reparto']
+
+const TERM_SLOTS: Readonly<Record<WorkConcept, WorkSlot>> = {
+  COMEDIA: 'genero',
+  MUSICAL: 'genero',
+  CLASICO: 'genero',
+  CORTA: 'duracion',
+  LARGA: 'duracion',
+  INFANTIL: 'edad',
+  CONTEMPORANEO: 'epoca',
+  POCOS_ACTORES: 'reparto',
+}
+
+/**
+ * Posicion de la mencion MAS RECIENTE de un concepto en el texto, o `-1`
+ * si no aparece. Se toma la ultima aparicion, no la primera: si alguien
+ * dice "larga... corta... larga", lo vigente es lo ultimo que dijo.
+ */
+function lastMentionIndex(normalizedQuery: string, canonical: WorkConcept): number {
+  return CANONICAL_TERMS[canonical].reduce((posicion, synonym) => Math.max(posicion, normalizedQuery.lastIndexOf(synonym)), -1)
+}
+
+/**
+ * Conceptos VIGENTES: uno por ranura, el mencionado mas tarde en el texto.
+ *
+ * El desempate por posicion es exactamente el desempate por recencia
+ * conversacional, y no requiere conocer la conversacion. El texto que
+ * llega aqui en un turno de continuacion es la concatenacion de los turnos
+ * previos con el actual, en orden cronologico -- del mas antiguo al mas
+ * reciente. La ultima ocupacion de una ranura es, por tanto, la del turno
+ * mas reciente. Esta funcion no sabe nada de turnos ni de conversaciones:
+ * sigue siendo pura, sincrona y determinista sobre una cadena.
+ *
+ * Los conceptos de ranuras distintas se acumulan, exactamente como antes:
+ * "comedias cortas" sigue produciendo genero y duracion a la vez. Lo unico
+ * que cambia es que dos conceptos de la MISMA ranura ya no coexisten.
+ */
+/**
+ * Ocupacion de ranuras tras este turno (Fase 3).
+ *
+ * `previousOccupancy` es lo que quedo vigente al terminar el turno
+ * anterior. No se mezcla con el texto: se PARTE de ella y el turno actual
+ * sobrescribe unicamente las dimensiones que menciona. Una dimension que
+ * el turno no nombra permanece intacta -- es exactamente la operacion
+ * MANTENER, y es lo que permite que "comedia" siga vigente cuando la
+ * palabra ya no aparece en ninguna parte del texto disponible.
+ *
+ * Sigue siendo pura, sincrona y determinista: no conoce turnos, ni
+ * conversaciones, ni estado. Recibe una ocupacion y una cadena, y devuelve
+ * otra ocupacion.
+ */
+export function resolveWorkOccupancy(
+  normalizedQuery: string,
+  previousOccupancy: WorkSlotOccupancy = {}
+): WorkSlotOccupancy {
+  const vigentePorRanura = new Map<WorkSlot, { canonical: WorkConcept; index: number }>()
+
+  // Lo heredado entra primero, con la posicion mas baja posible: cualquier
+  // mencion del turno actual en esa misma dimension lo desplaza.
+  for (const [slot, canonical] of Object.entries(previousOccupancy) as [WorkSlot, WorkConcept][]) {
+    vigentePorRanura.set(slot, { canonical, index: -1 })
+  }
+
+  for (const canonical of detectCanonicalTerms(normalizedQuery)) {
+    const slot = TERM_SLOTS[canonical]
+    if (slot === undefined) continue
+
+    const index = lastMentionIndex(normalizedQuery, canonical)
+    const vigente = vigentePorRanura.get(slot)
+
+    // `>` y no `>=`: ante un empate imposible en la practica, gana el
+    // primero en el orden de declaracion, para que el resultado sea
+    // estable y no dependa del orden de iteracion de un Map.
+    if (vigente === undefined || index > vigente.index) {
+      vigentePorRanura.set(slot, { canonical, index })
+    }
+  }
+
+  const ocupacion: { -readonly [K in WorkSlot]?: WorkConcept } = {}
+  for (const [slot, ocupante] of vigentePorRanura) ocupacion[slot] = ocupante.canonical
+
+  return ocupacion
 }
 
 const NUMBER_WORDS: Readonly<Record<string, number>> = {
@@ -132,9 +277,18 @@ function detectAuthor(normalizedQuery: string, knownAuthors: readonly string[]):
  * de WorkSearchCriteria corresponde a cada concepto; esa es la
  * responsabilidad exclusiva de interpretRules().
  */
-function domainVocabulary(normalizedQuery: string, knownAuthors: readonly string[]): CanonicalConcepts {
+function domainVocabulary(
+  normalizedQuery: string,
+  knownAuthors: readonly string[],
+  previousOccupancy: WorkSlotOccupancy
+): CanonicalConcepts {
   return {
-    terms: detectCanonicalTerms(normalizedQuery),
+    // Conceptos ya resueltos por ranura (Fase 2): interpretRules() recibe
+    // como maximo un concepto por dimension, de modo que su contrato de
+    // combinacion -- campos distintos se acumulan -- vuelve a ser cierto
+    // sin excepciones. Desde la Fase 3 la resolucion parte ademas de lo
+    // que quedo vigente en el turno anterior.
+    terms: Object.values(resolveWorkOccupancy(normalizedQuery, previousOccupancy)),
     author: detectAuthor(normalizedQuery, knownAuthors),
     explicitCastSize: detectExplicitCastSize(normalizedQuery),
   }
@@ -159,13 +313,14 @@ const POCOS_ACTORES_MAX = 4
  *   - Criterios que escriben campos DISTINTOS siempre se acumulan --
  *     "comedias cortas" produce {genre, maxDurationMinutes} a la vez,
  *     nunca se descarta uno a favor del otro.
- *   - Criterios que escribirian el MISMO campo (p.ej. una consulta que
- *     coincidiera a la vez con COMEDIA y MUSICAL) no tienen ninguna
- *     prioridad de negocio definida -- prevalece el ultimo evaluado
- *     segun el orden de este cuerpo de funcion, que es un detalle de
- *     implementacion, nunca una decision de producto. Si esto llega a
- *     importar en la practica, requiere una decision explicita de
- *     Direccion, igual que la ya tomada para "clasicos".
+ *   - Criterios de una MISMA DIMENSION ya no llegan juntos hasta aqui:
+ *     `resolveActiveTerms()` deja vigente uno solo por ranura antes de
+ *     esta funcion (Fase 2). Aquello que el contrato original dejaba
+ *     abierto -- "prevalece el ultimo evaluado segun el orden de este
+ *     cuerpo de funcion, que es un detalle de implementacion" -- quedo
+ *     decidido por Direccion tras producirse en produccion: prevalece el
+ *     concepto mencionado mas recientemente, no el que este mas abajo en
+ *     este archivo.
  *   - Un concepto sin ninguna regla aplicable no anade ningun campo --
  *     degradacion silenciosa a "sin filtro para ese concepto", nunca un
  *     valor inventado (taxonomia de degradacion, ADR SCENAIA-002C.1).
@@ -207,8 +362,12 @@ function interpretRules(concepts: CanonicalConcepts): WorkSearchCriteria {
  *   2. domainVocabulary()  -- texto -> conceptos canonicos.
  *   3. interpretRules()    -- conceptos canonicos -> WorkSearchCriteria.
  */
-export function interpretWorkQuery(normalizedQuery: string, knownAuthors: readonly string[] = []): WorkSearchCriteria {
-  const concepts = domainVocabulary(normalizedQuery, knownAuthors)
+export function interpretWorkQuery(
+  normalizedQuery: string,
+  knownAuthors: readonly string[] = [],
+  previousOccupancy: WorkSlotOccupancy = {}
+): WorkSearchCriteria {
+  const concepts = domainVocabulary(normalizedQuery, knownAuthors, previousOccupancy)
   return interpretRules(concepts)
 }
 

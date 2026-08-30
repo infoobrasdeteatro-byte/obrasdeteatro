@@ -80,9 +80,9 @@ describe('coordinateFlow', () => {
   it('invoca los 7 pasos del Núcleo en el orden congelado, enhebrando cada salida como entrada del siguiente', async () => {
     await coordinateFlow('profile-1', session, 'hola')
 
-    expect(normalizeRequest).toHaveBeenCalledWith('hola', [])
+    expect(normalizeRequest).toHaveBeenCalledWith('hola', [], null)
     expect(buildProfessionalContext).toHaveBeenCalledWith('profile-1', session)
-    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest)
+    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
     expect(buildDecisionContext).toHaveBeenCalledWith(normalizedRequest, professionalContext, knowledgeContext)
     expect(buildAuthorizationContext).toHaveBeenCalledWith(professionalContext, decisionContext)
     expect(composePrompt).toHaveBeenCalledWith(normalizedRequest, knowledgeContext, [])
@@ -133,6 +133,7 @@ describe('coordinateFlow', () => {
       isContinuation: false,
       resolvedTerms: [],
       retrievedEntityCount: 0,
+      coveredDomainCount: 0,
       knowledgeConfidence: 0,
       isEmptyResult: false,
       responseType: 'RESPONSE_SUCCESS',
@@ -147,11 +148,11 @@ describe('coordinateFlow', () => {
   it('Fase 0: un fallo de observabilidad no altera la respuesta ya construida', async () => {
     vi.mocked(recordTurnMetrics).mockRejectedValue(new Error('fallo simulado de telemetria'))
 
-    await expect(coordinateFlow('profile-1', session, 'hola')).resolves.toBe(responseContext)
+    await expect(coordinateFlow('profile-1', session, 'hola')).resolves.toMatchObject({ responseContext })
   })
 
   it('devuelve exactamente el ResponseContext producido por Response Composer', async () => {
-    const result = await coordinateFlow('profile-1', session, 'hola')
+    const { responseContext: result } = await coordinateFlow('profile-1', session, 'hola')
 
     expect(result).toBe(responseContext)
   })
@@ -160,7 +161,7 @@ describe('coordinateFlow', () => {
     vi.mocked(recordActivity).mockResolvedValue(false)
     vi.mocked(distributeExecutionAudit).mockResolvedValue(undefined)
 
-    const result = await coordinateFlow('profile-1', session, 'hola')
+    const { responseContext: result } = await coordinateFlow('profile-1', session, 'hola')
 
     expect(result).toBe(responseContext)
   })
@@ -182,7 +183,7 @@ describe('coordinateFlow', () => {
     await coordinateFlow('profile-1', session, 'hola', history)
 
     expect(buildProfessionalContext).toHaveBeenCalledWith('profile-1', session)
-    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest)
+    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
     expect(buildDecisionContext).toHaveBeenCalledWith(normalizedRequest, professionalContext, knowledgeContext)
     expect(buildAuthorizationContext).toHaveBeenCalledWith(professionalContext, decisionContext)
     expect(executeAIRequest).toHaveBeenCalledWith({
@@ -204,7 +205,7 @@ describe('coordinateFlow — continuidad contextual', () => {
     expect(normalizeRequest).toHaveBeenCalledWith('¿Y alguna más corta?', [
       '¿Qué obras de comedia tienes?',
       '¿Y de Lorca?',
-    ])
+    ], null)
   })
 })
 
@@ -412,7 +413,7 @@ describe('coordinateFlow — circuito economico', () => {
     // 'active'`). Aqui se comprueba que ese rechazo no se propaga al usuario.
     vi.mocked(settleReservation).mockRejectedValue(new Error('reserva no esta activa, no se puede liquidar'))
 
-    await expect(coordinateFlow('profile-1', session, 'hola')).resolves.toBe(responseContext)
+    await expect(coordinateFlow('profile-1', session, 'hola')).resolves.toMatchObject({ responseContext })
   })
 
   it('el cierre ocurre con la respuesta ya construida: nunca la condiciona', async () => {
@@ -422,7 +423,104 @@ describe('coordinateFlow — circuito economico', () => {
       audit,
     } as never)
 
-    await expect(coordinateFlow('profile-1', session, 'hola')).resolves.toBe(responseContext)
+    await expect(coordinateFlow('profile-1', session, 'hola')).resolves.toMatchObject({ responseContext })
     expect(composeResponse).toHaveBeenCalled()
+  })
+})
+
+/**
+ * FASE 3 — el Orquestador es el unico componente que ve el estado completo,
+ * y lo DESCOMPONE antes de que cruce ninguna frontera. Estos tests
+ * comprueban la descomposicion, no el contenido del estado: eso ya lo
+ * cubren las pruebas del propio modulo.
+ */
+describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
+  const ESTADO_ENTRANTE = {
+    conversationId: 'conv-1',
+    activeDomain: 'Obras' as const,
+    occupancyByDomain: [{ domain: 'Obras' as const, slots: { genero: 'COMEDIA' as const } }],
+  }
+
+  it('G · SIN ESTADO: el turno se resuelve exactamente como antes de esta fase', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(normalizeRequest).toHaveBeenCalledWith('hola', [], null)
+    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
+  })
+
+  it('G · sin estado entrante devuelve igualmente un estado nuevo, con conversacion propia', async () => {
+    const { conversationState } = await coordinateFlow('profile-1', session, 'hola')
+
+    expect(conversationState.conversationId).toEqual(expect.any(String))
+    expect(conversationState.conversationId.length).toBeGreaterThan(0)
+    expect(conversationState.stateVersion).toBe(1)
+  })
+
+  it('DESCOMPONE el estado: al interprete un dominio, al conocimiento una ocupacion', async () => {
+    await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+
+    expect(normalizeRequest).toHaveBeenCalledWith('hola', [], 'Obras')
+    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, { genero: 'COMEDIA' })
+  })
+
+  it('NINGUN componente del Nucleo recibe el estado completo', async () => {
+    await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+
+    const recibidoPorAlguien = [
+      ...vi.mocked(normalizeRequest).mock.calls,
+      ...vi.mocked(buildKnowledgeContext).mock.calls,
+      ...vi.mocked(buildDecisionContext).mock.calls,
+      ...vi.mocked(buildAuthorizationContext).mock.calls,
+      ...vi.mocked(executeAIRequest).mock.calls,
+      ...vi.mocked(composeResponse).mock.calls,
+    ].flat()
+
+    for (const argumento of recibidoPorAlguien) {
+      expect(JSON.stringify(argumento ?? null)).not.toContain('conversationId')
+      expect(JSON.stringify(argumento ?? null)).not.toContain('occupancyByDomain')
+    }
+  })
+
+  it('conserva la conversacion entre turnos, sin regenerar su identificador', async () => {
+    const { conversationState } = await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+
+    expect(conversationState.conversationId).toBe('conv-1')
+  })
+
+  it('la version se RECONSTRUYE del historial: la que enviara el cliente no se lee', async () => {
+    const historial = [
+      { role: 'user' as const, content: 'uno' },
+      { role: 'assistant' as const, content: 'respuesta' },
+      { role: 'user' as const, content: 'dos' },
+    ]
+
+    const { conversationState } = await coordinateFlow('profile-1', session, 'tres', historial, ESTADO_ENTRANTE)
+
+    // Dos turnos previos de usuario -> este es el tercero.
+    expect(conversationState.stateVersion).toBe(3)
+  })
+
+  it('el estado saliente recoge el dominio con el que se resolvio el turno', async () => {
+    const { conversationState } = await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+
+    expect(conversationState.activeDomain).toBe('Obras')
+  })
+
+  it('el estado viaja JUNTO a la respuesta, nunca dentro de ella', async () => {
+    const resultado = await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+
+    expect(resultado.responseContext).toBe(responseContext)
+    expect(Object.keys(resultado.responseContext)).not.toContain('conversationState')
+  })
+
+  it('un turno de continuacion reinterpretado hereda la misma ocupacion previa', async () => {
+    vi.mocked(resolveVocabulary).mockResolvedValue(['obra'])
+    vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: true } as never)
+
+    await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+
+    for (const llamada of vi.mocked(buildKnowledgeContext).mock.calls) {
+      expect(llamada[1]).toEqual({ genero: 'COMEDIA' })
+    }
   })
 })

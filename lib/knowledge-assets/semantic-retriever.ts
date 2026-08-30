@@ -1,5 +1,7 @@
 import { listPublishedWorkAuthors, listOrganizationLocations, listPersonLocations } from '@/lib/repository-layer'
 import { listWorkKnowledge } from './works-knowledge'
+import { resolveWorkOccupancy } from './interpret-work-query'
+import type { WorkSlotOccupancy } from './interpret-work-query'
 import { listOrganizationKnowledge } from './organizations-knowledge'
 import { listPersonKnowledge } from './persons-knowledge'
 import { interpretPersonQuery, hasUnresolvedPersonLocation } from './interpret-person-query'
@@ -40,6 +42,20 @@ export interface KnowledgeRetrievalResult {
    *   narrowed=false, unapplied=[]   -> SIN criterio: no hay nada que advertir
    */
   readonly unappliedCriteria: readonly string[]
+  /**
+   * Ranuras del dominio Obras que quedan VIGENTES tras este turno (Fase 3).
+   *
+   * Es el contexto que sobrevive al turno, y se emite aqui porque este es
+   * el unico punto que lo conoce: quien lo almacena no sabe interpretar
+   * lenguaje, y quien lo interpreta no debe saber que existe una
+   * conversacion. Un objeto vacio significa "ninguna dimension acotada",
+   * estado real y explicito, nunca un marcador de ausencia.
+   *
+   * Los dominios sin modelo de ranuras devuelven siempre vacio: declarar
+   * ranuras que no existen representaria un estado que ningun dominio
+   * respalda todavia (Principio de Madurez de la Abstraccion).
+   */
+  readonly workOccupancy: WorkSlotOccupancy
 }
 
 /**
@@ -51,7 +67,12 @@ export interface KnowledgeRetrievalResult {
  * por relevancia depende de las capacidades de la implementacion concreta.
  */
 export interface SemanticRetriever {
-  retrieve(domain: KnowledgeDomain, query: string, limit?: number): Promise<KnowledgeRetrievalResult>
+  retrieve(
+    domain: KnowledgeDomain,
+    query: string,
+    limit?: number,
+    previousOccupancy?: WorkSlotOccupancy
+  ): Promise<KnowledgeRetrievalResult>
 }
 
 /**
@@ -65,18 +86,26 @@ export interface SemanticRetriever {
  * cambiar esta interfaz (independencia tecnologica, Decision de Direccion,
  * Puntos 2 y 3).
  */
-async function baseRetrieve(domain: KnowledgeDomain, query: string, limit?: number): Promise<KnowledgeRetrievalResult> {
+async function baseRetrieve(
+  domain: KnowledgeDomain,
+  query: string,
+  limit?: number,
+  previousOccupancy: WorkSlotOccupancy = {}
+): Promise<KnowledgeRetrievalResult> {
   switch (domain) {
     case 'Obras': {
       const knownAuthors = await listPublishedWorkAuthors()
-      const criteria = interpretWorkQuery(query, knownAuthors)
+      // Las ranuras vigentes del turno anterior son el punto de partida; el
+      // turno actual solo sobrescribe las dimensiones que menciona.
+      const workOccupancy = resolveWorkOccupancy(query, previousOccupancy)
+      const criteria = interpretWorkQuery(query, knownAuthors, previousOccupancy)
       const items = await listWorkKnowledge(criteria, limit)
       // Obras distingue ya los cuatro estados, igual que Organizaciones: sabe
       // cuando el usuario atribuyo una obra a alguien que no esta en el
       // catalogo, y lo separa de "no se pidio ningun criterio".
       const unappliedCriteria = hasUnresolvedAuthor(query, criteria) ? ['autor'] : []
 
-      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria }
+      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy }
     }
     case 'Organizaciones': {
       const knownLocations = await listOrganizationLocations()
@@ -87,7 +116,7 @@ async function baseRetrieve(domain: KnowledgeDomain, query: string, limit?: numb
       // usuario pidio una ubicacion que no ha podido resolver.
       const unappliedCriteria = hasUnresolvedLocation(query, criteria) ? ['ubicacion'] : []
 
-      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria }
+      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {} }
     }
     case 'Personas': {
       const knownLocations = await listPersonLocations()
@@ -98,10 +127,10 @@ async function baseRetrieve(domain: KnowledgeDomain, query: string, limit?: numb
       // ubicacion pedida y no resuelta queda declarada, nunca silenciada.
       const unappliedCriteria = hasUnresolvedPersonLocation(query, criteria) ? ['ubicacion'] : []
 
-      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria }
+      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {} }
     }
     default:
-      return { items: [], requestWasNarrowed: false, unappliedCriteria: [] }
+      return { items: [], requestWasNarrowed: false, unappliedCriteria: [], workOccupancy: {} }
   }
 }
 
@@ -114,7 +143,8 @@ const baseSemanticRetriever: SemanticRetriever = { retrieve: baseRetrieve }
 export async function retrieveRelevantKnowledge(
   domain: KnowledgeDomain,
   query: string,
-  limit?: number
+  limit?: number,
+  previousOccupancy?: WorkSlotOccupancy
 ): Promise<KnowledgeRetrievalResult> {
-  return baseSemanticRetriever.retrieve(domain, query, limit)
+  return baseSemanticRetriever.retrieve(domain, query, limit, previousOccupancy)
 }

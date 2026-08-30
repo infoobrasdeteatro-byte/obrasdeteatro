@@ -23,7 +23,11 @@ vi.mock('@/lib/repository-layer', async () => {
 vi.mock('../works-knowledge', () => ({ listWorkKnowledge: vi.fn() }))
 vi.mock('../organizations-knowledge', () => ({ listOrganizationKnowledge: vi.fn() }))
 vi.mock('../persons-knowledge', () => ({ listPersonKnowledge: vi.fn() }))
-vi.mock('../interpret-work-query', () => ({ interpretWorkQuery: vi.fn(), hasUnresolvedAuthor: vi.fn(() => false) }))
+vi.mock('../interpret-work-query', () => ({
+  interpretWorkQuery: vi.fn(),
+  hasUnresolvedAuthor: vi.fn(() => false),
+  resolveWorkOccupancy: vi.fn(() => ({})),
+}))
 
 beforeEach(() => {
   vi.mocked(listPublishedWorkAuthors).mockReset()
@@ -50,7 +54,7 @@ describe('retrieveRelevantKnowledge', () => {
     const result = await retrieveRelevantKnowledge('Obras', 'obras de lorca', 5)
 
     expect(listPublishedWorkAuthors).toHaveBeenCalled()
-    expect(interpretWorkQuery).toHaveBeenCalledWith('obras de lorca', ['Federico García Lorca'])
+    expect(interpretWorkQuery).toHaveBeenCalledWith('obras de lorca', ['Federico García Lorca'], {})
     expect(listWorkKnowledge).toHaveBeenCalledWith({ author: 'Federico García Lorca' }, 5)
     expect(result.items).toBe(items)
     expect(result.requestWasNarrowed).toBe(true)

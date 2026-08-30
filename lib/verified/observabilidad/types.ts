@@ -39,6 +39,14 @@ export interface TurnObservation {
   readonly isContinuation: boolean
   readonly resolvedTerms: readonly string[]
   readonly retrievedEntityCount: number
+  /**
+   * Dominios que Knowledge Assets pudo cubrir realmente en este turno.
+   * Fase 1: es lo unico que separa "no habia ningun dominio que consultar"
+   * de "se consulto el dominio y no devolvio nada" -- dos causas opuestas
+   * que hasta ahora producian el mismo `retrievedEntityCount` de cero y
+   * eran indistinguibles en telemetria.
+   */
+  readonly coveredDomainCount: number
   readonly knowledgeConfidence: number
   /** Se cubrio algun dominio y aun asi no habia nada que ofrecer. */
   readonly isEmptyResult: boolean

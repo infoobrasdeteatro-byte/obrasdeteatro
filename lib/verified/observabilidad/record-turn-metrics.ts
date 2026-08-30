@@ -27,6 +27,43 @@ import type { TurnObservation } from './types'
  * booleano. Un fallo de observabilidad no puede degradar una respuesta ya
  * construida (misma propiedad ya congelada para recordActivity).
  */
+/**
+ * De donde salio el dominio con el que se resolvio el turno (Fase 1).
+ *
+ *   propio    -- la peticion nombraba su dominio y se interpreto sola.
+ *   heredado  -- no lo nombraba y lo tomo de la conversacion anterior.
+ *   ninguno   -- no se resolvio ningun dominio.
+ *
+ * Es la señal que faltaba: un turno resuelto por si mismo y otro que
+ * arrastra el contexto producian metricas identicas, de modo que la
+ * perdida de anclaje conversacional era invisible mientras el numero de
+ * dominios siguiera siendo uno. Vocabulario cerrado de tres valores.
+ */
+function resolveDomainSource(domainCount: number, isContinuation: boolean): 'propio' | 'heredado' | 'ninguno' {
+  if (domainCount === 0) return 'ninguno'
+
+  return isContinuation ? 'heredado' : 'propio'
+}
+
+/**
+ * Por que un turno se quedo sin entidades (Fase 1). Dos causas opuestas
+ * que hasta ahora compartian el mismo `retrieval.entities_count = 0`:
+ *
+ *   sin_dominio     -- no habia ningun dominio cubierto que consultar.
+ *   sin_resultados  -- se consulto el catalogo y no contenia nada.
+ *
+ * Devuelve `null` cuando si hubo entidades: entonces no hay vacio que
+ * explicar y la metrica no se emite, en lugar de inventar un tercer valor
+ * para "no aplica". Vocabulario cerrado de dos valores, tal como quedo
+ * acotado tras la revision adversarial -- `criterios_imposibles` se
+ * descarto por vestigial.
+ */
+function resolveEmptyReason(coveredDomainCount: number, retrievedEntityCount: number): 'sin_dominio' | 'sin_resultados' | null {
+  if (retrievedEntityCount > 0) return null
+
+  return coveredDomainCount === 0 ? 'sin_dominio' : 'sin_resultados'
+}
+
 export async function recordTurnMetrics(profileId: string, observation: TurnObservation): Promise<boolean> {
   const { requestId, domains, isContinuation, resolvedTerms } = observation
 
@@ -57,9 +94,27 @@ export async function recordTurnMetrics(profileId: string, observation: TurnObse
     // Metrica central de la Fase 1: 1 cuando el usuario se quedo sin nada.
     { name: 'scenaia.response.empty', value: observation.isEmptyResult ? 1 : 0, unit: 'flag', tags: contexto },
     { name: 'scenaia.response.status', value: 1, unit: 'count', tags: { ...base, responseType: observation.responseType } },
+    // Fase 1 -- el origen del dominio viaja en el tag; el valor solo cuenta
+    // la ocurrencia, mismo patron que `response.status` ya usaba.
+    {
+      name: 'scenaia.state.domain_source',
+      value: 1,
+      unit: 'count',
+      tags: { ...contexto, domainSource: resolveDomainSource(domains.length, isContinuation) },
+    },
   ]
 
-  // Una sola escritura para las siete metricas. Medido antes de decidirlo:
-  // enviarlas por separado costaba ~194 ms al cierre de cada turno.
+  // Fase 1 -- solo cuando hay un vacio que explicar. Un turno con
+  // resultados no emite esta metrica: la ausencia de la metrica ES la
+  // afirmacion de que no hubo vacio, y no hace falta un valor "no aplica".
+  const emptyReason = resolveEmptyReason(observation.coveredDomainCount, observation.retrievedEntityCount)
+  if (emptyReason !== null) {
+    metricas.push({ name: 'scenaia.retrieval.empty_reason', value: 1, unit: 'count', tags: { ...contexto, reason: emptyReason } })
+  }
+
+  // Una sola escritura para todas las metricas del turno. Medido antes de
+  // decidirlo: enviarlas por separado costaba ~194 ms al cierre de cada
+  // turno. Las metricas anadidas en la Fase 1 viajan en la misma escritura,
+  // de modo que observar mas no cuesta un viaje mas.
   return recordMetrics(profileId, metricas)
 }
