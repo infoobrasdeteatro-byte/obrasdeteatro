@@ -5,11 +5,18 @@ import ChatMessage from './components/ChatMessage'
 import ChatWelcome from './components/ChatWelcome'
 import ChatInput from './components/ChatInput'
 import TypingIndicator from './components/TypingIndicator'
+import type { ConversationState } from '@/lib/conversation-state'
 
 interface ScenaiaResponse {
   responseType: string
   responseContent: string | null
   responseWarnings: string[]
+  /**
+   * Contexto conversacional vigente (Fase 3). Se importa el tipo REAL del
+   * contrato: el cliente no declara una forma paralela ni serializa el
+   * estado por su cuenta.
+   */
+  conversationState: ConversationState | null
 }
 
 interface ConversationTurn {
@@ -32,6 +39,23 @@ interface ConversationTurn {
  */
 export default function ScenaiaClient() {
   const [messages, setMessages] = useState<ConversationTurn[]>([])
+  /**
+   * Contexto conversacional que el servidor devolvio en el turno anterior.
+   *
+   * El cliente ALMACENA, TRANSPORTA y REEMPLAZA. No lo lee, no lo
+   * interpreta y no modifica ninguno de sus campos -- ni el dominio, ni las
+   * ranuras, ni la version, ni el instante. Su unica responsabilidad es que
+   * lo que el servidor emitio en el turno N llegue intacto al turno N+1.
+   *
+   * No es una segunda memoria: es el mismo objeto del contrato, guardado
+   * tal cual. La validez de su contenido la decide siempre la API, que
+   * sigue siendo la frontera de validacion; lo que salga de aqui no es
+   * confiable por proceder de aqui.
+   *
+   * Vive en memoria del cliente, como el historial: se pierde al recargar,
+   * por el mismo diseno ya declarado y sin persistencia nueva.
+   */
+  const [conversationState, setConversationState] = useState<ConversationState | null>(null)
   const [message, setMessage] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,7 +81,13 @@ export default function ScenaiaClient() {
       const res = await fetch('/api/scenaia-verified', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ message: text, history, route: '/scenaia', module: 'centro-profesional' }),
+        body: JSON.stringify({
+          message: text,
+          history,
+          conversationState,
+          route: '/scenaia',
+          module: 'centro-profesional',
+        }),
       })
 
       if (!res.ok) {
@@ -68,6 +98,10 @@ export default function ScenaiaClient() {
 
       const data: ScenaiaResponse = await res.json()
       setMessages((prev) => [...prev, { role: 'assistant', content: data.responseContent ?? '(sin contenido)' }])
+      // REEMPLAZO, nunca fusion: el estado vigente es siempre el ultimo que
+      // el servidor emitio. Combinarlo con el anterior seria decidir aqui
+      // que sigue vigente, y esa decision no es del cliente.
+      setConversationState(data.conversationState ?? null)
     } catch {
       setError('No se pudo contactar con ScenaIA. Inténtalo de nuevo.')
     } finally {

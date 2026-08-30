@@ -30,6 +30,12 @@ const AUTHORIZED_IMPORTS = [
   // Orquestador es el unico punto que dispone de ambos. Sigue SIN acceder
   // a Supabase ni a Repository Layer (invariante comprobada mas arriba).
   "from '@/lib/accounting-engine'",
+  // Contexto conversacional (Fase 3, autorizado expresamente por Direccion).
+  // El Orquestador es el unico componente que puede componer el estado:
+  // ninguno del Nucleo debe conocerlo entero, y el estado se descompone
+  // aqui en las dos piezas que el interprete y el conocimiento si tienen
+  // derecho a recibir. Sigue SIN acceder a Supabase ni a Repository Layer.
+  "from '@/lib/conversation-state'",
 ]
 
 describe('Orquestador (lib/verified) — invariantes de integración (Plan Técnico aprobado, Acta de Autorización 2026-07-19)', () => {

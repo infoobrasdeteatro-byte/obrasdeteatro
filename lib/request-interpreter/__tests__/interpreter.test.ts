@@ -130,3 +130,92 @@ describe('normalizeRequest — continuidad contextual (Reconexion del Nucleo Con
     )
   })
 })
+
+/**
+ * FASE 3 — herencia de dominio desde el estado conversacional.
+ *
+ * El dominio previo llega ya resuelto desde fuera. Este componente no sabe
+ * de donde viene, no conoce ningun estado conversacional y sigue sin poder
+ * conocerlo: recibe un KnowledgeDomain, que es el unico tipo que su
+ * invariante le autoriza a manejar.
+ */
+describe('B · dominio heredado del estado conversacional', () => {
+  const OBRAS_T1 = '¿Qué obras de comedia tienes?'
+
+  it('un turno sin dominio propio ni historial hereda el dominio vigente', () => {
+    const resultado = normalizeRequest('¿y alguna más larga?', [], 'Obras')
+
+    expect(resultado.requestedKnowledgeDomains).toEqual(['Obras'])
+  })
+
+  it('EL DEFECTO VERIFICADO: cuando el turno inicial ya salio de la ventana, el dominio sobrevive igual', () => {
+    // Tres turnos de continuacion: el que nombraba "obras" ya no esta en
+    // `slice(-3)`, exactamente como ocurrio en el turno 5 de produccion.
+    const ventanaSinDominio = ['¿y alguna más corta?', '¿y alguna más larga?', '¿y alguna más larga?']
+
+    expect(normalizeRequest('¿y alguna más larga?', ventanaSinDominio).requestedKnowledgeDomains).toEqual([])
+    expect(normalizeRequest('¿y alguna más larga?', ventanaSinDominio, 'Obras').requestedKnowledgeDomains).toEqual([
+      'Obras',
+    ])
+  })
+
+  it('NOMBRAR UN DOMINIO CORTA LA HERENCIA: la regla vigente se conserva intacta', () => {
+    const resultado = normalizeRequest('¿Qué compañías hay en Madrid?', [], 'Obras')
+
+    expect(resultado.requestedKnowledgeDomains).toEqual(['Organizaciones'])
+    expect(resultado.requestedKnowledgeDomains).not.toContain('Obras')
+  })
+
+  it('el historial tiene precedencia sobre el estado: lo mas reciente manda', () => {
+    const resultado = normalizeRequest('¿y alguna más larga?', [OBRAS_T1], 'Organizaciones')
+
+    expect(resultado.requestedKnowledgeDomains).toEqual(['Obras'])
+  })
+
+  it('sin dominio previo el comportamiento es exactamente el anterior a la Fase 3', () => {
+    expect(normalizeRequest('¿y alguna más larga?', []).requestedKnowledgeDomains).toEqual(
+      normalizeRequest('¿y alguna más larga?', [], null).requestedKnowledgeDomains
+    )
+  })
+
+  it('el dominio previo solo resuelve ESTE turno: no se almacena ni se propaga', () => {
+    const resultado = normalizeRequest('¿y alguna más larga?', [], 'Obras')
+
+    expect(Object.keys(resultado)).not.toContain('previousDomain')
+    expect(Object.keys(resultado)).not.toContain('conversationState')
+  })
+})
+
+describe('K · compatibilidad de NormalizedRequest', () => {
+  it('el contrato conserva EXACTAMENTE sus campos: la Fase 3 no anade ninguno', () => {
+    expect(Object.keys(normalizeRequest('¿Qué obras tienes?', [], 'Obras')).sort()).toEqual([
+      'detectedAmbiguities',
+      'estimatedComplexity',
+      'interpretationConfidence',
+      'normalizedIntent',
+      'originalRequest',
+      'professionalContextLevel',
+      'requestId',
+      'requestType',
+      'requestedKnowledgeDomains',
+      'retrievalQuery',
+      'timestamp',
+    ])
+  })
+
+  it('no aparece ningun campo del estado conversacional', () => {
+    const claves = Object.keys(normalizeRequest('¿Qué obras tienes?', ['previo'], 'Obras'))
+
+    for (const prohibido of ['conversationState', 'conversationId', 'stateVersion', 'criteriaByDomain', 'lastResult']) {
+      expect(claves, prohibido).not.toContain(prohibido)
+    }
+  })
+
+  it('la ventana de continuidad no ha cambiado: sigue arrastrando tres turnos', () => {
+    const cuatro = ['uno obras', 'dos', 'tres', 'cuatro']
+    const query = normalizeRequest('¿y alguna más?', cuatro).retrievalQuery
+
+    expect(query).not.toContain('uno obras')
+    expect(query).toContain('dos')
+  })
+})

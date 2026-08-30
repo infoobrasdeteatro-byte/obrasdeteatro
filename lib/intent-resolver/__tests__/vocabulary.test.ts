@@ -379,3 +379,60 @@ describe('A1 — comprension de referencias humanas indefinidas', () => {
     expect(interpretWorkQuery('que obras cortas tienes?')).toEqual({ maxDurationMinutes: 60 })
   })
 })
+
+/**
+ * BATERIA REGIONAL DE OBRAS — no-regresion obligatoria (9/9).
+ *
+ * Los terminos que se pasan a `composeAugmentedRequest` son los que el
+ * proveedor real devolvio en la ejecucion registrada de la bateria, y se
+ * replican aqui tal cual. Lo que estos tests fijan es la mitad
+ * DETERMINISTA del recorrido -- composicion e interpretacion --, que es
+ * exactamente la que un cambio en las ranuras podria romper. Lo que el
+ * proveedor decida contestar no es determinista y no se fija en una suite:
+ * mismo criterio ya aplicado en la bateria de A1, mas arriba.
+ */
+describe('bateria regional de Obras — 9/9, no-regresion', () => {
+  const BATERIA: ReadonlyArray<{
+    pais: string
+    peticion: string
+    terminos: string[]
+    criterio: Record<string, number>
+  }> = [
+    { pais: 'ES', peticion: '¿que obras hay para un elenco pequeno?', terminos: ['obra', 'pocos actores'], criterio: { maxCastSize: 4 } },
+    { pais: 'AR', peticion: '¿tenes alguna obra cortita?', terminos: ['obra', 'corta'], criterio: { maxDurationMinutes: 60 } },
+    { pais: 'AR', peticion: 'busco una obrita para un elenco chico', terminos: ['obra', 'pocos actores'], criterio: { maxCastSize: 4 } },
+    { pais: 'MX', peticion: 'quiero una obra con reparto pequeno', terminos: ['obra', 'pocos actores'], criterio: { maxCastSize: 4 } },
+    { pais: 'CO', peticion: '¿tiene alguna obra cortica?', terminos: ['obra', 'corta'], criterio: { maxDurationMinutes: 60 } },
+    { pais: 'CO', peticion: 'busco algo para un grupo reducido', terminos: ['obra', 'pocos actores'], criterio: { maxCastSize: 4 } },
+    { pais: 'CL', peticion: '¿tendras una obra cortita?', terminos: ['obra', 'corta'], criterio: { maxDurationMinutes: 60 } },
+    { pais: 'PE', peticion: '¿que obras chiquitas tienen?', terminos: ['obra', 'corta'], criterio: { maxDurationMinutes: 60 } },
+    { pais: 'VE', peticion: 'quiero una obra que sea cortica', terminos: ['obra', 'corta'], criterio: { maxDurationMinutes: 60 } },
+  ]
+
+  it('las nueve formulaciones producen el mismo criterio que en la ejecucion registrada', () => {
+    for (const caso of BATERIA) {
+      const aumentada = composeAugmentedRequest(caso.peticion, caso.terminos)
+
+      expect(interpretWorkQuery(aumentada), `${caso.pais} ${caso.peticion}`).toEqual(caso.criterio)
+    }
+  })
+
+  it('las nueve siguen resolviendo al dominio Obras, sin abrir ningun otro', () => {
+    for (const caso of BATERIA) {
+      const aumentada = composeAugmentedRequest(caso.peticion, caso.terminos)
+
+      expect(detectKnowledgeDomains(aumentada), `${caso.pais} ${caso.peticion}`).toEqual(['Obras'])
+    }
+  })
+
+  it('ninguna de las nueve produce una condicion de duracion doble', () => {
+    for (const caso of BATERIA) {
+      const criteria = interpretWorkQuery(composeAugmentedRequest(caso.peticion, caso.terminos))
+
+      expect(
+        criteria.maxDurationMinutes !== undefined && criteria.minDurationMinutes !== undefined,
+        `${caso.pais} ${caso.peticion}`
+      ).toBe(false)
+    }
+  })
+})

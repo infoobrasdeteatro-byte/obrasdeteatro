@@ -1,19 +1,58 @@
-import type { Organization, Person, Work } from '@/lib/repository-layer'
+import type {
+  Organization,
+  OrganizationSearchCriteria,
+  Person,
+  PersonSearchCriteria,
+  Work,
+  WorkSearchCriteria,
+} from '@/lib/repository-layer'
 import type { TheatricalFunction } from './theatrical-function'
+
+/**
+ * Criterio de busqueda estructurado, discriminado por dominio (ADR
+ * SCENAIA-002C.1, seccion "Search Criteria").
+ *
+ * El ADR lo prescribio como union discriminada y descarto expresamente la
+ * herencia con campos base compartidos, porque "evita introducir
+ * estructuras genericas no respaldadas por un estado real, coherente con
+ * PRD-001". Cada dominio tiene su propio criterio, con sus propios campos
+ * reales; no hay ningun campo comun, y la unica cosa que comparten es
+ * pertenecer a un dominio.
+ *
+ * Solo figuran los tres dominios que Knowledge Assets recupera hoy. Los
+ * cinco restantes de CAT-001 no tienen motor ni criterio: incluirlos
+ * anticiparia estados que ningun dominio real respalda todavia (Principio
+ * de Madurez de la Abstraccion, ADR SCENAIA-002C.1).
+ */
+export type KnowledgeSearchCriteria =
+  | { readonly domain: 'Obras'; readonly criteria: WorkSearchCriteria }
+  | { readonly domain: 'Organizaciones'; readonly criteria: OrganizationSearchCriteria }
+  | { readonly domain: 'Personas'; readonly criteria: PersonSearchCriteria }
 
 /**
  * The 8 official knowledge domains (CAT-001). No other value may be used
  * to tag a knowledge item.
  */
-export type KnowledgeDomain =
-  | 'Personas'
-  | 'Obras'
-  | 'Organizaciones'
-  | 'Oportunidades'
-  | 'Editorial'
-  | 'Relaciones'
-  | 'Trayectoria'
-  | 'Inteligencia'
+export const KNOWLEDGE_DOMAINS = [
+  'Personas',
+  'Obras',
+  'Organizaciones',
+  'Oportunidades',
+  'Editorial',
+  'Relaciones',
+  'Trayectoria',
+  'Inteligencia',
+] as const
+
+/**
+ * Lista cerrada de los 8 dominios en forma ejecutable. Existe porque un
+ * tipo no puede validarse en tiempo de ejecucion: cualquier dato que
+ * entre desde fuera del sistema tiene que comprobarse contra esta lista,
+ * no contra la union de tipos. El tipo se deriva de ella, de modo que
+ * ambos no pueden divergir.
+ */
+export type KnowledgeDomain = (typeof KNOWLEDGE_DOMAINS)[number]
+
 
 /**
  * Jerarquia de autoridad del conocimiento. El orden de la union es el orden

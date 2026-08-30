@@ -1,4 +1,5 @@
 import type { NormalizedRequest } from '@/lib/request-interpreter'
+import type { WorkSlotOccupancy } from '@/lib/knowledge-assets'
 import type { KnowledgeCompleteness, KnowledgeContext } from './types'
 import { isDomainCovered } from './domain-coverage'
 import { retrieveKnowledgeForDomain } from './retrieve-knowledge'
@@ -24,7 +25,10 @@ function completenessToConfidence(completeness: KnowledgeCompleteness): number {
  * posterior, fuera del alcance actual. Objeto efimero: se construye de
  * nuevo en cada invocacion, nunca se cachea ni se reutiliza.
  */
-export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest): Promise<KnowledgeContext> {
+export async function buildKnowledgeContext(
+  normalizedRequest: NormalizedRequest,
+  previousOccupancy: WorkSlotOccupancy = {}
+): Promise<KnowledgeContext> {
   // Deduplicado defensivo: NormalizedRequest no garantiza unicidad a nivel de
   // tipos, aunque el unico productor actual (Request Interpreter) nunca la
   // viola -- evita recuperar el mismo dominio dos veces si eso cambiara.
@@ -33,7 +37,7 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
   const notCoveredDomains = requestedDomains.filter((domain) => !isDomainCovered(domain))
 
   const resultsByDomain = await Promise.all(
-    coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery))
+    coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy))
   )
   const knowledgeEntities = resultsByDomain.flatMap((result) => result.items)
 
@@ -80,6 +84,10 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
     knowledgeConfidence: completenessToConfidence(knowledgeCompleteness),
     knowledgeCompleteness,
     knowledgeLimitations,
+    // Contexto que sobrevive al turno (Fase 3). Se transporta sin
+    // interpretarlo: este componente no decide que significa una ranura,
+    // solo lleva hasta el Orquestador lo que el motor de dominio resolvio.
+    workOccupancy: resultsByDomain.find((resultado) => Object.keys(resultado.workOccupancy).length > 0)?.workOccupancy ?? {},
     knowledgeTimestamp: new Date().toISOString(),
   }
 }

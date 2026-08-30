@@ -8,10 +8,12 @@ import { settleReservation, releaseReservation, resolveSettlementCost } from '@/
 import { executeAIRequest } from '@/lib/ai-gateway'
 import type { NormalizedAIRequest } from '@/lib/ai-gateway'
 import { composeResponse } from '@/lib/response-composer'
-import type { ResponseContext } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
 import { recordTurnMetrics } from '@/lib/verified/observabilidad'
+import { emptyConversationState, nextConversationState, workOccupancyOf } from '@/lib/conversation-state'
+import type { IncomingConversationState } from '@/lib/conversation-state'
+import type { TurnOutcome } from './types'
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
 import { composeAugmentedRequest, resolveVocabulary } from '@/lib/intent-resolver'
@@ -86,8 +88,21 @@ export async function coordinateFlow(
   userId: string,
   session: SessionInput,
   originalRequest: string,
-  conversationHistory: readonly ConversationTurn[] = []
-): Promise<ResponseContext> {
+  conversationHistory: readonly ConversationTurn[] = [],
+  incomingState: IncomingConversationState | null = null
+): Promise<TurnOutcome> {
+  // CONTEXTO CONVERSACIONAL (Fase 3). El Orquestador es el unico componente
+  // que ve el estado completo, y lo descompone antes de que cruce ninguna
+  // frontera: al interprete le entrega un dominio, y al conocimiento una
+  // ocupacion de ranuras. Ninguno de los dos recibe -- ni puede recibir --
+  // el estado entero.
+  //
+  // Un estado ausente o descartado por invalido deja ambas piezas en su
+  // valor neutro, y el turno se resuelve exactamente como se resolvia
+  // antes de esta fase.
+  const estadoPrevio = incomingState ?? emptyConversationState(crypto.randomUUID())
+  const dominioPrevio = estadoPrevio.activeDomain
+  const ocupacionPrevia = workOccupancyOf(estadoPrevio, 'Obras')
   // Continuidad contextual: los turnos previos del usuario -- nunca los de
   // ScenaIA, que son respuestas, no peticiones -- se ofrecen al interprete
   // para que un turno de continuacion siga siendo interpretable. El
@@ -98,9 +113,9 @@ export async function coordinateFlow(
   const turnStartedAt = Date.now()
 
   const previousUserRequests = conversationHistory.filter((turn) => turn.role === 'user').map((turn) => turn.content)
-  let normalizedRequest = normalizeRequest(originalRequest, previousUserRequests)
+  let normalizedRequest = normalizeRequest(originalRequest, previousUserRequests, dominioPrevio)
   const professionalContext = await buildProfessionalContext(userId, session)
-  let knowledgeContext = await buildKnowledgeContext(normalizedRequest)
+  let knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
   const decisionContext = buildDecisionContext(normalizedRequest, professionalContext, knowledgeContext)
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
 
@@ -164,7 +179,7 @@ export async function coordinateFlow(
         composeAugmentedRequest(originalRequest, resolvedTerms),
         previousUserRequests
       )
-      knowledgeContext = await buildKnowledgeContext(normalizedRequest)
+      knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
     }
   }
 
@@ -238,6 +253,7 @@ export async function coordinateFlow(
       isContinuation: esTurnoDeContinuacion,
       resolvedTerms,
       retrievedEntityCount: entidades,
+      coveredDomainCount: dominiosCubiertos,
       knowledgeConfidence: knowledgeContext.knowledgeConfidence ?? 0,
       isEmptyResult: dominiosCubiertos > 0 && entidades === 0,
       responseType: responseContext.responseType,
@@ -247,5 +263,18 @@ export async function coordinateFlow(
     // Observar nunca puede impedir responder.
   }
 
-  return responseContext
+  // Estado que queda vigente para el turno siguiente. `stateVersion` y
+  // `updatedAt` los fija aqui el servidor: los valores que hubiera enviado
+  // el cliente no se leen en ningun momento.
+  const conversationState = nextConversationState(estadoPrevio, {
+    activeDomain: normalizedRequest.requestedKnowledgeDomains[0] ?? null,
+    workOccupancy: knowledgeContext.workOccupancy ?? {},
+    // La version es el indice de turno, derivado del historial que el
+    // cliente ya envia. No se acepta la version entrante: se RECONSTRUYE,
+    // que es lo unico que puede hacerse sin autoridad en servidor.
+    previousVersion: previousUserRequests.length,
+    occurredAt: new Date().toISOString(),
+  })
+
+  return { responseContext, conversationState }
 }

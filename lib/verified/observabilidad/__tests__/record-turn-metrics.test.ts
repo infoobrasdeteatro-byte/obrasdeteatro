@@ -11,6 +11,7 @@ const OBSERVACION: TurnObservation = {
   isContinuation: false,
   resolvedTerms: ['obra', 'corta'],
   retrievedEntityCount: 3,
+  coveredDomainCount: 1,
   knowledgeConfidence: 1,
   isEmptyResult: false,
   responseType: 'RESPONSE_SUCCESS',
@@ -27,7 +28,7 @@ beforeEach(() => {
 })
 
 describe('recordTurnMetrics — que se observa de un turno', () => {
-  it('emite las siete metricas del turno sobre el mecanismo de telemetria ya existente', async () => {
+  it('emite las metricas del turno sobre el mecanismo de telemetria ya existente', async () => {
     await recordTurnMetrics('profile-1', OBSERVACION)
 
     expect(metricasEmitidas().map((m) => m.name).sort()).toEqual([
@@ -38,6 +39,7 @@ describe('recordTurnMetrics — que se observa de un turno', () => {
       'scenaia.response.empty',
       'scenaia.response.status',
       'scenaia.retrieval.entities_count',
+      'scenaia.state.domain_source',
     ])
     expect(vi.mocked(recordMetrics).mock.calls.every(([profileId]) => profileId === 'profile-1')).toBe(true)
   })
@@ -114,10 +116,124 @@ describe('recordTurnMetrics — que se observa de un turno', () => {
     await expect(recordTurnMetrics('profile-1', OBSERVACION)).resolves.toBe(false)
   })
 
-  it('RENDIMIENTO: las siete metricas viajan en UNA sola escritura, no en siete', async () => {
+  it('RENDIMIENTO: todas las metricas viajan en UNA sola escritura, no una por metrica', async () => {
     await recordTurnMetrics('profile-1', OBSERVACION)
 
     expect(recordMetrics).toHaveBeenCalledTimes(1)
-    expect(vi.mocked(recordMetrics).mock.calls[0][1]).toHaveLength(7)
+    expect(vi.mocked(recordMetrics).mock.calls[0][1]).toHaveLength(8)
+  })
+
+  it('las metricas de la Fase 1 no cuestan una escritura adicional', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, isEmptyResult: true })
+
+    // Nueve metricas -- las ocho anteriores mas empty_reason -- en un solo viaje.
+    expect(recordMetrics).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(recordMetrics).mock.calls[0][1]).toHaveLength(9)
+  })
+})
+
+/**
+ * FASE 1 -- las dos senales que faltaban para poder auditar la continuidad
+ * conversacional sin leer el texto de nadie.
+ */
+describe('domain_source — de donde salio el dominio del turno', () => {
+  const fuente = () => metricasEmitidas().find((m) => m.name === 'scenaia.state.domain_source')?.tags?.domainSource
+
+  it('PROPIO: la peticion nombraba su dominio y se interpreto sola', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, domains: ['Obras'], isContinuation: false })
+
+    expect(fuente()).toBe('propio')
+  })
+
+  it('HEREDADO: no lo nombraba y lo tomo de la conversacion anterior', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, domains: ['Obras'], isContinuation: true })
+
+    expect(fuente()).toBe('heredado')
+  })
+
+  it('NINGUNO: no se resolvio ningun dominio, con o sin continuacion', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, domains: [], isContinuation: true })
+    expect(fuente()).toBe('ninguno')
+
+    vi.mocked(recordMetrics).mockReset().mockResolvedValue(true)
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, domains: [], isContinuation: false })
+    expect(fuente()).toBe('ninguno')
+  })
+
+  it('DISTINGUE lo que antes era indistinguible: un turno propio y uno heredado ya no producen la misma telemetria', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, isContinuation: false })
+    const propio = fuente()
+
+    vi.mocked(recordMetrics).mockReset().mockResolvedValue(true)
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, isContinuation: true })
+
+    expect(fuente()).not.toBe(propio)
+  })
+
+  it('VOCABULARIO CERRADO: solo tres valores posibles, nunca texto', async () => {
+    for (const observacion of [
+      { ...OBSERVACION, domains: ['Obras'], isContinuation: false },
+      { ...OBSERVACION, domains: ['Obras', 'Personas'], isContinuation: true },
+      { ...OBSERVACION, domains: [], isContinuation: false },
+    ]) {
+      vi.mocked(recordMetrics).mockReset().mockResolvedValue(true)
+      await recordTurnMetrics('profile-1', observacion)
+
+      expect(['propio', 'heredado', 'ninguno']).toContain(fuente())
+    }
+  })
+
+  it('se emite SIEMPRE, tambien cuando el turno fue normal: sin la metrica no hay linea base', async () => {
+    await recordTurnMetrics('profile-1', OBSERVACION)
+
+    expect(fuente()).toBeDefined()
+  })
+})
+
+describe('empty_reason — por que un turno se quedo sin entidades', () => {
+  const motivo = () => metricasEmitidas().find((m) => m.name === 'scenaia.retrieval.empty_reason')?.tags?.reason
+
+  it('SIN_DOMINIO: no habia ningun dominio cubierto que consultar', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, coveredDomainCount: 0 })
+
+    expect(motivo()).toBe('sin_dominio')
+  })
+
+  it('SIN_RESULTADOS: se consulto el catalogo y no contenia nada', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, coveredDomainCount: 1 })
+
+    expect(motivo()).toBe('sin_resultados')
+  })
+
+  it('SEPARA las dos causas que antes compartian entities_count = 0', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, coveredDomainCount: 0 })
+    const sinDominio = motivo()
+
+    vi.mocked(recordMetrics).mockReset().mockResolvedValue(true)
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, coveredDomainCount: 1 })
+
+    // Mismo recuento de entidades -- cero -- y sin embargo causas opuestas.
+    expect(motivo()).not.toBe(sinDominio)
+  })
+
+  it('NO se emite cuando hubo entidades: su ausencia afirma que no hubo vacio', async () => {
+    await recordTurnMetrics('profile-1', OBSERVACION)
+
+    expect(metricasEmitidas().some((m) => m.name === 'scenaia.retrieval.empty_reason')).toBe(false)
+  })
+
+  it('VOCABULARIO CERRADO: dos valores, ninguno mas', async () => {
+    for (const cubiertos of [0, 1, 3]) {
+      vi.mocked(recordMetrics).mockReset().mockResolvedValue(true)
+      await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, coveredDomainCount: cubiertos })
+
+      expect(['sin_dominio', 'sin_resultados']).toContain(motivo())
+    }
+  })
+
+  it('CORRELACION: tambien lleva el requestId del turno', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, coveredDomainCount: 0 })
+
+    expect(metricasEmitidas().find((m) => m.name === 'scenaia.retrieval.empty_reason')?.tags?.requestId).toBe('req-1')
   })
 })

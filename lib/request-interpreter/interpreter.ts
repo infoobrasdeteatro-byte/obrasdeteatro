@@ -84,16 +84,49 @@ function resolveRetrievalQuery(originalRequest: string, previousUserRequests: re
  * de esta v1 depende todavia de ellas (vacio diferido: reglas multi-idioma
  * futuras).
  */
+/**
+ * Dominios con los que se resuelve ESTE turno, por orden de precedencia:
+ *
+ *   1. los que la peticion nombra por si misma -- nombrar un dominio corta
+ *      toda herencia, regla vigente desde la continuidad original;
+ *   2. los que aparecen en los ultimos turnos de la conversacion;
+ *   3. el dominio que seguia vigente al terminar el turno anterior.
+ *
+ * El tercer escalon es la Fase 3, y es el que corrige el defecto
+ * verificado en produccion: la ventana de tres turnos expulsaba el unico
+ * turno que habia nombrado el dominio, y a partir de ahi ScenaIA dejaba de
+ * saber de que se estaba hablando sin que nada lo advirtiera. El dominio
+ * previo llega ya resuelto desde fuera; este componente no sabe de donde
+ * viene, no conoce ningun estado conversacional y sigue sin poder
+ * conocerlo -- recibe un `KnowledgeDomain`, que es el unico tipo que su
+ * invariante le autoriza a manejar.
+ *
+ * Se usa UNICAMENTE para resolver el turno actual: no se almacena, no se
+ * propaga y no aparece en `NormalizedRequest`.
+ */
+function resolveDomains(
+  ownDomains: KnowledgeDomain[],
+  domainsFromHistory: KnowledgeDomain[],
+  previousDomain: KnowledgeDomain | null
+): KnowledgeDomain[] {
+  if (ownDomains.length > 0) return ownDomains
+  if (domainsFromHistory.length > 0) return domainsFromHistory
+
+  return previousDomain === null ? [] : [previousDomain]
+}
+
 export function normalizeRequest(
   originalRequest: string,
-  previousUserRequests: readonly string[] = []
+  previousUserRequests: readonly string[] = [],
+  previousDomain: KnowledgeDomain | null = null
 ): NormalizedRequest {
   const normalizedIntent = normalizeText(originalRequest)
   const ownDomains = detectKnowledgeDomains(normalizedIntent)
 
   const isFollowUp = ownDomains.length === 0 && previousUserRequests.length > 0
   const retrievalQuery = isFollowUp ? resolveRetrievalQuery(originalRequest, previousUserRequests) : normalizedIntent
-  const requestedKnowledgeDomains = isFollowUp ? detectKnowledgeDomains(retrievalQuery) : ownDomains
+  const domainsFromHistory = isFollowUp ? detectKnowledgeDomains(retrievalQuery) : ownDomains
+  const requestedKnowledgeDomains = resolveDomains(ownDomains, domainsFromHistory, previousDomain)
   const requestType = detectRequestType(requestedKnowledgeDomains.length)
   const detectedAmbiguities = detectAmbiguities(originalRequest, requestedKnowledgeDomains, requestType)
 

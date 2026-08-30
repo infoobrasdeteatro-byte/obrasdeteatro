@@ -17,6 +17,7 @@ function fakeKnowledgeContext(overrides: Partial<KnowledgeContext> = {}): Knowle
     knowledgeConfidence: 1,
     knowledgeCompleteness: 'completo',
     knowledgeLimitations: [],
+    workOccupancy: {},
     knowledgeTimestamp: new Date().toISOString(),
     ...overrides,
   }
