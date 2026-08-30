@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { interpretWorkQuery } from '../interpret-work-query'
+import { interpretWorkQuery, hasUnresolvedAuthor } from '../interpret-work-query'
 
 const KNOWN_AUTHORS = ['Federico García Lorca', 'Lope de Vega', 'Calderón de la Barca']
 
@@ -106,5 +106,83 @@ describe('interpretWorkQuery', () => {
     const second = interpretWorkQuery('comedias de lorca', KNOWN_AUTHORS)
 
     expect(first).toEqual(second)
+  })
+})
+
+describe('detectAuthor — vocabulario del dominio no identifica a un autor', () => {
+  const AUTORES = ['Federico García Lorca', 'Compañía La Bicicleta', 'Teatro del Norte', 'Miguel Mihura']
+
+  it('DEFECTO CORREGIDO: "una obra para una compania con pocos actores" no atribuye autor alguno', () => {
+    expect(interpretWorkQuery('tienes una obra para una compania con pocos actores?', AUTORES)).toEqual({
+      maxCastSize: 4,
+    })
+  })
+
+  it('la palabra "teatro" tampoco identifica a un autor cuyo nombre la contiene', () => {
+    expect(interpretWorkQuery('que obras de teatro tienes?', AUTORES)).toEqual({})
+  })
+
+  it('el nombre propio que si distingue sigue reconociendose', () => {
+    expect(interpretWorkQuery('algo de lorca', AUTORES)).toEqual({ author: 'Federico García Lorca' })
+    expect(interpretWorkQuery('obras de mihura', AUTORES)).toEqual({ author: 'Miguel Mihura' })
+  })
+
+  it('un autor con nombre generico sigue siendo reconocible por su parte distintiva', () => {
+    expect(interpretWorkQuery('algo de la bicicleta', AUTORES)).toEqual({ author: 'Compañía La Bicicleta' })
+    expect(interpretWorkQuery('obras del norte', AUTORES)).toEqual({ author: 'Teatro del Norte' })
+  })
+})
+
+describe('hasUnresolvedAuthor — los cuatro estados del criterio en Obras', () => {
+  const AUTORES = ['Federico García Lorca', 'Miguel Mihura']
+
+  it('COMPLETO: el autor pedido existe en el catalogo -- nada pendiente', () => {
+    const criteria = interpretWorkQuery('obras de lorca', AUTORES)
+
+    expect(criteria).toEqual({ author: 'Federico García Lorca' })
+    expect(hasUnresolvedAuthor('obras de lorca', criteria)).toBe(false)
+  })
+
+  it('SOLICITADO PERO NO APLICABLE: se pidio un autor que no esta en el catalogo', () => {
+    const criteria = interpretWorkQuery('obras de shakespeare', AUTORES)
+
+    expect(criteria).toEqual({})
+    expect(hasUnresolvedAuthor('obras de shakespeare', criteria)).toBe(true)
+  })
+
+  it('PARCIAL: se aplico el genero pero el autor pedido no existe', () => {
+    const criteria = interpretWorkQuery('comedias de chejov', AUTORES)
+
+    expect(criteria).toEqual({ genre: 'comedia' })
+    expect(hasUnresolvedAuthor('comedias de chejov', criteria)).toBe(true)
+  })
+
+  it('SIN CRITERIO: no se pidio autor alguno -- nada que advertir', () => {
+    for (const consulta of ['que obras tienes?', 'obras cortas', 'que obras de teatro hay?']) {
+      const criteria = interpretWorkQuery(consulta, AUTORES)
+      expect(hasUnresolvedAuthor(consulta, criteria), consulta).toBe(false)
+    }
+  })
+
+  it('no confunde con autoria el vocabulario que el propio motor consume', () => {
+    for (const consulta of [
+      'obras de comedia',
+      'obras de poca duracion',
+      'obras de pocos actores',
+      'obras de mucha duracion',
+      'una obra para un grupo de actores',
+    ]) {
+      const criteria = interpretWorkQuery(consulta, AUTORES)
+      expect(hasUnresolvedAuthor(consulta, criteria), consulta).toBe(false)
+    }
+  })
+
+  it('es puro y determinista, y no conoce ningun nombre propio', () => {
+    const criteria = interpretWorkQuery('obras de ibsen', AUTORES)
+
+    expect(hasUnresolvedAuthor('obras de ibsen', criteria)).toBe(
+      hasUnresolvedAuthor('obras de ibsen', criteria)
+    )
+    expect(hasUnresolvedAuthor('obras de ibsen', criteria)).toBe(true)
   })
 })

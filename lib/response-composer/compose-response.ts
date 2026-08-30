@@ -52,6 +52,25 @@ export function composeResponse(
   directContent: string | null = null
 ): ResponseContext {
   if (authorizationContext !== null && authorizationContext.authorizationStatus === 'DENIED') {
+    // Degradacion a conocimiento propio (Reconexion del Nucleo
+    // Conversacional): la denegacion afecta a la ejecucion de IA, que tiene
+    // coste, nunca al conocimiento ya recuperado, que no lo tiene. Si hay
+    // contenido determinista disponible se entrega, con la razon de la
+    // denegacion visible como aviso -- el usuario no pierde una capacidad
+    // gratuita por haber agotado una cuota de IA. Ninguna reserva de credito
+    // se altera: esta rama nunca ejecuta proveedor.
+    if (directContent !== null) {
+      return buildResponse(
+        'RESPONSE_DIRECT',
+        directContent,
+        {
+          decisionRationale: decisionContext.decisionRationale,
+          authorizationReason: authorizationContext.authorizationReason,
+        },
+        ['respuesta compuesta sin IA: autorizacion no concedida']
+      )
+    }
+
     return buildResponse(
       'RESPONSE_DENIED',
       RESPONSE_TEMPLATES.RESPONSE_DENIED,
@@ -72,6 +91,24 @@ export function composeResponse(
   if (aiExecutionResult !== null && aiExecutionResult.executionStatus === 'EJECUTADO') {
     const responseType: ResponseType = aiExecutionResult.executionWarnings.length > 0 ? 'RESPONSE_PARTIAL' : 'RESPONSE_SUCCESS'
     return buildResponse(responseType, aiExecutionResult.generatedContent, {}, aiExecutionResult.executionWarnings)
+  }
+
+  // Degradacion a conocimiento propio antes que error (Reconexion del Nucleo
+  // Conversacional): si la IA no ha entregado contenido -- sin proveedor,
+  // error de comunicacion, credencial ausente -- pero el conocimiento
+  // recuperado si permite una respuesta factual, se entrega esa respuesta en
+  // lugar de una plantilla de error. Garantiza que ninguna consulta teatral
+  // pierda la respuesta que ya obtenia antes de esta reconexion.
+  if (directContent !== null) {
+    return buildResponse(
+      'RESPONSE_DIRECT',
+      directContent,
+      {
+        executionStatus: aiExecutionResult?.executionStatus ?? 'sin resultado de AI Gateway',
+        decisionRationale: decisionContext.decisionRationale,
+      },
+      ['respuesta compuesta sin IA: ejecucion no disponible', ...(aiExecutionResult?.executionWarnings ?? [])]
+    )
   }
 
   return buildResponse(

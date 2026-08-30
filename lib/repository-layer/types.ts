@@ -45,6 +45,9 @@ export interface Work {
   minAge: number | null
   durationMinutes: number | null
   castSizeMax: number | null
+  /** Procedencia declarada del texto en el catalogo. NULL = sin fuente declarada, nunca inferida. */
+  sourceName: string | null
+  sourceUrl: string | null
 }
 
 /**
@@ -67,11 +70,91 @@ export interface WorkSearchCriteria {
   readonly maxCastSize?: number
 }
 
+/**
+ * Criterio de busqueda estructurado del dominio Organizaciones (patron
+ * oficial ADR SCENAIA-002C.1, especializado para este dominio). Todos los
+ * campos opcionales -- su ausencia significa "sin filtrar por ese
+ * atributo", nunca un valor por defecto inventado.
+ *
+ * Cada campo corresponde a una columna real de `institutions`: `type`
+ * (CHECK de 9 valores), `country_code`, `region` y `ciudad`. Ninguno
+ * representa un estado que el modelo no contenga (PRD-001).
+ */
+export interface OrganizationSearchCriteria {
+  readonly type?: string
+  readonly countryCode?: string
+  readonly region?: string
+  readonly city?: string
+}
+
+/**
+ * Ubicaciones realmente presentes en el catalogo publico de organizaciones.
+ * Mismo patron que `listPublishedWorkAuthors()` en el dominio Obras: el
+ * vocabulario de interpretacion se toma del dato real, nunca de un
+ * diccionario geografico inventado. Una localidad ausente del catalogo no
+ * se reconoce como criterio.
+ */
+export interface OrganizationLocations {
+  readonly regions: string[]
+  readonly cities: string[]
+}
+
+/**
+ * Perfil profesional publico del ecosistema, tal como lo expone
+ * `public.profiles`. Recoge exclusivamente columnas reales; ningun campo se
+ * infiere ni se completa. `name` es la etiqueta visible: el nombre
+ * artistico cuando existe y, si no, el nombre real -- misma clase de
+ * decision que `labelOf` ya toma para Obras y Organizaciones, nunca un
+ * dato nuevo.
+ */
+/**
+ * Criterio de busqueda estructurado del dominio Personas (patron oficial
+ * ADR SCENAIA-002C.1, especializado para este dominio). Todos los campos
+ * opcionales -- su ausencia significa "sin filtrar por ese atributo",
+ * nunca un valor por defecto inventado.
+ *
+ * Cada campo corresponde a una columna real de `profiles`: `tipo_perfil`
+ * (ENUM), `country_code`, `region` y `ciudad`. `region` y `city` viajan en
+ * forma CANONICA (normalizada); Repository Layer las resuelve contra las
+ * variantes reales del catalogo antes de consultar.
+ */
+export interface PersonSearchCriteria {
+  readonly profileType?: string
+  readonly countryCode?: string
+  readonly region?: string
+  readonly city?: string
+}
+
+/**
+ * Ubicaciones realmente presentes en el catalogo publico de personas, en su
+ * forma ORIGINAL. Mismo patron que `OrganizationLocations`: el vocabulario
+ * de interpretacion procede del dato real, jamas de un diccionario
+ * geografico. Una localidad ausente del catalogo no se reconoce.
+ */
+export interface PersonLocations {
+  readonly regions: string[]
+  readonly cities: string[]
+}
+
+export interface Person {
+  id: string
+  name: string
+  profileType: string
+  bio: string | null
+  city: string | null
+  region: string | null
+  countryCode: string | null
+  slug: string | null
+  isVerified: boolean
+}
+
 export interface Organization {
   id: string
   name: string
   type: string
   countryCode: string | null
+  region: string | null
+  city: string | null
   website: string | null
   slug: string
 }
@@ -139,15 +222,39 @@ export interface CreditReservation {
   settledAt: string | null
 }
 
+/**
+ * Estado del presupuesto del periodo en el instante de verificar, calculado
+ * dentro de la misma operacion atomica que decide (nunca despues, ni por
+ * separado: eso reintroduciria la condicion de carrera que el bloqueo por
+ * perfil existe para cerrar).
+ *
+ * Los dos consumos son hechos distintos y por eso viajan separados
+ * (PRD-001): `settledConsumption` es consumo real ya liquidado -- no vuelve;
+ * `reservedConsumption` es capacidad apartada que todavia puede liquidarse o
+ * liberarse. Sumarlos de antemano perderia esa diferencia.
+ */
+export interface PeriodBudget {
+  /** Inicio del periodo vigente: mes natural (ARQUITECTURA_FUNCIONAL §9.2). */
+  readonly periodStart: string
+  /** Ya consumido y liquidado dentro del periodo. */
+  readonly settledConsumption: number
+  /** Comprometido en reservas vivas, aun sin resolver. */
+  readonly reservedConsumption: number
+  /** Lo que resta del presupuesto tras esta operacion. */
+  readonly availableCapacity: number
+}
+
 export interface ReservationAuthorized {
   authorized: true
   reservation: CreditReservation
+  budget: PeriodBudget
 }
 
 export interface ReservationDenied {
   authorized: false
   currentConsumption: number
   denialReason: string
+  budget: PeriodBudget
 }
 
 export type ReservationOutcome = ReservationAuthorized | ReservationDenied

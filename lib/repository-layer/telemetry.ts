@@ -69,6 +69,36 @@ export async function recordMetric(profileId: string, metric: MetricInput): Prom
 }
 
 /**
+ * Escritura de varias metricas del mismo perfil en una sola operacion
+ * (Fase 0). Misma tabla y misma forma de fila que `recordMetric`: no es un
+ * mecanismo distinto, es la misma escritura agrupada.
+ *
+ * Motivo medido, no supuesto: observar un turno emite siete metricas, y
+ * enviarlas de una en una anadia ~194 ms al cierre del turno. Agrupadas,
+ * cuesta un unico viaje. Un turno completo ronda 1,5-3 s, asi que ese
+ * ahorro no es cosmetico.
+ */
+export async function recordMetrics(profileId: string, metrics: readonly MetricInput[]): Promise<void> {
+  if (metrics.length === 0) return
+
+  const supabase = await createClient()
+
+  const { error } = await supabase.from('telemetry_metrics').insert(
+    metrics.map((metric) => ({
+      profile_id: profileId,
+      metric_name: metric.name,
+      metric_value: metric.value,
+      metric_unit: metric.unit ?? null,
+      tags: metric.tags ?? null,
+    }))
+  )
+
+  if (error) {
+    throw new Error(`recordMetrics failed: ${error.message}`)
+  }
+}
+
+/**
  * Devuelve entradas crudas, en orden cronologico ascendente -- Telemetria
  * nunca consolida ni agrega (ese verbo pertenece a Observabilidad). Filtro
  * opcional por nombre de metrica; `profileId` explicito por el mismo motivo

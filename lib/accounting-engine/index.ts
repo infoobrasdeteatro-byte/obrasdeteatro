@@ -2,3 +2,5 @@ export type { CreditReservation, ReservationOutcome, ReservationStatus } from '.
 export { DEFAULT_RESERVATION_TTL_SECONDS } from './types'
 export { verifyAndReserve } from './reservation'
 export { settleReservation, releaseReservation, expireStaleReservations } from './settlement'
+export { toCredits, isEconomicUnitDefined, resolveSettlementCost, CREDIT_VALUE } from './economic-unit'
+export type { CreditValue } from './economic-unit'

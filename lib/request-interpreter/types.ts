@@ -21,6 +21,17 @@ export interface NormalizedRequest {
   requestId: string
   originalRequest: string
   normalizedIntent: string
+  /**
+   * Texto sobre el que se ejecuta la recuperacion de conocimiento. Coincide
+   * con `normalizedIntent` en todo turno que nombra su propio dominio. Solo
+   * difiere en un turno de continuacion -- aquel que por si mismo no nombra
+   * ningun dominio -- donde incorpora los turnos previos del usuario para
+   * que la peticion siga siendo interpretable en su contexto. Campo
+   * explicito por PRD-001: el estado "esta peticion se interpreta sobre la
+   * conversacion" se representa en el contrato, nunca por convencion
+   * implicita sobre otro campo.
+   */
+  retrievalQuery: string
   requestType: RequestType
   requestedKnowledgeDomains: KnowledgeDomain[]
   estimatedComplexity: EstimatedComplexity

@@ -471,34 +471,40 @@ export type Database = {
       }
       institutions: {
         Row: {
+          ciudad: string | null
           country_code: string | null
           created_at: string
           id: string
           is_active: boolean
           is_public: boolean
           name: string
+          region: string | null
           slug: string
           type: string
           website: string | null
         }
         Insert: {
+          ciudad?: string | null
           country_code?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           is_public?: boolean
           name: string
+          region: string | null
           slug: string
           type: string
           website?: string | null
         }
         Update: {
+          ciudad?: string | null
           country_code?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
           is_public?: boolean
           name?: string
+          region?: string | null
           slug?: string
           type?: string
           website?: string | null
@@ -2801,12 +2807,16 @@ export type Database = {
         Returns: {
           authorized: boolean
           authorized_limit_snapshot: number
+          available_capacity: number
           created_at: string | null
           current_consumption: number
           denial_reason: string | null
           estimated_cost: number
           expires_at: string | null
+          period_start: string
           reservation_id: string | null
+          reserved_consumption: number
+          settled_consumption: number
           status: string | null
         }[]
       }

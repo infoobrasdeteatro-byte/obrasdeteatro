@@ -10,9 +10,14 @@ import { parseAuthorizedLimit } from './parse-authorized-limit'
  * directamente al SKM, al PCE ni al AI Gateway -- recibe unicamente las
  * salidas ya construidas de PCE y Decision Engine, y la unica dependencia
  * funcional nueva (reapertura 2026-07-13) es la operacion atomica de
- * verificar-y-reservar de Accounting Engine. `requestId` no se propaga
- * (DecisionContext no lo incluye en su contenido minimo) -- se omite,
- * parametro opcional en Accounting Engine.
+ * verificar-y-reservar de Accounting Engine.
+ *
+ * `requestId` SI se propaga desde el cierre del circuito economico:
+ * DecisionContext ya lo transporta, y sin el la reserva quedaba sin
+ * vinculo con la peticion que la origino (`request_id` en NULL en las 75
+ * reservas reales existentes). `reservationId` viaja de vuelta en el
+ * contexto para que el ciclo pueda cerrarse despues -- liquidando o
+ * liberando -- sobre la reserva concreta.
  */
 export async function buildAuthorizationContext(
   professionalContext: ProfessionalContext,
@@ -24,6 +29,7 @@ export async function buildAuthorizationContext(
     return {
       authorizationStatus: 'AUTHORIZED',
       authorizationReason: formatReason('NO_APLICA', 'no se requiere IA para esta peticion'),
+      reservationId: null,
       availableCredits: null,
       estimatedCost: null,
       remainingQuota: null,
@@ -36,6 +42,7 @@ export async function buildAuthorizationContext(
     return {
       authorizationStatus: 'DENIED',
       authorizationReason: formatReason('SIN_DATOS_VERIFICABLES', 'coste estimado no disponible (IA-004)'),
+      reservationId: null,
       availableCredits: null,
       estimatedCost: null,
       remainingQuota: null,
@@ -48,6 +55,7 @@ export async function buildAuthorizationContext(
     return {
       authorizationStatus: 'DENIED',
       authorizationReason: formatReason('SIN_DATOS_VERIFICABLES', 'limite de plan no disponible (IA-001)'),
+      reservationId: null,
       availableCredits: null,
       estimatedCost,
       remainingQuota: null,
@@ -59,6 +67,8 @@ export async function buildAuthorizationContext(
     return {
       authorizationStatus: 'AUTHORIZED',
       authorizationReason: formatReason('VERIFICADO', 'plan sin control de cuota (IA-AUTH-001)'),
+      // Sin cupo que consumir no hay reserva que cerrar despues.
+      reservationId: null,
       availableCredits: null,
       estimatedCost,
       remainingQuota: null,
@@ -66,13 +76,19 @@ export async function buildAuthorizationContext(
     }
   }
 
-  const outcome = await verifyAndReserve(professionalContext.identity.userId, authorizedLimit.value, estimatedCost)
+  const outcome = await verifyAndReserve(
+    professionalContext.identity.userId,
+    authorizedLimit.value,
+    estimatedCost,
+    decisionContext.requestId
+  )
 
   if (!outcome.authorized) {
     const available = Math.max(authorizedLimit.value - outcome.currentConsumption, 0)
     return {
       authorizationStatus: 'DENIED',
       authorizationReason: formatReason('VERIFICACION_NEGATIVA', outcome.denialReason),
+      reservationId: null,
       availableCredits: available,
       estimatedCost,
       remainingQuota: available,
@@ -87,6 +103,7 @@ export async function buildAuthorizationContext(
   return {
     authorizationStatus: 'AUTHORIZED',
     authorizationReason: formatReason('VERIFICADO', 'reserva de credito confirmada'),
+    reservationId: outcome.reservation.id,
     availableCredits: authorizedLimit.value,
     estimatedCost: outcome.reservation.estimatedCost,
     remainingQuota: authorizedLimit.value - outcome.reservation.estimatedCost,

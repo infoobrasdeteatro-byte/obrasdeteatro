@@ -16,3 +16,20 @@ import type { KnowledgeDomain } from '@/lib/knowledge-assets'
 export function unfilteredCriteriaNote(domain: KnowledgeDomain): string {
   return `${domain}: sin criterio reconocido en la peticion -- resultado sin filtrar`
 }
+
+/**
+ * Nota de criterio PARCIALMENTE aplicado: el usuario pidio varias cosas, se
+ * aplicaron unas y quedaron otras sin aplicar. Formato exacto y unico, igual
+ * que `unfilteredCriteriaNote`, para que los consumidores la reconozcan por
+ * coincidencia literal y nunca por heuristica.
+ *
+ * Es una nota distinta y no sustituye a la anterior: "no pude aplicar nada
+ * de lo que pediste" y "apliqué parte de lo que pediste" son dos estados de
+ * dominio diferentes y deben poder distinguirse (PRD-001). El detalle de que
+ * criterio concreto quedo pendiente vive en
+ * `KnowledgeRetrievalResult.unappliedCriteria`; esta nota transporta el
+ * estado, no el detalle.
+ */
+export function partiallyAppliedCriteriaNote(domain: KnowledgeDomain): string {
+  return `${domain}: criterio aplicado solo en parte -- el resultado no esta filtrado por todo lo pedido`
+}

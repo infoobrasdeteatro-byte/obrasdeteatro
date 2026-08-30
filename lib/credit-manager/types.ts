@@ -8,6 +8,16 @@ export type AuthorizationStatus = 'AUTHORIZED' | 'DENIED'
 export interface AuthorizationContext {
   readonly authorizationStatus: AuthorizationStatus
   readonly authorizationReason: string
+  /**
+   * Reserva economica creada por esta autorizacion, cuando la hubo. `null`
+   * en todos los demas casos: plan ilimitado (no consume cupo), peticion
+   * que no requiere IA, o autorizacion denegada.
+   *
+   * Explicito en el contrato por PRD-001: quien deba cerrar el ciclo
+   * economico -- liquidar o liberar -- necesita saber QUE reserva cerrar, y
+   * ese dato no puede deducirse de ningun otro campo.
+   */
+  readonly reservationId: string | null
   readonly availableCredits: number | null
   readonly estimatedCost: number | null
   readonly remainingQuota: number | null

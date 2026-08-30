@@ -17,6 +17,12 @@ function toSubscription(row: {
   }
 }
 
+/**
+ * Relacion comercial con Stripe. NO es la fuente del plan vigente (ver
+ * `getProfilePlan`): aporta el estado de la suscripcion de pago y sus
+ * fechas. Su ausencia es un estado normal -- significa "sin relacion de
+ * pago", no "sin plan".
+ */
 export async function getSubscription(userId: string): Promise<Subscription | null> {
   const supabase = await createClient()
 

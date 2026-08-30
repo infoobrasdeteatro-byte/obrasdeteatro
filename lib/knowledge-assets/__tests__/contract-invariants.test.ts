@@ -86,3 +86,37 @@ describe('Knowledge Assets — interpret-work-query.ts (invariante de componente
     )
   })
 })
+
+describe('Knowledge Assets — interpret-organization-query.ts (motor de recuperacion de Organizaciones)', () => {
+  const SOURCE = readFileSync(join(__dirname, '..', 'interpret-organization-query.ts'), 'utf-8')
+
+  it('nunca accede a Supabase: la ejecucion del criterio es de Repository Layer', () => {
+    expect(SOURCE).not.toMatch(/supabase|createClient/i)
+  })
+
+  it('no depende de ninguna tecnología de IA/embeddings (interpretación por reglas, no semántica real)', () => {
+    expect(SOURCE).not.toMatch(/pinecone|weaviate|qdrant|milvus|pgvector|openai|anthropic|embedding[s]?-api|neo4j/i)
+  })
+
+  it('no importa ningún componente del Núcleo', () => {
+    expect(SOURCE).not.toMatch(/decision-engine|credit-manager|ai-gateway|response-composer|request-interpreter/i)
+  })
+
+  it('es puro y síncrono: sin async/await, sin I/O', () => {
+    expect(SOURCE).not.toMatch(/\basync\b|\bawait\b|fetch\(/)
+  })
+
+  it('nunca inventa una ubicacion: region y ciudad solo pueden proceder de knownLocations', () => {
+    expect(SOURCE).toMatch(/detectLocation\(normalizedQuery, knownLocations\.regions\)/)
+    expect(SOURCE).toMatch(/detectLocation\(normalizedQuery, knownLocations\.cities\)/)
+    expect(SOURCE).not.toMatch(/criteria\.(region|city) = '/)
+  })
+
+  it('solo emite valores de `type` admitidos por el CHECK real de institutions', () => {
+    const ADMITIDOS = ['platform', 'editorial', 'university', 'cultural_org', 'foundation', 'festival', 'other', 'company', 'theater']
+    const claves = [...SOURCE.matchAll(/^\s{2}(\w+): \[/gm)].map((match) => match[1])
+
+    expect(claves.length).toBeGreaterThan(0)
+    for (const clave of claves) expect(ADMITIDOS).toContain(clave)
+  })
+})

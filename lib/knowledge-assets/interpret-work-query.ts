@@ -81,11 +81,45 @@ function stripDiacritics(text: string): string {
  * devuelto es siempre el nombre original de knownAuthors, sin normalizar
  * -- stripDiacritics() solo se usa para comparar, nunca para el resultado.
  */
+/**
+ * Palabras que aparecen en nombres de autor pero NO identifican a nadie:
+ * son vocabulario generico del dominio teatral. Sin esta guarda, una
+ * peticion como "una obra para una compania con pocos actores" casaba con
+ * el autor "Compania La Bicicleta" por la sola presencia de "compania", y
+ * ScenaIA presentaba su obra como si el usuario la hubiera pedido.
+ *
+ * La regla es general, no una lista de excepciones por autor: una palabra
+ * del vocabulario del dominio nunca basta, por si sola, para identificar a
+ * un autor. El nombre propio que si lo distingue sigue funcionando.
+ */
+const NON_IDENTIFYING_WORDS = new Set([
+  'compania',
+  'companias',
+  'teatro',
+  'teatros',
+  'grupo',
+  'grupos',
+  'festival',
+  'sala',
+  'salas',
+  'obra',
+  'obras',
+  'ediciones',
+  'editorial',
+  'universidad',
+  'fundacion',
+  'plataforma',
+  'produccion',
+  'producciones',
+])
+
 function detectAuthor(normalizedQuery: string, knownAuthors: readonly string[]): string | undefined {
   return knownAuthors.find((author) =>
     stripDiacritics(author.toLowerCase())
       .split(' ')
-      .some((word) => word.length > 3 && normalizedQuery.includes(word))
+      .some(
+        (word) => word.length > 3 && !NON_IDENTIFYING_WORDS.has(word) && normalizedQuery.includes(word)
+      )
   )
 }
 
@@ -176,4 +210,104 @@ function interpretRules(concepts: CanonicalConcepts): WorkSearchCriteria {
 export function interpretWorkQuery(normalizedQuery: string, knownAuthors: readonly string[] = []): WorkSearchCriteria {
   const concepts = domainVocabulary(normalizedQuery, knownAuthors)
   return interpretRules(concepts)
+}
+
+/**
+ * Preposiciones con las que el castellano atribuye la autoria de una obra:
+ * "obras DE Lorca", "escrita POR Valle-Inclan". Es la unica construccion
+ * que este motor reconoce como peticion de autor -- deliberadamente
+ * estrecha, para no clasificar como autor lo que no lo es.
+ */
+const AUTHORSHIP_PREPOSITION = /\b(?:de|del|por)\s+([a-z0-9]+(?:\s+[a-z0-9]+)?)/g
+
+/**
+ * Palabras que siguen a "de/por" sin nombrar a nadie. La lista es corta y
+ * cerrada: recoge el vocabulario que el propio motor ya consume (generos,
+ * duraciones, reparto) mas los cuantificadores mas frecuentes. Cualquier
+ * palabra de aqui significa que el usuario NO estaba atribuyendo autoria.
+ */
+const NON_AUTHOR_COMPLEMENTS = new Set([
+  'poca',
+  'poco',
+  'pocos',
+  'pocas',
+  'mucha',
+  'mucho',
+  'muchos',
+  'muchas',
+  'media',
+  'medio',
+  'gran',
+  'larga',
+  'largo',
+  'corta',
+  'corto',
+  'duracion',
+  'reparto',
+  'elenco',
+  'grupo',
+  'compania',
+  'teatro',
+  'obra',
+  'obras',
+  'pieza',
+  'piezas',
+  'actores',
+  'actrices',
+  'interpretes',
+  'personajes',
+  'epoca',
+  'estilo',
+  'tipo',
+  'clase',
+  'calidad',
+  'nivel',
+  'esas',
+  'esos',
+  'esta',
+  'este',
+  'ellas',
+  'ellos',
+  'cualquier',
+  'alguna',
+  'algunas',
+  'algun',
+  'algunos',
+  'otra',
+  'otras',
+  'otro',
+  'otros',
+  'nuevo',
+  'nueva',
+  'siempre',
+  'ahora',
+])
+
+/**
+ * Declara si el usuario atribuyo una obra a alguien y ese alguien NO se ha
+ * podido resolver contra el catalogo real.
+ *
+ * Es el equivalente exacto, en el dominio Obras, de `hasUnresolvedLocation`
+ * en Organizaciones: permite separar "no se pidio criterio de autor" de "se
+ * pidio y no existe en el catalogo". Sin esta distincion, "obras de
+ * Shakespeare" y "que obras tienes" producian la misma señal.
+ *
+ * No conoce ningun nombre propio: solo comprueba si lo que sigue a la
+ * preposicion quedo o no resuelto, y descarta el vocabulario que el propio
+ * motor ya consume.
+ */
+export function hasUnresolvedAuthor(normalizedQuery: string, criteria: WorkSearchCriteria): boolean {
+  if (criteria.author !== undefined) return false
+
+  for (const match of normalizedQuery.matchAll(AUTHORSHIP_PREPOSITION)) {
+    const primeraPalabra = match[1].trim().split(/\s+/)[0]
+
+    if (primeraPalabra.length <= 3) continue
+    if (NON_AUTHOR_COMPLEMENTS.has(primeraPalabra)) continue
+    if (detectCanonicalTerms(primeraPalabra).length > 0) continue
+
+    return true
+  }
+
+  return false
 }

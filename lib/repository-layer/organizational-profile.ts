@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import type { OrganizationalProfileData } from './types'
 
 type OrganizationalProfileType = 'compania' | 'productora' | 'teatro' | 'festival' | 'escuela'
+// Los valores coinciden literalmente con ORGANIZATIONAL_PROFILE_TYPES de
+// profile-classification.ts, fuente de verdad unica de la clasificacion.
 
 const TABLE_BY_TYPE = {
   compania: 'perfil_compania',

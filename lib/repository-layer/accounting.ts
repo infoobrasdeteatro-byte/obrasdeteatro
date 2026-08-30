@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { CreditReservation, ReservationOutcome, ReservationStatus } from './types'
+import type { CreditReservation, PeriodBudget, ReservationOutcome, ReservationStatus } from './types'
 
 function toReservation(row: {
   id: string
@@ -56,11 +56,19 @@ export async function verifyAndReserve(
     throw new Error(`accounting_verify_and_reserve failed: ${error?.message ?? 'sin datos'}`)
   }
 
+  const budget: PeriodBudget = {
+    periodStart: data.period_start,
+    settledConsumption: data.settled_consumption,
+    reservedConsumption: data.reserved_consumption,
+    availableCapacity: data.available_capacity,
+  }
+
   if (!data.authorized || !data.reservation_id || !data.status || !data.expires_at || !data.created_at) {
     return {
       authorized: false,
       currentConsumption: data.current_consumption,
       denialReason: data.denial_reason ?? 'reserva denegada',
+      budget,
     }
   }
 
@@ -78,6 +86,7 @@ export async function verifyAndReserve(
       createdAt: data.created_at,
       settledAt: null,
     },
+    budget,
   }
 }
 

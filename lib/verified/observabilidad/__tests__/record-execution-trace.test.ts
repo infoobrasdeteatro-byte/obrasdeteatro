@@ -16,6 +16,8 @@ const EMPTY_AUDIT: ExecutionAudit = {
   providerModel: null,
   executionLatencyMs: null,
   tokensConsumed: null,
+  inputTokens: null,
+  outputTokens: null,
   realExecutionCost: null,
   technicalMetadata: null,
 }
@@ -29,6 +31,8 @@ describe('recordExecutionTrace', () => {
       providerModel: 'claude-sonnet-5',
       executionLatencyMs: 340,
       tokensConsumed: 1200,
+      inputTokens: 900,
+      outputTokens: 300,
       realExecutionCost: 0.05,
       technicalMetadata: 'algo sin destino autorizado',
     }
@@ -50,10 +54,14 @@ describe('recordExecutionTrace', () => {
     expect(recordMetric).toHaveBeenCalledWith('profile-1', {
       name: 'ai_gateway.real_execution_cost',
       value: 0.05,
-      unit: 'usd',
+      unit: 'currency',
       tags: { providerIdentifier: 'anthropic', providerModel: 'claude-sonnet-5' },
     })
-    expect(recordMetric).toHaveBeenCalledTimes(3)
+    // IA-006 anadio el desglose de tokens: cinco metricas donde antes habia
+    // tres. El titulo de este test conserva "los tres campos numericos"
+    // porque sigue verificando exactamente esos tres; los otros dos son
+    // input/output tokens, cubiertos en su propio test.
+    expect(recordMetric).toHaveBeenCalledTimes(5)
     expect(result).toBe(true)
   })
 
@@ -89,5 +97,101 @@ describe('recordExecutionTrace', () => {
     })
 
     expect(result).toBe(false)
+  })
+})
+
+describe('recordExecutionTrace — contexto de ejecucion (Fase 0)', () => {
+  it('sin contexto se comporta exactamente como antes', async () => {
+    vi.mocked(recordMetric).mockReset().mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', { ...EMPTY_AUDIT, executionLatencyMs: 120 })
+
+    const [, metrica] = vi.mocked(recordMetric).mock.calls[0]
+    expect(metrica.tags?.requestId).toBeUndefined()
+    expect(metrica.tags?.stage).toBeUndefined()
+  })
+
+  it('con contexto, correlaciona el turno y distingue la etapa', async () => {
+    vi.mocked(recordMetric).mockReset().mockResolvedValue(true)
+
+    await recordExecutionTrace(
+      'profile-1',
+      { ...EMPTY_AUDIT, executionLatencyMs: 120, tokensConsumed: 50 },
+      { requestId: 'req-1', stage: 'resolver' }
+    )
+
+    for (const [, metrica] of vi.mocked(recordMetric).mock.calls) {
+      expect(metrica.tags?.requestId).toBe('req-1')
+      expect(metrica.tags?.stage).toBe('resolver')
+    }
+  })
+
+  it('las dos etapas de un mismo turno quedan separadas', async () => {
+    vi.mocked(recordMetric).mockReset().mockResolvedValue(true)
+
+    await recordExecutionTrace('p', { ...EMPTY_AUDIT, executionLatencyMs: 10 }, { requestId: 'req-1', stage: 'resolver' })
+    await recordExecutionTrace('p', { ...EMPTY_AUDIT, executionLatencyMs: 90 }, { requestId: 'req-1', stage: 'response' })
+
+    const etapas = vi.mocked(recordMetric).mock.calls.map(([, m]) => m.tags?.stage)
+    expect(etapas).toEqual(['resolver', 'response'])
+  })
+})
+
+/**
+ * IA-006: la tarificacion ocurre aqui, no en AI Gateway. La razon es de
+ * gobernanza: "AI Gateway nunca lo importa: invoca, nunca selecciona"
+ * (invariante de Direccion, cierre de IA-006).
+ */
+describe('recordExecutionTrace — tarificacion de la ejecucion (IA-006)', () => {
+  const AUDIT_EJECUTADO: ExecutionAudit = {
+    providerIdentifier: 'proveedor-a',
+    providerModel: 'modelo-rapido',
+    executionLatencyMs: 900,
+    tokensConsumed: 1500,
+    inputTokens: 1000,
+    outputTokens: 500,
+    realExecutionCost: null,
+    technicalMetadata: null,
+  }
+
+  it('registra el desglose de tokens que el proveedor publica', async () => {
+    vi.mocked(recordMetric).mockReset().mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', AUDIT_EJECUTADO)
+
+    const nombres = vi.mocked(recordMetric).mock.calls.map(([, m]) => m.name)
+    expect(nombres).toContain('ai_gateway.input_tokens')
+    expect(nombres).toContain('ai_gateway.output_tokens')
+    expect(nombres).toContain('ai_gateway.tokens_consumed')
+  })
+
+  it('SIN TARIFA en el catalogo no se registra coste: no se inventa una cifra', async () => {
+    vi.mocked(recordMetric).mockReset().mockResolvedValue(true)
+
+    // El catalogo oficial no declara tarifas todavia.
+    await recordExecutionTrace('profile-1', AUDIT_EJECUTADO)
+
+    const nombres = vi.mocked(recordMetric).mock.calls.map(([, m]) => m.name)
+    expect(nombres).not.toContain('ai_gateway.real_execution_cost')
+  })
+
+  it('cuando el propio proveedor comunica el coste, se registra tal cual', async () => {
+    vi.mocked(recordMetric).mockReset().mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', { ...AUDIT_EJECUTADO, realExecutionCost: 0.02 })
+
+    const coste = vi.mocked(recordMetric).mock.calls.map(([, m]) => m).find((m) => m.name === 'ai_gateway.real_execution_cost')
+    expect(coste?.value).toBe(0.02)
+    // Sin tarifa declarada, tampoco se le atribuye una moneda inventada.
+    expect(coste?.tags?.currency).toBeUndefined()
+  })
+
+  it('sin proveedor ni modelo no hay nada que tarifar', async () => {
+    vi.mocked(recordMetric).mockReset().mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', { ...AUDIT_EJECUTADO, providerIdentifier: null, providerModel: null })
+
+    const nombres = vi.mocked(recordMetric).mock.calls.map(([, m]) => m.name)
+    expect(nombres).not.toContain('ai_gateway.real_execution_cost')
   })
 })

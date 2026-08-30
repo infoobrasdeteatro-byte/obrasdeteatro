@@ -9,6 +9,7 @@ vi.mock('../provider-registry', () => ({ findProviderAdapter: vi.fn() }))
 
 function fakeDecisionContext(overrides: Partial<DecisionContext> = {}): DecisionContext {
   return {
+    requestId: 'req-1',
     executionStrategy: {
       executionMode: 'IA',
       recommendedAgent: null,
@@ -28,6 +29,7 @@ function fakeAuthorizationContext(overrides: Partial<AuthorizationContext> = {})
   return {
     authorizationStatus: 'AUTHORIZED',
     authorizationReason: 'VERIFICADO: reserva de credito confirmada',
+    reservationId: null,
     availableCredits: 30,
     estimatedCost: 5,
     remainingQuota: 25,
@@ -41,6 +43,11 @@ const EMPTY_AUDIT = {
   providerModel: null,
   executionLatencyMs: null,
   tokensConsumed: null,
+  // IA-006: el desglose que el proveedor publica cuando ejecuta. En un
+  // audit vacio -- no autorizado, sin proveedor, error -- es `null` como
+  // todo lo demas: no hubo ejecucion de la que informar.
+  inputTokens: null,
+  outputTokens: null,
   realExecutionCost: null,
   technicalMetadata: null,
 }
@@ -128,6 +135,8 @@ describe('executeAIRequest', () => {
         model: 'gpt-4o-mini',
         latencyMs: 120,
         tokensConsumed: 42,
+        inputTokens: 30,
+        outputTokens: 12,
       }),
     })
 
@@ -152,6 +161,9 @@ describe('executeAIRequest', () => {
       providerModel: 'gpt-4o-mini',
       executionLatencyMs: 120,
       tokensConsumed: 42,
+      // El desglose que el proveedor publico viaja intacto hasta el audit.
+      inputTokens: 30,
+      outputTokens: 12,
       realExecutionCost: null,
       technicalMetadata: null,
     })

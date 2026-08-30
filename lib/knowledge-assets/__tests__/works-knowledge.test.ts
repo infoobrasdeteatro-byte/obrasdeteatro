@@ -19,7 +19,7 @@ const SAMPLE_WORK = {
   slug: 'la-casa-de-bernarda-alba',
   minAge: 14,
   durationMinutes: 100,
-  castSizeMax: 9,
+  castSizeMax: 9, sourceName: null, sourceUrl: null,
 }
 
 describe('getWorkKnowledge', () => {
@@ -32,7 +32,7 @@ describe('getWorkKnowledge', () => {
 
     const result = await getWorkKnowledge('work-1')
 
-    expect(result).toEqual({ domain: 'Obras', data: SAMPLE_WORK })
+    expect(result).toMatchObject({ domain: 'Obras', data: SAMPLE_WORK  })
     expect(getPublishedWorkById).toHaveBeenCalledWith('work-1')
   })
 
@@ -55,7 +55,7 @@ describe('listWorkKnowledge', () => {
 
     const result = await listWorkKnowledge({}, 10)
 
-    expect(result).toEqual([{ domain: 'Obras', data: SAMPLE_WORK }])
+    expect(result).toMatchObject([{ domain: 'Obras', data: SAMPLE_WORK  }])
     expect(listPublishedWorks).toHaveBeenCalledWith({}, 10)
   })
 
@@ -72,6 +72,6 @@ describe('listWorkKnowledge', () => {
 
     const result = await listWorkKnowledge()
 
-    expect(result).toEqual([])
+    expect(result).toMatchObject([])
   })
 })

@@ -15,6 +15,11 @@ export type WorkRightsStatus =
   | 'restricted'
   | 'unknown'
 
+/**
+ * Refleja literalmente `institutions_type_check`. `company` y `theater` los
+ * incorporo la migracion 20260828120000; mantener este tipo sincronizado
+ * evita que un consumidor futuro rechace valores que la base si admite.
+ */
 export type InstitutionType =
   | 'platform'
   | 'editorial'
@@ -23,6 +28,8 @@ export type InstitutionType =
   | 'foundation'
   | 'festival'
   | 'other'
+  | 'company'
+  | 'theater'
 
 export const BIBLIOTECA_OFICIAL_SLUG = 'biblioteca-oficial' as const
 

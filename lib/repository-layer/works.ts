@@ -3,7 +3,7 @@ import { withCache } from '@/lib/verified/sistemas-cache'
 import type { Work, WorkSearchCriteria } from './types'
 
 const WORK_COLUMNS =
-  'id, title, subtitle, author, genre, synopsis, language, year, slug, min_age, duration_minutes, cast_size_max'
+  'id, title, subtitle, author, genre, synopsis, language, year, slug, min_age, duration_minutes, cast_size_max, source_name, source_url'
 const CACHE_TTL_MS = 60_000
 
 const DIACRITICS = /\p{Diacritic}/gu
@@ -59,6 +59,8 @@ function toWork(row: {
   min_age: number | null
   duration_minutes: number | null
   cast_size_max: number | null
+  source_name: string | null
+  source_url: string | null
 }): Work {
   return {
     id: row.id,
@@ -73,6 +75,8 @@ function toWork(row: {
     minAge: row.min_age,
     durationMinutes: row.duration_minutes,
     castSizeMax: row.cast_size_max,
+    sourceName: row.source_name,
+    sourceUrl: row.source_url,
   }
 }
 
