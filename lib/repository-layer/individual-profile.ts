@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import type { IndividualProfileData } from './types'
 
 type IndividualProfileType = 'actor' | 'director' | 'dramaturgo'
+// Los valores coinciden literalmente con INDIVIDUAL_PROFILE_TYPES de
+// profile-classification.ts, fuente de verdad unica de la clasificacion.
 
 const TABLE_BY_TYPE = {
   actor: 'perfil_actor',

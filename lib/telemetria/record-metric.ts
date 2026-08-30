@@ -1,4 +1,4 @@
-import { recordMetric as persistMetric } from '@/lib/repository-layer'
+import { recordMetric as persistMetric, recordMetrics as persistMetrics } from '@/lib/repository-layer'
 import type { MetricInput } from './types'
 
 /**
@@ -15,6 +15,20 @@ import type { MetricInput } from './types'
 export async function recordMetric(profileId: string, metric: MetricInput): Promise<boolean> {
   try {
     await persistMetric(profileId, metric)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Varias metricas del mismo perfil en una sola escritura. Misma garantia
+ * que `recordMetric`: nunca interrumpe el flujo que la invoca -- captura el
+ * error y devuelve un booleano.
+ */
+export async function recordMetrics(profileId: string, metrics: readonly MetricInput[]): Promise<boolean> {
+  try {
+    await persistMetrics(profileId, metrics)
     return true
   } catch {
     return false

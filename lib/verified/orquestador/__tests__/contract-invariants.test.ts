@@ -19,6 +19,17 @@ const AUTHORIZED_IMPORTS = [
   "from '@/lib/execution-audit-router'",
   "from '@/lib/direct-content-builder'",
   "from '@/lib/prompt-composer'",
+  "from '@/lib/intent-resolver'",
+  // Fase 0 (Plan Maestro): punto de integracion de observabilidad
+  // autorizado expresamente por Direccion. El Orquestador es el unico
+  // componente con visibilidad completa del turno; sigue SIN importar
+  // Telemetria directamente (invariante comprobada mas abajo).
+  "from '@/lib/verified/observabilidad'",
+  // Cierre del circuito economico: liquidar o liberar la reserva exige
+  // conocer AuthorizationContext y ExecutionAudit a la vez, y el
+  // Orquestador es el unico punto que dispone de ambos. Sigue SIN acceder
+  // a Supabase ni a Repository Layer (invariante comprobada mas arriba).
+  "from '@/lib/accounting-engine'",
 ]
 
 describe('Orquestador (lib/verified) — invariantes de integración (Plan Técnico aprobado, Acta de Autorización 2026-07-19)', () => {
@@ -27,7 +38,7 @@ describe('Orquestador (lib/verified) — invariantes de integración (Plan Técn
     expect(MODULE_SOURCE).not.toMatch(/from '@\/lib\/repository-layer'/)
   })
 
-  it('depende exclusivamente de los 11 contratos autorizados por el Plan Técnico (10 + Prompt Composer, SCENAIA-002A), ningún otro', () => {
+  it('depende exclusivamente de los 14 contratos autorizados (10 del Plan Técnico + Prompt Composer, SCENAIA-002A + Intent Resolver + Observabilidad + Accounting Engine), ningún otro', () => {
     const importLines = MODULE_SOURCE.match(/from '@\/lib\/[^']+'/g) ?? []
     for (const importLine of importLines) {
       expect(AUTHORIZED_IMPORTS.some((authorized) => importLine === authorized)).toBe(true)

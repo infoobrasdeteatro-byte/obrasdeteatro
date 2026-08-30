@@ -12,6 +12,8 @@ function buildResult(status: ExecutionStatus, content: string | null, warnings: 
 }
 
 const EMPTY_AUDIT: ExecutionAudit = {
+  inputTokens: null,
+  outputTokens: null,
   providerIdentifier: null,
   providerModel: null,
   executionLatencyMs: null,
@@ -94,6 +96,13 @@ export async function executeAIRequest(
         providerModel: outcome.model,
         executionLatencyMs: outcome.latencyMs,
         tokensConsumed: outcome.tokensConsumed,
+        // IA-006: el desglose que el proveedor publica. El COSTE no se
+        // calcula aqui: AI Gateway "invoca, nunca selecciona" y no puede
+        // conocer el catalogo de tarifas (invariante de Direccion, cierre
+        // de IA-006, verificada por contract-invariants). Quien tarifa es
+        // el consumidor del audit, que si puede consultarlo.
+        inputTokens: outcome.inputTokens,
+        outputTokens: outcome.outputTokens,
         realExecutionCost: null,
         technicalMetadata: null,
       },

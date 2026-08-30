@@ -53,6 +53,9 @@ async function execute(prompt: string): Promise<ProviderExecutionOutcome> {
     model,
     latencyMs: Date.now() - startedAt,
     tokensConsumed: completion.usage?.total_tokens ?? null,
+    // El proveedor ya publicaba el desglose; hasta IA-006 se descartaba.
+    inputTokens: completion.usage?.prompt_tokens ?? null,
+    outputTokens: completion.usage?.completion_tokens ?? null,
   }
 }
 

@@ -9,6 +9,7 @@ function fakeNormalizedRequest(overrides: Partial<NormalizedRequest> = {}): Norm
     requestId: 'req-1',
     originalRequest: 'texto de prueba',
     normalizedIntent: 'texto de prueba',
+    retrievalQuery: 'texto de prueba',
     requestType: 'RECONOCIDA',
     requestedKnowledgeDomains: ['Obras'],
     estimatedComplexity: 'media',

@@ -27,6 +27,14 @@ export interface ExecutionStrategy {
  * needsAI=false (no aplica ninguna operacion economica).
  */
 export interface DecisionContext {
+  /**
+   * Identificador del turno, tal cual lo genero Request Interpreter. No es
+   * un dato de decision: viaja para que la reserva economica pueda
+   * vincularse a la peticion que la origino (`credit_reservations.request_id`,
+   * columna ya existente que hasta ahora nunca se rellenaba). Sin el, una
+   * reserva no puede relacionarse con su ejecucion ni con su traza.
+   */
+  readonly requestId: string
   readonly executionStrategy: ExecutionStrategy
   readonly needsAI: boolean
   readonly estimatedCost: number | null

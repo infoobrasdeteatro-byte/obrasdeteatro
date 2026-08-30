@@ -85,7 +85,14 @@ describe('openaiAdapter', () => {
     const { openaiAdapter } = await import('../openai-adapter')
     const outcome = await openaiAdapter.execute('prompt secreto del usuario')
 
-    expect(Object.keys(outcome).sort()).toEqual(['content', 'latencyMs', 'model', 'tokensConsumed'])
+    expect(Object.keys(outcome).sort()).toEqual([
+      'content',
+      'inputTokens',
+      'latencyMs',
+      'model',
+      'outputTokens',
+      'tokensConsumed',
+    ])
   })
 
   it('lanza ProviderAdapterError cuando OPENAI_API_KEY está ausente, sin construir el cliente', async () => {

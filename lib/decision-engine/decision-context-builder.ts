@@ -27,7 +27,11 @@ export function buildDecisionContext(
   _professionalContext: ProfessionalContext,
   knowledgeContext: KnowledgeContext
 ): DecisionContext {
-  const aiNeeded = needsAI(knowledgeContext.knowledgeCompleteness)
+  // Las dos señales reales de "el conocimiento recuperado basta": cobertura
+  // de dominios y volumen realmente recuperado. `knowledgeEntities` ya venia
+  // en el contrato KnowledgeContext que este constructor recibe -- no hay
+  // dato nuevo ni recuperacion adicional.
+  const aiNeeded = needsAI(knowledgeContext.knowledgeCompleteness, knowledgeContext.knowledgeEntities.length)
   const executionMode = aiNeeded ? 'IA' : 'DIRECTO'
   const priorityLevel = derivePriorityLevel(normalizedRequest.estimatedComplexity)
   const decisionConfidence = estimateDecisionConfidence(
@@ -37,6 +41,7 @@ export function buildDecisionContext(
   const estimatedCost = estimateCost(aiNeeded)
 
   return {
+    requestId: normalizedRequest.requestId,
     executionStrategy: {
       executionMode,
       recommendedAgent: null,

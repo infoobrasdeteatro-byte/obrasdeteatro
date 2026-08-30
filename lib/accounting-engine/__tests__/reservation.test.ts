@@ -25,6 +25,13 @@ const AUTHORIZED_OUTCOME = {
     createdAt: '2026-07-16T00:00:00.000Z',
     settledAt: null,
   },
+  // Presupuesto del periodo, calculado en la misma operacion atomica.
+  budget: {
+    periodStart: '2026-07-01T00:00:00.000Z',
+    settledConsumption: 4,
+    reservedConsumption: 5,
+    availableCapacity: 21,
+  },
 }
 
 describe('verifyAndReserve (Accounting Engine)', () => {

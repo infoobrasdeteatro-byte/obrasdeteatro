@@ -30,6 +30,7 @@ function fakeProfessionalContext(usageLimits: string | null): ProfessionalContex
 
 function fakeDecisionContext(overrides: Partial<DecisionContext> = {}): DecisionContext {
   return {
+    requestId: 'req-1',
     executionStrategy: {
       executionMode: 'IA',
       recommendedAgent: null,
@@ -84,6 +85,7 @@ describe('buildAuthorizationContext', () => {
       authorized: false,
       currentConsumption: 28,
       denialReason: 'consumo_actual(28) + coste_estimado(5) > limite_autorizado(30)',
+      budget: { periodStart: '2026-08-01T00:00:00.000Z', settledConsumption: 0, reservedConsumption: 0, availableCapacity: 25 },
     })
 
     const result = await buildAuthorizationContext(fakeProfessionalContext('30'), fakeDecisionContext())
@@ -94,7 +96,8 @@ describe('buildAuthorizationContext', () => {
     )
     expect(result.availableCredits).toBe(2)
     expect(result.remainingQuota).toBe(2)
-    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 30, 5)
+    // El requestId viaja hasta la reserva desde el cierre del circuito economico.
+    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 30, 5, 'req-1')
   })
 
   it('VERIFICADO (ILIMITADO): autoriza directamente sin invocar verifyAndReserve cuando el plan es sin control de cuota (IA-AUTH-001, PRD-001)', async () => {
@@ -122,6 +125,7 @@ describe('buildAuthorizationContext', () => {
         createdAt: new Date().toISOString(),
         settledAt: null,
       },
+      budget: { periodStart: '2026-08-01T00:00:00.000Z', settledConsumption: 0, reservedConsumption: 0, availableCapacity: 25 },
     })
 
     const result = await buildAuthorizationContext(fakeProfessionalContext('30'), fakeDecisionContext())

@@ -13,8 +13,8 @@ beforeEach(() => {
 describe('retrieveKnowledgeForDomain', () => {
   it('delega en retrieveRelevantKnowledge, transportando el texto de la petición (IA-003)', async () => {
     const retrievalResult = {
-      items: [{ domain: 'Obras' as const, data: { id: 'w1' } as never }],
-      requestWasNarrowed: true,
+      items: [{ domain: 'Obras' as const, data: { id: 'w1' } as never, provenance: { authority: 'CATALOGO_PROPIO' as const, sourceName: null, sourceUrl: null, observedAt: 'T', validUntil: null }, functions: [] }],
+      requestWasNarrowed: true, unappliedCriteria: [],
     }
     vi.mocked(retrieveRelevantKnowledge).mockResolvedValue(retrievalResult)
 
@@ -25,10 +25,10 @@ describe('retrieveKnowledgeForDomain', () => {
   })
 
   it('devuelve lo que Knowledge Assets devuelva para un dominio todavía no cubierto, sin lanzar excepción', async () => {
-    vi.mocked(retrieveRelevantKnowledge).mockResolvedValue({ items: [], requestWasNarrowed: false })
+    vi.mocked(retrieveRelevantKnowledge).mockResolvedValue({ items: [], requestWasNarrowed: false, unappliedCriteria: [] })
 
     const result = await retrieveKnowledgeForDomain('Personas', 'texto')
 
-    expect(result).toEqual({ items: [], requestWasNarrowed: false })
+    expect(result).toEqual({ items: [], requestWasNarrowed: false, unappliedCriteria: [] })
   })
 })

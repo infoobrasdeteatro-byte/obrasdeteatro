@@ -38,6 +38,18 @@ export interface ExecutionAudit {
   readonly providerModel: string | null
   readonly executionLatencyMs: number | null
   readonly tokensConsumed: number | null
+  /** Desglose publicado por el proveedor (IA-006); `null` si no lo aporta. */
+  readonly inputTokens: number | null
+  readonly outputTokens: number | null
+  /**
+   * Coste real de la ejecucion, cuando el propio proveedor lo comunica.
+   * Sigue siendo `null` con OpenAI, que no lo devuelve: su coste se deriva
+   * de los tokens y de la tarifa del catalogo, y esa tarificacion NO ocurre
+   * aqui -- AI Gateway "invoca, nunca selecciona" y no conoce el catalogo
+   * (invariante de Direccion, cierre de IA-006).
+   *
+   * `null` significa "no determinado", jamas "cero".
+   */
   readonly realExecutionCost: number | null
   readonly technicalMetadata: string | null
 }

@@ -28,7 +28,7 @@ describe('normalizeRequest', () => {
   })
 
   it('marca ambiguedad cuando coinciden multiples dominios a la vez', () => {
-    const result = normalizeRequest('busco una compania para representar mi obra')
+    const result = normalizeRequest('busco obras y companias')
 
     expect(result.requestedKnowledgeDomains).toHaveLength(2)
     expect(result.detectedAmbiguities).toContain('la peticion coincide con multiples dominios de conocimiento simultaneamente')
@@ -55,5 +55,78 @@ describe('normalizeRequest', () => {
     const first = normalizeRequest('hola')
     const second = normalizeRequest('hola')
     expect(first.requestId).not.toBe(second.requestId)
+  })
+})
+
+describe('normalizeRequest — continuidad contextual (Reconexion del Nucleo Conversacional)', () => {
+  const TURNO_1 = '¿Qué obras de comedia tienes?'
+
+  it('sin turnos previos se comporta exactamente como antes: retrievalQuery es el propio texto normalizado', () => {
+    const result = normalizeRequest(TURNO_1)
+
+    expect(result.retrievalQuery).toBe(result.normalizedIntent)
+    expect(result.requestedKnowledgeDomains).toContain('Obras')
+  })
+
+  it('un turno de continuacion sin dominio propio hereda el dominio de la conversacion', () => {
+    const solo = normalizeRequest('¿Y alguna más corta?')
+    const enContexto = normalizeRequest('¿Y alguna más corta?', [TURNO_1])
+
+    expect(solo.requestedKnowledgeDomains).toEqual([])
+    expect(enContexto.requestedKnowledgeDomains).toContain('Obras')
+  })
+
+  it('el turno de continuacion conserva los criterios previos y suma el nuevo', () => {
+    const result = normalizeRequest('¿Y alguna más corta?', [TURNO_1])
+
+    expect(result.retrievalQuery).toContain('comedia')
+    expect(result.retrievalQuery).toContain('corta')
+  })
+
+  it('un turno que nombra su propio dominio nunca hereda: la herencia se corta sola', () => {
+    const result = normalizeRequest('¿Y qué obras infantiles tienes?', [TURNO_1])
+
+    expect(result.retrievalQuery).toBe(result.normalizedIntent)
+    expect(result.retrievalQuery).not.toContain('comedia')
+  })
+
+  it('normalizedIntent nunca se contamina con el contexto: sigue siendo solo el turno actual', () => {
+    const result = normalizeRequest('¿Y alguna más corta?', [TURNO_1])
+
+    expect(result.normalizedIntent).toBe('¿y alguna mas corta?')
+    expect(result.normalizedIntent).not.toContain('comedia')
+  })
+
+  it('originalRequest nunca se altera: es siempre el texto literal del usuario', () => {
+    const result = normalizeRequest('¿Y alguna más corta?', [TURNO_1])
+
+    expect(result.originalRequest).toBe('¿Y alguna más corta?')
+  })
+
+  it('acota la ventana de contexto a los tres ultimos turnos del usuario', () => {
+    const result = normalizeRequest('¿Y cuál recomendarías?', [
+      '¿Qué compañías de teatro hay?',
+      '¿Qué obras de comedia tienes?',
+      '¿Y alguna más corta?',
+      '¿Y alguna para pocos actores?',
+    ])
+
+    expect(result.retrievalQuery).not.toContain('companias')
+    expect(result.retrievalQuery).toContain('comedia')
+    expect(result.retrievalQuery).toContain('pocos actores')
+  })
+
+  it('un historial vacio se comporta igual que ausencia de historial', () => {
+    const conVacio = normalizeRequest('¿Y alguna más corta?', [])
+    const sinParametro = normalizeRequest('¿Y alguna más corta?')
+
+    expect(conVacio.retrievalQuery).toBe(sinParametro.retrievalQuery)
+    expect(conVacio.requestedKnowledgeDomains).toEqual(sinParametro.requestedKnowledgeDomains)
+  })
+
+  it('es determinista: misma entrada, misma retrievalQuery', () => {
+    expect(normalizeRequest('¿Y alguna más corta?', [TURNO_1]).retrievalQuery).toBe(
+      normalizeRequest('¿Y alguna más corta?', [TURNO_1]).retrievalQuery
+    )
   })
 })

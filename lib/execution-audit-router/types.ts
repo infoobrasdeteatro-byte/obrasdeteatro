@@ -1,4 +1,5 @@
 import type { ExecutionAudit } from '@/lib/ai-gateway'
+import type { ExecutionTraceContext } from '@/lib/verified/observabilidad'
 
 /**
  * Las 6 categorias de consumo ya autorizadas por SC-004.7 revisado, mas
@@ -22,5 +23,5 @@ export type ExecutionAuditConsumerCategory =
  */
 export interface ExecutionAuditConsumer {
   readonly category: ExecutionAuditConsumerCategory
-  deliver(userId: string, audit: ExecutionAudit): Promise<void>
+  deliver(userId: string, audit: ExecutionAudit, context?: ExecutionTraceContext): Promise<void>
 }

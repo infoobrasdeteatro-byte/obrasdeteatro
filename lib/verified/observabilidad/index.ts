@@ -1,3 +1,5 @@
 export type { TechnicalTrace, TechnicalMetricSummary, ExecutionAudit } from './types'
 export { recordExecutionTrace } from './record-execution-trace'
 export { buildTechnicalTrace } from './build-technical-trace'
+export { recordTurnMetrics } from './record-turn-metrics'
+export type { TurnObservation, ExecutionTraceContext } from './types'

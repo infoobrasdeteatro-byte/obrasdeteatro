@@ -47,6 +47,36 @@ function estimateConfidence(domains: KnowledgeDomain[]): number {
 }
 
 /**
+ * Turnos previos del usuario que un turno de continuacion puede arrastrar.
+ * Acotado deliberadamente: la continuidad sirve para no perder el hilo
+ * inmediato, nunca para acumular criterios de toda la sesion.
+ */
+const CONTEXT_WINDOW_TURNS = 3
+
+/**
+ * Continuidad contextual (Reconexion del Nucleo Conversacional).
+ *
+ * Un turno que nombra su propio dominio -- "¿que obras de comedia tienes?",
+ * "¿y obras infantiles?" -- es un enunciado completo: se interpreta solo,
+ * exactamente como antes de este cambio, y nunca hereda nada.
+ *
+ * Un turno que por si mismo no nombra ningun dominio -- "¿y alguna mas
+ * corta?", "¿cual recomendarias?" -- no es una peticion nueva sino la
+ * continuacion de la anterior. Solo en ese caso la interpretacion se
+ * ejecuta sobre los ultimos turnos del usuario mas el actual, de modo que
+ * el dominio y los criterios ya establecidos sigan vigentes y el criterio
+ * nuevo se sume a ellos.
+ *
+ * La regla es autolimitada por construccion: en cuanto el usuario vuelve a
+ * nombrar un dominio, la herencia se corta. No hay memoria persistente, no
+ * hay estado nuevo, no hay almacenamiento -- solo el historial que el flujo
+ * ya recibia.
+ */
+function resolveRetrievalQuery(originalRequest: string, previousUserRequests: readonly string[]): string {
+  return normalizeText([...previousUserRequests.slice(-CONTEXT_WINDOW_TURNS), originalRequest].join('. '))
+}
+
+/**
  * Unico punto de entrada de Request Interpreter (SC-004.4): funcion pura y
  * sincrona, sin I/O -- no consulta la capa de persistencia, el contexto
  * profesional ni el conocimiento del ecosistema. `locale` y la informacion
@@ -54,9 +84,16 @@ function estimateConfidence(domains: KnowledgeDomain[]): number {
  * de esta v1 depende todavia de ellas (vacio diferido: reglas multi-idioma
  * futuras).
  */
-export function normalizeRequest(originalRequest: string): NormalizedRequest {
+export function normalizeRequest(
+  originalRequest: string,
+  previousUserRequests: readonly string[] = []
+): NormalizedRequest {
   const normalizedIntent = normalizeText(originalRequest)
-  const requestedKnowledgeDomains = detectKnowledgeDomains(normalizedIntent)
+  const ownDomains = detectKnowledgeDomains(normalizedIntent)
+
+  const isFollowUp = ownDomains.length === 0 && previousUserRequests.length > 0
+  const retrievalQuery = isFollowUp ? resolveRetrievalQuery(originalRequest, previousUserRequests) : normalizedIntent
+  const requestedKnowledgeDomains = isFollowUp ? detectKnowledgeDomains(retrievalQuery) : ownDomains
   const requestType = detectRequestType(requestedKnowledgeDomains.length)
   const detectedAmbiguities = detectAmbiguities(originalRequest, requestedKnowledgeDomains, requestType)
 
@@ -64,6 +101,7 @@ export function normalizeRequest(originalRequest: string): NormalizedRequest {
     requestId: crypto.randomUUID(),
     originalRequest,
     normalizedIntent,
+    retrievalQuery,
     requestType,
     requestedKnowledgeDomains,
     estimatedComplexity: estimateComplexity(requestedKnowledgeDomains.length, originalRequest.length),

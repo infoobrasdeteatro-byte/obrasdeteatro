@@ -4,14 +4,17 @@ import type { SessionInput } from '@/lib/professional-context-engine'
 import { buildKnowledgeContext } from '@/lib/scenaia-knowledge-model'
 import { buildDecisionContext } from '@/lib/decision-engine'
 import { buildAuthorizationContext } from '@/lib/credit-manager'
+import { settleReservation, releaseReservation, resolveSettlementCost } from '@/lib/accounting-engine'
 import { executeAIRequest } from '@/lib/ai-gateway'
 import type { NormalizedAIRequest } from '@/lib/ai-gateway'
 import { composeResponse } from '@/lib/response-composer'
 import type { ResponseContext } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
+import { recordTurnMetrics } from '@/lib/verified/observabilidad'
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
+import { composeAugmentedRequest, resolveVocabulary } from '@/lib/intent-resolver'
 import type { ConversationTurn } from '@/lib/prompt-composer'
 
 /**
@@ -85,23 +88,164 @@ export async function coordinateFlow(
   originalRequest: string,
   conversationHistory: readonly ConversationTurn[] = []
 ): Promise<ResponseContext> {
-  const normalizedRequest = normalizeRequest(originalRequest)
+  // Continuidad contextual: los turnos previos del usuario -- nunca los de
+  // ScenaIA, que son respuestas, no peticiones -- se ofrecen al interprete
+  // para que un turno de continuacion siga siendo interpretable. El
+  // historial es el mismo que ya recibia composePrompt(); no hay fuente
+  // nueva ni estado nuevo.
+  // Fase 0 -- observabilidad: instante de entrada del turno. Solo se lee al
+  // final, para medir cuanto tardo el flujo completo.
+  const turnStartedAt = Date.now()
+
+  const previousUserRequests = conversationHistory.filter((turn) => turn.role === 'user').map((turn) => turn.content)
+  let normalizedRequest = normalizeRequest(originalRequest, previousUserRequests)
   const professionalContext = await buildProfessionalContext(userId, session)
-  const knowledgeContext = await buildKnowledgeContext(normalizedRequest)
+  let knowledgeContext = await buildKnowledgeContext(normalizedRequest)
   const decisionContext = buildDecisionContext(normalizedRequest, professionalContext, knowledgeContext)
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
+
+  // Segunda pasada de interpretacion: Domain Vocabulary asistido, la
+  // responsabilidad que el ADR SCENAIA-002C.1 ya define ("resuelve
+  // sinonimos, unifica conceptos"; nunca "construir criterios"). El
+  // proveedor traduce las palabras del usuario a terminos que los motores
+  // deterministas ya conocen; los umbrales numericos los sigue aplicando
+  // `interpretRules` con los valores ratificados en SCENAIA-002C.
+  //
+  // Quien decide si hay algo que traducir es el propio resolutor
+  // (`mayNeedResolution`): si en la peticion no queda contenido que los
+  // motores no consuman ya, declina sin consultar al proveedor y no se gasta
+  // ninguna llamada. El Orquestador solo aporta las dos condiciones que le
+  // corresponden -- que la IA sea necesaria y que este autorizada.
+  //
+  // Ocurre SIEMPRE despues de Credit Manager y solo con autorizacion
+  // concedida: ninguna ejecucion de proveedor precede a la autorizacion.
+  // Toda ejecucion pasa por AI Gateway y produce su ExecutionAudit.
+  // En un turno de continuacion ("¿y alguna mas corta?") la continuidad
+  // contextual ya ha resuelto el dominio y arrastra los criterios previos:
+  // anadir ahi terminos convertiria el turno en enunciado nuevo y le haria
+  // PERDER el hilo. El resolutor solo interviene en turnos que se
+  // interpretan por si solos. `retrievalQuery !== normalizedIntent` es
+  // exactamente la señal de continuacion, ya declarada en el contrato.
+  const esTurnoDeContinuacion = normalizedRequest.retrievalQuery !== normalizedRequest.normalizedIntent
+
+  let resolvedTerms: readonly string[] = []
+
+  if (
+    decisionContext.needsAI &&
+    authorizationContext.authorizationStatus === 'AUTHORIZED' &&
+    !esTurnoDeContinuacion
+  ) {
+    resolvedTerms = await resolveVocabulary(originalRequest, async (prompt) => {
+      const { result, audit } = await executeAIRequest({
+        decisionContext,
+        authorizationContext,
+        normalizedAIRequest: { userPrompt: prompt },
+      })
+      await distributeExecutionAudit(professionalContext.identity.userId, audit, {
+        requestId: normalizedRequest.requestId,
+        stage: 'resolver',
+      })
+      return result.generatedContent
+    })
+
+    if (resolvedTerms.length > 0) {
+      // El texto original nunca se altera: los terminos resueltos se anaden
+      // para que los motores deterministas de siempre los interpreten con
+      // sus umbrales ya ratificados. La IA no ha producido ningun criterio.
+      //
+      // La composicion la hace `composeAugmentedRequest`, no una
+      // concatenacion directa: es quien introduce los criterios con la
+      // preposicion que la gramatica de `detectKnowledgeDomains` lee como
+      // subordinacion, y quien descarta un criterio suelto sin dominio.
+      // Concatenar a secas hacia que "busco algo para hacer entre pocos"
+      // (resuelto a "pocos actores") activara el dominio Personas --
+      // exactamente el falso positivo que esa funcion existe para evitar.
+      normalizedRequest = normalizeRequest(
+        composeAugmentedRequest(originalRequest, resolvedTerms),
+        previousUserRequests
+      )
+      knowledgeContext = await buildKnowledgeContext(normalizedRequest)
+    }
+  }
+
   const normalizedAIRequest: NormalizedAIRequest = {
     userPrompt: composePrompt(normalizedRequest, knowledgeContext, conversationHistory),
   }
+  // Lo que la reserva aparto: es el importe con el que se liquida mientras
+  // el coste real del proveedor no pueda calcularse.
+  const reservedCost = authorizationContext.estimatedCost ?? 0
+
   const { result, audit } = await executeAIRequest({ decisionContext, authorizationContext, normalizedAIRequest })
   const directContent = buildDirectContent(knowledgeContext)
   const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)
+
+  // Cierre del circuito economico. La reserva creada al autorizar no puede
+  // quedarse abierta: se liquida si hubo ejecucion real de proveedor, y se
+  // libera si no llego a producirse. Sin este paso, toda reserva quedaba
+  // 'active' hasta expirar -- 75 reservas reales, ninguna cerrada.
+  //
+  // Se hace aqui, y no como consumidor del enrutador de ExecutionAudit,
+  // porque cerrar una reserva exige saber CUAL cerrar: el identificador
+  // vive en AuthorizationContext y el contrato de ExecutionAuditConsumer
+  // transporta el audit, no datos economicos. Ensancharlo para llevarlos
+  // mezclaria observabilidad con contabilidad. El Orquestador ya es quien
+  // dispone de ambas piezas, igual que ocurre con recordActivity.
+  //
+  // La doble liquidacion la impide la propia operacion atomica
+  // (`WHERE status = 'active'`), no una comprobacion de este componente.
+  // Nunca interrumpe una respuesta ya construida.
+  if (authorizationContext.reservationId !== null) {
+    try {
+      if (result.executionStatus === 'EJECUTADO') {
+        await settleReservation(authorizationContext.reservationId, resolveSettlementCost(audit, reservedCost))
+      } else {
+        await releaseReservation(authorizationContext.reservationId)
+      }
+    } catch {
+      // Una reserva ya cerrada, o cualquier fallo del cierre, no puede
+      // alterar la respuesta que el usuario ya tiene.
+    }
+  }
 
   await recordActivity({
     profileId: professionalContext.identity.userId,
     responseType: responseContext.responseType,
   })
-  await distributeExecutionAudit(professionalContext.identity.userId, audit)
+  await distributeExecutionAudit(professionalContext.identity.userId, audit, {
+    requestId: normalizedRequest.requestId,
+    stage: 'response',
+  })
+
+  // Fase 0 -- lo que ScenaIA entendio y recupero en este turno. Paso de
+  // observacion, como los dos anteriores: se ejecuta con la respuesta ya
+  // construida y su resultado no la altera. El Orquestador es el unico
+  // punto con visibilidad completa del turno, y se limita a leer valores
+  // que ya tenia en su ambito local -- ningun componente del Nucleo pasa a
+  // conocer la observabilidad.
+  //
+  // El paso completo -- incluida la LECTURA de los datos que observa -- va
+  // protegido: `recordTurnMetrics` ya nunca lanza, pero componer su entrada
+  // si podria hacerlo si algun contexto llegara incompleto. La propiedad
+  // "un fallo de observabilidad jamas altera una respuesta ya construida"
+  // debe sostenerse por construccion, no por confiar en la forma del dato.
+  try {
+    const entidades = knowledgeContext.knowledgeEntities?.length ?? 0
+    const dominiosCubiertos = knowledgeContext.knowledgeDomains?.length ?? 0
+
+    await recordTurnMetrics(professionalContext.identity.userId, {
+      requestId: normalizedRequest.requestId,
+      domains: normalizedRequest.requestedKnowledgeDomains ?? [],
+      isContinuation: esTurnoDeContinuacion,
+      resolvedTerms,
+      retrievedEntityCount: entidades,
+      knowledgeConfidence: knowledgeContext.knowledgeConfidence ?? 0,
+      isEmptyResult: dominiosCubiertos > 0 && entidades === 0,
+      responseType: responseContext.responseType,
+      durationMs: Date.now() - turnStartedAt,
+    })
+  } catch {
+    // Observar nunca puede impedir responder.
+  }
 
   return responseContext
 }

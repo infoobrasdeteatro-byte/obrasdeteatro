@@ -6,6 +6,7 @@ import { composeResponse } from '../compose-response'
 
 function fakeDecisionContext(overrides: Partial<DecisionContext> = {}): DecisionContext {
   return {
+    requestId: 'req-1',
     executionStrategy: {
       executionMode: 'IA',
       recommendedAgent: null,
@@ -25,6 +26,7 @@ function fakeAuthorizationContext(overrides: Partial<AuthorizationContext> = {})
   return {
     authorizationStatus: 'AUTHORIZED',
     authorizationReason: 'VERIFICADO: reserva de credito confirmada',
+    reservationId: null,
     availableCredits: 30,
     estimatedCost: 5,
     remainingQuota: 25,
@@ -143,5 +145,77 @@ describe('composeResponse', () => {
     expect(JSON.stringify(decisionContext)).toBe(decisionSnapshot)
     expect(JSON.stringify(authorizationContext)).toBe(authorizationSnapshot)
     expect(JSON.stringify(aiExecutionResult)).toBe(aiSnapshot)
+  })
+})
+
+describe('composeResponse — degradacion a conocimiento propio (Reconexion del Nucleo Conversacional)', () => {
+  const CONTENIDO = 'En obras he encontrado un resultado: Obra A.'
+
+  it('con autorizacion DENEGADA pero contenido determinista disponible, entrega el contenido en vez de la plantilla de denegacion', () => {
+    const result = composeResponse(
+      fakeDecisionContext(),
+      fakeAuthorizationContext({ authorizationStatus: 'DENIED', authorizationReason: 'VERIFICACION_NEGATIVA: cuota agotada' }),
+      null,
+      CONTENIDO
+    )
+
+    expect(result.responseType).toBe('RESPONSE_DIRECT')
+    expect(result.responseContent).toBe(CONTENIDO)
+    expect(result.responseMetadata.authorizationReason).toBe('VERIFICACION_NEGATIVA: cuota agotada')
+    expect(result.responseWarnings).toContain('respuesta compuesta sin IA: autorizacion no concedida')
+  })
+
+  it('con autorizacion DENEGADA y sin contenido determinista, conserva RESPONSE_DENIED', () => {
+    const result = composeResponse(
+      fakeDecisionContext(),
+      fakeAuthorizationContext({ authorizationStatus: 'DENIED' }),
+      null,
+      null
+    )
+
+    expect(result.responseType).toBe('RESPONSE_DENIED')
+  })
+
+  it('cuando la IA no entrega contenido pero si hay conocimiento recuperado, entrega ese conocimiento en vez de un error', () => {
+    const result = composeResponse(
+      fakeDecisionContext(),
+      fakeAuthorizationContext(),
+      fakeAIExecutionResult({ executionStatus: 'SIN_PROVEEDOR' }),
+      CONTENIDO
+    )
+
+    expect(result.responseType).toBe('RESPONSE_DIRECT')
+    expect(result.responseContent).toBe(CONTENIDO)
+    expect(result.responseMetadata.executionStatus).toBe('SIN_PROVEEDOR')
+    expect(result.responseWarnings[0]).toBe('respuesta compuesta sin IA: ejecucion no disponible')
+  })
+
+  it('conserva los avisos originales de AI Gateway al degradar', () => {
+    const result = composeResponse(
+      fakeDecisionContext(),
+      fakeAuthorizationContext(),
+      fakeAIExecutionResult({ executionStatus: 'ERROR_COMUNICACION', executionWarnings: ['fallo del proveedor'] }),
+      CONTENIDO
+    )
+
+    expect(result.responseWarnings).toContain('fallo del proveedor')
+  })
+
+  it('sin contenido determinista, un fallo de IA sigue produciendo RESPONSE_ERROR', () => {
+    const result = composeResponse(fakeDecisionContext(), fakeAuthorizationContext(), fakeAIExecutionResult(), null)
+
+    expect(result.responseType).toBe('RESPONSE_ERROR')
+  })
+
+  it('una ejecucion de IA correcta siempre tiene prioridad sobre el contenido determinista', () => {
+    const result = composeResponse(
+      fakeDecisionContext(),
+      fakeAuthorizationContext(),
+      fakeAIExecutionResult({ executionStatus: 'EJECUTADO', generatedContent: 'Respuesta conversacional', executionWarnings: [] }),
+      CONTENIDO
+    )
+
+    expect(result.responseType).toBe('RESPONSE_SUCCESS')
+    expect(result.responseContent).toBe('Respuesta conversacional')
   })
 })

@@ -8,6 +8,17 @@ export interface ProviderExecutionOutcome {
   readonly model: string
   readonly latencyMs: number
   readonly tokensConsumed: number | null
+  /**
+   * Desglose de consumo, cuando el proveedor lo publica (IA-006).
+   *
+   * No es un adorno del total: entrada y salida se tarifan a precios
+   * distintos -- la salida suele costar varias veces mas que la entrada --,
+   * de modo que sin este desglose el coste real no puede calcularse, solo
+   * aproximarse. `null` significa "el proveedor no lo aporta", nunca cero:
+   * un dato ausente jamas se sustituye por un valor.
+   */
+  readonly inputTokens: number | null
+  readonly outputTokens: number | null
 }
 
 /**

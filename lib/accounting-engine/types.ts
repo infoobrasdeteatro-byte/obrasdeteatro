@@ -1,4 +1,4 @@
-export type { CreditReservation, ReservationOutcome, ReservationStatus } from '@/lib/repository-layer'
+export type { CreditReservation, PeriodBudget, ReservationOutcome, ReservationStatus } from '@/lib/repository-layer'
 
 /**
  * TTL por defecto de una reserva, en segundos. Decision de politica de
