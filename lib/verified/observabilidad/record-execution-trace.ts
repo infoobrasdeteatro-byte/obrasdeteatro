@@ -106,6 +106,36 @@ export async function recordExecutionTrace(
     )
   }
 
+  // TRUNCAMIENTO (Bloque 5C; renombrada en 5D). Pertenece a la familia
+  // `ai_gateway.*` -- hechos de UNA ejecucion concreta del proveedor --, no
+  // a `scenaia.*`, reservada a hechos del turno. Un turno puede contener
+  // dos ejecuciones (resolutor y respuesta) y truncarse solo una: llamarla
+  // "del turno" haria imposible saber cual.
+  //
+  // Se emite como bandera 0/1 SIEMPRE que hubo ejecucion -- mismo patron de
+  // bandera ya usado por `scenaia.response.empty` --, no solo cuando corta.
+  // La razon es que la pregunta que hay que responder no es "cuantas veces
+  // se trunco", sino "que PROPORCION de ejecuciones se trunca": sin el
+  // denominador, la metrica no sirve para decidir un techo, que es
+  // exactamente para lo que existe.
+  //
+  // `null` (no hubo ejecucion) no emite nada: no es un cero, es una
+  // pregunta sin sujeto.
+  //
+  // Los tags ya distinguen las cuatro dimensiones pedidas: la operacion la
+  // aporta `stage` (resolver / response), y proveedor y modelo vienen del
+  // propio audit. No se anade ni un campo nuevo.
+  if (audit.truncated !== null) {
+    writes.push(
+      recordMetric(profileId, {
+        name: 'ai_gateway.truncated',
+        value: audit.truncated ? 1 : 0,
+        unit: 'flag',
+        ...(hasTags ? { tags } : {}),
+      })
+    )
+  }
+
   const results = await Promise.all(writes)
   return results.every(Boolean)
 }

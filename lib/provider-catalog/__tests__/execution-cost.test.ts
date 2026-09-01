@@ -111,9 +111,28 @@ describe('calculateExecutionCost — coste real a partir de tokens y tarifa', ()
 })
 
 describe('findModelRate — el catalogo oficial sigue siendo competencia de Direccion', () => {
-  it('el catalogo real todavia no declara ninguna tarifa: no se ha inventado ningun precio', () => {
-    expect(findModelRate('openai', 'gpt-4o-mini', AI_PROVIDER_CATALOG)).toBeNull()
-    expect(AI_PROVIDER_CATALOG.every((entry) => entry.rates === undefined)).toBe(true)
+  /**
+   * Este test sustituye al que afirmaba que el catalogo no declaraba
+   * ninguna tarifa. Aquel guardaba una ausencia: que ningun precio se
+   * hubiera inventado mientras Direccion no lo aportara. Direccion lo ha
+   * aportado -- tarifa oficial del proveedor, consultada el 2026-08-31 --
+   * de modo que lo que hay que custodiar ya no es la ausencia, sino la
+   * PROCEDENCIA: que el precio venga del catalogo y de ningun otro sitio.
+   */
+  it('la tarifa procede del CATALOGO, nunca del codigo que calcula', () => {
+    const rate = findModelRate('openai', 'gpt-4o-mini', AI_PROVIDER_CATALOG)
+
+    expect(rate).not.toBeNull()
+    expect(rate?.currency).toBe('USD')
+    expect(rate?.pricingUnit).toBe('PER_MILLION_TOKENS')
+    // El precio concreto es contenido de Direccion: se comprueba que
+    // existe y es positivo, no que valga una cifra fijada en la prueba.
+    expect(rate!.inputPricePerMillionTokens).toBeGreaterThan(0)
+    expect(rate!.outputPricePerMillionTokens).toBeGreaterThan(rate!.inputPricePerMillionTokens)
+  })
+
+  it('un modelo no declarado sigue sin tarifa: el catalogo no inventa por analogia', () => {
+    expect(findModelRate('openai', 'un-modelo-que-no-esta-en-el-catalogo', AI_PROVIDER_CATALOG)).toBeNull()
   })
 
   it('un proveedor ausente del catalogo no tiene tarifa', () => {

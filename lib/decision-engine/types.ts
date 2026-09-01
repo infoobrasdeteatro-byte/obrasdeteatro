@@ -1,4 +1,5 @@
 import type { EstimatedComplexity } from '@/lib/request-interpreter'
+import type { OperationEstimate } from './operation'
 
 export type ExecutionMode = 'DIRECTO' | 'IA'
 
@@ -37,7 +38,14 @@ export interface DecisionContext {
   readonly requestId: string
   readonly executionStrategy: ExecutionStrategy
   readonly needsAI: boolean
+  /** Coste maximo plausible del turno, en creditos. */
   readonly estimatedCost: number | null
+  /**
+   * Desglose por operacion de ese coste (Bloque 4). Vacio cuando no pudo
+   * calcularse: entonces `estimatedCost` es la reserva de ultimo recurso, y
+   * esta lista es la evidencia de por que.
+   */
+  readonly operationEstimates: readonly OperationEstimate[]
   readonly decisionConfidence: number
   readonly decisionRationale: string
 }

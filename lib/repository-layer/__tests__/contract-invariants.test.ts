@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
+import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
 const READ_ONLY_MODULES = [
@@ -153,5 +153,100 @@ describe('Repository Layer — individual-profile.ts y organizational-profile.ts
     expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/mostrar_telefono/)
     expect(INDIVIDUAL_PROFILE_SOURCE).toMatch(/mostrar_redes/)
     expect(ORGANIZATIONAL_PROFILE_SOURCE).toMatch(/mostrar_contacto/)
+  })
+})
+
+
+/**
+ * BLOQUE 5 — la cuota de IA vive en un solo sitio.
+ *
+ * La invariante no protege una cifra: protege que exista UN unico lugar
+ * donde cambiarla. Repartida por la UI, la API o SQL, una decision
+ * comercial deja de ser modificable y pasa a ser arqueologia.
+ */
+describe('Repository Layer — cuota de IA, fuente unica (Bloque 5)', () => {
+  const REPO_ROOT = join(__dirname, '..', '..', '..')
+  const QUOTA_SOURCE_PATH = join(REPO_ROOT, 'lib', 'repository-layer', 'subscription.ts')
+
+  /** Todos los .ts/.tsx de produccion bajo un directorio (sin pruebas). */
+  function ficherosDeProduccion(dir: string): string[] {
+    const salida: string[] = []
+    for (const entrada of readdirSync(dir, { withFileTypes: true })) {
+      if (entrada.isDirectory()) {
+        if (entrada.name === '__tests__') continue
+        salida.push(...ficherosDeProduccion(join(dir, entrada.name)))
+      } else if (entrada.name.endsWith('.ts') || entrada.name.endsWith('.tsx')) {
+        salida.push(join(dir, entrada.name))
+      }
+    }
+    return salida
+  }
+
+  const PRODUCCION = [...ficherosDeProduccion(join(REPO_ROOT, 'lib')), ...ficherosDeProduccion(join(REPO_ROOT, 'app'))]
+
+  it('ningun modulo salvo subscription.ts declara una cuota de IA', () => {
+    const declarantes = PRODUCCION.filter(
+      (fichero) => /PLAN_AI_QUOTAS|creditsPerPeriod/.test(readFileSync(fichero, 'utf-8'))
+    )
+
+    expect(declarantes).toEqual([QUOTA_SOURCE_PATH])
+  })
+
+  it('la traduccion plan -> cuota se expone por una sola funcion, no por el mapa en crudo', () => {
+    expect(SUBSCRIPTION_SOURCE).toMatch(/export function getUsageLimit\(/)
+    // El mapa NO se exporta: quien quiera una cuota pasa por la funcion, y
+    // no puede quedarse con una copia propia que despues divergiria.
+    expect(SUBSCRIPTION_SOURCE).not.toMatch(/export const PLAN_AI_QUOTAS|export \{[^}]*PLAN_AI_QUOTAS/)
+  })
+
+  it('ILIMITADO no se representa con ninguna cifra convenida (PRD-001)', () => {
+    // Se mira el CODIGO, no los comentarios: la documentacion puede
+    // nombrar los valores prohibidos precisamente para explicar por que no
+    // se usan, y eso no es usarlos.
+    const codigo = SUBSCRIPTION_SOURCE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '')
+
+    expect(codigo).not.toMatch(/999999999|Number\.MAX_SAFE_INTEGER|Infinity/)
+    // La rama sin techo no lleva `creditsPerPeriod` en absoluto.
+    expect(codigo).toMatch(/empresas:\s*\{\s*kind:\s*'ILIMITADO'\s*\}/)
+  })
+
+  it('el catalogo comercial (lib/plans.ts) sigue sin conocer la cuota de IA', () => {
+    // Precios, euros y Stripe viven ahi; la cuota de IA no. Si un dia
+    // apareciera, habria dos fuentes y ninguna autoridad.
+    const PLANS_SOURCE = readFileSync(join(REPO_ROOT, 'lib', 'plans.ts'), 'utf-8')
+
+    expect(PLANS_SOURCE).not.toMatch(/scenaia|creditos?_?ia|creditsPerPeriod|usageLimit/i)
+  })
+})
+
+/**
+ * BLOQUE 5 — el periodo de cuota es el que ya existia.
+ *
+ * No se inventa una arquitectura de periodos nueva: la funcion atomica ya
+ * acota el presupuesto al mes natural desde el Bloque 3. Estas invariantes
+ * impiden que se duplique o se sustituya sin decidirlo.
+ */
+describe('Accounting SQL — periodo y cuota (Bloque 5)', () => {
+  const MIGRATIONS_DIR = join(__dirname, '..', '..', '..', 'supabase', 'migrations')
+  const SEPARADOR = String.fromCharCode(10)
+  const ACCOUNTING_SQL = readdirSync(MIGRATIONS_DIR)
+    .filter((fichero) => fichero.includes('accounting'))
+    .map((fichero) => readFileSync(join(MIGRATIONS_DIR, fichero), 'utf-8'))
+    .join(SEPARADOR)
+
+  it('SQL no conoce ninguna cuota: recibe el techo como parametro en cada invocacion', () => {
+    // Por eso cambiar una cuota comercial NUNCA exige una migracion.
+    expect(ACCOUNTING_SQL).toMatch(/p_authorized_limit/)
+    expect(ACCOUNTING_SQL).not.toMatch(/gratuito|premium|destacado|empresas/i)
+  })
+
+  it('el periodo es el mes natural ya existente, no uno nuevo', () => {
+    expect(ACCOUNTING_SQL).toMatch(/date_trunc\('month', now\(\)\)/)
+    expect(ACCOUNTING_SQL).not.toMatch(/date_trunc\('(day|week|year)'/)
+  })
+
+  it('un plan sin techo no puede denegarse por cuota', () => {
+    // La comparacion contra el limite solo ocurre cuando hay limite.
+    expect(ACCOUNTING_SQL).toMatch(/IF p_authorized_limit IS NOT NULL[\s\S]{0,20}AND v_current_consumption \+ p_estimated_cost > p_authorized_limit/)
   })
 })

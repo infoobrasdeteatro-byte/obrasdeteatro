@@ -19,7 +19,7 @@ const EMPTY_AUDIT: ExecutionAudit = {
   inputTokens: null,
   outputTokens: null,
   realExecutionCost: null,
-  technicalMetadata: null,
+  truncated: null, technicalMetadata: null,
 }
 
 describe('recordExecutionTrace', () => {
@@ -34,7 +34,7 @@ describe('recordExecutionTrace', () => {
       inputTokens: 900,
       outputTokens: 300,
       realExecutionCost: 0.05,
-      technicalMetadata: 'algo sin destino autorizado',
+      truncated: null, technicalMetadata: 'algo sin destino autorizado',
     }
 
     const result = await recordExecutionTrace('profile-1', audit)
@@ -71,7 +71,7 @@ describe('recordExecutionTrace', () => {
     await recordExecutionTrace('profile-1', {
       ...EMPTY_AUDIT,
       executionLatencyMs: 100,
-      technicalMetadata: 'texto libre',
+      truncated: null, technicalMetadata: 'texto libre',
     })
 
     for (const call of vi.mocked(recordMetric).mock.calls) {
@@ -151,7 +151,7 @@ describe('recordExecutionTrace — tarificacion de la ejecucion (IA-006)', () =>
     inputTokens: 1000,
     outputTokens: 500,
     realExecutionCost: null,
-    technicalMetadata: null,
+    truncated: null, technicalMetadata: null,
   }
 
   it('registra el desglose de tokens que el proveedor publica', async () => {
@@ -193,5 +193,83 @@ describe('recordExecutionTrace — tarificacion de la ejecucion (IA-006)', () =>
 
     const nombres = vi.mocked(recordMetric).mock.calls.map(([, m]) => m.name)
     expect(nombres).not.toContain('ai_gateway.real_execution_cost')
+  })
+})
+
+
+/**
+ * BLOQUE 5C — telemetria de truncamiento.
+ *
+ * La pregunta que esta metrica existe para responder no es "cuantas veces
+ * se trunco", sino "que PROPORCION de ejecuciones se trunca". Sin
+ * denominador no sirve para decidir un techo, que es justo para lo que se
+ * pide. De ahi que se emita como bandera 0/1 siempre que hubo ejecucion,
+ * igual que `scenaia.response.empty`.
+ */
+describe('recordExecutionTrace — truncamiento (Bloque 5C)', () => {
+  function auditCon(truncated: boolean | null): ExecutionAudit {
+    return {
+      providerIdentifier: 'openai',
+      providerModel: 'gpt-4o-mini',
+      executionLatencyMs: 120,
+      tokensConsumed: 1000,
+      inputTokens: 900,
+      outputTokens: 100,
+      realExecutionCost: null,
+      truncated,
+      technicalMetadata: null,
+    }
+  }
+
+  function metrica(nombre: string) {
+    return vi.mocked(recordMetric).mock.calls.map((llamada) => llamada[1]).find((m) => m.name === nombre)
+  }
+
+  it('TRUNCADO: emite la metrica con valor 1', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditCon(true), { requestId: 'req-1', stage: 'response' })
+
+    expect(metrica('ai_gateway.truncated')?.value).toBe(1)
+  })
+
+  it('NO TRUNCADO: emite igualmente, con valor 0 -- sin denominador no hay proporcion', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditCon(false), { requestId: 'req-1', stage: 'response' })
+
+    expect(metrica('ai_gateway.truncated')?.value).toBe(0)
+  })
+
+  it('SIN EJECUCION no emite nada: `null` no es un cero, es una pregunta sin sujeto', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditCon(null), { requestId: 'req-1', stage: 'response' })
+
+    expect(metrica('ai_gateway.truncated')).toBeUndefined()
+  })
+
+  it('DISTINGUE operacion, proveedor y modelo, sin anadir ningun campo nuevo', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditCon(true), { requestId: 'req-1', stage: 'resolver' })
+
+    const emitida = metrica('ai_gateway.truncated')
+    expect(emitida?.unit).toBe('flag')
+    // `stage` ES la operacion: resolver o response.
+    expect(emitida?.tags).toMatchObject({
+      stage: 'resolver',
+      providerIdentifier: 'openai',
+      providerModel: 'gpt-4o-mini',
+    })
+  })
+
+  it('no altera las metricas ya establecidas: se suma, no sustituye', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditCon(true), { requestId: 'req-1', stage: 'response' })
+
+    expect(metrica('ai_gateway.input_tokens')?.value).toBe(900)
+    expect(metrica('ai_gateway.output_tokens')?.value).toBe(100)
   })
 })

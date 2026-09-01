@@ -26,7 +26,52 @@ describe('Catálogo de proveedores de IA — invariantes (Decisión de Direcció
   })
 
   it('solo contiene proveedores incorporados mediante Autorización Oficial de Implementación (IA-OPENAI-001, 2026-07-23): exactamente OpenAI', () => {
-    expect(AI_PROVIDER_CATALOG).toEqual([{ id: 'openai', name: 'OpenAI' }])
+    // Lo que esta invariante protege es QUE proveedores existen, no que
+    // carezcan de tarifa. Incorporar una tarifa (Bloque 3) no incorpora un
+    // proveedor: la lista sigue siendo exactamente la autorizada.
+    expect(AI_PROVIDER_CATALOG.map((entry) => entry.id)).toEqual(['openai'])
+    expect(AI_PROVIDER_CATALOG.map((entry) => entry.name)).toEqual(['OpenAI'])
+  })
+
+  /**
+   * BLOQUE 3 — el precio del proveedor vive en un unico sitio, y su moneda
+   * debe coincidir con la de X. Si no coincidiera, `toCredits` devolveria
+   * `null` y el sistema seguiria liquidando el importe reservado sin que
+   * ninguna prueba fallara: la clase de averia que no se ve.
+   */
+  it('toda tarifa declara su unidad y una moneda: una tarifa sin unidad no es interpretable', () => {
+    for (const entry of AI_PROVIDER_CATALOG) {
+      for (const rate of entry.rates ?? []) {
+        expect(rate.pricingUnit, rate.model).toBe('PER_MILLION_TOKENS')
+        expect(typeof rate.currency, rate.model).toBe('string')
+        expect(rate.currency.length, rate.model).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('MONEDA COHERENTE: toda tarifa se expresa en la misma moneda que X', () => {
+    const economicUnit = readFileSync(join(__dirname, '..', '..', 'accounting-engine', 'economic-unit.ts'), 'utf-8')
+    const monedaDeX = economicUnit.match(/currency:\s*'([A-Z]+)'/)?.[1]
+
+    expect(monedaDeX).toBeDefined()
+    for (const entry of AI_PROVIDER_CATALOG) {
+      for (const rate of entry.rates ?? []) {
+        expect(rate.currency, `${rate.model} vs X`).toBe(monedaDeX)
+      }
+    }
+  })
+
+  it('SIN NUMEROS MAGICOS: ningun precio de proveedor aparece fuera del catalogo', () => {
+    const precios = AI_PROVIDER_CATALOG.flatMap((entry) =>
+      (entry.rates ?? []).flatMap((rate) => [rate.inputPricePerMillionTokens, rate.outputPricePerMillionTokens])
+    )
+
+    expect(precios.length).toBeGreaterThan(0)
+    // El calculo de coste no puede contener ninguno de esos precios.
+    const costeSource = readFileSync(join(__dirname, '..', 'execution-cost.ts'), 'utf-8')
+    for (const precio of precios) {
+      expect(costeSource, String(precio)).not.toContain(String(precio))
+    }
   })
 
   it('AI Gateway nunca lo importa: invoca, nunca selecciona', () => {

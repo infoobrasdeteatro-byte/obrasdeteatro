@@ -1,5 +1,5 @@
 import OpenAI from 'openai'
-import type { ProviderAdapter, ProviderExecutionOutcome } from './provider-adapter'
+import type { ProviderAdapter, ProviderExecutionOutcome, ProviderExecutionRequest } from './provider-adapter'
 import { ProviderAdapterError } from './provider-adapter'
 
 const DEFAULT_MODEL = 'gpt-4o-mini'
@@ -32,7 +32,7 @@ function resolveModel(): string {
   return process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL
 }
 
-async function execute(prompt: string): Promise<ProviderExecutionOutcome> {
+async function execute(request: ProviderExecutionRequest): Promise<ProviderExecutionOutcome> {
   const model = resolveModel()
   const startedAt = Date.now()
 
@@ -40,7 +40,12 @@ async function execute(prompt: string): Promise<ProviderExecutionOutcome> {
   try {
     completion = await getClient().chat.completions.create({
       model,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: request.prompt }],
+      // Techo de generacion recibido por contrato. Este archivo no elige
+      // el valor, no lo amplia y no tiene uno propio por defecto: si
+      // alguna vez apareciera aqui una cifra, seria una politica de coste
+      // oculta dentro de la integracion de un proveedor concreto.
+      max_completion_tokens: request.maxOutputTokens,
     })
   } catch (error) {
     throw new ProviderAdapterError(
@@ -56,6 +61,12 @@ async function execute(prompt: string): Promise<ProviderExecutionOutcome> {
     // El proveedor ya publicaba el desglose; hasta IA-006 se descartaba.
     inputTokens: completion.usage?.prompt_tokens ?? null,
     outputTokens: completion.usage?.completion_tokens ?? null,
+    // UNICAMENTE 'length'. 'stop' es un final normal; 'content_filter',
+    // 'tool_calls' o cualquier otro valor describen otra cosa, y llamarles
+    // truncamiento haria que la metrica midiera una mezcla de causas y
+    // dejara de servir para decidir un techo. Ausente o desconocido => no
+    // truncado: no se afirma un corte que no consta.
+    truncated: completion.choices[0]?.finish_reason === 'length',
   }
 }
 

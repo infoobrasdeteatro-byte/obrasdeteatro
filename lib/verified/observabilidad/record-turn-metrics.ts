@@ -112,6 +112,27 @@ export async function recordTurnMetrics(profileId: string, observation: TurnObse
     metricas.push({ name: 'scenaia.retrieval.empty_reason', value: 1, unit: 'count', tags: { ...contexto, reason: emptyReason } })
   }
 
+  // Bloque 4 -- solo cuando la estimacion se quedo corta. El VALOR de la
+  // metrica es la diferencia: cuanto falto por reservar. Lo reservado y lo
+  // liquidado viajan como etiquetas para poder recalibrar sin volver a la
+  // base de datos.
+  const anomalia = observation.settlementAnomaly
+  if (anomalia !== null) {
+    metricas.push({
+      name: 'scenaia.accounting.settlement_anomaly',
+      value: anomalia.settledCredits - anomalia.reservedCredits,
+      unit: 'credits',
+      tags: {
+        ...base,
+        reservationId: anomalia.reservationId,
+        reserved: String(anomalia.reservedCredits),
+        settled: String(anomalia.settledCredits),
+        providerIdentifier: anomalia.providerIdentifier ?? 'ninguno',
+        providerModel: anomalia.providerModel ?? 'ninguno',
+      },
+    })
+  }
+
   // Una sola escritura para todas las metricas del turno. Medido antes de
   // decidirlo: enviarlas por separado costaba ~194 ms al cierre de cada
   // turno. Las metricas anadidas en la Fase 1 viajan en la misma escritura,

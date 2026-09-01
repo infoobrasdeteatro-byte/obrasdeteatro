@@ -8,7 +8,7 @@ function toReservation(row: {
   status: string
   estimated_cost: number
   settled_cost: number | null
-  authorized_limit_snapshot: number
+  authorized_limit_snapshot: number | null
   expires_at: string
   created_at: string
   settled_at: string | null
@@ -32,10 +32,16 @@ function toReservation(row: {
  * de verificacion y reserva. `authorizedLimit` y `estimatedCost` son los
  * unicos datos de entrada externos legitimos (DA-001) -- el consumo actual
  * se calcula siempre dentro de la funcion de base de datos, nunca aqui.
+ *
+ * `authorizedLimit` en `null` significa PLAN SIN LIMITE: la operacion se
+ * mide igual -- reserva, liquidacion, presupuesto del periodo -- pero no
+ * puede denegarse por cuota. No es un valor convenido que signifique otra
+ * cosa: es la ausencia de limite, dicha en el unico lugar donde puede
+ * decirse sin inventar una cifra.
  */
 export async function verifyAndReserve(
   profileId: string,
-  authorizedLimit: number,
+  authorizedLimit: number | null,
   estimatedCost: number,
   ttlSeconds: number,
   requestId: string | null = null

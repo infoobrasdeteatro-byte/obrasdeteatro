@@ -11,7 +11,11 @@ import { composeResponse } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
 import { recordTurnMetrics } from '@/lib/verified/observabilidad'
+import type { SettlementAnomaly } from '@/lib/verified/observabilidad'
 import { emptyConversationState, nextConversationState, workOccupancyOf } from '@/lib/conversation-state'
+import { CREDIT_VALUE } from '@/lib/accounting-engine'
+import { MAX_OUTPUT_TOKENS_BY_OPERATION } from '@/lib/ai-gateway'
+import { buildResolverPrompt } from '@/lib/intent-resolver'
 import type { IncomingConversationState } from '@/lib/conversation-state'
 import type { TurnOutcome } from './types'
 import { buildDirectContent } from '@/lib/direct-content-builder'
@@ -116,7 +120,30 @@ export async function coordinateFlow(
   let normalizedRequest = normalizeRequest(originalRequest, previousUserRequests, dominioPrevio)
   const professionalContext = await buildProfessionalContext(userId, session)
   let knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
-  const decisionContext = buildDecisionContext(normalizedRequest, professionalContext, knowledgeContext)
+  // Senal de continuacion, ya declarada en el contrato. Se deriva aqui
+  // porque la reserva preventiva necesita saber si el resolutor puede
+  // llegar a ejecutarse antes de estimar el coste del turno.
+  const esTurnoDeContinuacion = normalizedRequest.retrievalQuery !== normalizedRequest.normalizedIntent
+
+  // RESERVA PREVENTIVA (Bloque 4). Para apartar el coste maximo plausible
+  // antes de ejecutar hay que conocer el tamano de lo que se va a enviar, y
+  // eso exige componer el prompt ANTES de autorizar. `composePrompt` es
+  // pura y sincrona -- sin I/O, sin red --, de modo que adelantarla no
+  // cuesta nada y convierte una estimacion a ciegas en una cota real.
+  //
+  // Un turno de continuacion no invoca al resolutor (regla ya congelada),
+  // asi que solo se aparta su coste cuando efectivamente puede ejecutarse:
+  // reservar por una llamada imposible encarece el turno sin motivo.
+  const promptEstimado = composePrompt(normalizedRequest, knowledgeContext, conversationHistory)
+  const decisionContext = buildDecisionContext(normalizedRequest, professionalContext, knowledgeContext, {
+    promptCharacters: promptEstimado.length,
+    // Se reenvia la politica del Gateway tal cual, sin leer ni copiar
+    // ninguna cifra: el Orquestador sabe QUE operaciones puede haber, nunca
+    // cuanto puede generar cada una.
+    maxOutputTokensByOperation: MAX_OUTPUT_TOKENS_BY_OPERATION,
+    resolverPromptCharacters: esTurnoDeContinuacion ? null : buildResolverPrompt(originalRequest).length,
+    creditValue: CREDIT_VALUE,
+  })
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
 
   // Segunda pasada de interpretacion: Domain Vocabulary asistido, la
@@ -141,7 +168,6 @@ export async function coordinateFlow(
   // PERDER el hilo. El resolutor solo interviene en turnos que se
   // interpretan por si solos. `retrievalQuery !== normalizedIntent` es
   // exactamente la señal de continuacion, ya declarada en el contrato.
-  const esTurnoDeContinuacion = normalizedRequest.retrievalQuery !== normalizedRequest.normalizedIntent
 
   let resolvedTerms: readonly string[] = []
 
@@ -154,7 +180,7 @@ export async function coordinateFlow(
       const { result, audit } = await executeAIRequest({
         decisionContext,
         authorizationContext,
-        normalizedAIRequest: { userPrompt: prompt },
+        normalizedAIRequest: { userPrompt: prompt, operationKind: 'RESOLVER' },
       })
       await distributeExecutionAudit(professionalContext.identity.userId, audit, {
         requestId: normalizedRequest.requestId,
@@ -185,6 +211,7 @@ export async function coordinateFlow(
 
   const normalizedAIRequest: NormalizedAIRequest = {
     userPrompt: composePrompt(normalizedRequest, knowledgeContext, conversationHistory),
+    operationKind: 'TEXT_STANDARD',
   }
   // Lo que la reserva aparto: es el importe con el que se liquida mientras
   // el coste real del proveedor no pueda calcularse.
@@ -209,10 +236,28 @@ export async function coordinateFlow(
   // La doble liquidacion la impide la propia operacion atomica
   // (`WHERE status = 'active'`), no una comprobacion de este componente.
   // Nunca interrumpe una respuesta ya construida.
+  let anomaliaDeLiquidacion: SettlementAnomaly | null = null
+
   if (authorizationContext.reservationId !== null) {
     try {
       if (result.executionStatus === 'EJECUTADO') {
-        await settleReservation(authorizationContext.reservationId, resolveSettlementCost(audit, reservedCost))
+        const costeLiquidado = resolveSettlementCost(audit, reservedCost)
+        await settleReservation(authorizationContext.reservationId, costeLiquidado)
+
+        // El coste real NUNCA se capa: si supera lo reservado, lo que hay
+        // que corregir es la estimacion, no el importe. Capar convertiria
+        // un problema de presupuesto en contabilidad falsa, y destruiria la
+        // unica evidencia de que la estimacion se quedo corta.
+        anomaliaDeLiquidacion =
+          costeLiquidado > reservedCost
+            ? {
+                reservationId: authorizationContext.reservationId,
+                reservedCredits: reservedCost,
+                settledCredits: costeLiquidado,
+                providerIdentifier: audit.providerIdentifier,
+                providerModel: audit.providerModel,
+              }
+            : null
       } else {
         await releaseReservation(authorizationContext.reservationId)
       }
@@ -258,6 +303,7 @@ export async function coordinateFlow(
       isEmptyResult: dominiosCubiertos > 0 && entidades === 0,
       responseType: responseContext.responseType,
       durationMs: Date.now() - turnStartedAt,
+      settlementAnomaly: anomaliaDeLiquidacion,
     })
   } catch {
     // Observar nunca puede impedir responder.

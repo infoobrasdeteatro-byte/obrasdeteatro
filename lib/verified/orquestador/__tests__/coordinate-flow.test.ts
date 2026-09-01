@@ -5,6 +5,7 @@ import { buildKnowledgeContext } from '@/lib/scenaia-knowledge-model'
 import { buildDecisionContext } from '@/lib/decision-engine'
 import { buildAuthorizationContext } from '@/lib/credit-manager'
 import { executeAIRequest } from '@/lib/ai-gateway'
+import { MAX_OUTPUT_TOKENS_BY_OPERATION } from '@/lib/ai-gateway'
 import { composeResponse } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
@@ -23,7 +24,13 @@ vi.mock('@/lib/scenaia-knowledge-model', () => ({
 }))
 vi.mock('@/lib/decision-engine', () => ({ buildDecisionContext: vi.fn() }))
 vi.mock('@/lib/credit-manager', () => ({ buildAuthorizationContext: vi.fn() }))
-vi.mock('@/lib/ai-gateway', () => ({ executeAIRequest: vi.fn() }))
+// Se mockea SOLO la ejecucion. La politica de techos llega real: si esta
+// prueba la falsificara, dejaria de detectar que el Orquestador use una
+// cifra propia en vez de la fuente unica (Bloque 5D).
+vi.mock('@/lib/ai-gateway', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/ai-gateway')>()),
+  executeAIRequest: vi.fn(),
+}))
 vi.mock('@/lib/response-composer', () => ({ composeResponse: vi.fn() }))
 vi.mock('@/lib/procesos-asincronos', () => ({ recordActivity: vi.fn() }))
 vi.mock('@/lib/execution-audit-router', () => ({ distributeExecutionAudit: vi.fn() }))
@@ -32,6 +39,7 @@ vi.mock('@/lib/accounting-engine', () => ({
   settleReservation: vi.fn(),
   releaseReservation: vi.fn(),
   resolveSettlementCost: vi.fn(),
+  CREDIT_VALUE: { amountPerCredit: 0.0003, currency: 'USD' },
 }))
 vi.mock('@/lib/direct-content-builder', () => ({ buildDirectContent: vi.fn() }))
 vi.mock('@/lib/prompt-composer', () => ({ composePrompt: vi.fn() }))
@@ -41,7 +49,7 @@ vi.mock('@/lib/prompt-composer', () => ({ composePrompt: vi.fn() }))
 vi.mock('@/lib/intent-resolver', async () => {
   const { composeAugmentedRequest } = await import('@/lib/intent-resolver/vocabulary')
 
-  return { resolveVocabulary: vi.fn(), composeAugmentedRequest }
+  return { resolveVocabulary: vi.fn(), composeAugmentedRequest, buildResolverPrompt: (texto: string) => texto }
 })
 
 const normalizedRequest = { requestId: 'req-1', originalRequest: 'hola', normalizedIntent: 'hola', retrievalQuery: 'hola', requestedKnowledgeDomains: ['Obras'] } as never
@@ -83,13 +91,24 @@ describe('coordinateFlow', () => {
     expect(normalizeRequest).toHaveBeenCalledWith('hola', [], null)
     expect(buildProfessionalContext).toHaveBeenCalledWith('profile-1', session)
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
-    expect(buildDecisionContext).toHaveBeenCalledWith(normalizedRequest, professionalContext, knowledgeContext)
+    expect(buildDecisionContext).toHaveBeenCalledWith(
+      normalizedRequest,
+      professionalContext,
+      knowledgeContext,
+      // Bloque 4: el contexto de operacion viaja como cuarta entrada. No
+      // contiene historial ni texto: solo longitudes, la politica de techos
+      // (Bloque 5D) y el valor del credito.
+      expect.objectContaining({
+        maxOutputTokensByOperation: expect.any(Object),
+        promptCharacters: expect.any(Number),
+      })
+    )
     expect(buildAuthorizationContext).toHaveBeenCalledWith(professionalContext, decisionContext)
     expect(composePrompt).toHaveBeenCalledWith(normalizedRequest, knowledgeContext, [])
     expect(executeAIRequest).toHaveBeenCalledWith({
       decisionContext,
       authorizationContext,
-      normalizedAIRequest: { userPrompt: composedPrompt },
+      normalizedAIRequest: { userPrompt: composedPrompt, operationKind: 'TEXT_STANDARD' },
     })
     expect(buildDirectContent).toHaveBeenCalledWith(knowledgeContext)
     expect(composeResponse).toHaveBeenCalledWith(decisionContext, authorizationContext, aiExecutionResult, directContent)
@@ -138,6 +157,7 @@ describe('coordinateFlow', () => {
       isEmptyResult: false,
       responseType: 'RESPONSE_SUCCESS',
       durationMs: expect.any(Number),
+      settlementAnomaly: null,
     })
 
     const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
@@ -184,12 +204,23 @@ describe('coordinateFlow', () => {
 
     expect(buildProfessionalContext).toHaveBeenCalledWith('profile-1', session)
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
-    expect(buildDecisionContext).toHaveBeenCalledWith(normalizedRequest, professionalContext, knowledgeContext)
+    expect(buildDecisionContext).toHaveBeenCalledWith(
+      normalizedRequest,
+      professionalContext,
+      knowledgeContext,
+      // Bloque 4: el contexto de operacion viaja como cuarta entrada. No
+      // contiene historial ni texto: solo longitudes, la politica de techos
+      // (Bloque 5D) y el valor del credito.
+      expect.objectContaining({
+        maxOutputTokensByOperation: expect.any(Object),
+        promptCharacters: expect.any(Number),
+      })
+    )
     expect(buildAuthorizationContext).toHaveBeenCalledWith(professionalContext, decisionContext)
     expect(executeAIRequest).toHaveBeenCalledWith({
       decisionContext,
       authorizationContext,
-      normalizedAIRequest: { userPrompt: composedPrompt },
+      normalizedAIRequest: { userPrompt: composedPrompt, operationKind: 'TEXT_STANDARD' },
     })
   })
 })
@@ -522,5 +553,190 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
     for (const llamada of vi.mocked(buildKnowledgeContext).mock.calls) {
       expect(llamada[1]).toEqual({ genero: 'COMEDIA' })
     }
+  })
+})
+
+/**
+ * BLOQUE 4 — la reserva deja de ser un credito fijo.
+ *
+ * Lo que estas pruebas custodian no es una cifra concreta, sino tres
+ * propiedades: que la reserva depende de la operacion, que una operacion
+ * sin capacidad NO llega al proveedor, y que una desviacion de la
+ * estimacion no toca el coste real.
+ */
+describe('coordinateFlow — reserva preventiva por operacion (Bloque 4)', () => {
+  it('el prompt se compone ANTES de autorizar: la estimacion usa el texto real', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    // Sin esto, la reserva se calcularia a ciegas sobre un prompt que
+    // todavia no existe.
+    const ordenCompose = vi.mocked(composePrompt).mock.invocationCallOrder[0]
+    const ordenAutorizar = vi.mocked(buildAuthorizationContext).mock.invocationCallOrder[0]
+
+    expect(ordenCompose).toBeLessThan(ordenAutorizar)
+  })
+
+  it('el contexto de operacion lleva la POLITICA de techos, no una cifra suelta (Bloque 5D)', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, , , operationContext] = vi.mocked(buildDecisionContext).mock.calls[0]
+
+    expect(operationContext).not.toBeNull()
+    // Se compara contra la fuente unica, nunca contra un numero escrito
+    // aqui: si esta prueba fijara una cifra, seguiria pasando el dia en que
+    // la estimacion dejara de usar la politica real.
+    expect(operationContext!.maxOutputTokensByOperation).toBe(MAX_OUTPUT_TOKENS_BY_OPERATION)
+  })
+
+  it('el contexto de operacion lleva el valor del credito, sin duplicarlo', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, , , operationContext] = vi.mocked(buildDecisionContext).mock.calls[0]
+
+    expect(operationContext!.creditValue).toEqual({ amountPerCredit: 0.0003, currency: 'USD' })
+  })
+
+  it('RESOLUTOR: un turno que puede invocarlo aparta tambien su coste', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, , , operationContext] = vi.mocked(buildDecisionContext).mock.calls[0]
+
+    // Turno autonomo: el resolutor puede ejecutarse, luego se estima.
+    expect(operationContext!.resolverPromptCharacters).not.toBeNull()
+  })
+
+  it('RESOLUTOR: un turno de continuacion NO aparta un coste que no puede producirse', async () => {
+    vi.mocked(normalizeRequest).mockReturnValue({
+      ...(normalizedRequest as object),
+      retrievalQuery: 'texto concatenado distinto',
+      normalizedIntent: 'hola',
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola', [{ role: 'user', content: 'previo' }])
+
+    const [, , , operationContext] = vi.mocked(buildDecisionContext).mock.calls[0]
+
+    expect(operationContext!.resolverPromptCharacters).toBeNull()
+  })
+
+  it('SIN CAPACIDAD NO SE EJECUTA: una denegacion no llega jamas al proveedor', async () => {
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'DENIED',
+      authorizationReason: 'VERIFICACION_NEGATIVA: presupuesto del periodo agotado',
+      reservationId: null,
+      estimatedCost: 2.5,
+    } as never)
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'NO_AUTORIZADO', generatedContent: null, executionWarnings: [] },
+      audit,
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    // AI Gateway se autoguarda: la denegacion queda registrada y no hay
+    // ejecucion real de proveedor.
+    const [entrada] = vi.mocked(executeAIRequest).mock.calls[0]
+    expect(entrada.authorizationContext.authorizationStatus).toBe('DENIED')
+    expect(settleReservation).not.toHaveBeenCalled()
+  })
+
+  it('SOBRANTE: liquidar por debajo de lo reservado devuelve la diferencia sola', async () => {
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      authorizationReason: 'VERIFICADO',
+      reservationId: 'res-1',
+      estimatedCost: 2.5,
+    } as never)
+    vi.mocked(resolveSettlementCost).mockReturnValue(0.84)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    // Se liquida lo REAL. El presupuesto del periodo cuenta lo liquidado,
+    // de modo que 1,66 vuelven sin ninguna operacion de devolucion.
+    expect(settleReservation).toHaveBeenCalledWith('res-1', 0.84)
+  })
+
+  it('ANOMALIA: si lo real supera lo reservado se registra, y NO se capa', async () => {
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      authorizationReason: 'VERIFICADO',
+      reservationId: 'res-1',
+      estimatedCost: 2,
+    } as never)
+    vi.mocked(resolveSettlementCost).mockReturnValue(3)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    // El coste real llega intacto a la liquidacion.
+    expect(settleReservation).toHaveBeenCalledWith('res-1', 3)
+
+    const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
+    expect(observacion.settlementAnomaly).toEqual({
+      reservationId: 'res-1',
+      reservedCredits: 2,
+      settledCredits: 3,
+      providerIdentifier: (audit as { providerIdentifier: string | null }).providerIdentifier,
+      providerModel: (audit as { providerModel: string | null }).providerModel,
+    })
+  })
+
+  it('SIN ANOMALIA cuando lo real coincide con lo reservado', async () => {
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      authorizationReason: 'VERIFICADO',
+      reservationId: 'res-1',
+      estimatedCost: 2,
+    } as never)
+    vi.mocked(resolveSettlementCost).mockReturnValue(2)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
+    expect(observacion.settlementAnomaly).toBeNull()
+  })
+})
+
+
+/**
+ * BLOQUE 5D — el Orquestador nombra la operacion; nunca la tarifa.
+ */
+describe('coordinateFlow — operacion declarada, techo delegado (Bloque 5D)', () => {
+  it('la llamada de RESPUESTA se declara TEXT_STANDARD', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const llamadas = vi.mocked(executeAIRequest).mock.calls.map(([entrada]) => entrada.normalizedAIRequest)
+    expect(llamadas.some((r) => r.operationKind === 'TEXT_STANDARD')).toBe(true)
+  })
+
+  it('la llamada del RESOLUTOR se declara RESOLVER: son operaciones distintas', async () => {
+    // `resolveVocabulary` esta mockeado, asi que el ejecutor no llega a
+    // dispararse solo. Se recupera el que el Orquestador le entrego y se
+    // invoca: es exactamente el que usaria en produccion.
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, ejecutor] = vi.mocked(resolveVocabulary).mock.calls[0]
+    vi.mocked(executeAIRequest).mockClear()
+    await ejecutor('prompt del resolutor')
+
+    const [entrada] = vi.mocked(executeAIRequest).mock.calls[0]
+    expect(entrada.normalizedAIRequest.operationKind).toBe('RESOLVER')
+  })
+
+  it('NINGUNA llamada transporta una cifra de techo', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    for (const [entrada] of vi.mocked(executeAIRequest).mock.calls) {
+      expect(entrada.normalizedAIRequest).not.toHaveProperty('maxOutputTokens')
+    }
+  })
+
+  it('la estimacion usa la MISMA politica que despues se aplica', async () => {
+    // Reservar por 1024 y ejecutar con 512 apartaria el doble de lo debido;
+    // al reves, dejaria la reserva corta. Las dos puntas leen la misma
+    // fuente, y esta prueba lo fija.
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, , , operationContext] = vi.mocked(buildDecisionContext).mock.calls[0]
+    expect(operationContext!.maxOutputTokensByOperation).toBe(MAX_OUTPUT_TOKENS_BY_OPERATION)
   })
 })

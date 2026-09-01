@@ -19,6 +19,18 @@ export interface ProviderExecutionOutcome {
    */
   readonly inputTokens: number | null
   readonly outputTokens: number | null
+  /**
+   * El proveedor detuvo la generacion al alcanzar el techo, en vez de
+   * terminar de decir lo que tenia que decir (Bloque 5C).
+   *
+   * Aqui es `boolean` y no admite ausencia: este contrato solo se
+   * construye cuando ha habido una ejecucion real, y de una ejecucion real
+   * siempre se sabe como termino. Es el unico dato del resultado que no
+   * describe cuanto costo, sino si la respuesta esta COMPLETA -- y hasta
+   * ahora se perdia entero: el techo se aplicaba, pero nadie se enteraba
+   * de cuando mordia.
+   */
+  readonly truncated: boolean
 }
 
 /**
@@ -28,9 +40,31 @@ export interface ProviderExecutionOutcome {
  * sin normalizar: cualquier fallo del proveedor debe transformarse en un
  * `ProviderAdapterError` antes de propagarse (Directriz 5).
  */
+/**
+ * Lo que un adaptador recibe para ejecutar. Antes recibia una cadena
+ * suelta; ahora recibe una peticion con forma propia.
+ *
+ * El motivo no es de estilo: mientras el contrato fuese `string`, no habia
+ * ningun sitio por el que hacer llegar un limite de generacion, y la
+ * longitud de la respuesta quedaba enteramente en manos del proveedor.
+ * Como la salida se tarifa varias veces mas cara que la entrada, eso era
+ * un multiplicador de coste sin techo: una sola peticion podia costar lo
+ * que decenas de turnos normales.
+ */
+export interface ProviderExecutionRequest {
+  readonly prompt: string
+  /**
+   * Techo de generacion, en tokens. Lo decide y lo entrega quien invoca:
+   * ningun adaptador puede elegirlo, ampliarlo ni ignorarlo, y ninguno
+   * puede traer un valor propio por defecto. Un adaptador que no lo
+   * aplique deja de cumplir este contrato.
+   */
+  readonly maxOutputTokens: number
+}
+
 export interface ProviderAdapter {
   readonly providerId: string
-  execute(prompt: string): Promise<ProviderExecutionOutcome>
+  execute(request: ProviderExecutionRequest): Promise<ProviderExecutionOutcome>
 }
 
 /**

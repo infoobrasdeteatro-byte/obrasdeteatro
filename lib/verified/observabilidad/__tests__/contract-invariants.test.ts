@@ -51,3 +51,37 @@ describe('Observabilidad — record-execution-trace.ts (invariante propio: nunca
     expect(RECORD_EXECUTION_TRACE_SOURCE).not.toMatch(/audit\.technicalMetadata/)
   })
 })
+
+
+/**
+ * BLOQUE 5D-1 — familias de metricas.
+ *
+ * `ai_gateway.*` describe UNA ejecucion concreta del proveedor.
+ * `scenaia.*` describe el turno. Un turno puede contener dos ejecuciones
+ * -- resolutor y respuesta -- y truncarse solo una: si el truncamiento
+ * viviera en la familia del turno, seria imposible saber cual.
+ */
+describe('Observabilidad — familia de la metrica de truncamiento (Bloque 5D)', () => {
+  const TRACE = readFileSync(join(__dirname, '..', 'record-execution-trace.ts'), 'utf-8')
+  const TURN = readFileSync(join(__dirname, '..', 'record-turn-metrics.ts'), 'utf-8')
+
+  it('la metrica es exactamente `ai_gateway.truncated`', () => {
+    expect(TRACE).toMatch(/name: 'ai_gateway\.truncated'/)
+  })
+
+  it('NO existe `scenaia.ai.truncated`: no se mantienen las dos', () => {
+    expect(TRACE).not.toMatch(/scenaia\.ai\.truncated/)
+    expect(TURN).not.toMatch(/scenaia\.ai\.truncated/)
+  })
+
+  it('el truncamiento NO se emite como metrica de turno: no es un hecho del turno', () => {
+    expect(TURN).not.toMatch(/truncated/)
+  })
+
+  it('cada familia se emite desde su propio traductor, sin mezclarse', () => {
+    // Ninguna metrica `scenaia.*` sale del traductor de ejecuciones.
+    expect(TRACE).not.toMatch(/name: 'scenaia\./)
+    // Ninguna metrica `ai_gateway.*` sale del traductor de turnos.
+    expect(TURN).not.toMatch(/name: 'ai_gateway\./)
+  })
+})

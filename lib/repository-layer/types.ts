@@ -216,7 +216,15 @@ export interface CreditReservation {
   status: ReservationStatus
   estimatedCost: number
   settledCost: number | null
-  authorizedLimitSnapshot: number
+  /**
+   * Limite que regia cuando se creo la reserva. `null` significa que NO
+   * habia limite -- el plan es ilimitado --, no que se desconozca: es la
+   * ausencia real de techo, representada explicitamente y no mediante una
+   * cifra convenida (PRD-001). Una reserva de un plan ilimitado se crea,
+   * se liquida y se mide igual que cualquier otra; lo unico que no hace
+   * es poder denegarse.
+   */
+  authorizedLimitSnapshot: number | null
   expiresAt: string
   createdAt: string
   settledAt: string | null
@@ -240,8 +248,13 @@ export interface PeriodBudget {
   readonly settledConsumption: number
   /** Comprometido en reservas vivas, aun sin resolver. */
   readonly reservedConsumption: number
-  /** Lo que resta del presupuesto tras esta operacion. */
-  readonly availableCapacity: number
+  /**
+   * Lo que resta del presupuesto tras esta operacion. `null` cuando el
+   * plan no tiene limite: sin techo, "lo que resta" no es cero -- es una
+   * magnitud que no existe. Devolver cero afirmaria lo contrario de lo
+   * que ocurre.
+   */
+  readonly availableCapacity: number | null
 }
 
 export interface ReservationAuthorized {

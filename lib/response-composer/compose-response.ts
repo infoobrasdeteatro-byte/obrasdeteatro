@@ -59,6 +59,17 @@ export function composeResponse(
     // denegacion visible como aviso -- el usuario no pierde una capacidad
     // gratuita por haber agotado una cuota de IA. Ninguna reserva de credito
     // se altera: esta rama nunca ejecuta proveedor.
+    // Bloque 5 -- la causa viaja como dato, no como frase. Va en los
+    // metadatos, que ya son `Record<string, string>` y ya cruzan hasta el
+    // cliente: el contrato no gana ningun campo y la interfaz actual, que
+    // solo lee `responseContent`, se comporta exactamente igual que antes.
+    // Lo que cambia es que a partir de ahora existe con que distinguir
+    // "cuota de IA agotada" de "no se pudo verificar", que es la condicion
+    // previa a poder decir "Has alcanzado tu cuota de IA" sin decirselo
+    // tambien a quien no ha gastado nada.
+    const denialMetadata: Record<string, string> =
+      authorizationContext.denialCode !== null ? { denialCode: authorizationContext.denialCode } : {}
+
     if (directContent !== null) {
       return buildResponse(
         'RESPONSE_DIRECT',
@@ -66,6 +77,7 @@ export function composeResponse(
         {
           decisionRationale: decisionContext.decisionRationale,
           authorizationReason: authorizationContext.authorizationReason,
+          ...denialMetadata,
         },
         ['respuesta compuesta sin IA: autorizacion no concedida']
       )
@@ -74,7 +86,7 @@ export function composeResponse(
     return buildResponse(
       'RESPONSE_DENIED',
       RESPONSE_TEMPLATES.RESPONSE_DENIED,
-      { authorizationReason: authorizationContext.authorizationReason },
+      { authorizationReason: authorizationContext.authorizationReason, ...denialMetadata },
       []
     )
   }
