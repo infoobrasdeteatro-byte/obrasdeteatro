@@ -47,13 +47,13 @@ describe('buildProfessionalContext', () => {
       cancelAtPeriodEnd: false,
     })
     vi.mocked(getIndividualProfileData).mockResolvedValue(null)
-    vi.mocked(getUsageLimit).mockReturnValue('30')
+    vi.mocked(getUsageLimit).mockReturnValue('CUOTA-DE-LA-FUENTE')
 
     const result = await buildProfessionalContext('user-1', { route: '/scenaia', module: 'biblioteca', locale: 'es' })
 
     expect(result.identity.userId).toBe('user-1')
     expect(result.identity.authenticationStatus).toBe('autenticado')
-    expect(result.subscription).toEqual({ plan: 'premium', status: 'active', availableCapabilities: null, usageLimits: '30' })
+    expect(result.subscription).toEqual({ plan: 'premium', status: 'active', availableCapabilities: null, usageLimits: 'CUOTA-DE-LA-FUENTE' })
     expect(result.professionalProfile).toEqual({
       specialty: null,
       disciplines: null,

@@ -2798,7 +2798,7 @@ export type Database = {
       }
       accounting_verify_and_reserve: {
         Args: {
-          p_authorized_limit: number
+          p_authorized_limit: number | null
           p_estimated_cost: number
           p_profile_id: string
           p_request_id?: string
@@ -2806,8 +2806,8 @@ export type Database = {
         }
         Returns: {
           authorized: boolean
-          authorized_limit_snapshot: number
-          available_capacity: number
+          authorized_limit_snapshot: number | null
+          available_capacity: number | null
           created_at: string | null
           current_consumption: number
           denial_reason: string | null

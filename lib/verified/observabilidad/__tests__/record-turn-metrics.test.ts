@@ -16,6 +16,7 @@ const OBSERVACION: TurnObservation = {
   isEmptyResult: false,
   responseType: 'RESPONSE_SUCCESS',
   durationMs: 1234,
+  settlementAnomaly: null,
 }
 
 /** Todas las metricas emitidas en una invocacion, para inspeccionarlas juntas. */

@@ -32,24 +32,39 @@ import type { ExecutionCost, ProviderCatalogEntry } from '@/lib/provider-catalog
  */
 
 /**
- * Valor monetario de un credito ScenaIA. **Configuracion pendiente.**
+ * Valor monetario de un credito ScenaIA. **X, fijado por Direccion.**
  *
- * `null` significa que Direccion todavia no ha fijado X. No es un valor por
- * defecto ni un marcador temporal: mientras siga en `null`, ninguna
- * ejecucion puede expresarse en creditos, y el circuito economico aplica el
- * comportamiento seguro ya definido (liquidar con el importe reservado).
+ * ESTE ES EL UNICO PUNTO DEL SISTEMA DONDE VIVE X. Ningun otro archivo
+ * puede repetir la cifra: un segundo lugar donde escribirla seria un
+ * segundo lugar donde olvidarla al cambiarla.
  *
- * Fijarlo aqui "provisionalmente" seria decidir de facto cuanta capacidad
- * cabe en cada plan -- una decision comercial disfrazada de constante
- * tecnica. Ya ocurrio una vez en este proyecto: Direccion rechazo una
- * heuristica de coste (`baja->1, media->2, alta->3`) precisamente por estar
- * "correctamente etiquetada como provisional" y no respaldada por ningun
- * documento (acta de cierre de Decision Engine). No se repite.
+ * DE DONDE SALE. No se deriva del precio del plan ni de una media que
+ * cambie sola. Se ancla al coste de un TURNO DE REFERENCIA -- 1.000 tokens
+ * de entrada y 200 de salida -- calculado con la tarifa oficial del
+ * proveedor:
  *
- * Se determinara a partir de tarifas reales, coste real de ejecucion,
- * margen, capacidad de los planes y comportamiento de consultas reales.
+ *     (1000 x 0,15 + 200 x 0,60) / 1.000.000  =  0,00027 USD
+ *
+ * redondeado a 0,0003 para que sea legible y estable. Un turno tipico
+ * consume asi algo menos de un credito, y uno excepcionalmente largo
+ * varios: el numero sigue significando para el usuario aproximadamente lo
+ * que significaba -- "un uso" -- mientras el sistema mide el coste real.
+ *
+ * POR QUE NO SE DERIVA DEL PROVEEDOR. Cambiar de proveedor cambia lo que
+ * cuesta una ejecucion; no cambia lo que vale un credito. Si X siguiera a
+ * la tarifa, una subida de precios reduciria en silencio la capacidad de
+ * todos los planes. X es una constante DECLARADA, y revisarla es una
+ * decision, no un efecto.
+ *
+ * EN USD, no en euros. El proveedor factura en USD y `toCredits` se niega
+ * a convertir entre monedas -- con razon: ningun tipo de cambio ha sido
+ * autorizado. Declarar X en euros haria que la conversion devolviera
+ * `null` y el sistema siguiera liquidando el importe reservado sin que
+ * nada lo delatara. El precio comercial de los planes sigue en euros y no
+ * se convierte nunca: bajo absorcion, el credito no necesita expresarse en
+ * la moneda del usuario.
  */
-export const CREDIT_VALUE: CreditValue | null = null
+export const CREDIT_VALUE: CreditValue | null = { amountPerCredit: 0.0003, currency: 'USD' }
 
 /**
  * Valor de un credito, con la moneda en la que se expresa. La moneda es

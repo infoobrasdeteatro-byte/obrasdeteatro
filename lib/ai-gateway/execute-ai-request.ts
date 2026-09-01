@@ -1,4 +1,5 @@
 import type { AIExecutionInput, AIExecutionResult, ExecutionAudit, ExecutionStatus } from './types'
+import { maxOutputTokensFor, TRUNCATION_WARNING } from './types'
 import { findProviderAdapter } from './provider-registry'
 import { ProviderAdapterError } from './provider-adapter'
 
@@ -19,6 +20,8 @@ const EMPTY_AUDIT: ExecutionAudit = {
   executionLatencyMs: null,
   tokensConsumed: null,
   realExecutionCost: null,
+  // No hubo ejecucion: no se trunco nada, pero tampoco se completo nada.
+  truncated: null,
   technicalMetadata: null,
 }
 
@@ -87,10 +90,25 @@ export async function executeAIRequest(
   }
 
   try {
-    const outcome = await adapter.execute(normalizedAIRequest.userPrompt)
+    // El techo de generacion viaja SIEMPRE con la peticion. Es aqui, y no
+    // en el adaptador, donde se decide cuanto puede generarse: el Gateway
+    // invoca y el adaptador obedece.
+    //
+    // Quien llama declara QUE operacion es; el numero sale de la politica
+    // de este modulo. Asi ningun llamador -- ni el Orquestador, ni una UI,
+    // ni un futuro enrutador -- puede elegir cuanto se genera.
+    const outcome = await adapter.execute({
+      prompt: normalizedAIRequest.userPrompt,
+      maxOutputTokens: maxOutputTokensFor(normalizedAIRequest.operationKind),
+    })
 
+    // La ejecucion es correcta -- el contenido llega y se entrega intacto
+    // --, pero puede estar incompleta. Es la unica advertencia que NO
+    // describe un fallo: describe una respuesta que se quedo a medias por
+    // una politica nuestra, no del proveedor. Response Composer ya la
+    // traduce a RESPONSE_PARTIAL sin necesitar ningun cambio.
     return {
-      result: buildResult('EJECUTADO', outcome.content, []),
+      result: buildResult('EJECUTADO', outcome.content, outcome.truncated ? [TRUNCATION_WARNING] : []),
       audit: {
         providerIdentifier: adapter.providerId,
         providerModel: outcome.model,
@@ -103,6 +121,7 @@ export async function executeAIRequest(
         // el consumidor del audit, que si puede consultarlo.
         inputTokens: outcome.inputTokens,
         outputTokens: outcome.outputTokens,
+        truncated: outcome.truncated,
         realExecutionCost: null,
         technicalMetadata: null,
       },

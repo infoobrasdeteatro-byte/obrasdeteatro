@@ -52,4 +52,22 @@ export interface TurnObservation {
   readonly isEmptyResult: boolean
   readonly responseType: string
   readonly durationMs: number
+  /**
+   * Desviacion de la estimacion (Bloque 4): el coste real supero lo
+   * reservado. `null` cuando no ocurrio, que es lo normal.
+   *
+   * No es un error de la liquidacion -- el coste real es correcto y se
+   * registra intacto -- sino de la ESTIMACION, que se quedo corta. Se
+   * observa para poder recalibrarla; ocultarla capando el importe
+   * convertiria un problema de presupuesto en contabilidad falsa.
+   */
+  readonly settlementAnomaly: SettlementAnomaly | null
+}
+
+export interface SettlementAnomaly {
+  readonly reservationId: string
+  readonly reservedCredits: number
+  readonly settledCredits: number
+  readonly providerIdentifier: string | null
+  readonly providerModel: string | null
 }

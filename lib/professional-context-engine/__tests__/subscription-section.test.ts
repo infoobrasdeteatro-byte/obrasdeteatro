@@ -30,13 +30,16 @@ describe('buildSubscriptionSection', () => {
       currentPeriodEnd: '2026-08-21T00:00:00.000Z',
       cancelAtPeriodEnd: false,
     })
-    vi.mocked(getUsageLimit).mockReturnValue('30')
+    // Valor arbitrario a proposito: estas pruebas comprueban que la seccion
+    // TRANSPORTA la cuota sin interpretarla, nunca cuanto vale. La cifra
+    // comercial vive en su unica fuente, y solo alli (Bloque 5).
+    vi.mocked(getUsageLimit).mockReturnValue('CUOTA-DE-LA-FUENTE')
 
     expect(await buildSubscriptionSection('user-1')).toEqual({
       plan: 'premium',
       status: 'active',
       availableCapabilities: null,
-      usageLimits: '30',
+      usageLimits: 'CUOTA-DE-LA-FUENTE',
     })
     expect(getProfilePlan).toHaveBeenCalledWith('user-1')
     expect(getSubscription).toHaveBeenCalledWith('user-1')
@@ -46,13 +49,13 @@ describe('buildSubscriptionSection', () => {
   it('sin relacion comercial SIGUE habiendo plan: el gratuito no es ausencia de plan', async () => {
     vi.mocked(getProfilePlan).mockResolvedValue('gratuito')
     vi.mocked(getSubscription).mockResolvedValue(null)
-    vi.mocked(getUsageLimit).mockReturnValue('5')
+    vi.mocked(getUsageLimit).mockReturnValue('CUOTA-DE-LA-FUENTE')
 
     expect(await buildSubscriptionSection('user-gratuito')).toEqual({
       plan: 'gratuito',
       status: null,
       availableCapabilities: null,
-      usageLimits: '5',
+      usageLimits: 'CUOTA-DE-LA-FUENTE',
     })
     // El limite se resuelve sobre el plan real, nunca sobre `null`.
     expect(getUsageLimit).toHaveBeenCalledWith('gratuito')
@@ -79,7 +82,7 @@ describe('buildSubscriptionSection', () => {
       currentPeriodEnd: null,
       cancelAtPeriodEnd: true,
     })
-    vi.mocked(getUsageLimit).mockReturnValue('5')
+    vi.mocked(getUsageLimit).mockReturnValue('CUOTA-DE-LA-FUENTE')
 
     const seccion = await buildSubscriptionSection('user-excancelado')
 
@@ -106,7 +109,7 @@ describe('buildSubscriptionSection', () => {
   it('availableCapabilities sigue no disponible (fuera de alcance)', async () => {
     vi.mocked(getProfilePlan).mockResolvedValue('premium')
     vi.mocked(getSubscription).mockResolvedValue(null)
-    vi.mocked(getUsageLimit).mockReturnValue('30')
+    vi.mocked(getUsageLimit).mockReturnValue('CUOTA-DE-LA-FUENTE')
 
     expect((await buildSubscriptionSection('user-1')).availableCapabilities).toBeNull()
   })
