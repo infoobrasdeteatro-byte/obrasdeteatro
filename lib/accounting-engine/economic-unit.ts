@@ -135,27 +135,67 @@ export function isEconomicUnitDefined(creditValue: CreditValue | null = CREDIT_V
  * comportamiento seguro que la arquitectura ya tenia definido, no un
  * fallback nuevo. Nunca devuelve cero, que fingiria que una ejecucion real
  * salio gratis.
+ *
+ * F5F-4 -- LIQUIDA EL TURNO, NO UNA EJECUCION.
+ *
+ * Recibe TODAS las ejecuciones reales del turno y devuelve la suma de sus
+ * costes. Antes recibia una sola, y como un turno autonomo llama al
+ * proveedor dos veces -- resolutor y respuesta --, el coste del resolutor
+ * nunca llegaba a cobrarse: medido en produccion, 0,3205 de 0,7320
+ * creditos, el 43,8 % del coste real de un turno.
+ *
+ * La reserva siempre fue del turno; lo que estaba desalineado era la
+ * liquidacion. Esto no cambia el modelo economico: lo completa.
+ *
+ * TRES REGLAS, y ninguna es una convencion:
+ *
+ *   · SIN EJECUCIONES -> 0. No hubo llamada al proveedor, luego no hubo
+ *     coste de IA. Devolver el importe reservado cobraria una ejecucion
+ *     que no existio. Quien recibe el 0 debe LIBERAR la reserva, no
+ *     liquidarla: liquidar cero y liberar significan lo mismo para el
+ *     presupuesto, pero solo lo segundo lo dice.
+ *
+ *   · UNA SOLA EJECUCION NO TARIFICABLE -> repliegue al importe reservado
+ *     para el TURNO ENTERO. Sumar unicamente las que si se pueden tarificar
+ *     y dar por gratis el resto seria un subcobro silencioso -- exactamente
+ *     el defecto que este bloque existe para eliminar, reintroducido por
+ *     otra puerta. Es el mismo criterio ya congelado en `estimateCost`.
+ *
+ *   · NUNCA SE CAPA. Si la suma supera lo reservado se devuelve igual: lo
+ *     que hay que corregir entonces es la estimacion, no el importe.
  */
 export function resolveSettlementCost(
-  audit: ExecutionAuditForSettlement,
+  audits: readonly ExecutionAuditForSettlement[],
   reservedCost: number,
   creditValue: CreditValue | null = CREDIT_VALUE,
   catalog: readonly ProviderCatalogEntry[] = AI_PROVIDER_CATALOG
 ): number {
-  if (audit.providerIdentifier === null || audit.providerModel === null) return reservedCost
+  // Ninguna ejecucion real: no hay coste de IA que liquidar.
+  if (audits.length === 0) return 0
 
-  const cost = calculateExecutionCost(
-    {
-      providerId: audit.providerIdentifier,
-      model: audit.providerModel,
-      inputTokens: audit.inputTokens,
-      outputTokens: audit.outputTokens,
-    },
-    catalog
-  )
-  if (cost === null) return reservedCost
+  let total = 0
 
-  return toCredits(cost, creditValue) ?? reservedCost
+  for (const audit of audits) {
+    if (audit.providerIdentifier === null || audit.providerModel === null) return reservedCost
+
+    const cost = calculateExecutionCost(
+      {
+        providerId: audit.providerIdentifier,
+        model: audit.providerModel,
+        inputTokens: audit.inputTokens,
+        outputTokens: audit.outputTokens,
+      },
+      catalog
+    )
+    if (cost === null) return reservedCost
+
+    const credits = toCredits(cost, creditValue)
+    if (credits === null) return reservedCost
+
+    total += credits
+  }
+
+  return total
 }
 
 /**

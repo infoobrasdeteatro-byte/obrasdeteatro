@@ -2,7 +2,13 @@ import { recordMetric } from '@/lib/telemetria'
 import { calculateExecutionCost } from '@/lib/provider-catalog'
 import type { ExecutionAudit, ExecutionTraceContext } from './types'
 
-type NumericAuditField = 'executionLatencyMs' | 'tokensConsumed' | 'inputTokens' | 'outputTokens' | 'realExecutionCost'
+type NumericAuditField =
+  | 'executionLatencyMs'
+  | 'tokensConsumed'
+  | 'inputTokens'
+  | 'outputTokens'
+  | 'maxOutputTokens'
+  | 'realExecutionCost'
 
 /**
  * `real_execution_cost` conserva su nombre de metrica ya establecido, pero
@@ -15,6 +21,14 @@ const NUMERIC_FIELDS: Array<{ key: NumericAuditField; name: string; unit: string
   { key: 'tokensConsumed', name: 'ai_gateway.tokens_consumed', unit: 'tokens' },
   { key: 'inputTokens', name: 'ai_gateway.input_tokens', unit: 'tokens' },
   { key: 'outputTokens', name: 'ai_gateway.output_tokens', unit: 'tokens' },
+  // F5F-2 -- el techo que la ejecucion aplico. Entra por el mecanismo
+  // existente, sin rama propia: `null` (sin ejecucion, o adaptador que no
+  // lo declara) simplemente no emite metrica, igual que el resto.
+  //
+  // Se registra junto a `output_tokens` porque solo tiene sentido con el:
+  // el par da el margen que quedaba, y es lo que permitira recalibrar el
+  // techo con datos en lugar de deducirlo del codigo.
+  { key: 'maxOutputTokens', name: 'ai_gateway.max_output_tokens', unit: 'tokens' },
   { key: 'realExecutionCost', name: 'ai_gateway.real_execution_cost', unit: 'currency' },
 ]
 

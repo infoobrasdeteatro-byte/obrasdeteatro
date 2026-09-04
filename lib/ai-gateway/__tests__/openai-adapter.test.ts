@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 const mockCreate = vi.fn()
 
@@ -97,6 +99,7 @@ describe('openaiAdapter', () => {
       'content',
       'inputTokens',
       'latencyMs',
+      'maxOutputTokens',
       'model',
       'outputTokens',
       'tokensConsumed',
@@ -271,5 +274,62 @@ describe('openaiAdapter — truncamiento (Bloque 5C)', () => {
     expect(enviado.messages[0].content).toBe('prompt exacto del usuario')
     // Observar el truncamiento no toca la politica de techo (Bloque 1).
     expect(enviado.max_completion_tokens).toBe(777)
+  })
+})
+
+
+/**
+ * F5F-2 — el techo aplicado es un HECHO de la ejecucion.
+ *
+ * En 5E los techos no fueron observables: la telemetria no los registraba
+ * y ninguna llamada se acerco al suyo, de modo que 512 y 1024 solo podian
+ * deducirse leyendo el codigo. Estas pruebas fijan que el adaptador
+ * declare lo que aplico.
+ */
+describe('openaiAdapter — techo aplicado (F5F-2)', () => {
+  beforeEach(async () => {
+    vi.resetModules()
+    mockCreate.mockReset()
+    process.env.OPENAI_API_KEY = 'test-openai-key'
+    mockCreate.mockResolvedValue({
+      choices: [{ message: { content: 'respuesta' }, finish_reason: 'stop' }],
+      usage: { total_tokens: 5, prompt_tokens: 3, completion_tokens: 2 },
+    })
+  })
+
+  it('devuelve el techo que recibio, sin alterarlo', async () => {
+    const { openaiAdapter } = await import('../openai-adapter')
+
+    expect((await openaiAdapter.execute(peticion('hola', 512))).maxOutputTokens).toBe(512)
+  })
+
+  it('lo devuelto COINCIDE con lo enviado al proveedor', async () => {
+    // Es la propiedad que convierte el dato en evidencia: si divergieran,
+    // la telemetria estaria registrando una intencion, no un hecho.
+    const { openaiAdapter } = await import('../openai-adapter')
+
+    const outcome = await openaiAdapter.execute(peticion('hola', 777))
+    const [enviado] = mockCreate.mock.calls[0]
+
+    expect(outcome.maxOutputTokens).toBe(enviado.max_completion_tokens)
+  })
+
+  it('NO lo deduce de la operacion: el adaptador no conoce la politica', async () => {
+    const adaptador = readFileSync(join(__dirname, '..', 'openai-adapter.ts'), 'utf-8')
+
+    expect(adaptador).not.toMatch(/MAX_OUTPUT_TOKENS_BY_OPERATION|maxOutputTokensFor|OperationKind/)
+    expect(adaptador).toMatch(/maxOutputTokens: request\.maxOutputTokens/)
+  })
+
+  it('el contrato comun no introduce vocabulario de OpenAI', async () => {
+    // Se mira la SUPERFICIE DE TIPOS, no la documentacion: un comentario
+    // puede citar la autorizacion IA-OPENAI-001 o explicar como responde un
+    // proveedor concreto, y explicarlo no es acoplarse a el.
+    const codigo = readFileSync(join(__dirname, '..', 'provider-adapter.ts'), 'utf-8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*/g, '')
+
+    expect(codigo).not.toMatch(/max_completion_tokens|max_tokens|finish_reason|openai/i)
+    expect(codigo).toMatch(/readonly maxOutputTokens: number \| null/)
   })
 })

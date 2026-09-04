@@ -67,6 +67,17 @@ async function execute(request: ProviderExecutionRequest): Promise<ProviderExecu
     // dejara de servir para decidir un techo. Ausente o desconocido => no
     // truncado: no se afirma un corte que no consta.
     truncated: completion.choices[0]?.finish_reason === 'length',
+    // LIMITACION DOCUMENTADA: la respuesta de Chat Completions no devuelve
+    // `max_completion_tokens`. La API no publica ningun campo equivalente,
+    // de modo que la unica fuente veraz disponible es el valor que este
+    // adaptador acaba de enviar en ESTA llamada -- que es exactamente el
+    // que el proveedor aplico.
+    //
+    // Se declara aqui y no en el Gateway a proposito: el Gateway
+    // reconstruiria el numero releyendo su politica, y entonces la
+    // telemetria estaria repitiendo una inferencia en lugar de observar
+    // una ejecucion. Lo que se registra es lo que se envio.
+    maxOutputTokens: request.maxOutputTokens,
   }
 }
 

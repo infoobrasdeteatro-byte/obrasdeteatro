@@ -115,27 +115,27 @@ const AUDIT = {
 describe('resolveSettlementCost — con que importe se cierra una reserva', () => {
   it('recorre la cadena completa tokens -> coste -> creditos cuando existen tarifa y valor', () => {
     // 1M x 1000 + 1M x 4000 = 5000 USD; a 0,01 USD/credito = 500.000 creditos.
-    const importe = resolveSettlementCost(AUDIT, 1, { amountPerCredit: 0.01, currency: 'USD' }, CATALOGO)
+    const importe = resolveSettlementCost([AUDIT], 1, { amountPerCredit: 0.01, currency: 'USD' }, CATALOGO)
 
     expect(importe).toBe(500_000)
   })
 
   it('SIN VALOR DE CREDITO liquida lo reservado: comportamiento seguro, no un fallback nuevo', () => {
-    expect(resolveSettlementCost(AUDIT, 1, null)).toBe(1)
+    expect(resolveSettlementCost([AUDIT], 1, null)).toBe(1)
   })
 
   it('SIN TARIFA en el catalogo tambien liquida lo reservado', () => {
     // El catalogo oficial no declara tarifas todavia.
-    expect(resolveSettlementCost(AUDIT, 1, { amountPerCredit: 0.01, currency: 'USD' })).toBe(1)
+    expect(resolveSettlementCost([AUDIT], 1, { amountPerCredit: 0.01, currency: 'USD' })).toBe(1)
   })
 
   it('sin proveedor o sin modelo no hay nada que tarificar', () => {
-    expect(resolveSettlementCost({ ...AUDIT, providerIdentifier: null }, 3)).toBe(3)
-    expect(resolveSettlementCost({ ...AUDIT, providerModel: null }, 3)).toBe(3)
+    expect(resolveSettlementCost([{ ...AUDIT, providerIdentifier: null }], 3)).toBe(3)
+    expect(resolveSettlementCost([{ ...AUDIT, providerModel: null }], 3)).toBe(3)
   })
 
   it('sin desglose de tokens liquida lo reservado, nunca cero', () => {
-    const importe = resolveSettlementCost({ ...AUDIT, inputTokens: null }, 7, { amountPerCredit: 0.01, currency: 'USD' })
+    const importe = resolveSettlementCost([{ ...AUDIT, inputTokens: null }], 7, { amountPerCredit: 0.01, currency: 'USD' })
 
     expect(importe).toBe(7)
     expect(importe).not.toBe(0)
@@ -147,7 +147,7 @@ describe('resolveSettlementCost — con que importe se cierra una reserva', () =
       { ...AUDIT, inputTokens: null, outputTokens: null },
       AUDIT,
     ]) {
-      expect(resolveSettlementCost(audit, 2)).toBeGreaterThan(0)
+      expect(resolveSettlementCost([audit], 2)).toBeGreaterThan(0)
     }
   })
 
@@ -261,7 +261,7 @@ describe('Bloque 3 — del coste real del proveedor a los creditos', () => {
   it('COSTE REAL distinto de COSTE ESTIMADO: liquidar por lo real cambia la cifra', () => {
     const reservado = 1
     const real = resolveSettlementCost(
-      { providerIdentifier: 'openai', providerModel: 'gpt-4o-mini', inputTokens: 984, outputTokens: 176 },
+      [{ providerIdentifier: 'openai', providerModel: 'gpt-4o-mini', inputTokens: 984, outputTokens: 176 }],
       reservado
     )
 
@@ -288,7 +288,7 @@ describe('Bloque 3 — del coste real del proveedor a los creditos', () => {
 
     expect(
       resolveSettlementCost(
-        { providerIdentifier: 'proveedor-inexistente', providerModel: 'x', inputTokens: 10, outputTokens: 10 },
+        [{ providerIdentifier: 'proveedor-inexistente', providerModel: 'x', inputTokens: 10, outputTokens: 10 }],
         3
       )
     ).toBe(3)
@@ -297,7 +297,7 @@ describe('Bloque 3 — del coste real del proveedor a los creditos', () => {
   it('USAGE INCOMPLETO: sin desglose no se inventa un coste, se liquida lo reservado', () => {
     expect(
       resolveSettlementCost(
-        { providerIdentifier: 'openai', providerModel: 'gpt-4o-mini', inputTokens: null, outputTokens: 176 },
+        [{ providerIdentifier: 'openai', providerModel: 'gpt-4o-mini', inputTokens: null, outputTokens: 176 }],
         7
       )
     ).toBe(7)
@@ -307,5 +307,163 @@ describe('Bloque 3 — del coste real del proveedor a los creditos', () => {
     // Cambiar de proveedor cambiaria la primera, jamas la segunda.
     expect(TARIFA.inputPricePerMillionTokens).not.toBe(X)
     expect(TARIFA.outputPricePerMillionTokens).not.toBe(X)
+  })
+})
+
+
+/**
+ * F5F-4 — LIQUIDACION MULTI-OPERACION.
+ *
+ * El caso real de 5E: un turno autonomo llamo dos veces al proveedor y solo
+ * se cobro una. La reserva ya era del turno; lo que faltaba era que la
+ * liquidacion tambien lo fuera.
+ *
+ * Ninguna prueba escribe una tarifa: se leen del catalogo oficial y X de su
+ * unica fuente. Fijarlas aqui haria que siguieran pasando el dia en que el
+ * calculo dejara de usarlos.
+ */
+describe('resolveSettlementCost — coste agregado del turno (F5F-4)', () => {
+  const X = CREDIT_VALUE!.amountPerCredit
+  const ejecucion = (inputTokens: number, outputTokens: number) => ({
+    providerIdentifier: 'openai',
+    providerModel: 'gpt-4o-mini',
+    inputTokens,
+    outputTokens,
+  })
+  /** Coste en creditos de una ejecucion, derivado del catalogo -- nunca escrito a mano. */
+  const creditosDe = (inputTokens: number, outputTokens: number) =>
+    toCredits(
+      calculateExecutionCost({ providerId: 'openai', model: 'gpt-4o-mini', inputTokens, outputTokens }, AI_PROVIDER_CATALOG)!,
+      CREDIT_VALUE
+    )!
+
+  it('17 · CASO REAL 5E: 0,3205 (resolutor) + 0,4115 (texto) = 0,7320', () => {
+    // Las cifras exactas observadas en produccion el 2026-09-01.
+    const RESOLUTOR = ejecucion(569, 18)
+    const TEXTO = ejecucion(415, 102)
+    const RESERVADO = 3.759
+
+    const liquidado = resolveSettlementCost([RESOLUTOR, TEXTO], RESERVADO)
+
+    expect(creditosDe(569, 18)).toBeCloseTo(0.3205, 6)
+    expect(creditosDe(415, 102)).toBeCloseTo(0.4115, 6)
+    expect(liquidado).toBeCloseTo(0.732, 6)
+    // Lo que se liquidaba antes, y lo que nunca debe liquidarse.
+    expect(liquidado).not.toBeCloseTo(0.4115, 6)
+    expect(liquidado).not.toBe(RESERVADO)
+  })
+
+  it('1 · DOS ejecuciones: suma exacta', () => {
+    const total = resolveSettlementCost([ejecucion(569, 18), ejecucion(415, 102)], 3.759)
+
+    expect(total).toBeCloseTo(creditosDe(569, 18) + creditosDe(415, 102), 12)
+  })
+
+  it('2 · TRES O MAS ejecuciones: suma exacta, sin tope', () => {
+    const total = resolveSettlementCost([ejecucion(100, 10), ejecucion(200, 20), ejecucion(300, 30)], 99)
+
+    expect(total).toBeCloseTo(creditosDe(100, 10) + creditosDe(200, 20) + creditosDe(300, 30), 12)
+  })
+
+  it('3/4 · solo entra lo que se le entrega: la coleccion ya viene filtrada', () => {
+    // El filtrado de fallidas ocurre en `acumularEjecucion` (F5F-3): aqui
+    // no se reintroduce una segunda logica que pudiera divergir.
+    const soloUna = resolveSettlementCost([ejecucion(415, 102)], 3.759)
+
+    expect(soloUna).toBeCloseTo(creditosDe(415, 102), 12)
+  })
+
+  it('5/6/7 · SIN EJECUCIONES el coste de IA es CERO, no lo reservado', () => {
+    // Cobrar la reserva cuando no hubo ninguna llamada seria cobrar una
+    // ejecucion que no existio.
+    expect(resolveSettlementCost([], 3.759)).toBe(0)
+  })
+
+  it('8 · coste real POR DEBAJO de la reserva: se liquida lo real', () => {
+    const RESERVADO = 3.759
+    const liquidado = resolveSettlementCost([ejecucion(569, 18), ejecucion(415, 102)], RESERVADO)
+
+    expect(liquidado).toBeLessThan(RESERVADO)
+    // El excedente (3,0270) no se devuelve aqui: deja de estar comprometido
+    // al cambiar la reserva de estado. No hay segunda operacion.
+    expect(RESERVADO - liquidado).toBeCloseTo(3.027, 6)
+  })
+
+  it('9 · coste real IGUAL a la reserva: se liquida esa misma cifra', () => {
+    const exacto = creditosDe(415, 102)
+
+    expect(resolveSettlementCost([ejecucion(415, 102)], exacto)).toBeCloseTo(exacto, 12)
+  })
+
+  it('10 · coste real POR ENCIMA de la reserva: NO se capa', () => {
+    const RESERVADO = 0.1
+    const liquidado = resolveSettlementCost([ejecucion(569, 18), ejecucion(415, 102)], RESERVADO)
+
+    expect(liquidado).toBeGreaterThan(RESERVADO)
+    expect(liquidado).toBeCloseTo(0.732, 6)
+    // Capar convertiria un problema de estimacion en contabilidad falsa.
+    expect(liquidado).not.toBe(RESERVADO)
+  })
+
+  it('12 · una ejecucion NO TARIFICABLE arrastra el turno entero al repliegue', () => {
+    // Sumar solo la tarificable y dar por gratis la otra seria un subcobro
+    // silencioso: exactamente el defecto que F5F-4 elimina, por otra puerta.
+    const RESERVADO = 3.759
+    const tarificable = ejecucion(415, 102)
+    const sinModelo = { ...ejecucion(569, 18), providerModel: null }
+
+    const liquidado = resolveSettlementCost([tarificable, sinModelo], RESERVADO)
+
+    expect(liquidado).toBe(RESERVADO)
+    expect(liquidado).not.toBeCloseTo(creditosDe(415, 102), 6)
+  })
+
+  it('12b · el repliegue tambien aplica si falta el desglose de tokens', () => {
+    const RESERVADO = 5
+    const sinTokens = { ...ejecucion(569, 18), inputTokens: null }
+
+    expect(resolveSettlementCost([ejecucion(415, 102), sinTokens], RESERVADO)).toBe(RESERVADO)
+  })
+
+  it('12c · y si no hay valor de credito: sin X no se inventa una conversion', () => {
+    expect(resolveSettlementCost([ejecucion(415, 102)], 4, null)).toBe(4)
+  })
+
+  it('PRECISION: no se redondea prematuramente', () => {
+    const total = resolveSettlementCost([ejecucion(1, 1), ejecucion(1, 1)], 9)
+
+    expect(Number.isInteger(total)).toBe(false)
+    expect(total).toBeCloseTo(2 * creditosDe(1, 1), 15)
+  })
+
+  it('ORDEN IRRELEVANTE para la suma, pero la coleccion no se altera', () => {
+    const a = ejecucion(569, 18)
+    const b = ejecucion(415, 102)
+    const coleccion = [a, b]
+
+    expect(resolveSettlementCost(coleccion, 9)).toBeCloseTo(resolveSettlementCost([b, a], 9), 12)
+    expect(coleccion).toEqual([a, b])
+  })
+
+  it('el coste se calcula con el catalogo, no con cifras propias de esta funcion', () => {
+    const CATALOGO_AJENO = [
+      {
+        id: 'openai',
+        name: 'OpenAI',
+        rates: [
+          {
+            model: 'gpt-4o-mini',
+            inputPricePerMillionTokens: 1000,
+            outputPricePerMillionTokens: 4000,
+            currency: 'USD',
+            pricingUnit: 'PER_MILLION_TOKENS' as const,
+          },
+        ],
+      },
+    ]
+
+    const conAjeno = resolveSettlementCost([ejecucion(1_000_000, 1_000_000)], 1, CREDIT_VALUE, CATALOGO_AJENO)
+
+    expect(conAjeno).toBeCloseTo(5000 / X, 6)
   })
 })

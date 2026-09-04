@@ -19,7 +19,7 @@ const EMPTY_AUDIT: ExecutionAudit = {
   inputTokens: null,
   outputTokens: null,
   realExecutionCost: null,
-  truncated: null, technicalMetadata: null,
+  truncated: null, maxOutputTokens: null, technicalMetadata: null,
 }
 
 describe('recordExecutionTrace', () => {
@@ -34,7 +34,7 @@ describe('recordExecutionTrace', () => {
       inputTokens: 900,
       outputTokens: 300,
       realExecutionCost: 0.05,
-      truncated: null, technicalMetadata: 'algo sin destino autorizado',
+      truncated: null, maxOutputTokens: null, technicalMetadata: 'algo sin destino autorizado',
     }
 
     const result = await recordExecutionTrace('profile-1', audit)
@@ -71,7 +71,7 @@ describe('recordExecutionTrace', () => {
     await recordExecutionTrace('profile-1', {
       ...EMPTY_AUDIT,
       executionLatencyMs: 100,
-      truncated: null, technicalMetadata: 'texto libre',
+      truncated: null, maxOutputTokens: null, technicalMetadata: 'texto libre',
     })
 
     for (const call of vi.mocked(recordMetric).mock.calls) {
@@ -151,7 +151,7 @@ describe('recordExecutionTrace — tarificacion de la ejecucion (IA-006)', () =>
     inputTokens: 1000,
     outputTokens: 500,
     realExecutionCost: null,
-    truncated: null, technicalMetadata: null,
+    truncated: null, maxOutputTokens: null, technicalMetadata: null,
   }
 
   it('registra el desglose de tokens que el proveedor publica', async () => {
@@ -217,6 +217,7 @@ describe('recordExecutionTrace — truncamiento (Bloque 5C)', () => {
       outputTokens: 100,
       realExecutionCost: null,
       truncated,
+      maxOutputTokens: null,
       technicalMetadata: null,
     }
   }
@@ -271,5 +272,96 @@ describe('recordExecutionTrace — truncamiento (Bloque 5C)', () => {
 
     expect(metrica('ai_gateway.input_tokens')?.value).toBe(900)
     expect(metrica('ai_gateway.output_tokens')?.value).toBe(100)
+  })
+})
+
+
+/**
+ * F5F-2 — telemetria del techo aplicado.
+ *
+ * Entra por el mecanismo numerico ya existente: sin rama propia, sin tabla
+ * nueva, sin etiquetas nuevas. Lo que aporta es la escala que a `truncated`
+ * le faltaba -- el par (techo, salida) da el margen que quedaba.
+ */
+describe('recordExecutionTrace — techo aplicado (F5F-2)', () => {
+  function auditConTecho(maxOutputTokens: number | null): ExecutionAudit {
+    return {
+      providerIdentifier: 'openai',
+      providerModel: 'gpt-4o-mini',
+      executionLatencyMs: 120,
+      tokensConsumed: 1000,
+      inputTokens: 900,
+      outputTokens: 100,
+      realExecutionCost: null,
+      truncated: false,
+      maxOutputTokens,
+      technicalMetadata: null,
+    }
+  }
+
+  function metrica(nombre: string) {
+    return vi.mocked(recordMetric).mock.calls.map((llamada) => llamada[1]).find((m) => m.name === nombre)
+  }
+
+  it('registra `ai_gateway.max_output_tokens` en tokens', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditConTecho(512), { requestId: 'turno-1', stage: 'response' })
+
+    expect(metrica('ai_gateway.max_output_tokens')?.value).toBe(512)
+    expect(metrica('ai_gateway.max_output_tokens')?.unit).toBe('tokens')
+  })
+
+  it('RESOLUTOR y RESPUESTA registran techos distintos, distinguibles por operacion', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditConTecho(1024), { requestId: 'turno-1', stage: 'resolver' })
+    const delResolutor = metrica('ai_gateway.max_output_tokens')
+    vi.mocked(recordMetric).mockClear()
+    await recordExecutionTrace('profile-1', auditConTecho(512), { requestId: 'turno-1', stage: 'response' })
+    const deLaRespuesta = metrica('ai_gateway.max_output_tokens')
+
+    expect(delResolutor?.value).toBe(1024)
+    expect(deLaRespuesta?.value).toBe(512)
+    // La operacion la aporta `stage`: ninguna dimension nueva.
+    expect(delResolutor?.tags).toMatchObject({ stage: 'resolver' })
+    expect(deLaRespuesta?.tags).toMatchObject({ stage: 'response' })
+  })
+
+  it('`null` NO emite metrica: un techo desconocido no es cero', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditConTecho(null), { requestId: 'turno-1', stage: 'response' })
+
+    expect(metrica('ai_gateway.max_output_tokens')).toBeUndefined()
+  })
+
+  it('NO anade etiquetas nuevas: usa exactamente las mismas que el resto', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditConTecho(512), { requestId: 'turno-1', stage: 'response' })
+
+    expect(Object.keys(metrica('ai_gateway.max_output_tokens')?.tags ?? {}).sort()).toEqual(
+      Object.keys(metrica('ai_gateway.output_tokens')?.tags ?? {}).sort()
+    )
+  })
+
+  it('acompaña a la salida real: el par permite calcular el margen restante', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditConTecho(512), { requestId: 'turno-1', stage: 'response' })
+
+    expect(metrica('ai_gateway.output_tokens')?.value).toBe(100)
+    expect(metrica('ai_gateway.max_output_tokens')?.value).toBe(512)
+  })
+
+  it('IDENTIDAD F5F-1 INTACTA: todas las metricas de la ejecucion comparten requestId', async () => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+
+    await recordExecutionTrace('profile-1', auditConTecho(512), { requestId: 'turno-1', stage: 'response' })
+
+    const identidades = vi.mocked(recordMetric).mock.calls.map((llamada) => llamada[1].tags?.requestId)
+    expect(new Set(identidades).size).toBe(1)
+    expect(identidades[0]).toBe('turno-1')
   })
 })

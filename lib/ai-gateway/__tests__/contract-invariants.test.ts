@@ -127,12 +127,18 @@ describe('AI Gateway — techo de generacion (Bloque 1)', () => {
   })
 
   it('el contrato del adaptador exige el techo: no admite una peticion sin el', () => {
+    // ACOTADA en F5F-2 al bloque de la PETICION. El mismo fichero declara
+    // ahora un techo en el RESULTADO, que si es anulable -- un adaptador
+    // puede no poder declarar el que aplico. Son dos cosas distintas: el
+    // techo que se EXIGE al invocar, y el que se OBSERVA al terminar.
+    // Mirar el fichero entero confundia ambos.
     const contrato = readFileSync(join(__dirname, '..', 'provider-adapter.ts'), 'utf-8')
+    const peticion = contrato.slice(contrato.indexOf('export interface ProviderExecutionRequest'))
 
-    expect(contrato).toMatch(/readonly maxOutputTokens: number/)
+    expect(peticion).toMatch(/readonly maxOutputTokens: number/)
     // Ni opcional, ni anulable: un techo que se pueda omitir no es un techo.
-    expect(contrato).not.toMatch(/maxOutputTokens\?:/)
-    expect(contrato).not.toMatch(/maxOutputTokens: number \| null/)
+    expect(peticion).not.toMatch(/maxOutputTokens\?:/)
+    expect(peticion).not.toMatch(/maxOutputTokens: number \| null/)
   })
 })
 
@@ -255,6 +261,46 @@ describe('AI Gateway — politica de techo por operacion (Bloque 5D)', () => {
       const source = readFileSync(join(__dirname, '..', file), 'utf-8')
       expect(source, file).toMatch(/request\.maxOutputTokens/)
       expect(source, file).not.toMatch(/MAX_OUTPUT_TOKENS_BY_OPERATION|maxOutputTokensFor/)
+    }
+  })
+})
+
+
+/**
+ * F5F-2 — el techo aplicado es un hecho observado, no una deduccion.
+ *
+ * La direccion del dato es lo unico que hace util a esta metrica:
+ * ProviderExecutionOutcome → ExecutionAudit → telemetria. Si el Gateway
+ * releyera su politica para rellenar el audit, una divergencia entre lo
+ * que la politica dice y lo que la ejecucion hizo seria indetectable.
+ */
+describe('AI Gateway — observabilidad del techo (F5F-2)', () => {
+  it('el audit lo toma del OUTCOME, nunca de la politica', () => {
+    expect(MODULE_SOURCE).toMatch(/maxOutputTokens: outcome\.maxOutputTokens/)
+    // La politica se consulta UNA sola vez, y es para invocar al adaptador.
+    const consultas = MODULE_SOURCE.match(/maxOutputTokensFor\(/g) ?? []
+    expect(consultas).toHaveLength(1)
+  })
+
+  it('el contrato del resultado declara el techo aplicado, anulable', () => {
+    const contrato = readFileSync(join(__dirname, '..', 'provider-adapter.ts'), 'utf-8')
+    const resultado = contrato.slice(
+      contrato.indexOf('export interface ProviderExecutionOutcome'),
+      contrato.indexOf('export interface ProviderExecutionRequest')
+    )
+
+    // Anulable a proposito: un adaptador puede no poder declararlo. Lo que
+    // nunca puede es sustituirlo por cero.
+    expect(resultado).toMatch(/readonly maxOutputTokens: number \| null/)
+  })
+
+  it('TODO adaptador declara el techo que aplico, y no lo inventa', () => {
+    for (const file of ADAPTER_FILES) {
+      const source = readFileSync(join(__dirname, '..', file), 'utf-8')
+
+      expect(source, file).toMatch(/maxOutputTokens: request\.maxOutputTokens/)
+      // Un literal seria una afirmacion del adaptador, no un hecho.
+      expect(source, file).not.toMatch(/maxOutputTokens:\s*\d/)
     }
   })
 })

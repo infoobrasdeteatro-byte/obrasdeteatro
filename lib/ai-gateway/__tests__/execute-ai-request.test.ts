@@ -55,6 +55,8 @@ const EMPTY_AUDIT = {
   // Bloque 5C: no hubo ejecucion, luego no hay respuesta cuya integridad
   // valorar. `false` afirmaria que una respuesta inexistente esta completa.
   truncated: null,
+  // F5F-2: sin ejecucion no hay techo aplicado del que informar.
+  maxOutputTokens: null,
   technicalMetadata: null,
 }
 
@@ -400,5 +402,119 @@ describe('executeAIRequest — techo por operacion (Bloque 5D)', () => {
     })
 
     expect(execute.mock.calls[0][0].maxOutputTokens).toBe(MAX_OUTPUT_TOKENS_BY_OPERATION.TEXT_STANDARD)
+  })
+})
+
+
+/**
+ * F5F-2 — el techo viaja del OUTCOME al AUDIT, sin recalcularse.
+ *
+ * La direccion importa: ProviderExecutionOutcome → ExecutionAudit. Si el
+ * Gateway releyera su politica para rellenar el audit, la telemetria
+ * repetiria una inferencia en vez de registrar lo que la ejecucion hizo, y
+ * una divergencia entre politica y ejecucion seria indetectable -- que es
+ * justo lo que el Bloque 5E no pudo descartar.
+ */
+describe('executeAIRequest — techo observado (F5F-2)', () => {
+  function adaptadorQueDeclara(maxOutputTokens: number | null) {
+    vi.mocked(findProviderAdapter).mockReturnValue({
+      providerId: 'openai',
+      execute: vi.fn().mockResolvedValue({
+        content: 'contenido',
+        model: 'gpt-4o-mini',
+        latencyMs: 10,
+        tokensConsumed: 5,
+        inputTokens: 3,
+        outputTokens: 2,
+        truncated: false,
+        maxOutputTokens,
+      }),
+    })
+  }
+
+  function entradaPara(operationKind: 'TEXT_STANDARD' | 'RESOLVER') {
+    return {
+      decisionContext: fakeDecisionContext({
+        executionStrategy: {
+          executionMode: 'IA' as const,
+          recommendedAgent: null,
+          recommendedProvider: 'openai',
+          priorityLevel: 'media' as const,
+          executionPolicy: null,
+        },
+      }),
+      authorizationContext: fakeAuthorizationContext(),
+      normalizedAIRequest: { userPrompt: 'peticion', operationKind },
+    }
+  }
+
+  it('COPIA el valor del outcome, exactamente', async () => {
+    adaptadorQueDeclara(333)
+
+    const { audit } = await executeAIRequest(entradaPara('TEXT_STANDARD'))
+
+    expect(audit.maxOutputTokens).toBe(333)
+  })
+
+  it('NO lo recalcula desde la politica: manda lo que declaro la ejecucion', async () => {
+    // El outcome declara un valor imposible segun la politica. Si el audit
+    // lo "corrigiera" a 512, estaria inventando un hecho.
+    adaptadorQueDeclara(999)
+
+    const { audit } = await executeAIRequest(entradaPara('TEXT_STANDARD'))
+
+    expect(audit.maxOutputTokens).toBe(999)
+    expect(audit.maxOutputTokens).not.toBe(MAX_OUTPUT_TOKENS_BY_OPERATION.TEXT_STANDARD)
+  })
+
+  it('un adaptador que no puede declararlo produce `null`, jamas cero', async () => {
+    adaptadorQueDeclara(null)
+
+    const { audit } = await executeAIRequest(entradaPara('TEXT_STANDARD'))
+
+    expect(audit.maxOutputTokens).toBeNull()
+    expect(audit.maxOutputTokens).not.toBe(0)
+  })
+
+  it('SIN EJECUCION no hay techo aplicado del que informar', async () => {
+    const { audit } = await executeAIRequest({
+      decisionContext: fakeDecisionContext(),
+      authorizationContext: fakeAuthorizationContext({ authorizationStatus: 'DENIED' }),
+      normalizedAIRequest: { userPrompt: 'peticion', operationKind: 'TEXT_STANDARD' as const },
+    })
+
+    expect(audit.maxOutputTokens).toBeNull()
+  })
+
+  it('EXTREMO A EXTREMO: lo que el Gateway entrega es lo que el audit observa', async () => {
+    // Con un adaptador que se comporta como el real -- devuelve lo que
+    // recibe -- el audit debe reflejar el techo de cada operacion.
+    const execute = vi.fn().mockImplementation(async (peticionAlProveedor: { maxOutputTokens: number }) => ({
+      content: 'c',
+      model: 'gpt-4o-mini',
+      latencyMs: 1,
+      tokensConsumed: 1,
+      inputTokens: 1,
+      outputTokens: 1,
+      truncated: false,
+      maxOutputTokens: peticionAlProveedor.maxOutputTokens,
+    }))
+    vi.mocked(findProviderAdapter).mockReturnValue({ providerId: 'openai', execute })
+
+    const texto = await executeAIRequest(entradaPara('TEXT_STANDARD'))
+    const resolutor = await executeAIRequest(entradaPara('RESOLVER'))
+
+    expect(texto.audit.maxOutputTokens).toBe(MAX_OUTPUT_TOKENS_BY_OPERATION.TEXT_STANDARD)
+    expect(resolutor.audit.maxOutputTokens).toBe(MAX_OUTPUT_TOKENS_BY_OPERATION.RESOLVER)
+    expect(texto.audit.maxOutputTokens).not.toBe(resolutor.audit.maxOutputTokens)
+  })
+
+  it('el truncamiento del Bloque 5C sigue funcionando igual', async () => {
+    adaptadorQueDeclara(512)
+
+    const { audit, result } = await executeAIRequest(entradaPara('TEXT_STANDARD'))
+
+    expect(audit.truncated).toBe(false)
+    expect(result.executionWarnings).toEqual([])
   })
 })

@@ -8,7 +8,7 @@ beforeEach(() => {
   vi.mocked(recordExecutionTrace).mockReset()
 })
 
-const AUDIT = { providerIdentifier: null, providerModel: null, executionLatencyMs: null, tokensConsumed: null, inputTokens: null, outputTokens: null, realExecutionCost: null, realExecutionCostCurrency: null, truncated: null, technicalMetadata: null }
+const AUDIT = { providerIdentifier: null, providerModel: null, executionLatencyMs: null, tokensConsumed: null, inputTokens: null, outputTokens: null, realExecutionCost: null, realExecutionCostCurrency: null, truncated: null, maxOutputTokens: null, technicalMetadata: null }
 
 describe('distributeExecutionAudit', () => {
   it('entrega el audit al único consumidor registrado (Observabilidad), preservando el comportamiento ya existente', async () => {
