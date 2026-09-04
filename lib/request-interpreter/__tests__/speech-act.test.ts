@@ -4,6 +4,23 @@ import { detectKnowledgeDomains } from '../domain-rules'
 import { normalizeRequest } from '../interpreter'
 
 /**
+ * F5F-1: `normalizeRequest` ya no acuña identidad -- la recibe. Estas
+ * pruebas verifican INTERPRETACION, no identidad, asi que la fijan a un
+ * valor constante y siguen expresando exactamente lo que expresaban antes.
+ * La identidad tiene sus propias pruebas al final del fichero.
+ */
+const ID_DE_PRUEBA = 'turno-de-prueba'
+
+function interpretar(
+  originalRequest: string,
+  previousUserRequests: readonly string[] = [],
+  previousDomain: Parameters<typeof normalizeRequest>[3] = null
+) {
+  return normalizeRequest(originalRequest, ID_DE_PRUEBA, previousUserRequests, previousDomain)
+}
+
+
+/**
  * A3.1-alfa. La regla se comprueba SIEMPRE por parejas: la misma palabra del
  * vocabulario en una construccion definicional y en una de catalogo. Si un
  * dia la implementacion degenerase en una lista de temas, estas parejas
@@ -102,24 +119,24 @@ describe('detectKnowledgeDomains — una peticion definicional no abre catalogo'
 
 describe('normalizeRequest — efecto extremo a extremo', () => {
   it('una peticion definicional llega sin dominios: no habra nada que recuperar', () => {
-    const resultado = normalizeRequest('¿Qué es el teatro del absurdo?')
+    const resultado = interpretar('¿Qué es el teatro del absurdo?')
 
     expect(resultado.requestedKnowledgeDomains).toEqual([])
   })
 
   it('la peticion de catalogo equivalente conserva su dominio', () => {
-    expect(normalizeRequest('¿Qué teatros hay en Madrid?').requestedKnowledgeDomains).toEqual(['Organizaciones'])
+    expect(interpretar('¿Qué teatros hay en Madrid?').requestedKnowledgeDomains).toEqual(['Organizaciones'])
   })
 
   it('el texto original y la consulta de recuperacion no se alteran', () => {
-    const resultado = normalizeRequest('¿Qué es el teatro del absurdo?')
+    const resultado = interpretar('¿Qué es el teatro del absurdo?')
 
     expect(resultado.originalRequest).toBe('¿Qué es el teatro del absurdo?')
     expect(resultado.retrievalQuery).toBe(resultado.normalizedIntent)
   })
 
   it('CONTINUIDAD intacta: un turno de seguimiento sigue heredando el contexto anterior', () => {
-    const resultado = normalizeRequest('¿y alguna más corta?', ['¿Qué obras de comedia tienes?'])
+    const resultado = interpretar('¿y alguna más corta?', ['¿Qué obras de comedia tienes?'])
 
     expect(resultado.requestedKnowledgeDomains).toEqual(['Obras'])
     expect(resultado.retrievalQuery).toContain('comedia')

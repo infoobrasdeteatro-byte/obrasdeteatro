@@ -22,6 +22,8 @@ const EMPTY_AUDIT: ExecutionAudit = {
   realExecutionCost: null,
   // No hubo ejecucion: no se trunco nada, pero tampoco se completo nada.
   truncated: null,
+  // Sin ejecucion no hay techo aplicado del que informar.
+  maxOutputTokens: null,
   technicalMetadata: null,
 }
 
@@ -122,6 +124,9 @@ export async function executeAIRequest(
         inputTokens: outcome.inputTokens,
         outputTokens: outcome.outputTokens,
         truncated: outcome.truncated,
+        // Del OUTCOME, nunca de la politica: se registra el techo que la
+        // ejecucion aplico, no el que le corresponderia por su operacion.
+        maxOutputTokens: outcome.maxOutputTokens,
         realExecutionCost: null,
         technicalMetadata: null,
       },

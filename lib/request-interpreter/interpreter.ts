@@ -115,8 +115,28 @@ function resolveDomains(
   return previousDomain === null ? [] : [previousDomain]
 }
 
+/**
+ * `requestId` se RECIBE, no se acuña (F5F-1).
+ *
+ * Antes se generaba aqui con `crypto.randomUUID()`, de modo que la
+ * identidad era un efecto secundario de interpretar: interpretar dos veces
+ * el mismo turno -- lo que ocurre siempre que el resolutor devuelve
+ * terminos y hay que reinterpretar la peticion aumentada -- producia dos
+ * identidades para un solo turno. En produccion se observo exactamente
+ * eso: la reserva y el resolutor quedaron bajo un identificador y la
+ * respuesta bajo otro, y las dos llamadas de un mismo turno dejaron de ser
+ * enlazables por clave.
+ *
+ * Quien conoce el turno es el Orquestador, no este componente: una
+ * interpretacion no es un turno, y no le corresponde nombrarlo. Recibirlo
+ * ademas devuelve a esta funcion su pureza -- era su unica impureza.
+ *
+ * Obligatorio, ni opcional ni con valor por defecto: un defecto que
+ * generase identidad aqui reintroduciria el defecto en silencio.
+ */
 export function normalizeRequest(
   originalRequest: string,
+  requestId: string,
   previousUserRequests: readonly string[] = [],
   previousDomain: KnowledgeDomain | null = null
 ): NormalizedRequest {
@@ -131,7 +151,7 @@ export function normalizeRequest(
   const detectedAmbiguities = detectAmbiguities(originalRequest, requestedKnowledgeDomains, requestType)
 
   return {
-    requestId: crypto.randomUUID(),
+    requestId,
     originalRequest,
     normalizedIntent,
     retrievalQuery,

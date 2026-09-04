@@ -6,7 +6,7 @@ import { buildDecisionContext } from '@/lib/decision-engine'
 import { buildAuthorizationContext } from '@/lib/credit-manager'
 import { settleReservation, releaseReservation, resolveSettlementCost } from '@/lib/accounting-engine'
 import { executeAIRequest } from '@/lib/ai-gateway'
-import type { NormalizedAIRequest } from '@/lib/ai-gateway'
+import type { NormalizedAIRequest, AIExecutionInput, ExecutionAudit, AIExecutionResult } from '@/lib/ai-gateway'
 import { composeResponse } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
@@ -88,6 +88,34 @@ import type { ConversationTurn } from '@/lib/prompt-composer'
  * ni conoce este historial -- cada uno sigue operando exclusivamente
  * sobre `originalRequest`, exactamente igual que antes de este bloque.
  */
+/**
+ * REGLA DE ADMISION AL ACUMULADOR DEL TURNO (F5F-3).
+ *
+ * Existe como funcion propia por una razon concreta: el acumulador es
+ * local a un turno y no lo consume nadie todavia, de modo que la unica
+ * forma de DEMOSTRAR -- y no solo afirmar -- que ningun audit ejecutado se
+ * pierde y que ninguno vacio entra, es que la regla sea comprobable por si
+ * misma. Lo que corrige F5F-3 no es una linea olvidada: es que "ejecutar" y
+ * "quedar registrado" dejen de ser dos actos separados.
+ *
+ * Solo entra lo EJECUTADO. Un `EMPTY_AUDIT` -- denegado, sin proveedor,
+ * error de comunicacion -- es un objeto sin ejecucion detras: existe el
+ * audit, no la llamada. Admitirlo haria creer que hubo un coste que nunca
+ * se produjo.
+ *
+ * Muta la coleccion recibida a proposito, en vez de devolver una nueva: el
+ * orden de ejecucion es el unico dato que despues no podria reconstruirse,
+ * y anadir al final lo preserva sin depender de marcas temporales.
+ */
+export function acumularEjecucion(
+  auditsDelTurno: ExecutionAudit[],
+  salida: { readonly result: AIExecutionResult; readonly audit: ExecutionAudit }
+): void {
+  if (salida.result.executionStatus !== 'EJECUTADO') return
+
+  auditsDelTurno.push(salida.audit)
+}
+
 export async function coordinateFlow(
   userId: string,
   session: SessionInput,
@@ -117,7 +145,22 @@ export async function coordinateFlow(
   const turnStartedAt = Date.now()
 
   const previousUserRequests = conversationHistory.filter((turn) => turn.role === 'user').map((turn) => turn.content)
-  let normalizedRequest = normalizeRequest(originalRequest, previousUserRequests, dominioPrevio)
+
+  /**
+   * IDENTIDAD DEL TURNO (F5F-1). Se acuña UNA sola vez, aqui, y acompaña
+   * al turno entero: las dos interpretaciones, la reserva, las trazas de
+   * cada ejecucion y las metricas finales.
+   *
+   * Nace en el Orquestador porque es el unico componente que ve el turno
+   * completo -- el mismo motivo por el que ya le corresponde cerrar la
+   * reserva y componer la observacion del turno.
+   *
+   * No se reutiliza `reservationId`: un turno determinista no crea reserva
+   * y tambien necesita identidad. Tampoco `conversationId`, que identifica
+   * la conversacion y no el turno.
+   */
+  const turnId = crypto.randomUUID()
+  let normalizedRequest = normalizeRequest(originalRequest, turnId, previousUserRequests, dominioPrevio)
   const professionalContext = await buildProfessionalContext(userId, session)
   let knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
   // Senal de continuacion, ya declarada en el contrato. Se deriva aqui
@@ -145,6 +188,50 @@ export async function coordinateFlow(
     creditValue: CREDIT_VALUE,
   })
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
+
+  /**
+   * EJECUCIONES DEL TURNO (F5F-3).
+   *
+   * Un turno puede llamar al proveedor mas de una vez -- hoy resolutor y
+   * respuesta -- y cada llamada tiene coste propio. Hasta ahora el audit
+   * del resolutor moria en el ambito de la funcion que lo producia: se
+   * media en telemetria y desaparecia para todo lo demas. En produccion
+   * eso dejo 0,3205 creditos reales sin registrar en el cierre del turno.
+   *
+   * La coleccion es LOCAL al turno: se crea en cada invocacion, no hay
+   * estado de modulo, ni singleton, ni nada compartido entre usuarios.
+   * Conserva el ORDEN de ejecucion, que es el unico dato que despues no
+   * podria reconstruirse -- ordenar por marca temporal seria inferirlo.
+   *
+   * Guarda el `ExecutionAudit` completo, no una proyeccion reducida:
+   * recortarlo aqui descartaria justo lo que F5F-2 acaba de incorporar
+   * (`maxOutputTokens`, `truncated`, latencia). Quien liquide tomara lo
+   * que necesite; acumular no es el momento de decidir que sobra.
+   *
+   * F5F-3 SOLO acumula. La liquidacion sigue exactamente como estaba.
+   */
+  const auditsDelTurno: ExecutionAudit[] = []
+
+  /**
+   * PUNTO UNICO de ejecucion de proveedor en todo el turno.
+   *
+   * No es azucar sintactico: es la garantia estructural de que ninguna
+   * ejecucion pueda quedar fuera del acumulador. Mientras este sea el
+   * unico sitio del Orquestador que invoca al Gateway -- y hay una
+   * invariante que lo comprueba --, "ejecutar" y "quedar registrado" son
+   * el mismo acto, y no dependen de que alguien recuerde anadir una
+   * linea despues de cada llamada.
+   *
+   * Solo entra lo EJECUTADO. Un audit vacio -- denegado, sin proveedor,
+   * error de comunicacion -- no representa ninguna llamada real: existe
+   * el objeto, no la ejecucion.
+   */
+  async function ejecutarOperacion(input: AIExecutionInput) {
+    const salida = await executeAIRequest(input)
+    acumularEjecucion(auditsDelTurno, salida)
+
+    return salida
+  }
 
   // Segunda pasada de interpretacion: Domain Vocabulary asistido, la
   // responsabilidad que el ADR SCENAIA-002C.1 ya define ("resuelve
@@ -177,7 +264,7 @@ export async function coordinateFlow(
     !esTurnoDeContinuacion
   ) {
     resolvedTerms = await resolveVocabulary(originalRequest, async (prompt) => {
-      const { result, audit } = await executeAIRequest({
+      const { result, audit } = await ejecutarOperacion({
         decisionContext,
         authorizationContext,
         normalizedAIRequest: { userPrompt: prompt, operationKind: 'RESOLVER' },
@@ -201,8 +288,12 @@ export async function coordinateFlow(
       // Concatenar a secas hacia que "busco algo para hacer entre pocos"
       // (resuelto a "pocos actores") activara el dominio Personas --
       // exactamente el falso positivo que esa funcion existe para evitar.
+      // Reinterpretar NO abre un turno nuevo: mismo `turnId`. Es el punto
+      // exacto donde antes se acuñaba una segunda identidad y la
+      // trazabilidad del turno se partia en dos.
       normalizedRequest = normalizeRequest(
         composeAugmentedRequest(originalRequest, resolvedTerms),
+        turnId,
         previousUserRequests
       )
       knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
@@ -217,7 +308,7 @@ export async function coordinateFlow(
   // el coste real del proveedor no pueda calcularse.
   const reservedCost = authorizationContext.estimatedCost ?? 0
 
-  const { result, audit } = await executeAIRequest({ decisionContext, authorizationContext, normalizedAIRequest })
+  const { result, audit } = await ejecutarOperacion({ decisionContext, authorizationContext, normalizedAIRequest })
   const directContent = buildDirectContent(knowledgeContext)
   const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)
 
@@ -240,8 +331,14 @@ export async function coordinateFlow(
 
   if (authorizationContext.reservationId !== null) {
     try {
-      if (result.executionStatus === 'EJECUTADO') {
-        const costeLiquidado = resolveSettlementCost(audit, reservedCost)
+      // F5F-4 -- lo que decide liquidar o liberar es si HUBO ejecuciones
+      // reales en el turno, no como termino la ultima. Un turno cuyo
+      // resolutor ejecuto y cuya respuesta fallo tiene coste real, y antes
+      // se liberaba entero.
+      if (auditsDelTurno.length > 0) {
+        // UN solo settlement por reserva: la coleccion es la fuente del
+        // coste agregado, jamas una lista de liquidaciones.
+        const costeLiquidado = resolveSettlementCost(auditsDelTurno, reservedCost)
         await settleReservation(authorizationContext.reservationId, costeLiquidado)
 
         // El coste real NUNCA se capa: si supera lo reservado, lo que hay
@@ -254,8 +351,8 @@ export async function coordinateFlow(
                 reservationId: authorizationContext.reservationId,
                 reservedCredits: reservedCost,
                 settledCredits: costeLiquidado,
-                providerIdentifier: audit.providerIdentifier,
-                providerModel: audit.providerModel,
+                providerIdentifier: auditsDelTurno[0].providerIdentifier,
+                providerModel: auditsDelTurno[0].providerModel,
               }
             : null
       } else {

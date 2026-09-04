@@ -85,3 +85,33 @@ describe('Observabilidad — familia de la metrica de truncamiento (Bloque 5D)',
     expect(TURN).not.toMatch(/name: 'ai_gateway\./)
   })
 })
+
+
+/**
+ * F5F-2 — la metrica del techo pertenece al audit de SU ejecucion.
+ */
+describe('Observabilidad — techo aplicado (F5F-2)', () => {
+  const TRACE = readFileSync(join(__dirname, '..', 'record-execution-trace.ts'), 'utf-8')
+
+  it('`ai_gateway.max_output_tokens` se emite desde el audit de la ejecucion', () => {
+    expect(TRACE).toMatch(/name: 'ai_gateway\.max_output_tokens'/)
+    expect(TRACE).toMatch(/key: 'maxOutputTokens'/)
+  })
+
+  it('entra por el mecanismo numerico existente: sin rama propia', () => {
+    // Debe estar en NUMERIC_FIELDS, que ya filtra los `null` y ya aplica
+    // las etiquetas comunes. Una rama aparte duplicaria ese criterio.
+    const bloque = TRACE.slice(TRACE.indexOf('const NUMERIC_FIELDS'), TRACE.indexOf(']', TRACE.indexOf('const NUMERIC_FIELDS')))
+    expect(bloque).toMatch(/ai_gateway\.max_output_tokens/)
+  })
+
+  it('NO reconstruye el valor desde la politica del Gateway', () => {
+    expect(TRACE).not.toMatch(/MAX_OUTPUT_TOKENS_BY_OPERATION|maxOutputTokensFor/)
+  })
+
+  it('NO introduce dimension nueva: ninguna etiqueta propia', () => {
+    // Las etiquetas se construyen una sola vez para todas las metricas.
+    const etiquetasPropias = TRACE.match(/tags: \{[^}]*max_output/g) ?? []
+    expect(etiquetasPropias).toHaveLength(0)
+  })
+})

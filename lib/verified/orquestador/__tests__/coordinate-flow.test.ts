@@ -14,7 +14,8 @@ import { settleReservation, releaseReservation, resolveSettlementCost } from '@/
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
 import { resolveVocabulary, composeAugmentedRequest } from '@/lib/intent-resolver'
-import { coordinateFlow } from '../coordinate-flow'
+import { coordinateFlow, acumularEjecucion } from '../coordinate-flow'
+import type { ExecutionAudit } from '@/lib/ai-gateway'
 
 vi.mock('@/lib/request-interpreter', () => ({ normalizeRequest: vi.fn() }))
 vi.mock('@/lib/professional-context-engine', () => ({ buildProfessionalContext: vi.fn() }))
@@ -88,7 +89,7 @@ describe('coordinateFlow', () => {
   it('invoca los 7 pasos del Núcleo en el orden congelado, enhebrando cada salida como entrada del siguiente', async () => {
     await coordinateFlow('profile-1', session, 'hola')
 
-    expect(normalizeRequest).toHaveBeenCalledWith('hola', [], null)
+    expect(normalizeRequest).toHaveBeenCalledWith('hola', expect.any(String), [], null)
     expect(buildProfessionalContext).toHaveBeenCalledWith('profile-1', session)
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
     expect(buildDecisionContext).toHaveBeenCalledWith(
@@ -233,7 +234,7 @@ describe('coordinateFlow — continuidad contextual', () => {
       { role: 'user', content: '¿Y de Lorca?' },
     ])
 
-    expect(normalizeRequest).toHaveBeenCalledWith('¿Y alguna más corta?', [
+    expect(normalizeRequest).toHaveBeenCalledWith('¿Y alguna más corta?', expect.any(String), [
       '¿Qué obras de comedia tienes?',
       '¿Y de Lorca?',
     ], null)
@@ -388,11 +389,13 @@ describe('coordinateFlow — circuito economico', () => {
   })
 
   it('el importe de liquidacion lo determina Accounting Engine, no el Orquestador', async () => {
-    // IA-006.2: coordinar no es tarificar. El Orquestador entrega el audit y
-    // lo reservado, y liquida con lo que la contabilidad decida.
+    // IA-006.2: coordinar no es tarificar. El Orquestador entrega LAS
+    // EJECUCIONES del turno (F5F-4) y lo reservado, y liquida con lo que la
+    // contabilidad decida. Antes entregaba un unico audit, y por eso el
+    // coste del resolutor nunca llegaba a cobrarse.
     await coordinateFlow('profile-1', session, 'hola')
 
-    expect(resolveSettlementCost).toHaveBeenCalledWith(audit, 1)
+    expect(resolveSettlementCost).toHaveBeenCalledWith([audit], 1)
   })
 
   it('liquida en CREDITOS cuando la contabilidad puede convertir el coste real', async () => {
@@ -475,7 +478,7 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
   it('G · SIN ESTADO: el turno se resuelve exactamente como antes de esta fase', async () => {
     await coordinateFlow('profile-1', session, 'hola')
 
-    expect(normalizeRequest).toHaveBeenCalledWith('hola', [], null)
+    expect(normalizeRequest).toHaveBeenCalledWith('hola', expect.any(String), [], null)
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
   })
 
@@ -490,7 +493,7 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
   it('DESCOMPONE el estado: al interprete un dominio, al conocimiento una ocupacion', async () => {
     await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
 
-    expect(normalizeRequest).toHaveBeenCalledWith('hola', [], 'Obras')
+    expect(normalizeRequest).toHaveBeenCalledWith('hola', expect.any(String), [], 'Obras')
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, { genero: 'COMEDIA' })
   })
 
@@ -738,5 +741,499 @@ describe('coordinateFlow — operacion declarada, techo delegado (Bloque 5D)', (
 
     const [, , , operationContext] = vi.mocked(buildDecisionContext).mock.calls[0]
     expect(operationContext!.maxOutputTokensByOperation).toBe(MAX_OUTPUT_TOKENS_BY_OPERATION)
+  })
+})
+
+
+/**
+ * F5F-1 — IDENTIDAD ESTABLE DEL TURNO.
+ *
+ * En produccion se observo un turno real cuyo resolutor quedo bajo un
+ * identificador y cuya respuesta quedo bajo otro: las dos llamadas de un
+ * mismo turno dejaron de ser enlazables por clave, y la reserva quedo
+ * atada solo a la primera mitad. La causa era que `normalizeRequest`
+ * acuñaba identidad, y un turno se interpreta dos veces siempre que el
+ * resolutor devuelve terminos.
+ *
+ * Estas pruebas fijan la propiedad, no la cifra: UN TURNO = UN IDENTIFICADOR.
+ * El mock del interprete DEVUELVE el identificador que recibe, que es
+ * exactamente lo que hace la implementacion real desde F5F-1 (y lo que sus
+ * propias pruebas custodian).
+ */
+describe('coordinateFlow — identidad del turno (F5F-1)', () => {
+  /** Interprete que se comporta como el real: devuelve la identidad recibida. */
+  function interpreteQueDevuelveSuIdentidad(overrides: object = {}) {
+    vi.mocked(normalizeRequest).mockImplementation(
+      ((_texto: string, requestId: string) => ({ ...(normalizedRequest as object), ...overrides, requestId })) as never
+    )
+  }
+
+  /** Los identificadores con los que se invoco al interprete en el turno. */
+  function identidadesEntregadas(): string[] {
+    return vi.mocked(normalizeRequest).mock.calls.map((llamada) => llamada[1] as string)
+  }
+
+  it('A · un turno con UNA sola interpretacion usa un unico identificador', async () => {
+    interpreteQueDevuelveSuIdentidad()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(new Set(identidadesEntregadas()).size).toBe(1)
+    expect(identidadesEntregadas()[0]).not.toBe('')
+  })
+
+  it('B · con RESOLUTOR y segunda interpretacion, AMBAS reciben el MISMO identificador', async () => {
+    // Es el caso exacto que fallo en produccion.
+    interpreteQueDevuelveSuIdentidad()
+    vi.mocked(resolveVocabulary).mockResolvedValue(['obra', 'comedia'])
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const identidades = identidadesEntregadas()
+    expect(identidades.length).toBe(2)
+    expect(identidades[0]).toBe(identidades[1])
+  })
+
+  it('C · el identificador llega al Decision Engine, y de ahi a la reserva', async () => {
+    interpreteQueDevuelveSuIdentidad()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [peticionInterpretada] = vi.mocked(buildDecisionContext).mock.calls[0]
+    expect(peticionInterpretada.requestId).toBe(identidadesEntregadas()[0])
+  })
+
+  it('D · las trazas del RESOLUTOR y de la RESPUESTA comparten identificador', async () => {
+    interpreteQueDevuelveSuIdentidad()
+    vi.mocked(resolveVocabulary).mockResolvedValue(['obra', 'comedia'])
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, ejecutor] = vi.mocked(resolveVocabulary).mock.calls[0]
+    await ejecutor('prompt del resolutor')
+
+    const trazas = vi.mocked(distributeExecutionAudit).mock.calls.map(([, , contexto]) => contexto)
+    const etapas = trazas.map((c) => c?.stage)
+    expect(etapas).toContain('resolver')
+    expect(etapas).toContain('response')
+    expect(new Set(trazas.map((c) => c?.requestId)).size).toBe(1)
+  })
+
+  it('E · las metricas del turno usan ese mismo identificador', async () => {
+    interpreteQueDevuelveSuIdentidad()
+    vi.mocked(resolveVocabulary).mockResolvedValue(['obra', 'comedia'])
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
+    expect(observacion.requestId).toBe(identidadesEntregadas()[0])
+  })
+
+  it('F · un turno DETERMINISTA tiene identidad aunque no exista reserva', async () => {
+    // Es la razon por la que `reservationId` no puede hacer de identidad de
+    // turno: aqui no existe, y el turno sigue necesitando nombre.
+    interpreteQueDevuelveSuIdentidad()
+    vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: false } as never)
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      reservationId: null,
+      estimatedCost: null,
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
+    expect(observacion.requestId).toBe(identidadesEntregadas()[0])
+    expect(observacion.requestId).not.toBe('')
+    // Sin reserva no hay cierre economico, y el consumo de IA sigue siendo cero.
+    expect(settleReservation).not.toHaveBeenCalled()
+    expect(releaseReservation).not.toHaveBeenCalled()
+  })
+
+  it('TURNOS DISTINTOS reciben identidades distintas', async () => {
+    interpreteQueDevuelveSuIdentidad()
+
+    await coordinateFlow('profile-1', session, 'hola')
+    const primero = identidadesEntregadas()[0]
+    vi.mocked(normalizeRequest).mockClear()
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(identidadesEntregadas()[0]).not.toBe(primero)
+  })
+})
+
+
+/**
+ * F5F-3 — ACUMULADOR DE EJECUCIONES DEL TURNO.
+ *
+ * En 5E se confirmo que el audit del RESOLUTOR moria en el ambito de la
+ * funcion que lo producia: se medía en telemetria y desaparecia para todo
+ * lo demas, dejando 0,3205 creditos reales fuera del cierre del turno.
+ *
+ * Estas pruebas cubren la REGLA DE ADMISION, que es donde vive la
+ * propiedad. Que la regla se aplique a TODA ejecucion lo garantiza el
+ * punto unico de invocacion, custodiado por invariante: `executeAIRequest`
+ * se llama en un solo sitio de todo el codigo de produccion.
+ */
+describe('acumularEjecucion — regla de admision (F5F-3)', () => {
+  const auditEjecutado = (maxOutputTokens: number): ExecutionAudit =>
+    ({
+      providerIdentifier: 'openai',
+      providerModel: 'gpt-4o-mini',
+      executionLatencyMs: 10,
+      tokensConsumed: 5,
+      inputTokens: 3,
+      outputTokens: 2,
+      truncated: false,
+      maxOutputTokens,
+      realExecutionCost: null,
+      technicalMetadata: null,
+    }) as ExecutionAudit
+
+  const EMPTY_AUDIT = {
+    providerIdentifier: null,
+    providerModel: null,
+    executionLatencyMs: null,
+    tokensConsumed: null,
+    inputTokens: null,
+    outputTokens: null,
+    truncated: null,
+    maxOutputTokens: null,
+    realExecutionCost: null,
+    technicalMetadata: null,
+  } as ExecutionAudit
+
+  const ejecutado = (a: ExecutionAudit) => ({ result: { executionStatus: 'EJECUTADO' } as never, audit: a })
+  const noEjecutado = (estado: string) => ({ result: { executionStatus: estado } as never, audit: EMPTY_AUDIT })
+
+  it('1 · RESOLUTOR + TEXT_STANDARD: ambos quedan acumulados, en orden', () => {
+    const acumulador: ExecutionAudit[] = []
+    const resolutor = auditEjecutado(1024)
+    const texto = auditEjecutado(512)
+
+    acumularEjecucion(acumulador, ejecutado(resolutor))
+    acumularEjecucion(acumulador, ejecutado(texto))
+
+    expect(acumulador).toHaveLength(2)
+    expect(acumulador[0]).toBe(resolutor)
+    expect(acumulador[1]).toBe(texto)
+  })
+
+  it('2 · solo TEXT_STANDARD: un unico audit', () => {
+    const acumulador: ExecutionAudit[] = []
+
+    acumularEjecucion(acumulador, ejecutado(auditEjecutado(512)))
+
+    expect(acumulador).toHaveLength(1)
+  })
+
+  it('3 · RESOLUTOR FALLIDO + TEXT_STANDARD: solo entra el que ejecuto', () => {
+    const acumulador: ExecutionAudit[] = []
+    const texto = auditEjecutado(512)
+
+    acumularEjecucion(acumulador, noEjecutado('ERROR_COMUNICACION'))
+    acumularEjecucion(acumulador, ejecutado(texto))
+
+    expect(acumulador).toHaveLength(1)
+    expect(acumulador[0]).toBe(texto)
+  })
+
+  it('4 · RESOLUTOR FALLIDO y ninguna otra IA: acumulador vacio', () => {
+    const acumulador: ExecutionAudit[] = []
+
+    acumularEjecucion(acumulador, noEjecutado('ERROR_COMUNICACION'))
+
+    expect(acumulador).toHaveLength(0)
+  })
+
+  it('5 · TURNO DETERMINISTA: nada que acumular', () => {
+    const acumulador: ExecutionAudit[] = []
+
+    acumularEjecucion(acumulador, noEjecutado('NO_REQUERIDO'))
+
+    expect(acumulador).toHaveLength(0)
+  })
+
+  it('6 · NO esta limitado a dos operaciones: acumula tantas como se ejecuten', () => {
+    // No inventa ninguna operacion nueva: repite ejecuciones ya validas
+    // para demostrar que la regla no tiene tope.
+    const acumulador: ExecutionAudit[] = []
+    const cuatro = [auditEjecutado(1024), auditEjecutado(512), auditEjecutado(512), auditEjecutado(1024)]
+
+    for (const a of cuatro) acumularEjecucion(acumulador, ejecutado(a))
+
+    expect(acumulador).toHaveLength(4)
+    expect(acumulador).toEqual(cuatro)
+  })
+
+  it('7 · ORDEN: se conserva el de ejecucion, no se reordena', () => {
+    const acumulador: ExecutionAudit[] = []
+    const primero = auditEjecutado(1024)
+    const segundo = auditEjecutado(512)
+
+    acumularEjecucion(acumulador, ejecutado(segundo))
+    acumularEjecucion(acumulador, ejecutado(primero))
+
+    // Se acumulan como se ejecutaron, aunque los techos sugieran otro orden.
+    expect(acumulador[0]).toBe(segundo)
+    expect(acumulador[1]).toBe(primero)
+  })
+
+  it('9 · conserva INTEGRO el audit de F5F-2: 1024 y 512 sobreviven', () => {
+    const acumulador: ExecutionAudit[] = []
+
+    acumularEjecucion(acumulador, ejecutado(auditEjecutado(1024)))
+    acumularEjecucion(acumulador, ejecutado(auditEjecutado(512)))
+
+    expect(acumulador.map((a) => a.maxOutputTokens)).toEqual([1024, 512])
+    // Y no se recorta a una proyeccion economica: el audit entra entero.
+    expect(acumulador[0].truncated).toBe(false)
+    expect(acumulador[0].executionLatencyMs).toBe(10)
+  })
+
+  it('10 · EMPTY_AUDIT no entra JAMAS, sea cual sea el estado no ejecutado', () => {
+    const acumulador: ExecutionAudit[] = []
+
+    for (const estado of ['NO_AUTORIZADO', 'NO_REQUERIDO', 'SIN_PROVEEDOR', 'ERROR_COMUNICACION']) {
+      acumularEjecucion(acumulador, noEjecutado(estado))
+    }
+
+    expect(acumulador).toHaveLength(0)
+  })
+
+  it('CADA ejecucion entra EXACTAMENTE una vez (P4)', () => {
+    const acumulador: ExecutionAudit[] = []
+    const uno = auditEjecutado(1024)
+    const dos = auditEjecutado(512)
+
+    acumularEjecucion(acumulador, ejecutado(uno))
+    acumularEjecucion(acumulador, ejecutado(dos))
+
+    expect(acumulador.filter((a) => a === uno)).toHaveLength(1)
+    expect(acumulador.filter((a) => a === dos)).toHaveLength(1)
+  })
+
+  it('NO hay estado global: cada turno parte de su propia coleccion', () => {
+    const turnoA: ExecutionAudit[] = []
+    const turnoB: ExecutionAudit[] = []
+
+    acumularEjecucion(turnoA, ejecutado(auditEjecutado(512)))
+
+    expect(turnoA).toHaveLength(1)
+    expect(turnoB).toHaveLength(0)
+  })
+})
+
+/**
+ * F5F-3 — el flujo real produce las ejecuciones que la regla acumulara.
+ *
+ * El acumulador es local al turno y todavia no lo consume nadie, asi que
+ * lo observable desde fuera es CUANTAS ejecuciones EJECUTADO produce cada
+ * escenario. Combinado con el punto unico de invocacion y con la regla ya
+ * probada arriba, queda determinado el contenido del acumulador.
+ */
+describe('coordinateFlow — ejecuciones del turno (F5F-3)', () => {
+  /** `executeAIRequest` devuelve promesas: hay que resolverlas para leer el estado. */
+  async function ejecucionesEjecutadas(): Promise<number> {
+    const salidas = await Promise.all(vi.mocked(executeAIRequest).mock.results.map((r) => r.value))
+
+    return salidas.filter((s) => (s as { result?: { executionStatus?: string } })?.result?.executionStatus === 'EJECUTADO')
+      .length
+  }
+
+  it('8 · IDENTIDAD: todas las ejecuciones del turno comparten turnId', async () => {
+    vi.mocked(normalizeRequest).mockImplementation(
+      ((_t: string, requestId: string) => ({ ...(normalizedRequest as object), requestId })) as never
+    )
+    vi.mocked(resolveVocabulary).mockImplementation(async (_texto, ejecutor) => {
+      await ejecutor('prompt del resolutor')
+      return ['obra']
+    })
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const identidades = vi.mocked(distributeExecutionAudit).mock.calls.map(([, , contexto]) => contexto?.requestId)
+    expect(identidades.length).toBeGreaterThan(1)
+    expect(new Set(identidades).size).toBe(1)
+  })
+
+  it('un turno con RESOLUTOR produce DOS ejecuciones ejecutadas', async () => {
+    vi.mocked(resolveVocabulary).mockImplementation(async (_texto, ejecutor) => {
+      await ejecutor('prompt del resolutor')
+      return ['obra']
+    })
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(await ejecucionesEjecutadas()).toBe(2)
+  })
+
+  it('un turno de continuacion produce UNA sola', async () => {
+    vi.mocked(normalizeRequest).mockReturnValue({
+      ...(normalizedRequest as object),
+      retrievalQuery: 'texto distinto',
+      normalizedIntent: 'hola',
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola', [{ role: 'user', content: 'previo' }])
+
+    expect(await ejecucionesEjecutadas()).toBe(1)
+  })
+
+  it('un turno DETERMINISTA no produce ninguna, y no crea reserva', async () => {
+    vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: false } as never)
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      reservationId: null,
+      estimatedCost: null,
+    } as never)
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'NO_REQUERIDO', generatedContent: null, executionWarnings: [] },
+      audit,
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(await ejecucionesEjecutadas()).toBe(0)
+    expect(settleReservation).not.toHaveBeenCalled()
+    expect(releaseReservation).not.toHaveBeenCalled()
+  })
+})
+
+
+/**
+ * F5F-4 — el cierre economico del turno.
+ *
+ * Un turno = una reserva = UN settlement, sobre el coste agregado de todas
+ * sus ejecuciones. La coleccion es la fuente del importe, jamas una lista
+ * de liquidaciones.
+ */
+describe('coordinateFlow — settlement multi-operacion (F5F-4)', () => {
+  /** Hace que el resolutor ejecute de verdad, produciendo su propio audit. */
+  function conResolutorEjecutado() {
+    vi.mocked(resolveVocabulary).mockImplementation(async (_texto, ejecutor) => {
+      await ejecutor('prompt del resolutor')
+      return ['obra']
+    })
+  }
+
+  it('14 · UN turno con DOS ejecuciones produce UN SOLO settlement', async () => {
+    conResolutorEjecutado()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    expect(releaseReservation).not.toHaveBeenCalled()
+  })
+
+  it('15 · NO hay un settlement por operacion', async () => {
+    conResolutorEjecutado()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    // Dos ejecuciones, una sola liquidacion.
+    expect(vi.mocked(executeAIRequest).mock.calls.length).toBe(2)
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('la liquidacion recibe TODAS las ejecuciones del turno, en orden', async () => {
+    conResolutorEjecutado()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [ejecuciones] = vi.mocked(resolveSettlementCost).mock.calls[0]
+    expect(ejecuciones).toHaveLength(2)
+    expect(ejecuciones[0]).toBe(audit)
+    expect(ejecuciones[1]).toBe(audit)
+  })
+
+  it('13 · DETERMINISTA: sin ejecuciones no se liquida coste de IA', async () => {
+    vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: false } as never)
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'NO_REQUERIDO', generatedContent: null, executionWarnings: [] },
+      audit,
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).not.toHaveBeenCalled()
+    expect(releaseReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('TODO FALLIDO: se libera la reserva, no se cobra nada', async () => {
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'ERROR_COMUNICACION', generatedContent: null, executionWarnings: ['x'] },
+      audit,
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).not.toHaveBeenCalled()
+    expect(releaseReservation).toHaveBeenCalledWith('res-1')
+  })
+
+  it('RESOLUTOR EJECUTADO + RESPUESTA FALLIDA: se liquida, ya no se pierde su coste', async () => {
+    // Antes de F5F-4 este turno se liberaba entero y el coste real del
+    // resolutor -- ya gastado con el proveedor -- desaparecia.
+    let primera = true
+    vi.mocked(executeAIRequest).mockImplementation(async () => {
+      if (primera) {
+        primera = false
+        return { result: { executionStatus: 'EJECUTADO', generatedContent: 'x', executionWarnings: [] }, audit } as never
+      }
+      return { result: { executionStatus: 'ERROR_COMUNICACION', generatedContent: null, executionWarnings: [] }, audit } as never
+    })
+    conResolutorEjecutado()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    const [ejecuciones] = vi.mocked(resolveSettlementCost).mock.calls[0]
+    expect(ejecuciones).toHaveLength(1)
+  })
+
+  it('16 · IDEMPOTENCIA: un fallo del cierre no altera la respuesta ya construida', async () => {
+    // La doble liquidacion la impide la operacion atomica; aqui se
+    // comprueba que su excepcion no rompe el turno.
+    conResolutorEjecutado()
+    vi.mocked(settleReservation).mockRejectedValue(new Error('reserva no esta activa'))
+
+    const salida = await coordinateFlow('profile-1', session, 'hola')
+
+    expect(salida.responseContext).toBe(responseContext)
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('11 · EMPRESAS con techo NULL: se liquida igual el coste agregado', async () => {
+    // `authorized_limit_snapshot = NULL` significa SIN LIMITE: no impide
+    // medir ni liquidar. Sin techo no hay denegacion, no hay excepcion.
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      reservationId: 'res-empresas',
+      estimatedCost: 4.9,
+      availableCredits: null,
+      remainingQuota: null,
+    } as never)
+    vi.mocked(resolveSettlementCost).mockReturnValue(0.732)
+    conResolutorEjecutado()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [ejecuciones, reservado] = vi.mocked(resolveSettlementCost).mock.calls[0]
+    expect(ejecuciones).toHaveLength(2)
+    expect(reservado).toBe(4.9)
+    expect(settleReservation).toHaveBeenCalledWith('res-empresas', 0.732)
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('ANOMALIA preservada: si lo agregado supera lo reservado, se registra y NO se capa', async () => {
+    conResolutorEjecutado()
+    vi.mocked(resolveSettlementCost).mockReturnValue(5)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).toHaveBeenCalledWith('res-1', 5)
+    const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
+    expect(observacion.settlementAnomaly).toMatchObject({ reservedCredits: 1, settledCredits: 5 })
   })
 })

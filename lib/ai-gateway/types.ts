@@ -129,6 +129,17 @@ export interface ExecutionAudit {
    * ausente jamas se sustituye por un valor.
    */
   readonly truncated: boolean | null
+  /**
+   * Techo de generacion aplicado por la ejecucion (F5F-2).
+   *
+   * Llega del `ProviderExecutionOutcome` y NO se recalcula: la politica ya
+   * se aplico antes de llamar al proveedor, y volver a consultarla aqui
+   * convertiria un hecho observado en una deduccion.
+   *
+   * `null` cuando no hubo ejecucion, o cuando el adaptador no puede
+   * declararlo. Nunca cero.
+   */
+  readonly maxOutputTokens: number | null
   readonly technicalMetadata: string | null
 }
 
