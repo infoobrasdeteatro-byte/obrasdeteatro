@@ -10,7 +10,7 @@ import type { NormalizedAIRequest, AIExecutionInput, ExecutionAudit, AIExecution
 import { composeResponse } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
-import { recordTurnMetrics } from '@/lib/verified/observabilidad'
+import { recordTurnMetrics, recordTurnFailure } from '@/lib/verified/observabilidad'
 import type { SettlementAnomaly } from '@/lib/verified/observabilidad'
 import { emptyConversationState, nextConversationState, workOccupancyOf } from '@/lib/conversation-state'
 import { CREDIT_VALUE } from '@/lib/accounting-engine'
@@ -116,6 +116,28 @@ export function acumularEjecucion(
   auditsDelTurno.push(salida.audit)
 }
 
+/** Que operacion de cierre correspondia a este turno. */
+type OperacionDeCierre = 'settle' | 'release'
+
+/**
+ * Lo que de verdad ocurrio al cerrar el circuito economico (P1.2).
+ *
+ * Existe para separar dos cosas que antes eran indistinguibles: que el
+ * cierre SE INTENTARA y que la reserva QUEDARA CERRADA. Cuando la base de
+ * datos no responde, lo primero ocurre y lo segundo no, y el sistema debe
+ * poder decirlo.
+ */
+type ResultadoDelCierre =
+  | { readonly estado: 'sin_reserva' }
+  | { readonly estado: 'liquidada'; readonly creditos: number }
+  | { readonly estado: 'liberada' }
+  | {
+      readonly estado: 'fallo_al_cerrar'
+      readonly operacion: OperacionDeCierre
+      readonly reservationId: string
+      readonly causa: unknown
+    }
+
 export async function coordinateFlow(
   userId: string,
   session: SessionInput,
@@ -213,6 +235,125 @@ export async function coordinateFlow(
   const auditsDelTurno: ExecutionAudit[] = []
 
   /**
+   * Lo que la reserva aparto: es el importe con el que se liquida mientras
+   * el coste real del proveedor no pueda calcularse. Se lee aqui, junto a
+   * la reserva que lo produjo, para que el cierre no dependa de haber
+   * llegado hasta el final del turno.
+   */
+  const reservedCost = authorizationContext.estimatedCost ?? 0
+
+  let anomaliaDeLiquidacion: SettlementAnomaly | null = null
+  let resultadoDelCierre: ResultadoDelCierre | null = null
+
+  /**
+   * CIERRE DEL CIRCUITO ECONOMICO (P1.2) -- punto unico y obligatorio.
+   *
+   * Antes esto era un bloque suelto a mitad del turno. Si algo lanzaba
+   * entre la reserva y ese punto -- una consulta de conocimiento, por
+   * ejemplo --, la reserva quedaba `active` hasta expirar: con el plan
+   * gratuito, una sola excepcion inmovilizaba el 75 % de la cuota durante
+   * cinco minutos. El TTL lo resolvia despues; no lo impedia.
+   *
+   * Ahora hay un solo lugar que cierra, y el `finally` del turno garantiza
+   * que se alcanza por los dos caminos. `circuitoEconomicoCerrado` hace que
+   * ocurra EXACTAMENTE UNA VEZ: la doble liquidacion ya era imposible en la
+   * operacion atomica (`WHERE status = 'active'`), pero depender de que la
+   * base de datos rechace lo que no deberiamos ni intentar es apoyarse en
+   * la ultima linea de defensa.
+   *
+   * QUE se hace lo sigue decidiendo F5F-4, sin un solo cambio: si hubo
+   * ejecuciones reales se liquida su coste agregado -- el proveedor ya
+   * cobro, liberar seria dejar de cobrarlo --; si no hubo ninguna, se
+   * libera. Una excepcion no altera esa politica: solo obliga a aplicarla.
+   *
+   * DEVUELVE LO QUE OCURRIO, no `void`. Es la diferencia entre "se intento
+   * cerrar" y "quedo cerrada": sin este resultado, quien llama no puede
+   * distinguir una liquidacion de un fallo, y esa indistincion era el
+   * defecto de la primera version de este bloque.
+   *
+   * NO absorbe el fallo en silencio. Lo captura -- relanzarlo aqui
+   * sustituiria al error real que pudiera estar propagandose -- pero lo
+   * DEJA REGISTRADO y lo devuelve al llamador, que decide si encadenarlo.
+   *
+   * El resultado se memoriza: una segunda invocacion devuelve lo mismo sin
+   * volver a intentar nada. El cierre se intenta EXACTAMENTE UNA VEZ.
+   */
+  async function cerrarCircuitoEconomico(): Promise<ResultadoDelCierre> {
+    if (resultadoDelCierre !== null) return resultadoDelCierre
+    if (authorizationContext.reservationId === null) {
+      resultadoDelCierre = { estado: 'sin_reserva' }
+      return resultadoDelCierre
+    }
+
+    const reservationId = authorizationContext.reservationId
+    // Que operacion corresponde se decide ANTES de intentarla, para poder
+    // decir cual fallo. Un `settle` fallido y un `release` fallido no son
+    // el mismo incidente: el primero deja consumo real sin registrar.
+    const operacion: OperacionDeCierre = auditsDelTurno.length > 0 ? 'settle' : 'release'
+
+    try {
+      // F5F-4 -- lo que decide liquidar o liberar es si HUBO ejecuciones
+      // reales en el turno, no como termino la ultima. Un turno cuyo
+      // resolutor ejecuto y cuya respuesta fallo tiene coste real, y antes
+      // se liberaba entero.
+      if (operacion === 'settle') {
+        // UN solo settlement por reserva: la coleccion es la fuente del
+        // coste agregado, jamas una lista de liquidaciones.
+        const costeLiquidado = resolveSettlementCost(auditsDelTurno, reservedCost)
+        await settleReservation(reservationId, costeLiquidado)
+
+        // El coste real NUNCA se capa: si supera lo reservado, lo que hay
+        // que corregir es la estimacion, no el importe.
+        anomaliaDeLiquidacion =
+          costeLiquidado > reservedCost
+            ? {
+                reservationId,
+                reservedCredits: reservedCost,
+                settledCredits: costeLiquidado,
+                providerIdentifier: auditsDelTurno[0].providerIdentifier,
+                providerModel: auditsDelTurno[0].providerModel,
+              }
+            : null
+
+        resultadoDelCierre = { estado: 'liquidada', creditos: costeLiquidado }
+      } else {
+        await releaseReservation(reservationId)
+        resultadoDelCierre = { estado: 'liberada' }
+      }
+    } catch (causa) {
+      /*
+       * NUNCA se intenta la otra operacion como alternativa. Liberar
+       * despues de un `settle` fallido convertiria una deuda no registrada
+       * en una liberacion explicita: borraria justo la evidencia de que
+       * hubo consumo real sin cobrar.
+       *
+       * Tampoco se afirma que la reserva quedara cerrada. Queda `active`
+       * hasta expirar, y eso debe constar.
+       */
+      resultadoDelCierre = { estado: 'fallo_al_cerrar', operacion, reservationId, causa }
+
+      /*
+       * El registro ocurre AQUI y no en `recordTurnMetrics` porque en el
+       * camino de excepcion las metricas del turno no llegan a ejecutarse:
+       * el `finally` cierra y el error sale antes. Un incidente contable
+       * que solo se observara cuando el turno va bien no serviria de nada.
+       */
+      console.error('[P1.2] fallo al cerrar la reserva economica', {
+        reservationId,
+        operacion,
+        // `settle` es el grave: hubo consumo real de proveedor que no ha
+        // llegado a registrarse, y el TTL no lo corrige nunca.
+        consumoRealSinRegistrar: operacion === 'settle',
+        ejecucionesDelTurno: auditsDelTurno.length,
+        causa,
+      })
+    }
+
+    return resultadoDelCierre
+  }
+
+
+  /**
    * PUNTO UNICO de ejecucion de proveedor en todo el turno.
    *
    * No es azucar sintactico: es la garantia estructural de que ninguna
@@ -233,191 +374,204 @@ export async function coordinateFlow(
     return salida
   }
 
-  // Segunda pasada de interpretacion: Domain Vocabulary asistido, la
-  // responsabilidad que el ADR SCENAIA-002C.1 ya define ("resuelve
-  // sinonimos, unifica conceptos"; nunca "construir criterios"). El
-  // proveedor traduce las palabras del usuario a terminos que los motores
-  // deterministas ya conocen; los umbrales numericos los sigue aplicando
-  // `interpretRules` con los valores ratificados en SCENAIA-002C.
-  //
-  // Quien decide si hay algo que traducir es el propio resolutor
-  // (`mayNeedResolution`): si en la peticion no queda contenido que los
-  // motores no consuman ya, declina sin consultar al proveedor y no se gasta
-  // ninguna llamada. El Orquestador solo aporta las dos condiciones que le
-  // corresponden -- que la IA sea necesaria y que este autorizada.
-  //
-  // Ocurre SIEMPRE despues de Credit Manager y solo con autorizacion
-  // concedida: ninguna ejecucion de proveedor precede a la autorizacion.
-  // Toda ejecucion pasa por AI Gateway y produce su ExecutionAudit.
-  // En un turno de continuacion ("¿y alguna mas corta?") la continuidad
-  // contextual ya ha resuelto el dominio y arrastra los criterios previos:
-  // anadir ahi terminos convertiria el turno en enunciado nuevo y le haria
-  // PERDER el hilo. El resolutor solo interviene en turnos que se
-  // interpretan por si solos. `retrievalQuery !== normalizedIntent` es
-  // exactamente la señal de continuacion, ya declarada en el contrato.
-
-  let resolvedTerms: readonly string[] = []
-
-  if (
-    decisionContext.needsAI &&
-    authorizationContext.authorizationStatus === 'AUTHORIZED' &&
-    !esTurnoDeContinuacion
-  ) {
-    resolvedTerms = await resolveVocabulary(originalRequest, async (prompt) => {
-      const { result, audit } = await ejecutarOperacion({
-        decisionContext,
-        authorizationContext,
-        normalizedAIRequest: { userPrompt: prompt, operationKind: 'RESOLVER' },
-      })
-      await distributeExecutionAudit(professionalContext.identity.userId, audit, {
-        requestId: normalizedRequest.requestId,
-        stage: 'resolver',
-      })
-      return result.generatedContent
-    })
-
-    if (resolvedTerms.length > 0) {
-      // El texto original nunca se altera: los terminos resueltos se anaden
-      // para que los motores deterministas de siempre los interpreten con
-      // sus umbrales ya ratificados. La IA no ha producido ningun criterio.
-      //
-      // La composicion la hace `composeAugmentedRequest`, no una
-      // concatenacion directa: es quien introduce los criterios con la
-      // preposicion que la gramatica de `detectKnowledgeDomains` lee como
-      // subordinacion, y quien descarta un criterio suelto sin dominio.
-      // Concatenar a secas hacia que "busco algo para hacer entre pocos"
-      // (resuelto a "pocos actores") activara el dominio Personas --
-      // exactamente el falso positivo que esa funcion existe para evitar.
-      // Reinterpretar NO abre un turno nuevo: mismo `turnId`. Es el punto
-      // exacto donde antes se acuñaba una segunda identidad y la
-      // trazabilidad del turno se partia en dos.
-      normalizedRequest = normalizeRequest(
-        composeAugmentedRequest(originalRequest, resolvedTerms),
-        turnId,
-        previousUserRequests
-      )
-      knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
-    }
-  }
-
-  const normalizedAIRequest: NormalizedAIRequest = {
-    userPrompt: composePrompt(normalizedRequest, knowledgeContext, conversationHistory),
-    operationKind: 'TEXT_STANDARD',
-  }
-  // Lo que la reserva aparto: es el importe con el que se liquida mientras
-  // el coste real del proveedor no pueda calcularse.
-  const reservedCost = authorizationContext.estimatedCost ?? 0
-
-  const { result, audit } = await ejecutarOperacion({ decisionContext, authorizationContext, normalizedAIRequest })
-  const directContent = buildDirectContent(knowledgeContext)
-  const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)
-
-  // Cierre del circuito economico. La reserva creada al autorizar no puede
-  // quedarse abierta: se liquida si hubo ejecucion real de proveedor, y se
-  // libera si no llego a producirse. Sin este paso, toda reserva quedaba
-  // 'active' hasta expirar -- 75 reservas reales, ninguna cerrada.
-  //
-  // Se hace aqui, y no como consumidor del enrutador de ExecutionAudit,
-  // porque cerrar una reserva exige saber CUAL cerrar: el identificador
-  // vive en AuthorizationContext y el contrato de ExecutionAuditConsumer
-  // transporta el audit, no datos economicos. Ensancharlo para llevarlos
-  // mezclaria observabilidad con contabilidad. El Orquestador ya es quien
-  // dispone de ambas piezas, igual que ocurre con recordActivity.
-  //
-  // La doble liquidacion la impide la propia operacion atomica
-  // (`WHERE status = 'active'`), no una comprobacion de este componente.
-  // Nunca interrumpe una respuesta ya construida.
-  let anomaliaDeLiquidacion: SettlementAnomaly | null = null
-
-  if (authorizationContext.reservationId !== null) {
-    try {
-      // F5F-4 -- lo que decide liquidar o liberar es si HUBO ejecuciones
-      // reales en el turno, no como termino la ultima. Un turno cuyo
-      // resolutor ejecuto y cuya respuesta fallo tiene coste real, y antes
-      // se liberaba entero.
-      if (auditsDelTurno.length > 0) {
-        // UN solo settlement por reserva: la coleccion es la fuente del
-        // coste agregado, jamas una lista de liquidaciones.
-        const costeLiquidado = resolveSettlementCost(auditsDelTurno, reservedCost)
-        await settleReservation(authorizationContext.reservationId, costeLiquidado)
-
-        // El coste real NUNCA se capa: si supera lo reservado, lo que hay
-        // que corregir es la estimacion, no el importe. Capar convertiria
-        // un problema de presupuesto en contabilidad falsa, y destruiria la
-        // unica evidencia de que la estimacion se quedo corta.
-        anomaliaDeLiquidacion =
-          costeLiquidado > reservedCost
-            ? {
-                reservationId: authorizationContext.reservationId,
-                reservedCredits: reservedCost,
-                settledCredits: costeLiquidado,
-                providerIdentifier: auditsDelTurno[0].providerIdentifier,
-                providerModel: auditsDelTurno[0].providerModel,
-              }
-            : null
-      } else {
-        await releaseReservation(authorizationContext.reservationId)
-      }
-    } catch {
-      // Una reserva ya cerrada, o cualquier fallo del cierre, no puede
-      // alterar la respuesta que el usuario ya tiene.
-    }
-  }
-
-  await recordActivity({
-    profileId: professionalContext.identity.userId,
-    responseType: responseContext.responseType,
-  })
-  await distributeExecutionAudit(professionalContext.identity.userId, audit, {
-    requestId: normalizedRequest.requestId,
-    stage: 'response',
-  })
-
-  // Fase 0 -- lo que ScenaIA entendio y recupero en este turno. Paso de
-  // observacion, como los dos anteriores: se ejecuta con la respuesta ya
-  // construida y su resultado no la altera. El Orquestador es el unico
-  // punto con visibilidad completa del turno, y se limita a leer valores
-  // que ya tenia en su ambito local -- ningun componente del Nucleo pasa a
-  // conocer la observabilidad.
-  //
-  // El paso completo -- incluida la LECTURA de los datos que observa -- va
-  // protegido: `recordTurnMetrics` ya nunca lanza, pero componer su entrada
-  // si podria hacerlo si algun contexto llegara incompleto. La propiedad
-  // "un fallo de observabilidad jamas altera una respuesta ya construida"
-  // debe sostenerse por construccion, no por confiar en la forma del dato.
+  /**
+   * TRAMO PROTEGIDO (P1.2). Desde aqui hasta el final del turno, toda
+   * salida -- normal o por excepcion -- pasa por el cierre economico. El
+   * `finally` no captura el error: solo garantiza que la reserva no quede
+   * abierta antes de que ese error siga su camino hacia arriba.
+   */
   try {
-    const entidades = knowledgeContext.knowledgeEntities?.length ?? 0
-    const dominiosCubiertos = knowledgeContext.knowledgeDomains?.length ?? 0
 
-    await recordTurnMetrics(professionalContext.identity.userId, {
-      requestId: normalizedRequest.requestId,
-      domains: normalizedRequest.requestedKnowledgeDomains ?? [],
-      isContinuation: esTurnoDeContinuacion,
-      resolvedTerms,
-      retrievedEntityCount: entidades,
-      coveredDomainCount: dominiosCubiertos,
-      knowledgeConfidence: knowledgeContext.knowledgeConfidence ?? 0,
-      isEmptyResult: dominiosCubiertos > 0 && entidades === 0,
+    // Segunda pasada de interpretacion: Domain Vocabulary asistido, la
+    // responsabilidad que el ADR SCENAIA-002C.1 ya define ("resuelve
+    // sinonimos, unifica conceptos"; nunca "construir criterios"). El
+    // proveedor traduce las palabras del usuario a terminos que los motores
+    // deterministas ya conocen; los umbrales numericos los sigue aplicando
+    // `interpretRules` con los valores ratificados en SCENAIA-002C.
+    //
+    // Quien decide si hay algo que traducir es el propio resolutor
+    // (`mayNeedResolution`): si en la peticion no queda contenido que los
+    // motores no consuman ya, declina sin consultar al proveedor y no se gasta
+    // ninguna llamada. El Orquestador solo aporta las dos condiciones que le
+    // corresponden -- que la IA sea necesaria y que este autorizada.
+    //
+    // Ocurre SIEMPRE despues de Credit Manager y solo con autorizacion
+    // concedida: ninguna ejecucion de proveedor precede a la autorizacion.
+    // Toda ejecucion pasa por AI Gateway y produce su ExecutionAudit.
+    // En un turno de continuacion ("¿y alguna mas corta?") la continuidad
+    // contextual ya ha resuelto el dominio y arrastra los criterios previos:
+    // anadir ahi terminos convertiria el turno en enunciado nuevo y le haria
+    // PERDER el hilo. El resolutor solo interviene en turnos que se
+    // interpretan por si solos. `retrievalQuery !== normalizedIntent` es
+    // exactamente la señal de continuacion, ya declarada en el contrato.
+
+    let resolvedTerms: readonly string[] = []
+
+    if (
+      decisionContext.needsAI &&
+      authorizationContext.authorizationStatus === 'AUTHORIZED' &&
+      !esTurnoDeContinuacion
+    ) {
+      resolvedTerms = await resolveVocabulary(originalRequest, async (prompt) => {
+        const { result, audit } = await ejecutarOperacion({
+          decisionContext,
+          authorizationContext,
+          normalizedAIRequest: { userPrompt: prompt, operationKind: 'RESOLVER' },
+        })
+        await distributeExecutionAudit(professionalContext.identity.userId, audit, {
+          requestId: normalizedRequest.requestId,
+          stage: 'resolver',
+        })
+        return result.generatedContent
+      })
+
+      if (resolvedTerms.length > 0) {
+        // El texto original nunca se altera: los terminos resueltos se anaden
+        // para que los motores deterministas de siempre los interpreten con
+        // sus umbrales ya ratificados. La IA no ha producido ningun criterio.
+        //
+        // La composicion la hace `composeAugmentedRequest`, no una
+        // concatenacion directa: es quien introduce los criterios con la
+        // preposicion que la gramatica de `detectKnowledgeDomains` lee como
+        // subordinacion, y quien descarta un criterio suelto sin dominio.
+        // Concatenar a secas hacia que "busco algo para hacer entre pocos"
+        // (resuelto a "pocos actores") activara el dominio Personas --
+        // exactamente el falso positivo que esa funcion existe para evitar.
+        // Reinterpretar NO abre un turno nuevo: mismo `turnId`. Es el punto
+        // exacto donde antes se acuñaba una segunda identidad y la
+        // trazabilidad del turno se partia en dos.
+        normalizedRequest = normalizeRequest(
+          composeAugmentedRequest(originalRequest, resolvedTerms),
+          turnId,
+          previousUserRequests
+        )
+        knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
+      }
+    }
+
+    const normalizedAIRequest: NormalizedAIRequest = {
+      userPrompt: composePrompt(normalizedRequest, knowledgeContext, conversationHistory),
+      operationKind: 'TEXT_STANDARD',
+    }
+    const { result, audit } = await ejecutarOperacion({ decisionContext, authorizationContext, normalizedAIRequest })
+    const directContent = buildDirectContent(knowledgeContext)
+    const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)
+
+    await cerrarCircuitoEconomico()
+
+    await recordActivity({
+      profileId: professionalContext.identity.userId,
       responseType: responseContext.responseType,
-      durationMs: Date.now() - turnStartedAt,
-      settlementAnomaly: anomaliaDeLiquidacion,
     })
-  } catch {
-    // Observar nunca puede impedir responder.
+    await distributeExecutionAudit(professionalContext.identity.userId, audit, {
+      requestId: normalizedRequest.requestId,
+      stage: 'response',
+    })
+
+    // Fase 0 -- lo que ScenaIA entendio y recupero en este turno. Paso de
+    // observacion, como los dos anteriores: se ejecuta con la respuesta ya
+    // construida y su resultado no la altera. El Orquestador es el unico
+    // punto con visibilidad completa del turno, y se limita a leer valores
+    // que ya tenia en su ambito local -- ningun componente del Nucleo pasa a
+    // conocer la observabilidad.
+    //
+    // El paso completo -- incluida la LECTURA de los datos que observa -- va
+    // protegido: `recordTurnMetrics` ya nunca lanza, pero componer su entrada
+    // si podria hacerlo si algun contexto llegara incompleto. La propiedad
+    // "un fallo de observabilidad jamas altera una respuesta ya construida"
+    // debe sostenerse por construccion, no por confiar en la forma del dato.
+    try {
+      const entidades = knowledgeContext.knowledgeEntities?.length ?? 0
+      const dominiosCubiertos = knowledgeContext.knowledgeDomains?.length ?? 0
+
+      await recordTurnMetrics(professionalContext.identity.userId, {
+        requestId: normalizedRequest.requestId,
+        domains: normalizedRequest.requestedKnowledgeDomains ?? [],
+        isContinuation: esTurnoDeContinuacion,
+        resolvedTerms,
+        retrievedEntityCount: entidades,
+        coveredDomainCount: dominiosCubiertos,
+        knowledgeConfidence: knowledgeContext.knowledgeConfidence ?? 0,
+        isEmptyResult: dominiosCubiertos > 0 && entidades === 0,
+        responseType: responseContext.responseType,
+        durationMs: Date.now() - turnStartedAt,
+        settlementAnomaly: anomaliaDeLiquidacion,
+      })
+    } catch {
+      // Observar nunca puede impedir responder.
+    }
+
+    // Estado que queda vigente para el turno siguiente. `stateVersion` y
+    // `updatedAt` los fija aqui el servidor: los valores que hubiera enviado
+    // el cliente no se leen en ningun momento.
+    const conversationState = nextConversationState(estadoPrevio, {
+      activeDomain: normalizedRequest.requestedKnowledgeDomains[0] ?? null,
+      workOccupancy: knowledgeContext.workOccupancy ?? {},
+      // La version es el indice de turno, derivado del historial que el
+      // cliente ya envia. No se acepta la version entrante: se RECONSTRUYE,
+      // que es lo unico que puede hacerse sin autoridad en servidor.
+      previousVersion: previousUserRequests.length,
+      occurredAt: new Date().toISOString(),
+    })
+
+    return { responseContext, conversationState }
+  } catch (errorDelTurno) {
+    /*
+     * El turno fallo. Antes de dejar salir el error hay que cerrar la
+     * reserva -- si no, queda `active` hasta expirar.
+     *
+     * Si ademas el cierre falla, se conservan LAS DOS causas. La original
+     * manda: es la raiz de lo ocurrido, y sustituirla por un fallo de
+     * contabilidad haria imposible diagnosticar el turno.
+     */
+    const cierre = await cerrarCircuitoEconomico()
+
+    /*
+     * P1-C -- rastro propio del turno fallido.
+     *
+     * ORDEN, y no es indiferente: DESPUES del cierre y ANTES de propagar.
+     *
+     *   - Despues del cierre porque liquidar o liberar es el unico acto
+     *     irreversible que queda pendiente, y no puede esperar a que se
+     *     observe nada. Ademas, observado despues, el registro puede decir
+     *     COMO quedo la reserva -- que es justo el dato que faltaba para
+     *     reconstruir el incidente.
+     *   - Antes de propagar porque una vez lanzado el error ya no hay
+     *     ningun punto de este flujo que vuelva a ejecutarse.
+     *
+     * No altera el cierre: no lo invoca, no lo repite y no depende de su
+     * resultado mas que para describirlo. Va protegido porque observar
+     * jamas puede sustituir al error real que se esta propagando -- misma
+     * propiedad que ya rige `recordTurnMetrics` en el camino normal.
+     */
+    try {
+      await recordTurnFailure(professionalContext.identity.userId, {
+        turnId,
+        error: errorDelTurno,
+        executionCount: auditsDelTurno.length,
+        reservationId: authorizationContext.reservationId,
+        closure: cierre.estado,
+      })
+    } catch {
+      // Observar nunca puede impedir que el error llegue a quien lo espera.
+    }
+
+    if (cierre.estado === 'fallo_al_cerrar') {
+      throw new AggregateError(
+        [errorDelTurno, cierre.causa],
+        `el turno fallo y ademas no se pudo ${cierre.operacion === 'settle' ? 'liquidar' : 'liberar'} la reserva ${cierre.reservationId}`
+      )
+    }
+
+    throw errorDelTurno
+  } finally {
+    /*
+     * Red de seguridad estructural: ninguna salida de la funcion puede
+     * evitarla. Por los caminos normal y de excepcion el cierre ya ocurrio
+     * y el resultado memorizado hace que esto no intente nada; existe para
+     * que una futura salida temprana tampoco pueda dejar la reserva
+     * abierta. No captura ni relanza: la excepcion se propaga sola.
+     */
+    await cerrarCircuitoEconomico()
   }
-
-  // Estado que queda vigente para el turno siguiente. `stateVersion` y
-  // `updatedAt` los fija aqui el servidor: los valores que hubiera enviado
-  // el cliente no se leen en ningun momento.
-  const conversationState = nextConversationState(estadoPrevio, {
-    activeDomain: normalizedRequest.requestedKnowledgeDomains[0] ?? null,
-    workOccupancy: knowledgeContext.workOccupancy ?? {},
-    // La version es el indice de turno, derivado del historial que el
-    // cliente ya envia. No se acepta la version entrante: se RECONSTRUYE,
-    // que es lo unico que puede hacerse sin autoridad en servidor.
-    previousVersion: previousUserRequests.length,
-    occurredAt: new Date().toISOString(),
-  })
-
-  return { responseContext, conversationState }
 }

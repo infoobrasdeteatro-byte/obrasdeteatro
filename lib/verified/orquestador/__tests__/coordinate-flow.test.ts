@@ -9,7 +9,7 @@ import { MAX_OUTPUT_TOKENS_BY_OPERATION } from '@/lib/ai-gateway'
 import { composeResponse } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
-import { recordTurnMetrics } from '@/lib/verified/observabilidad'
+import { recordTurnMetrics, recordTurnFailure } from '@/lib/verified/observabilidad'
 import { settleReservation, releaseReservation, resolveSettlementCost } from '@/lib/accounting-engine'
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
@@ -35,7 +35,7 @@ vi.mock('@/lib/ai-gateway', async (importOriginal) => ({
 vi.mock('@/lib/response-composer', () => ({ composeResponse: vi.fn() }))
 vi.mock('@/lib/procesos-asincronos', () => ({ recordActivity: vi.fn() }))
 vi.mock('@/lib/execution-audit-router', () => ({ distributeExecutionAudit: vi.fn() }))
-vi.mock('@/lib/verified/observabilidad', () => ({ recordTurnMetrics: vi.fn() }))
+vi.mock('@/lib/verified/observabilidad', () => ({ recordTurnMetrics: vi.fn(), recordTurnFailure: vi.fn() }))
 vi.mock('@/lib/accounting-engine', () => ({
   settleReservation: vi.fn(),
   releaseReservation: vi.fn(),
@@ -79,6 +79,7 @@ beforeEach(() => {
   vi.mocked(composePrompt).mockReset().mockReturnValue(composedPrompt)
   vi.mocked(resolveVocabulary).mockReset().mockResolvedValue([])
   vi.mocked(recordTurnMetrics).mockReset().mockResolvedValue(true)
+  vi.mocked(recordTurnFailure).mockReset().mockResolvedValue(true)
   vi.mocked(settleReservation).mockReset().mockResolvedValue({} as never)
   vi.mocked(releaseReservation).mockReset().mockResolvedValue({} as never)
   // Por defecto, sin tarifa ni valor de credito: liquida lo reservado.
@@ -1235,5 +1236,466 @@ describe('coordinateFlow — settlement multi-operacion (F5F-4)', () => {
     expect(settleReservation).toHaveBeenCalledWith('res-1', 5)
     const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
     expect(observacion.settlementAnomaly).toMatchObject({ reservedCredits: 1, settledCredits: 5 })
+  })
+})
+
+
+/**
+ * P1.2 — LA RESERVA NO PUEDE QUEDAR ABIERTA POR UNA EXCEPCION.
+ *
+ * Entre la reserva y su cierre hay E/S real -- conocimiento, proveedor --
+ * que puede lanzar. Hasta ahora, si lanzaba, la reserva quedaba `active`
+ * hasta expirar: con el plan gratuito y una reserva de 3,759 sobre 5
+ * creditos, una sola excepcion inmovilizaba el 75 % de la cuota durante
+ * cinco minutos.
+ *
+ * El TTL seguia resolviendolo despues. Lo que faltaba era impedirlo.
+ */
+describe('coordinateFlow — cierre garantizado de la reserva (P1.2)', () => {
+  /** Hace que el resolutor ejecute de verdad, produciendo su propio audit. */
+  function conResolutorEjecutado() {
+    vi.mocked(resolveVocabulary).mockImplementation(async (_texto, ejecutor) => {
+      await ejecutor('prompt del resolutor')
+      return ['obra']
+    })
+  }
+
+  /** Rompe el turno DESPUES de la reserva, en la recuperacion de conocimiento. */
+  function fallaTrasReservar() {
+    vi.mocked(buildKnowledgeContext).mockImplementationOnce(async () => knowledgeContext).mockImplementationOnce(
+      async () => {
+        throw new Error('fallo de conocimiento')
+      }
+    )
+  }
+
+  it('1 · excepcion ANTES de cualquier ejecucion IA: se libera la reserva', async () => {
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('caida inesperada')
+
+    expect(releaseReservation).toHaveBeenCalledWith('res-1')
+    expect(settleReservation).not.toHaveBeenCalled()
+  })
+
+  it('2 · excepcion DESPUES de una ejecucion IA valida: se liquida, no se pierde su coste', async () => {
+    // El proveedor ya cobro esa llamada. Liberar seria dejar de cobrarla.
+    conResolutorEjecutado()
+    fallaTrasReservar()
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('fallo de conocimiento')
+
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    expect(releaseReservation).not.toHaveBeenCalled()
+    const [ejecuciones] = vi.mocked(resolveSettlementCost).mock.calls[0]
+    expect(ejecuciones).toHaveLength(1)
+  })
+
+  it('3 · excepcion DESPUES de varias ejecuciones: se liquida el agregado de todas', async () => {
+    vi.mocked(resolveVocabulary).mockImplementation(async (_texto, ejecutor) => {
+      await ejecutor('primer prompt')
+      await ejecutor('segundo prompt')
+      return ['obra']
+    })
+    fallaTrasReservar()
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('fallo de conocimiento')
+
+    const [ejecuciones] = vi.mocked(resolveSettlementCost).mock.calls[0]
+    expect(ejecuciones).toHaveLength(2)
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('4 · ejecucion IA FALLIDA + excepcion: no se cobra lo que no ejecuto', async () => {
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'ERROR_COMUNICACION', generatedContent: null, executionWarnings: [] },
+      audit,
+    } as never)
+    conResolutorEjecutado()
+    fallaTrasReservar()
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('fallo de conocimiento')
+
+    expect(releaseReservation).toHaveBeenCalledTimes(1)
+    expect(settleReservation).not.toHaveBeenCalled()
+  })
+
+  it('5 · MEZCLA valida + fallida + excepcion: solo se cobra la que ejecuto', async () => {
+    let primera = true
+    vi.mocked(executeAIRequest).mockImplementation(async () => {
+      if (primera) {
+        primera = false
+        return { result: { executionStatus: 'EJECUTADO', generatedContent: 'x', executionWarnings: [] }, audit } as never
+      }
+      return { result: { executionStatus: 'ERROR_COMUNICACION', generatedContent: null, executionWarnings: [] }, audit } as never
+    })
+    vi.mocked(resolveVocabulary).mockImplementation(async (_texto, ejecutor) => {
+      await ejecutor('primer prompt')
+      await ejecutor('segundo prompt')
+      return ['obra']
+    })
+    fallaTrasReservar()
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('fallo de conocimiento')
+
+    const [ejecuciones] = vi.mocked(resolveSettlementCost).mock.calls[0]
+    expect(ejecuciones).toHaveLength(1)
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('6 · FLUJO NORMAL sin excepcion: se cierra una sola vez, como siempre', async () => {
+    const salida = await coordinateFlow('profile-1', session, 'hola')
+
+    expect(salida.responseContext).toBe(responseContext)
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    expect(releaseReservation).not.toHaveBeenCalled()
+  })
+
+  it('7 · FLUJO DETERMINISTA sin IA: no liquida, libera', async () => {
+    vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: false } as never)
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'NO_REQUERIDO', generatedContent: null, executionWarnings: [] },
+      audit,
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).not.toHaveBeenCalled()
+    expect(releaseReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('8 · SIN AUDITORIA LIQUIDABLE se libera, tanto con excepcion como sin ella', async () => {
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'SIN_PROVEEDOR', generatedContent: null, executionWarnings: [] },
+      audit,
+    } as never)
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(releaseReservation).toHaveBeenCalledTimes(1)
+    expect(settleReservation).not.toHaveBeenCalled()
+  })
+
+  it('9/10 · EXACTAMENTE UN cierre: ni doble settle ni doble release', async () => {
+    // El camino normal cierra antes de las metricas; el `finally` vuelve a
+    // invocar al cierre y no debe hacer nada.
+    conResolutorEjecutado()
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    expect(releaseReservation).toHaveBeenCalledTimes(0)
+  })
+
+  it('11 · IDEMPOTENCIA: si el cierre falla, no rompe el turno ni se reintenta', async () => {
+    vi.mocked(settleReservation).mockRejectedValue(new Error('reserva no esta activa'))
+
+    const salida = await coordinateFlow('profile-1', session, 'hola')
+
+    expect(salida.responseContext).toBe(responseContext)
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+  })
+
+  it('12 · EMPRESAS con techo NULL: una excepcion no lo convierte en plan limitado', async () => {
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      reservationId: 'res-empresas',
+      estimatedCost: 4.9,
+      availableCredits: null,
+      remainingQuota: null,
+    } as never)
+    conResolutorEjecutado()
+    fallaTrasReservar()
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('fallo de conocimiento')
+
+    // Se liquida su coste real, igual que cualquier otro plan. Sin techo no
+    // hay denegacion, y una excepcion no introduce una.
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    const [, reservado] = vi.mocked(resolveSettlementCost).mock.calls[0]
+    expect(reservado).toBe(4.9)
+  })
+
+  it('13 · LA EXCEPCION SE PROPAGA: el cierre no la oculta', async () => {
+    // Lo contrario convertiria un fallo real en una respuesta aparentemente
+    // correcta, que es peor que la reserva colgada.
+    const fallo = new Error('fallo de conocimiento')
+    vi.mocked(buildKnowledgeContext).mockImplementationOnce(async () => knowledgeContext).mockImplementationOnce(
+      async () => {
+        throw fallo
+      }
+    )
+    conResolutorEjecutado()
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toBe(fallo)
+  })
+
+  it('14 · turno fallido + CIERRE fallido: se conservan LAS DOS causas', async () => {
+    // Ni la del turno tapa a la del cierre ni al reves. Sustituir la
+    // original por un fallo de contabilidad haria imposible diagnosticar
+    // por que fallo el turno.
+    const falloDelTurno = new Error('fallo de conocimiento')
+    const falloDelCierre = new Error('la base de datos no responde')
+    conResolutorEjecutado()
+    vi.mocked(buildKnowledgeContext).mockImplementationOnce(async () => knowledgeContext).mockImplementationOnce(
+      async () => {
+        throw falloDelTurno
+      }
+    )
+    vi.mocked(settleReservation).mockRejectedValue(falloDelCierre)
+
+    const error = await coordinateFlow('profile-1', session, 'hola').catch((e) => e)
+
+    expect(error).toBeInstanceOf(AggregateError)
+    expect((error as AggregateError).errors).toContain(falloDelTurno)
+    expect((error as AggregateError).errors).toContain(falloDelCierre)
+    // La causa raiz sigue siendo identificable, y en primer lugar.
+    expect((error as AggregateError).errors[0]).toBe(falloDelTurno)
+  })
+
+  it('14b · turno fallido + cierre CORRECTO: se propaga la original, sin envolver', async () => {
+    const falloDelTurno = new Error('fallo de conocimiento')
+    conResolutorEjecutado()
+    vi.mocked(buildKnowledgeContext).mockImplementationOnce(async () => knowledgeContext).mockImplementationOnce(
+      async () => {
+        throw falloDelTurno
+      }
+    )
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toBe(falloDelTurno)
+  })
+
+  it('16 · el fallo de SETTLE no queda silencioso: se registra con su gravedad', async () => {
+    // Un settle fallido deja consumo real de proveedor sin registrar, y el
+    // TTL no lo corrige nunca. Tiene que constar.
+    const registro = vi.spyOn(console, 'error').mockImplementation(() => {})
+    conResolutorEjecutado()
+    vi.mocked(settleReservation).mockRejectedValue(new Error('la base de datos no responde'))
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(registro).toHaveBeenCalledTimes(1)
+    const [mensaje, detalle] = registro.mock.calls[0]
+    expect(mensaje).toContain('[P1.2]')
+    expect(detalle).toMatchObject({ operacion: 'settle', consumoRealSinRegistrar: true })
+    registro.mockRestore()
+  })
+
+  it('17 · el fallo de RELEASE tampoco queda silencioso, y se distingue del de settle', async () => {
+    const registro = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(executeAIRequest).mockResolvedValue({
+      result: { executionStatus: 'SIN_PROVEEDOR', generatedContent: null, executionWarnings: [] },
+      audit,
+    } as never)
+    vi.mocked(releaseReservation).mockRejectedValue(new Error('la base de datos no responde'))
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    const [, detalle] = registro.mock.calls[0]
+    // No hubo consumo: la gravedad es otra, y el registro lo dice.
+    expect(detalle).toMatchObject({ operacion: 'release', consumoRealSinRegistrar: false })
+    registro.mockRestore()
+  })
+
+  it('18 · NUNCA se libera como alternativa a un settle fallido', async () => {
+    // Liberar aqui convertiria una deuda no registrada en una liberacion
+    // explicita: borraria la unica evidencia de que hubo consumo sin cobrar.
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    conResolutorEjecutado()
+    vi.mocked(settleReservation).mockRejectedValue(new Error('la base de datos no responde'))
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    expect(releaseReservation).not.toHaveBeenCalled()
+    vi.mocked(console.error).mockRestore()
+  })
+
+  it('19 · CASO G · turno correcto + settle fallido: la respuesta NO se convierte en error', async () => {
+    // El usuario no tiene la culpa de un fallo de contabilidad, y el
+    // proveedor ya cobro esa respuesta. Romper el turno la perderia.
+    const registro = vi.spyOn(console, 'error').mockImplementation(() => {})
+    conResolutorEjecutado()
+    vi.mocked(settleReservation).mockRejectedValue(new Error('la base de datos no responde'))
+
+    const salida = await coordinateFlow('profile-1', session, 'hola')
+
+    expect(salida.responseContext).toBe(responseContext)
+    // Pero la incidencia queda registrada.
+    expect(registro).toHaveBeenCalled()
+    registro.mockRestore()
+  })
+
+  it('20 · un cierre fallido NO se reintenta: se intenta exactamente una vez', async () => {
+    // El `finally` vuelve a invocar al cierre; el resultado memorizado
+    // impide un segundo intento contra una base de datos que ya fallo.
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    conResolutorEjecutado()
+    vi.mocked(settleReservation).mockRejectedValue(new Error('la base de datos no responde'))
+
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    vi.mocked(console.error).mockRestore()
+  })
+
+  it('15 · SIN RESERVA no hay nada que cerrar, y la excepcion sigue propagandose', async () => {
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      reservationId: null,
+      estimatedCost: null,
+    } as never)
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('caida inesperada')
+
+    expect(settleReservation).not.toHaveBeenCalled()
+    expect(releaseReservation).not.toHaveBeenCalled()
+  })
+})
+
+
+/**
+ * P1-C — UN TURNO QUE FALLA DEJA RASTRO.
+ *
+ * El `catch` encadenaba la causa y la relanzaba, pero `recordTurnMetrics`
+ * vive despues en el camino feliz y nunca llegaba a ejecutarse. Un turno
+ * roto solo existia como un 500 en los registros de la plataforma: sin
+ * `turnId`, sin causa y sin forma de correlacionarlo con su reserva.
+ */
+describe('coordinateFlow — rastro del turno fallido (P1-C)', () => {
+  /** Hace que el resolutor ejecute de verdad, produciendo su propio audit. */
+  function conResolutorEjecutado() {
+    vi.mocked(resolveVocabulary).mockImplementation(async (_texto, ejecutor) => {
+      await ejecutor('prompt del resolutor')
+      return ['obra']
+    })
+  }
+
+  /** Rompe el turno DESPUES de la reserva, en la recuperacion de conocimiento. */
+  function fallaTrasReservar() {
+    vi.mocked(buildKnowledgeContext).mockImplementationOnce(async () => knowledgeContext).mockImplementationOnce(
+      async () => {
+        throw new Error('fallo de conocimiento')
+      }
+    )
+  }
+
+  /** El registro del fallo, ya desempaquetado. */
+  function falloRegistrado() {
+    const llamada = vi.mocked(recordTurnFailure).mock.calls[0]
+    return llamada ? llamada[1] : null
+  }
+
+  it('11 · EL TURNO QUEDA IDENTIFICABLE: se registra con el mismo turnId que lo acuño', async () => {
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('caida inesperada')
+
+    // El turnId no se reinventa aqui: es exactamente el que F5F-1 acuño y
+    // el que recibio el interprete.
+    const turnIdDelTurno = vi.mocked(normalizeRequest).mock.calls[0][1]
+    expect(falloRegistrado()).toMatchObject({ turnId: turnIdDelTurno })
+    expect(vi.mocked(recordTurnFailure).mock.calls[0][0]).toBe('profile-1')
+  })
+
+  it('11b · la CAUSA REAL viaja intacta, no un resumen', async () => {
+    const fallo = new Error('caida inesperada')
+    vi.mocked(executeAIRequest).mockRejectedValue(fallo)
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toBe(fallo)
+
+    expect(falloRegistrado()?.error).toBe(fallo)
+  })
+
+  it('12 · LA RESERVA se conserva cuando existe', async () => {
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow()
+
+    expect(falloRegistrado()).toMatchObject({ reservationId: 'res-1', closure: 'liberada' })
+  })
+
+  it('12b · y se dice que no la habia cuando el turno no reservo', async () => {
+    vi.mocked(buildAuthorizationContext).mockResolvedValue({
+      authorizationStatus: 'AUTHORIZED',
+      reservationId: null,
+      estimatedCost: null,
+    } as never)
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow()
+
+    expect(falloRegistrado()).toMatchObject({ reservationId: null, closure: 'sin_reserva' })
+  })
+
+  it('12c · un cierre FALLIDO se registra como tal: es el unico que deja consumo sin cobrar', async () => {
+    conResolutorEjecutado()
+    fallaTrasReservar()
+    vi.mocked(settleReservation).mockRejectedValue(new Error('la base de datos no responde'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow(AggregateError)
+
+    expect(falloRegistrado()).toMatchObject({ closure: 'fallo_al_cerrar', executionCount: 1 })
+  })
+
+  it('13 · NO SE REGISTRA UNA EJECUCION IA QUE NO OCURRIO', async () => {
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow()
+
+    // Cero ejecuciones, dicho explicitamente. Y la traza de ejecucion --
+    // que describe llamadas reales al proveedor -- no se emite.
+    expect(falloRegistrado()).toMatchObject({ executionCount: 0 })
+    expect(distributeExecutionAudit).not.toHaveBeenCalled()
+  })
+
+  it('13b · cuando SI hubo ejecucion, el recuento lo refleja', async () => {
+    conResolutorEjecutado()
+    fallaTrasReservar()
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('fallo de conocimiento')
+
+    expect(falloRegistrado()).toMatchObject({ executionCount: 1, closure: 'liquidada' })
+  })
+
+  it('14 · UN SOLO REGISTRO, aunque el cierre se invoque dos veces', async () => {
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow()
+
+    expect(recordTurnFailure).toHaveBeenCalledTimes(1)
+    // Las metricas del turno feliz no se emiten: el turno no llego a
+    // componerse y fingir que si seria peor que no observarlo.
+    expect(recordTurnMetrics).not.toHaveBeenCalled()
+  })
+
+  it('14b · el turno que va bien NO registra ningun fallo', async () => {
+    await coordinateFlow('profile-1', session, 'hola')
+
+    expect(recordTurnFailure).not.toHaveBeenCalled()
+    expect(recordTurnMetrics).toHaveBeenCalledTimes(1)
+  })
+
+  it('15 · EL REGISTRO NO ALTERA EL CIERRE: va despues, y su fallo no cambia nada', async () => {
+    conResolutorEjecutado()
+    fallaTrasReservar()
+    vi.mocked(recordTurnFailure).mockRejectedValue(new Error('telemetria caida'))
+
+    // La causa que llega arriba sigue siendo la del turno, no la de observar.
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('fallo de conocimiento')
+
+    expect(settleReservation).toHaveBeenCalledTimes(1)
+    expect(releaseReservation).not.toHaveBeenCalled()
+  })
+
+  it('15b · observar no puede provocar un segundo cierre', async () => {
+    vi.mocked(executeAIRequest).mockRejectedValue(new Error('caida inesperada'))
+    vi.mocked(recordTurnFailure).mockRejectedValue(new Error('telemetria caida'))
+
+    await expect(coordinateFlow('profile-1', session, 'hola')).rejects.toThrow('caida inesperada')
+
+    expect(releaseReservation).toHaveBeenCalledTimes(1)
+    expect(settleReservation).not.toHaveBeenCalled()
   })
 })

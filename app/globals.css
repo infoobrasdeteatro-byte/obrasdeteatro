@@ -2162,6 +2162,49 @@ body {
 .scenaia-send-btn:hover:not(:disabled) { transform: scale(1.06); }
 .scenaia-send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
+/*
+ * UX-002 -- aviso que acompana a un turno. Tres naturalezas distintas:
+ * economica (cuota), respuesta incompleta y averia. La diferencia NUNCA
+ * descansa solo en el color: cada una lleva su propia marca textual y su
+ * borde izquierdo, de modo que sigue siendo distinguible sin percibir el
+ * tono.
+ */
+.scenaia-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 0 0 2px;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  border-left: 3px solid currentColor;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.scenaia-notice-mark {
+  font-weight: 700;
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+/*
+ * La cuota NO es una averia: el usuario no ha hecho nada mal y puede
+ * actuar. Usa el acento de ScenaIA -- ya definido en el sistema -- en vez
+ * del rojo de error, para no confundir un limite con un fallo. No se
+ * introduce ningun token nuevo.
+ */
+.scenaia-notice--cuota {
+  background: var(--scenaia-accent-bg);
+  color: var(--scenaia-accent);
+}
+.scenaia-notice--incompleta {
+  background: var(--subtle);
+  color: var(--muted);
+}
+.scenaia-notice--error {
+  background: var(--red-light);
+  color: var(--red-h);
+}
+
 .scenaia-error-banner {
   margin: 0 20px 12px;
   padding: 10px 14px;
