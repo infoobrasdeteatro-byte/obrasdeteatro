@@ -188,7 +188,13 @@ describe('Orquestador — acumulador de ejecuciones (F5F-3)', () => {
   it('G · liquidar o liberar lo decide si HUBO ejecuciones, no como termino la ultima', () => {
     // Un turno cuyo resolutor ejecuto y cuya respuesta fallo tiene coste
     // real: antes se liberaba entero y ese coste se perdia.
-    expect(COORDINATE_FLOW_SOURCE).toMatch(/if \(auditsDelTurno\.length > 0\)/)
+    //
+    // REFORMULADA en la correccion de P1.2: la decision se toma ANTES de
+    // intentar la operacion, para poder decir cual de las dos fallo. El
+    // criterio no cambia -- sigue siendo si hubo ejecuciones.
+    expect(COORDINATE_FLOW_SOURCE).toMatch(
+      /const operacion: OperacionDeCierre = auditsDelTurno\.length > 0 \? 'settle' : 'release'/
+    )
   })
 
   it('G · el Orquestador NO tarifa: ninguna formula de coste vive aqui', () => {
@@ -200,5 +206,176 @@ describe('Orquestador — acumulador de ejecuciones (F5F-3)', () => {
     // `truncated` y la latencia -- justo lo que F5F-2 acaba de anadir.
     expect(COORDINATE_FLOW_SOURCE).toMatch(/const auditsDelTurno: ExecutionAudit\[\]/)
     expect(COORDINATE_FLOW_SOURCE).not.toMatch(/auditsDelTurno: ExecutionAuditForSettlement/)
+  })
+})
+
+
+/**
+ * P1.2 — NO EXISTE EL CAMINO «RESERVA CREADA → EXCEPCION → FIN».
+ *
+ * La proteccion no puede depender de que alguien recuerde liberar la
+ * reserva en cada rama nueva. Estas invariantes fijan la propiedad
+ * estructuralmente: un solo cierre, alcanzado por los dos caminos, y una
+ * excepcion que sigue viva despues de cerrarlo.
+ */
+describe('Orquestador — cierre garantizado de la reserva (P1.2)', () => {
+  it('el cierre existe UNA sola vez y es el unico que toca la reserva', () => {
+    const declaraciones = COORDINATE_FLOW_SOURCE.match(/async function cerrarCircuitoEconomico\(/g) ?? []
+    expect(declaraciones).toHaveLength(1)
+
+    // settle y release viven exclusivamente dentro de ese cierre.
+    expect(COORDINATE_FLOW_SOURCE.match(/await settleReservation\(/g) ?? []).toHaveLength(1)
+    expect(COORDINATE_FLOW_SOURCE.match(/await releaseReservation\(/g) ?? []).toHaveLength(1)
+  })
+
+  it('TODO EL TRAMO posterior a la reserva esta protegido por un `finally`', () => {
+    // Es lo que hace imposible el camino «reserva creada -> excepcion ->
+    // fin del flujo»: no hay salida de la funcion que lo evite.
+    const finallies = COORDINATE_FLOW_SOURCE.match(/^ {2}\} finally \{$/gm) ?? []
+    expect(finallies).toHaveLength(1)
+
+    const bloqueFinal = COORDINATE_FLOW_SOURCE.slice(COORDINATE_FLOW_SOURCE.lastIndexOf('} finally {'))
+    expect(bloqueFinal).toMatch(/await cerrarCircuitoEconomico\(\)/)
+  })
+
+  it('NINGUN catch oculta la excepcion del turno: todos relanzan', () => {
+    // REFORMULADA: ahora el turno SI tiene un catch, pero solo para
+    // encadenar el fallo del cierre. Lo que se prohibe no es capturar --
+    // es terminar sin relanzar, que convertiria un fallo real en una
+    // respuesta aparentemente correcta.
+    const cierre = COORDINATE_FLOW_SOURCE.slice(
+      COORDINATE_FLOW_SOURCE.indexOf('async function cerrarCircuitoEconomico'),
+      COORDINATE_FLOW_SOURCE.indexOf('async function ejecutarOperacion')
+    )
+
+    // El cierre captura su propio fallo y NO relanza: sustituiria al error
+    // original. Lo registra y lo devuelve en su lugar.
+    expect(cierre.match(/\} catch/g) ?? []).toHaveLength(1)
+    expect(cierre).not.toMatch(/throw/)
+
+    // El turno captura para encadenar, y siempre relanza.
+    const turno = COORDINATE_FLOW_SOURCE.slice(COORDINATE_FLOW_SOURCE.indexOf('catch (errorDelTurno)'))
+    expect(turno).toMatch(/throw new AggregateError/)
+    expect(turno).toMatch(/throw errorDelTurno/)
+  })
+
+  it('EXACTAMENTE UNA VEZ: el resultado se memoriza y no se reintenta', () => {
+    // El pestillo booleano pasa a ser el propio RESULTADO: ademas de
+    // impedir el segundo intento, dice que ocurrio en el primero.
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/let resultadoDelCierre: ResultadoDelCierre \| null = null/)
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/if \(resultadoDelCierre !== null\) return resultadoDelCierre/)
+  })
+
+  it('el cierre DEVUELVE lo ocurrido: distingue "se intento" de "quedo cerrada"', () => {
+    // Sin esto, un fallo de la base de datos era indistinguible de una
+    // liquidacion correcta -- el defecto de la primera version del bloque.
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/async function cerrarCircuitoEconomico\(\): Promise<ResultadoDelCierre>/)
+    for (const estado of ['sin_reserva', 'liquidada', 'liberada', 'fallo_al_cerrar']) {
+      expect(COORDINATE_FLOW_SOURCE, estado).toContain(`'${estado}'`)
+    }
+  })
+
+  it('el fallo del cierre NO queda silencioso: se registra alli mismo', () => {
+    // En el camino de excepcion las metricas del turno no llegan a
+    // ejecutarse, asi que el registro tiene que vivir dentro del cierre.
+    const cierre = COORDINATE_FLOW_SOURCE.slice(
+      COORDINATE_FLOW_SOURCE.indexOf('async function cerrarCircuitoEconomico'),
+      COORDINATE_FLOW_SOURCE.indexOf('async function ejecutarOperacion')
+    )
+
+    expect(cierre).toMatch(/console\.error\('\[P1\.2\]/)
+    expect(cierre).toMatch(/estado: 'fallo_al_cerrar'/)
+    // Y distingue cual fallo: un settle fallido deja consumo sin registrar.
+    expect(cierre).toMatch(/consumoRealSinRegistrar/)
+  })
+
+  it('NUNCA se libera como alternativa a un settle fallido', () => {
+    // Liberar despues de un settle fallido convertiria una deuda no
+    // registrada en una liberacion explicita: borraria la evidencia.
+    const cierre = COORDINATE_FLOW_SOURCE.slice(
+      COORDINATE_FLOW_SOURCE.indexOf('async function cerrarCircuitoEconomico'),
+      COORDINATE_FLOW_SOURCE.indexOf('async function ejecutarOperacion')
+    )
+    const bloqueDeFallo = cierre.slice(cierre.indexOf('} catch (causa)'))
+
+    expect(bloqueDeFallo).not.toMatch(/releaseReservation|settleReservation/)
+  })
+
+  it('LAS DOS CAUSAS se conservan cuando el turno y el cierre fallan a la vez', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/catch \(errorDelTurno\)/)
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/new AggregateError\(\s*\[errorDelTurno, cierre\.causa\]/)
+    // Y si el cierre fue bien, se propaga la original sin envolverla.
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/throw errorDelTurno/)
+  })
+
+  it('SIN RESERVA no se cierra nada: el turno determinista no cambia', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/if \(authorizationContext\.reservationId === null\) \{/)
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/estado: 'sin_reserva'/)
+  })
+
+  it('F5F-4 INTACTO: la politica de liquidacion no cambia, solo el lugar', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/auditsDelTurno\.length > 0/)
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/resolveSettlementCost\(auditsDelTurno, reservedCost\)/)
+    expect(COORDINATE_FLOW_SOURCE).not.toMatch(/resolveSettlementCost\(audit,/)
+  })
+
+  it('NO se introduce reintento, ni estado global, ni segunda via de cierre', () => {
+    expect(COORDINATE_FLOW_SOURCE).not.toMatch(/retry|reintent|setTimeout|while \(/i)
+    // El pestillo y la anomalia viven DENTRO de la funcion del turno.
+    expect(COORDINATE_FLOW_SOURCE).not.toMatch(/^(let|var) /m)
+  })
+
+  it('NINGUNA magnitud economica vive aqui', () => {
+    expect(COORDINATE_FLOW_SOURCE).not.toMatch(/amountPerCredit|PricePerMillionTokens|calculateExecutionCost|creditsPerPeriod/)
+    expect(COORDINATE_FLOW_SOURCE).not.toMatch(/\b(512|1024)\b/)
+  })
+})
+
+
+/**
+ * P1-C — EL TURNO FALLIDO NO PUEDE VOLVER A SER INVISIBLE.
+ *
+ * Lo que se protege aqui no es que exista una llamada, sino DONDE esta: un
+ * registro colocado antes del cierre retrasaria el unico acto irreversible
+ * del turno, y colocado despues del `throw` no se ejecutaria nunca.
+ */
+describe('Orquestador — rastro del turno fallido (P1-C)', () => {
+  const CIERRE = 'const cierre = await cerrarCircuitoEconomico()'
+  const REGISTRO = 'recordTurnFailure('
+  const ENCADENADO = 'throw new AggregateError('
+
+  it('el camino de excepcion registra el fallo', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/recordTurnFailure\(/)
+    // Y por la via ya autorizada, sin importar Telemetria (comprobado arriba).
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/recordTurnFailure[\s\S]*?from '@\/lib\/verified\/observabilidad'/)
+  })
+
+  it('ORDEN: despues del cierre economico y antes de propagar el error', () => {
+    const cierre = COORDINATE_FLOW_SOURCE.indexOf(CIERRE)
+    const registro = COORDINATE_FLOW_SOURCE.indexOf(REGISTRO)
+    const propagacion = COORDINATE_FLOW_SOURCE.indexOf(ENCADENADO)
+
+    expect(cierre).toBeGreaterThan(-1)
+    expect(registro).toBeGreaterThan(cierre)
+    expect(propagacion).toBeGreaterThan(registro)
+  })
+
+  it('OBSERVAR NO PUEDE SUSTITUIR AL ERROR: el registro va protegido', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/try \{\s*\n\s*await recordTurnFailure\([\s\S]*?\} catch \{/)
+  })
+
+  it('el registro NO cierra, ni reabre, ni repite nada economico', () => {
+    const desdeElRegistro = COORDINATE_FLOW_SOURCE.slice(
+      COORDINATE_FLOW_SOURCE.indexOf(REGISTRO),
+      COORDINATE_FLOW_SOURCE.indexOf(ENCADENADO)
+    )
+
+    expect(desdeElRegistro).not.toMatch(/settleReservation|releaseReservation|cerrarCircuitoEconomico/)
+  })
+
+  it('NO INVENTA UNA EJECUCION: el recuento sale del acumulador real', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/executionCount: auditsDelTurno\.length/)
+    // La identidad es la del turno, no una nueva.
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/recordTurnFailure\([\s\S]{0,200}?turnId,/)
   })
 })

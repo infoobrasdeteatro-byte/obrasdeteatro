@@ -6,11 +6,20 @@ import ChatWelcome from './components/ChatWelcome'
 import ChatInput from './components/ChatInput'
 import TypingIndicator from './components/TypingIndicator'
 import type { ConversationState } from '@/lib/conversation-state'
+import { resolveTurnNotice, resolveAccessDestination } from './turn-notice'
+import type { TurnNotice } from './turn-notice'
 
 interface ScenaiaResponse {
   responseType: string
   responseContent: string | null
   responseWarnings: string[]
+  /**
+   * UX-002: las señales que el Núcleo ya emitía y que hasta ahora no se
+   * leían. `denialCode` viaja aquí -- no en la raíz -- porque el Bloque 5
+   * lo transportó por los metadatos precisamente para no ensanchar el
+   * contrato de respuesta.
+   */
+  responseMetadata: Record<string, string>
   /**
    * Contexto conversacional vigente (Fase 3). Se importa el tipo REAL del
    * contrato: el cliente no declara una forma paralela ni serializa el
@@ -22,6 +31,8 @@ interface ScenaiaResponse {
 interface ConversationTurn {
   readonly role: 'user' | 'assistant'
   readonly content: string
+  /** Aviso ya traducido que acompaña a este turno, si lo hubo (UX-002). */
+  readonly notice?: TurnNotice | null
 }
 
 /**
@@ -92,12 +103,49 @@ export default function ScenaiaClient() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
+        /*
+         * P1-B. El servidor ya decía POR QUÉ denegaba -- `reason`, contrato
+         * P1.3 -- y ese dato se descartaba: quien perdía el acceso a mitad
+         * de sesión veía "Acceso no autorizado" y nada más, sin saber qué
+         * le faltaba ni a dónde ir.
+         *
+         * Aquí NO se decide nada: no se comprueba verificación, ni plan, ni
+         * cuota, ni se consulta ninguna fuente. Y solo se navega en el caso
+         * para el que UX-003 construyó una pantalla: `no_verificado`.
+         * CUALQUIER otro motivo -- `no_autenticado`, `plan_no_reconocido`,
+         * o uno que el contrato aún no declare -- conserva exactamente el
+         * comportamiento anterior a P1-ERRORES: el aviso, sin moverse de la
+         * conversación. Llevárselo de aquí perdería lo escrito, y eso no lo
+         * ha autorizado nadie.
+         *
+         * Navegación completa, no `router.push`: el destino resuelve el
+         * acceso otra vez en el servidor, que sigue siendo la fuente de
+         * verdad, y una entrada servida desde la caché de router podría
+         * contradecirlo.
+         */
+        const destino = resolveAccessDestination(body.reason)
+
+        if (destino !== null) {
+          window.location.assign(destino)
+          return
+        }
+
         setError(body.error ?? `Error ${res.status}`)
         return
       }
 
       const data: ScenaiaResponse = await res.json()
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.responseContent ?? '(sin contenido)' }])
+      /*
+       * UX-002. La decisión de QUÉ se advierte vive en `resolveTurnNotice`,
+       * que solo traduce el estado ya clasificado por el backend. Aquí no
+       * se calculan créditos, no se consultan planes y no se detecta
+       * truncamiento: se muestra lo que el Núcleo ya determinó.
+       */
+      const notice = resolveTurnNotice(data)
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: data.responseContent ?? '(sin contenido)', notice },
+      ])
       // REEMPLAZO, nunca fusion: el estado vigente es siempre el ultimo que
       // el servidor emitio. Combinarlo con el anterior seria decidir aqui
       // que sigue vigente, y esa decision no es del cliente.
@@ -117,7 +165,7 @@ export default function ScenaiaClient() {
         ) : (
           <>
             {messages.map((turn, i) => (
-              <ChatMessage key={i} role={turn.role} content={turn.content} />
+              <ChatMessage key={i} role={turn.role} content={turn.content} notice={turn.notice ?? null} />
             ))}
             {pending && <TypingIndicator />}
           </>

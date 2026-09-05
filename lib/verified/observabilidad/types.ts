@@ -71,3 +71,27 @@ export interface SettlementAnomaly {
   readonly providerIdentifier: string | null
   readonly providerModel: string | null
 }
+
+
+/**
+ * Como quedo el circuito economico del turno (vocabulario de P1.2, tal
+ * cual: aqui no se reinterpreta ni se resume). `fallo_al_cerrar` es el
+ * unico estado que deja consumo posiblemente sin registrar.
+ */
+export type TurnClosureState = 'sin_reserva' | 'liquidada' | 'liberada' | 'fallo_al_cerrar'
+
+/**
+ * Un turno que termino por excepcion (P1-C).
+ *
+ * NO es una ejecucion de proveedor y no debe confundirse con una:
+ * `executionCount` dice cuantas llegaron a ocurrir -- cero es lo normal --,
+ * y ninguna metrica de la familia `ai_gateway.*` sale de aqui.
+ */
+export interface TurnFailure {
+  /** `turnId` del Orquestador (F5F-1); es el mismo `requestId` que llevan las demas metricas del turno. */
+  readonly turnId: string
+  readonly error: unknown
+  readonly executionCount: number
+  readonly reservationId: string | null
+  readonly closure: TurnClosureState
+}
