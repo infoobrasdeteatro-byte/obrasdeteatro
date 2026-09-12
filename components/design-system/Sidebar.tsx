@@ -20,6 +20,10 @@ const NAV_SECTIONS = [
     label: 'Explorar',
     items: [
       { href: '/directorio', label: 'Directorio', icon: '◈' },
+      // El listado PUBLICO de convocatorias, no la gestion propia: con sesion
+      // iniciada la barra publica no se ve, y sin esta entrada habria que
+      // cerrar sesion para descubrir castings de otros.
+      { href: '/castings',   label: 'Castings',   icon: '◆' },
       { href: '/precios',    label: 'Planes',     icon: '◇' },
     ],
   },
