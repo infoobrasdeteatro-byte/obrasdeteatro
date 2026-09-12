@@ -133,7 +133,13 @@ export interface CreditReservation {
   status: ReservationStatus
   estimatedCost: number
   settledCost: number | null
-  authorizedLimitSnapshot: number
+  /**
+   * Limite que regia cuando se creo la reserva. `null` significa que NO habia
+   * limite -- el plan es ilimitado --, no que se desconozca. La columna admite
+   * null en la base desde la migracion 20260831074722; este tipo no lo
+   * reflejaba.
+   */
+  authorizedLimitSnapshot: number | null
   expiresAt: string
   createdAt: string
   settledAt: string | null
