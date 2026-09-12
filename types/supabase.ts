@@ -2990,6 +2990,26 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: undefined
       }
+      mis_postulaciones: {
+        Args: {
+          p_cursor_applied_at?: string
+          p_cursor_id?: string
+          p_limite?: number
+        }
+        Returns: {
+          applied_at: string
+          casting_entidad: string
+          casting_estado: string
+          casting_fecha_apertura: string
+          casting_fecha_cierre: string
+          casting_id: string
+          casting_titulo: string
+          cover_letter: string
+          id: string
+          portfolio_url: string
+          status: string
+        }[]
+      }
       paises_con_castings: {
         Args: never
         Returns: {

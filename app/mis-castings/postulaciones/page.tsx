@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import BandejaList, { type PostulacionRecibida } from './BandejaList'
+import { leerCursor, escribirCursor } from '@/components/castings/cursor'
 
 export const metadata: Metadata = {
   title: 'Postulaciones recibidas | ObrasDeTeatro',
@@ -15,21 +16,6 @@ const TAMANO_PAGINA = 20
 
 type Props = {
   searchParams: Promise<{ casting?: string; status?: string; cursor?: string }>
-}
-
-/** El cursor viaja en la URL como base64 de "applied_at|id". */
-function leerCursor(valor?: string): { appliedAt: string; id: string } | null {
-  if (!valor) return null
-  try {
-    const [appliedAt, id] = Buffer.from(valor, 'base64url').toString('utf8').split('|')
-    return appliedAt && id ? { appliedAt, id } : null
-  } catch {
-    return null
-  }
-}
-
-function escribirCursor(appliedAt: string, id: string): string {
-  return Buffer.from(`${appliedAt}|${id}`, 'utf8').toString('base64url')
 }
 
 /**

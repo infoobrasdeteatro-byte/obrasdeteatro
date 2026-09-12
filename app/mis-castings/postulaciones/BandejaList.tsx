@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import EstadoPostulacion from '@/components/castings/EstadoPostulacion'
 
 export type ActorInfo = {
   fotoPrincipal: string | null
@@ -32,13 +33,6 @@ export type PostulacionRecibida = {
   nombre: string | null
   slug: string | null
   actor: ActorInfo | null
-}
-
-const ESTADOS: Record<string, { etiqueta: string; clase: string; estilo?: React.CSSProperties }> = {
-  pending:  { etiqueta: 'Pendiente',    clase: 'status-pill status-pill--draft' },
-  reviewed: { etiqueta: 'Revisada',     clase: 'status-pill', estilo: { background: 'var(--subtle)', color: 'var(--text)' } },
-  selected: { etiqueta: 'Seleccionada', clase: 'status-pill status-pill--published' },
-  rejected: { etiqueta: 'Descartada',   clase: 'status-pill', estilo: { background: 'var(--red-light)', color: 'var(--red-h)' } },
 }
 
 function fechaHora(valor: string | null): string {
@@ -96,7 +90,6 @@ export default function BandejaList({ postulaciones }: { postulaciones: Postulac
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {postulaciones.map(p => {
-        const estado = ESTADOS[p.status] ?? { etiqueta: p.status, clase: 'status-pill' }
         const a = p.actor
         const sinContacto = !a || (!a.email && !a.telefono && !a.whatsapp && a.redes.length === 0)
         const enCurso = ocupado === p.id
@@ -121,7 +114,7 @@ export default function BandejaList({ postulaciones }: { postulaciones: Postulac
                 </p>
               </div>
 
-              <span className={estado.clase} style={{ ...estado.estilo, flexShrink: 0 }}>{estado.etiqueta}</span>
+              <div style={{ flexShrink: 0 }}><EstadoPostulacion status={p.status} /></div>
             </header>
 
             {p.coverLetter && (
