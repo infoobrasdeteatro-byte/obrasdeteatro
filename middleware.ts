@@ -44,6 +44,7 @@ export async function middleware(request: NextRequest) {
     // gestionar no. Se enumeran las rutas privadas una a una justamente para
     // no arrastrar /castings entero detrás del muro.
     pathname.startsWith('/mis-castings') ||
+    pathname.startsWith('/mis-postulaciones') ||
     pathname.startsWith('/castings/nuevo') ||
     (pathname.startsWith('/castings/') && pathname.endsWith('/editar')) ||
     pathname.startsWith('/admin')
