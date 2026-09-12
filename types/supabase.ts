@@ -2976,6 +2976,23 @@ export type Database = {
         }[]
       }
       cerrar_castings_vencidos: { Args: never; Returns: undefined }
+      cola_reportes: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_limite?: number
+        }
+        Returns: {
+          casting_estado: string
+          casting_id: string
+          casting_titulo: string
+          created_at: string
+          id: string
+          motivo: string
+          organizador: string
+          reportante: string
+        }[]
+      }
       contacto_del_casting: {
         Args: { p_casting_id: string }
         Returns: {
