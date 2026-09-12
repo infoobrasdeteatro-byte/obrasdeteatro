@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { toGeneratedArgs } from './accounting-rpc-types'
+import type { AccountingVerifyAndReserveArgs, AccountingVerifyAndReserveRow } from './accounting-rpc-types'
 import type { CreditReservation, PeriodBudget, ReservationOutcome, ReservationStatus } from './types'
 
 function toReservation(row: {
@@ -48,19 +50,27 @@ export async function verifyAndReserve(
 ): Promise<ReservationOutcome> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .rpc('accounting_verify_and_reserve', {
-      p_profile_id: profileId,
-      p_authorized_limit: authorizedLimit,
-      p_estimated_cost: estimatedCost,
-      p_ttl_seconds: ttlSeconds,
-      p_request_id: requestId ?? undefined,
-    })
+  const args: AccountingVerifyAndReserveArgs = {
+    p_profile_id: profileId,
+    p_authorized_limit: authorizedLimit,
+    p_estimated_cost: estimatedCost,
+    p_ttl_seconds: ttlSeconds,
+    p_request_id: requestId ?? undefined,
+  }
+
+  const { data: generated, error } = await supabase
+    .rpc('accounting_verify_and_reserve', toGeneratedArgs(args))
     .single()
 
-  if (error || !data) {
+  if (error || !generated) {
     throw new Error(`accounting_verify_and_reserve failed: ${error?.message ?? 'sin datos'}`)
   }
+
+  // Los tipos generados declaran no-nulos siete campos que la funcion SQL si
+  // devuelve nulos (ver accounting-rpc-types.ts). Ensanchar aqui restituye
+  // las comprobaciones de nulo de mas abajo, que si no serian codigo muerto
+  // a ojos del compilador.
+  const data: AccountingVerifyAndReserveRow = generated
 
   const budget: PeriodBudget = {
     periodStart: data.period_start,
