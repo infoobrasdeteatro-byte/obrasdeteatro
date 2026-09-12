@@ -8,7 +8,7 @@ function toReservation(row: {
   status: string
   estimated_cost: number
   settled_cost: number | null
-  authorized_limit_snapshot: number
+  authorized_limit_snapshot: number | null
   expires_at: string
   created_at: string
   settled_at: string | null
