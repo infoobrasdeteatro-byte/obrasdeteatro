@@ -39,7 +39,14 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/mis-obras') ||
     pathname.startsWith('/cuenta') ||
     pathname.startsWith('/obras/nueva') ||
-    (pathname.startsWith('/obras/') && pathname.endsWith('/editar'))
+    (pathname.startsWith('/obras/') && pathname.endsWith('/editar')) ||
+    // Castings: el listado y la ficha son públicos, pero crear, editar y
+    // gestionar no. Se enumeran las rutas privadas una a una justamente para
+    // no arrastrar /castings entero detrás del muro.
+    pathname.startsWith('/mis-castings') ||
+    pathname.startsWith('/castings/nuevo') ||
+    (pathname.startsWith('/castings/') && pathname.endsWith('/editar')) ||
+    pathname.startsWith('/admin')
 
   const isAuthRoute =
     pathname.startsWith('/auth') &&

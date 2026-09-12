@@ -169,10 +169,10 @@ export default async function DashboardPage({
               <p className="module-card-desc">Gestiona tu catálogo de obras teatrales y controla su visibilidad.</p>
               <Link href="/mis-obras" className="module-card-link">Ver obras →</Link>
             </div>
-            <div className="module-card" style={{ opacity: 0.55 }}>
+            <div className="module-card">
               <div className="module-card-title">Convocatorias</div>
-              <p className="module-card-desc">Casting, residencias y festivales. Disponible próximamente.</p>
-              <span style={{ fontSize: '12px', color: 'var(--muted)', fontWeight: 500 }}>Próximamente</span>
+              <p className="module-card-desc">Publica castings, revisa las candidaturas recibidas y gestiona su estado.</p>
+              <Link href="/mis-castings" className="module-card-link">Ver convocatorias →</Link>
             </div>
           </div>
 
