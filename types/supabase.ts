@@ -2976,6 +2976,14 @@ export type Database = {
         }[]
       }
       cerrar_castings_vencidos: { Args: never; Returns: undefined }
+      contacto_del_casting: {
+        Args: { p_casting_id: string }
+        Returns: {
+          email_recepcion: string
+          telefono_contacto: string
+          url_externa: string
+        }[]
+      }
       es_mi_casting: { Args: { p_casting: string }; Returns: boolean }
       es_moderador: { Args: never; Returns: boolean }
       extinguish_personal_identity: {
