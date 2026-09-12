@@ -73,6 +73,20 @@ export default async function CastingPublicoPage({ params }: Props) {
     yaPostulado = (count ?? 0) > 0
   }
 
+  // El contacto solo existe para quien ya se postuló (o para el dueño y
+  // moderación). Las columnas están revocadas: si no se cumple ninguna de esas
+  // condiciones, la función devuelve 0 filas y aquí no hay nada que enseñar.
+  // No se pide siquiera cuando no hay sesión.
+  const { data: contacto } = user
+    ? await supabase.rpc('contacto_del_casting', { p_casting_id: id })
+    : { data: null }
+  const contactoOrganizador = contacto?.[0] ?? null
+  const hayContacto =
+    contactoOrganizador !== null &&
+    (contactoOrganizador.email_recepcion ||
+      contactoOrganizador.url_externa ||
+      contactoOrganizador.telefono_contacto)
+
   const edad = rangoEdad(casting.edad_min, casting.edad_max)
 
   return (
@@ -181,10 +195,44 @@ export default async function CastingPublicoPage({ params }: Props) {
             )}
 
             {user && plan !== 'gratuito' && yaPostulado && (
-              <div className="ds-alert-success">
-                <strong style={{ display: 'block', marginBottom: '2px' }}>Ya te postulaste</strong>
-                Tu candidatura está en manos de la organización.
-              </div>
+              <>
+                <div className="ds-alert-success">
+                  <strong style={{ display: 'block', marginBottom: '2px' }}>Ya te postulaste</strong>
+                  Tu candidatura está en manos de la organización.
+                </div>
+
+                {hayContacto && (
+                  <div style={{ marginTop: '18px', paddingTop: '18px', borderTop: '1px solid var(--border)' }}>
+                    <h3 className="obras-stat-label" style={{ marginBottom: '8px' }}>Contacto del organizador</h3>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {contactoOrganizador?.email_recepcion && (
+                        <li>
+                          ✉{' '}
+                          <a href={`mailto:${contactoOrganizador.email_recepcion}`}
+                            style={{ color: 'var(--red)', textDecoration: 'none' }}>
+                            {contactoOrganizador.email_recepcion}
+                          </a>
+                        </li>
+                      )}
+                      {contactoOrganizador?.telefono_contacto && (
+                        <li>☎ {contactoOrganizador.telefono_contacto}</li>
+                      )}
+                      {contactoOrganizador?.url_externa && (
+                        <li>
+                          ↗{' '}
+                          <a href={contactoOrganizador.url_externa} target="_blank" rel="noopener noreferrer"
+                            style={{ color: 'var(--red)', textDecoration: 'none' }}>
+                            {contactoOrganizador.url_externa}
+                          </a>
+                        </li>
+                      )}
+                    </ul>
+                    <p className="ds-form-hint" style={{ marginTop: '10px' }}>
+                      Se muestra porque te has presentado a esta convocatoria.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {user && plan !== 'gratuito' && !yaPostulado && (

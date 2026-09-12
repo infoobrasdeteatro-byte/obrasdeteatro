@@ -35,14 +35,39 @@ export default async function EditarCastingPage({ params, searchParams }: Props)
   // lo visible a lo propio (y deja ver los publicados de otros). El filtro
   // explícito evita que un organizador abra el editor de un casting ajeno
   // publicado, que RLS le dejaría leer pero no modificar.
-  const { data: casting } = await supabase
+  // No se puede pedir `*`: email_recepcion, url_externa y telefono_contacto
+  // tienen el SELECT revocado para anon y authenticated, y un `*` los incluye.
+  // Se enumeran las columnas legibles y el contacto se pide aparte, por la
+  // única vía que lo expone.
+  const { data: fila } = await supabase
     .from('castings')
-    .select('*')
+    .select(`
+      id, user_id, titulo, nombre_proyecto, entidad_organizadora, tipo_entidad,
+      descripcion, sinopsis, tipo_otro, perfil_nombre, perfil_descripcion,
+      edad_min, edad_max, genero_escenico, idiomas_requeridos,
+      experiencia_requerida, formacion_requerida, habilidades_especiales,
+      importe, fechas_previstas, lugar_trabajo, pais, ciudad,
+      fecha_apertura, fecha_cierre, modalidad, descripcion_proceso,
+      forma_candidatura, estado, publicado, destacado, scenaia_activo,
+      created_at, updated_at, motivo_rechazo, motivo_filtro,
+      tipo_remuneracion, categorias
+    `)
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
-  if (!casting) notFound()
+  if (!fila) notFound()
+
+  // Al ser el dueño, la función le devuelve el contacto de su propio casting.
+  const { data: contacto } = await supabase.rpc('contacto_del_casting', { p_casting_id: id })
+  const c = contacto?.[0]
+
+  const casting = {
+    ...fila,
+    email_recepcion: c?.email_recepcion ?? null,
+    url_externa: c?.url_externa ?? null,
+    telefono_contacto: c?.telefono_contacto ?? null,
+  }
 
   const { data: categorias } = await supabase
     .from('casting_categorias')
