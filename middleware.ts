@@ -35,7 +35,13 @@ export async function middleware(request: NextRequest) {
 
   const isProtectedRoute =
     pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/perfil') ||
+    // Perfiles: la ficha /perfil/<slug> es PÚBLICA -- la ven visitantes sin
+    // cuenta, Google y las vistas previas de redes. Un startsWith('/perfil')
+    // la arrastraba detrás del muro junto con las privadas. Se enumeran las
+    // privadas una a una, como ya se hace más abajo con /castings.
+    pathname === '/perfil' ||
+    pathname.startsWith('/perfil/centro') ||
+    pathname.startsWith('/perfil/bloque') ||
     pathname.startsWith('/mis-obras') ||
     pathname.startsWith('/cuenta') ||
     pathname.startsWith('/obras/nueva') ||
