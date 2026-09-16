@@ -49,6 +49,8 @@ Cada uno de estos roles tiene un formulario de perfil propio que define sus camp
 | `festival` | Festival | Organizacional | Formulario_Perfil_Festival.docx | Sí |
 | `school` | Escuela / Formación | Organizacional | Formulario_escuelas_y_formaciones.docx | Sí |
 
+> ⚠️ **NOTA DE OBSOLESCENCIA (16/09/2026):** `profile_roles.is_primary` no existe en el esquema real: la tabla solo tiene `id`, `profile_id`, `role` y `created_at`, de modo que hoy no hay forma de marcar el rol principal de un perfil. Ver [`docs/ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md`](../ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md) para los nombres/valores actuales.
+
 > Un usuario puede tener múltiples roles simultáneamente (ej. actor Y dramaturgo). La tabla `profile_roles` gestiona esta multiplicidad. El campo `is_primary` indica el rol principal del perfil.
 
 ### 1.2 Roles de usuario — parciales (3)
@@ -249,6 +251,9 @@ Fuente autoritativa: **Tabla Definitiva de Planes v2** (Nivel 2).
 **Funcionalidades:**
 
 - Publicación de obra con clasificación de derechos: `public_domain` / `copyrighted` / `licensed`
+
+> ⚠️ **NOTA DE OBSOLESCENCIA (16/09/2026):** `rights_type` y `rights_holder` se llaman hoy `rights_status` y `rights_manager` en la tabla `works`. Ver [`docs/ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md`](../ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md) para los nombres/valores actuales.
+
 - Si `rights_type = licensed`: campo `rights_holder` obligatorio
 - Obras con `copyrighted` o `licensed`: solo se muestra información descriptiva y fragmentos autorizados, **nunca el texto completo**
 - Upload de texto completo (PDF) al bucket `work-files` con acceso privado (URL firmada)
@@ -355,6 +360,8 @@ Ver [Sección 8 — Integración con Stripe](#8-integración-con-stripe) para de
 - **Restricción por plan:** solo usuarios Premium+ pueden **iniciar** una conversación. Plan Gratuito puede **responder** mensajes recibidos.
 - Los mensajes no se eliminan (`DELETE Prohibido` en RLS)
 - Moderación: sin supervisión permanente; usuario responsable de su uso (Aviso Legal)
+
+> ⚠️ **NOTA DE OBSOLESCENCIA (16/09/2026):** La comparación `profiles.plan != 'free'` de esta nota ya no es válida: `plan` es un enum `plan_suscripcion` cuyo valor gratuito es `'gratuito'`, no `'free'`. El código en producción ya usa `'gratuito'`. Ver [`docs/ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md`](../ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md) para los nombres/valores actuales.
 
 > **Nota de implementación — aplicación de la restricción Premium:**  
 > La RLS de `conversations` en BD v1.2 permite `INSERT` a cualquier usuario `authenticated`. La restricción "solo Premium+ puede iniciar conversaciones" **no se aplica a nivel de RLS** sino en la **capa de aplicación** (middleware Next.js o API route), verificando `profiles.plan != 'free'` antes de permitir el `INSERT`. Esta decisión es intencional: la RLS solo controla acceso a datos; las reglas de negocio de plan se aplican server-side para facilitar cambios futuros sin migraciones de BD.
@@ -629,6 +636,8 @@ Ver [Sección 10 — Backoffice / Panel de Administración](#10-backoffice--pane
 
 **Actor:** Usuario con suscripción activa
 
+> ⚠️ **NOTA DE OBSOLESCENCIA (16/09/2026):** En la fila **6 — Al fin del período** de la tabla siguiente, `UPDATE profiles.plan = 'free'` ya no es válido: `plan` es un enum `plan_suscripcion` y el valor gratuito es `'gratuito'`. El webhook real ya escribe `'gratuito'`. Ver [`docs/ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md`](../ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md) para los nombres/valores actuales.
+
 | Paso | Acción | Sistema |
 |---|---|---|
 | 1 | Accede a portal de cliente Stripe desde su dashboard | Stripe Customer Portal |
@@ -785,6 +794,8 @@ Ver [Sección 10 — Backoffice / Panel de Administración](#10-backoffice--pane
 
 ### 6.2 Reglas por módulo
 
+> ⚠️ **NOTA DE OBSOLESCENCIA (16/09/2026):** En la fila **Obras** de la tabla siguiente, `rights_type` y `rights_holder` se llaman hoy `rights_status` y `rights_manager`. Ver [`docs/ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md`](../ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md) para los nombres/valores actuales.
+
 | Módulo | Regla |
 |---|---|
 | Perfiles | Slug SEO generado automáticamente. Nunca modificar tras primera publicación. |
@@ -892,6 +903,8 @@ Ver [Sección 10 — Backoffice / Panel de Administración](#10-backoffice--pane
 | Empresa | `company` | €8,99/mes | Mensual automática |
 
 ### 8.2 Webhook — endpoint: `/api/webhooks/stripe`
+
+> ⚠️ **NOTA DE OBSOLESCENCIA (16/09/2026):** En la fila **`customer.subscription.deleted`** de la tabla siguiente, `UPDATE profiles.plan = 'free'` ya no es válido: el valor real del enum `plan_suscripcion` es `'gratuito'`. Ver [`docs/ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md`](../ARQUITECTURA_BD_ESTADO_REAL_2026-09-16.md) para los nombres/valores actuales.
 
 | Evento Stripe | Acción en BD |
 |---|---|
