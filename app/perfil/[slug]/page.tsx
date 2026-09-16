@@ -97,6 +97,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .select('nombre, nombre_artistico, tipo_perfil, bio, avatar_url')
     .eq('slug', slug)
     .eq('perfil_publico', true)
+    .eq('verificado', true)
+    .eq('activo', true)
+    .is('extincion_solicitada_at', null)
     .is('deleted_at', null)
     .single()
 
@@ -134,6 +137,9 @@ export default async function PerfilPublicoPage({ params }: Props) {
       .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, ciudad, pais, country_code, plan, verificado, website_url, social_links, slug')
       .eq('slug', slug)
       .eq('perfil_publico', true)
+      .eq('verificado', true)
+      .eq('activo', true)
+      .is('extincion_solicitada_at', null)
       .is('deleted_at', null)
       .single(),
     supabase.auth.getUser(),

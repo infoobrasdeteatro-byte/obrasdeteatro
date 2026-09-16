@@ -124,6 +124,9 @@ export default async function DirectorioPage({ searchParams }: Props) {
     .from('profiles')
     .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, country_code, pais, bio, slug, avatar_url, verificado, plan')
     .eq('perfil_publico', true)
+    .eq('verificado', true)
+    .eq('activo', true)
+    .is('extincion_solicitada_at', null)
     .is('deleted_at', null)
     .not('slug', 'is', null)
 
