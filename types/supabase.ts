@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -98,16 +98,21 @@ export type Database = {
       }
       calls: {
         Row: {
-          call_type: string | null
+          category: string | null
           created_at: string | null
           deadline: string | null
           deleted_at: string | null
           description: string | null
+          estado: string
+          fecha_publicacion: string | null
           id: string
           is_featured: boolean | null
           is_published: boolean | null
           location: string | null
-          prize_amount: number | null
+          moderacion_entrada_at: string | null
+          motivo_filtro: string | null
+          motivo_rechazo: string | null
+          prize: string | null
           profile_id: string
           slug: string | null
           title: string
@@ -115,16 +120,21 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
-          call_type?: string | null
+          category?: string | null
           created_at?: string | null
           deadline?: string | null
           deleted_at?: string | null
           description?: string | null
+          estado?: string
+          fecha_publicacion?: string | null
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
           location?: string | null
-          prize_amount?: number | null
+          moderacion_entrada_at?: string | null
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
+          prize?: string | null
           profile_id: string
           slug?: string | null
           title: string
@@ -132,16 +142,21 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
-          call_type?: string | null
+          category?: string | null
           created_at?: string | null
           deadline?: string | null
           deleted_at?: string | null
           description?: string | null
+          estado?: string
+          fecha_publicacion?: string | null
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
           location?: string | null
-          prize_amount?: number | null
+          moderacion_entrada_at?: string | null
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
+          prize?: string | null
           profile_id?: string
           slug?: string | null
           title?: string
@@ -222,8 +237,85 @@ export type Database = {
           },
         ]
       }
+      casting_categorias: {
+        Row: {
+          activo: boolean
+          etiqueta: string
+          id: string
+          orden: number
+        }
+        Insert: {
+          activo?: boolean
+          etiqueta: string
+          id: string
+          orden?: number
+        }
+        Update: {
+          activo?: boolean
+          etiqueta?: string
+          id?: string
+          orden?: number
+        }
+        Relationships: []
+      }
+      casting_reportes: {
+        Row: {
+          casting_id: string
+          created_at: string
+          estado: string
+          id: string
+          motivo: string
+          reporter_id: string
+          revisado_en: string | null
+          revisado_por: string | null
+        }
+        Insert: {
+          casting_id: string
+          created_at?: string
+          estado?: string
+          id?: string
+          motivo: string
+          reporter_id: string
+          revisado_en?: string | null
+          revisado_por?: string | null
+        }
+        Update: {
+          casting_id?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          motivo?: string
+          reporter_id?: string
+          revisado_en?: string | null
+          revisado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "casting_reportes_casting_id_fkey"
+            columns: ["casting_id"]
+            isOneToOne: false
+            referencedRelation: "castings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casting_reportes_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "casting_reportes_revisado_por_fkey"
+            columns: ["revisado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       castings: {
         Row: {
+          categorias: string[]
           ciudad: string | null
           created_at: string
           descripcion: string
@@ -247,26 +339,26 @@ export type Database = {
           importe: string | null
           lugar_trabajo: string | null
           modalidad: string | null
+          motivo_filtro: string | null
+          motivo_rechazo: string | null
           nombre_proyecto: string
           pais: string | null
           perfil_descripcion: string
           perfil_nombre: string
           publicado: boolean | null
-          remunerado: boolean | null
           scenaia_activo: boolean | null
           sinopsis: string | null
-          tipo_audiovisual: boolean | null
-          tipo_danza: boolean | null
+          telefono_contacto: string | null
           tipo_entidad: string | null
-          tipo_musical: boolean | null
           tipo_otro: string | null
-          tipo_teatro: boolean | null
+          tipo_remuneracion: string
           titulo: string
           updated_at: string
           url_externa: string | null
           user_id: string
         }
         Insert: {
+          categorias?: string[]
           ciudad?: string | null
           created_at?: string
           descripcion: string
@@ -290,26 +382,26 @@ export type Database = {
           importe?: string | null
           lugar_trabajo?: string | null
           modalidad?: string | null
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
           nombre_proyecto: string
           pais?: string | null
           perfil_descripcion: string
           perfil_nombre: string
           publicado?: boolean | null
-          remunerado?: boolean | null
           scenaia_activo?: boolean | null
           sinopsis?: string | null
-          tipo_audiovisual?: boolean | null
-          tipo_danza?: boolean | null
+          telefono_contacto?: string | null
           tipo_entidad?: string | null
-          tipo_musical?: boolean | null
           tipo_otro?: string | null
-          tipo_teatro?: boolean | null
+          tipo_remuneracion: string
           titulo: string
           updated_at?: string
           url_externa?: string | null
           user_id: string
         }
         Update: {
+          categorias?: string[]
           ciudad?: string | null
           created_at?: string
           descripcion?: string
@@ -333,20 +425,19 @@ export type Database = {
           importe?: string | null
           lugar_trabajo?: string | null
           modalidad?: string | null
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
           nombre_proyecto?: string
           pais?: string | null
           perfil_descripcion?: string
           perfil_nombre?: string
           publicado?: boolean | null
-          remunerado?: boolean | null
           scenaia_activo?: boolean | null
           sinopsis?: string | null
-          tipo_audiovisual?: boolean | null
-          tipo_danza?: boolean | null
+          telefono_contacto?: string | null
           tipo_entidad?: string | null
-          tipo_musical?: boolean | null
           tipo_otro?: string | null
-          tipo_teatro?: boolean | null
+          tipo_remuneracion?: string
           titulo?: string
           updated_at?: string
           url_externa?: string | null
@@ -395,6 +486,53 @@ export type Database = {
           {
             foreignKeyName: "conversations_participant_2_fkey"
             columns: ["participant_2"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_reservations: {
+        Row: {
+          authorized_limit_snapshot: number | null
+          created_at: string
+          estimated_cost: number
+          expires_at: string
+          id: string
+          profile_id: string
+          request_id: string | null
+          settled_at: string | null
+          settled_cost: number | null
+          status: string
+        }
+        Insert: {
+          authorized_limit_snapshot?: number | null
+          created_at?: string
+          estimated_cost: number
+          expires_at: string
+          id?: string
+          profile_id: string
+          request_id?: string | null
+          settled_at?: string | null
+          settled_cost?: number | null
+          status?: string
+        }
+        Update: {
+          authorized_limit_snapshot?: number | null
+          created_at?: string
+          estimated_cost?: number
+          expires_at?: string
+          id?: string
+          profile_id?: string
+          request_id?: string | null
+          settled_at?: string | null
+          settled_cost?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_reservations_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -491,7 +629,7 @@ export type Database = {
           is_active?: boolean
           is_public?: boolean
           name: string
-          region: string | null
+          region?: string | null
           slug: string
           type: string
           website?: string | null
@@ -553,6 +691,33 @@ export type Database = {
           },
         ]
       }
+      moderacion_reglas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          motivo: string | null
+          patron: string
+          tipo: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          patron: string
+          tipo?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          patron?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -587,6 +752,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nucleo_activity_log: {
+        Row: {
+          id: string
+          occurred_at: string
+          processed_at: string | null
+          profile_id: string | null
+          response_type: string
+        }
+        Insert: {
+          id?: string
+          occurred_at?: string
+          processed_at?: string | null
+          profile_id?: string | null
+          response_type: string
+        }
+        Update: {
+          id?: string
+          occurred_at?: string
+          processed_at?: string | null
+          profile_id?: string | null
+          response_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nucleo_activity_log_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -2286,6 +2483,44 @@ export type Database = {
           },
         ]
       }
+      telemetry_metrics: {
+        Row: {
+          id: string
+          metric_name: string
+          metric_unit: string | null
+          metric_value: number
+          profile_id: string | null
+          recorded_at: string
+          tags: Json | null
+        }
+        Insert: {
+          id?: string
+          metric_name: string
+          metric_unit?: string | null
+          metric_value: number
+          profile_id?: string | null
+          recorded_at?: string
+          tags?: Json | null
+        }
+        Update: {
+          id?: string
+          metric_name?: string
+          metric_unit?: string | null
+          metric_value?: number
+          profile_id?: string | null
+          recorded_at?: string
+          tags?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telemetry_metrics_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_orders: {
         Row: {
           buyer_id: string
@@ -2635,138 +2870,16 @@ export type Database = {
           },
         ]
       }
-      credit_reservations: {
-        Row: {
-          authorized_limit_snapshot: number
-          created_at: string
-          estimated_cost: number
-          expires_at: string
-          id: string
-          profile_id: string
-          request_id: string | null
-          settled_at: string | null
-          settled_cost: number | null
-          status: string
-        }
-        Insert: {
-          authorized_limit_snapshot: number
-          created_at?: string
-          estimated_cost: number
-          expires_at: string
-          id?: string
-          profile_id: string
-          request_id?: string | null
-          settled_at?: string | null
-          settled_cost?: number | null
-          status?: string
-        }
-        Update: {
-          authorized_limit_snapshot?: number
-          created_at?: string
-          estimated_cost?: number
-          expires_at?: string
-          id?: string
-          profile_id?: string
-          request_id?: string | null
-          settled_at?: string | null
-          settled_cost?: number | null
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "credit_reservations_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      nucleo_activity_log: {
-        Row: {
-          id: string
-          occurred_at: string
-          processed_at: string | null
-          profile_id: string | null
-          response_type: string
-        }
-        Insert: {
-          id?: string
-          occurred_at?: string
-          processed_at?: string | null
-          profile_id?: string | null
-          response_type: string
-        }
-        Update: {
-          id?: string
-          occurred_at?: string
-          processed_at?: string | null
-          profile_id?: string | null
-          response_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nucleo_activity_log_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      telemetry_metrics: {
-        Row: {
-          id: string
-          metric_name: string
-          metric_unit: string | null
-          metric_value: number
-          profile_id: string | null
-          recorded_at: string
-          tags: Json | null
-        }
-        Insert: {
-          id?: string
-          metric_name: string
-          metric_unit?: string | null
-          metric_value: number
-          profile_id?: string | null
-          recorded_at?: string
-          tags?: Json | null
-        }
-        Update: {
-          id?: string
-          metric_name?: string
-          metric_unit?: string | null
-          metric_value?: number
-          profile_id?: string | null
-          recorded_at?: string
-          tags?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "telemetry_metrics_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      accounting_expire_stale_reservations: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      accounting_expire_stale_reservations: { Args: never; Returns: number }
       accounting_release_reservation: {
-        Args: {
-          p_reservation_id: string
-        }
+        Args: { p_reservation_id: string }
         Returns: {
-          authorized_limit_snapshot: number
+          authorized_limit_snapshot: number | null
           created_at: string
           estimated_cost: number
           expires_at: string
@@ -2776,15 +2889,18 @@ export type Database = {
           settled_at: string | null
           settled_cost: number | null
           status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "credit_reservations"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       accounting_settle_reservation: {
-        Args: {
-          p_real_cost: number
-          p_reservation_id: string
-        }
+        Args: { p_real_cost: number; p_reservation_id: string }
         Returns: {
-          authorized_limit_snapshot: number
+          authorized_limit_snapshot: number | null
           created_at: string
           estimated_cost: number
           expires_at: string
@@ -2794,11 +2910,17 @@ export type Database = {
           settled_at: string | null
           settled_cost: number | null
           status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "credit_reservations"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       accounting_verify_and_reserve: {
         Args: {
-          p_authorized_limit: number | null
+          p_authorized_limit: number
           p_estimated_cost: number
           p_profile_id: string
           p_request_id?: string
@@ -2806,20 +2928,142 @@ export type Database = {
         }
         Returns: {
           authorized: boolean
-          authorized_limit_snapshot: number | null
-          available_capacity: number | null
-          created_at: string | null
+          authorized_limit_snapshot: number
+          available_capacity: number
+          created_at: string
           current_consumption: number
-          denial_reason: string | null
+          denial_reason: string
           estimated_cost: number
-          expires_at: string | null
+          expires_at: string
           period_start: string
-          reservation_id: string | null
+          reservation_id: string
           reserved_consumption: number
           settled_consumption: number
-          status: string | null
+          status: string
         }[]
       }
+      bandeja_postulaciones: {
+        Args: {
+          p_casting?: string
+          p_cursor_applied_at?: string
+          p_cursor_id?: string
+          p_limite?: number
+          p_status?: string
+        }
+        Returns: {
+          applicant_id: string
+          applied_at: string | null
+          casting_id: string
+          cover_letter: string | null
+          id: string
+          notes: string | null
+          portfolio_url: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "casting_applications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      buscar_castings_publicos: {
+        Args: {
+          p_categorias?: string[]
+          p_ciudad?: string
+          p_limite?: number
+          p_pais?: string
+        }
+        Returns: {
+          categorias: string[]
+          ciudad: string
+          entidad_organizadora: string
+          fecha_apertura: string
+          fecha_cierre: string
+          id: string
+          nombre_proyecto: string
+          pais: string
+          tipo_remuneracion: string
+          titulo: string
+        }[]
+      }
+      cerrar_castings_vencidos: { Args: never; Returns: undefined }
+      cerrar_convocatorias_vencidas: { Args: never; Returns: undefined }
+      cola_reportes: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_limite?: number
+        }
+        Returns: {
+          casting_estado: string
+          casting_id: string
+          casting_titulo: string
+          created_at: string
+          id: string
+          motivo: string
+          organizador: string
+          reportante: string
+        }[]
+      }
+      contacto_del_casting: {
+        Args: { p_casting_id: string }
+        Returns: {
+          email_recepcion: string
+          telefono_contacto: string
+          url_externa: string
+        }[]
+      }
+      cupo_mensual_convocatorias_agotado: {
+        Args: { p_profile: string }
+        Returns: boolean
+      }
+      es_mi_casting: { Args: { p_casting: string }; Returns: boolean }
+      es_moderador: { Args: never; Returns: boolean }
+      extinguish_personal_identity: {
+        Args: { p_profile_id: string }
+        Returns: undefined
+      }
+      mis_postulaciones: {
+        Args: {
+          p_cursor_applied_at?: string
+          p_cursor_id?: string
+          p_limite?: number
+        }
+        Returns: {
+          applied_at: string
+          casting_entidad: string
+          casting_estado: string
+          casting_fecha_apertura: string
+          casting_fecha_cierre: string
+          casting_id: string
+          casting_titulo: string
+          cover_letter: string
+          id: string
+          portfolio_url: string
+          status: string
+        }[]
+      }
+      paises_con_castings: {
+        Args: never
+        Returns: {
+          pais: string
+        }[]
+      }
+      plan_de_pago: { Args: never; Returns: boolean }
+      plan_destacado_o_superior: {
+        Args: { p_profile?: string }
+        Returns: boolean
+      }
+      se_postulo_a_mis_castings: {
+        Args: { p_perfil: string }
+        Returns: boolean
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       plan_suscripcion: "gratuito" | "premium" | "destacado" | "empresas"
@@ -2850,12 +3094,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2879,11 +3123,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2904,11 +3148,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2929,11 +3173,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2946,11 +3190,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
