@@ -1,0 +1,34 @@
+-- Convocatorias, limpieza: retirar el índice de slug redundante.
+--
+-- QUÉ PASÓ. La migración 20260916132342_convocatorias_rls_indices_y_cierre
+-- creó `idx_calls_slug_unico` partiendo de una premisa equivocada, que su
+-- propio comentario dejó escrita: «La tabla solo tenía el de su clave
+-- primaria». No era cierto. `public.calls` ya tenía `calls_slug_idx` desde el
+-- baseline (20260708000000):
+--
+--   CREATE UNIQUE INDEX calls_slug_idx ON public.calls
+--     USING btree (slug) WHERE (deleted_at IS NULL)
+--
+-- POR QUÉ SOBRA. El índice nuevo añadía `slug is not null` al predicado
+-- parcial, pero eso no cambia nada en un índice UNIQUE de PostgreSQL: dos NULL
+-- nunca se consideran iguales, así que un slug nulo jamás colisiona. La
+-- condición extra solo reduce el número de entradas del índice; la garantía de
+-- unicidad que ofrece es exactamente la misma que ya daba calls_slug_idx.
+--
+-- El resultado eran dos índices únicos sobre la misma columna y con el mismo
+-- efecto: doble coste en cada insert y cada update de slug, sin ninguna
+-- garantía adicional a cambio.
+--
+-- SE RETIRA EL NUEVO, NO EL ANTIGUO. calls_slug_idx es el que la función
+-- auto_slug_calls() lleva usando desde el baseline para desambiguar colisiones,
+-- y el que respalda el contrato de /convocatoria/[slug]. Tocarlo sería cambiar
+-- algo que funciona; retirar el recién añadido devuelve la tabla al estado que
+-- tenía antes de la migración 3, en este punto concreto.
+--
+-- NO SE PIERDE NINGUNA GARANTÍA. Tras este DROP, la unicidad del slug entre
+-- convocatorias no borradas sigue impuesta por calls_slug_idx.
+--
+-- IDEMPOTENTE. `if exists` permite reaplicarla sin efecto sobre una base en la
+-- que el índice ya no esté.
+
+drop index if exists public.idx_calls_slug_unico;
