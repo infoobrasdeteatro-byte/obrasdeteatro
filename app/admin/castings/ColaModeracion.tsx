@@ -178,7 +178,7 @@ export default function ColaModeracion({ pendientes }: { pendientes: CastingPend
                 </dd>
               </div>
               <div>
-                <dt className="obras-stat-label">Convocatoria</dt>
+                <dt className="obras-stat-label">Casting</dt>
                 <dd style={{ fontSize: '13px', color: 'var(--text)' }}>
                   {formatearFecha(casting.fechaApertura)} – {formatearFecha(casting.fechaCierre)}
                 </dd>
@@ -228,7 +228,7 @@ export default function ColaModeracion({ pendientes }: { pendientes: CastingPend
                   onChange={event => setMotivo(event.target.value)}
                   placeholder="Qué debe corregir el organizador antes de volver a enviarlo."
                 />
-                <p className="ds-form-hint">Lo verá el organizador junto a su convocatoria.</p>
+                <p className="ds-form-hint">Lo verá el organizador junto a su casting.</p>
                 <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                   <button
                     type="button"

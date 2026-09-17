@@ -1,11 +1,16 @@
 /**
- * Piezas compartidas por el listado público y la ficha de una convocatoria.
+ * Piezas compartidas por el listado público y la ficha de un casting.
+ *
+ * OJO CON EL VOCABULARIO. «Convocatoria» ya NO es sinónimo de «casting»:
+ * desde que existe el módulo de Convocatorias (app/convocatoria/, sobre la
+ * tabla public.calls) son dos cosas distintas, con su propio ciclo de vida y
+ * sus propias reglas de plan. Este fichero es solo de Castings.
  */
 
 /**
  * Insignia fija, sin comprobación adicional. No es un adorno: solo las cuentas
  * de pago pueden llegar a publicar (política "Casting propio - creación" más
- * el cupo por plan), de modo que cualquier convocatoria que se vea aquí
+ * el cupo por plan), de modo que cualquier casting que se vea aquí
  * cumple la condición por construcción. Si algún día se abriera la publicación
  * a cuentas gratuitas, esta insignia dejaría de ser cierta y habría que
  * volverla condicional.
@@ -21,18 +26,6 @@ export function InsigniaVerificado() {
       Organizador verificado
     </span>
   )
-}
-
-export function fecha(valor: string | null): string {
-  if (!valor) return '—'
-  const d = new Date(valor)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-export function lugar(ciudad: string | null, pais: string | null): string {
-  const partes = [ciudad, pais].filter(Boolean)
-  return partes.length > 0 ? partes.join(', ') : '—'
 }
 
 /** Rango de edad legible. Ausencia real de dato, no "0" ni "sin límite". */

@@ -83,7 +83,7 @@ export function AvisoEstado({
             {motivoFiltro}
           </div>
           <div className="ds-status-hint">
-            Retenida por el filtro automático. No está rechazada: alguien del equipo la revisará.
+            Retención del filtro automático. No es un rechazo: alguien del equipo revisará esta publicación.
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@ export function AvisoEstado({
   if (estado === 'rechazado' && motivoRechazo) {
     return (
       <div className="ds-alert-error" style={{ marginBottom: '16px' }}>
-        <strong style={{ display: 'block', marginBottom: '2px' }}>Rechazada por moderación</strong>
+        <strong style={{ display: 'block', marginBottom: '2px' }}>Rechazo de moderación</strong>
         {motivoRechazo}
       </div>
     )

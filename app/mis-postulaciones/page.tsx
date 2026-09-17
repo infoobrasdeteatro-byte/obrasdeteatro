@@ -5,9 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import EstadoPostulacion from '@/components/castings/EstadoPostulacion'
-import EstadoPill from '@/components/castings/EstadoPill'
-import { leerCursor, escribirCursor } from '@/components/castings/cursor'
-import { fecha } from '@/components/castings/publico'
+import EstadoPill from '@/components/shared/EstadoPill'
+import { leerCursor, escribirCursor } from '@/components/shared/cursor'
+import { fecha } from '@/components/shared/formato'
 
 export const metadata: Metadata = {
   title: 'Mis postulaciones | ObrasDeTeatro',
@@ -27,8 +27,8 @@ type Props = { searchParams: Promise<{ cursor?: string }> }
  *
  * Los datos llegan por public.mis_postulaciones(), que acompaña cada
  * postulación con su casting AUNQUE ESTE YA ESTE CERRADO O CANCELADO. Sin esa
- * función, la RLS de castings deja de mostrar la convocatoria en cuanto el
- * organizador la cierra, y la fila que más necesita explicación -- la que ya
+ * función, la RLS de castings deja de mostrar el casting en cuanto el
+ * organizador lo cierra, y la fila que más necesita explicación -- la que ya
  * no va a ninguna parte -- aparecería sin título ni entidad.
  */
 export default async function MisPostulacionesPage({ searchParams }: Props) {
@@ -80,12 +80,12 @@ export default async function MisPostulacionesPage({ searchParams }: Props) {
             <div className="page-title-group">
               <h1 className="page-title">Mis postulaciones</h1>
               <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-                Las convocatorias a las que te has presentado, de la más reciente a la más antigua.
+                Los castings a los que te has presentado, del más reciente al más antiguo.
               </span>
             </div>
             <Link href="/castings" className="ds-btn-secondary"
               style={{ padding: '10px 20px', fontSize: '13px' }}>
-              Ver convocatorias abiertas
+              Ver castings abiertos
             </Link>
           </div>
 
@@ -97,10 +97,10 @@ export default async function MisPostulacionesPage({ searchParams }: Props) {
 
           {visibles.length === 0 ? (
             <div className="obras-empty">
-              <p className="obras-empty-text">Todavía no te has presentado a ninguna convocatoria</p>
+              <p className="obras-empty-text">Todavía no te has presentado a ningún casting</p>
               <Link href="/castings" className="ds-btn-primary"
                 style={{ width: 'auto', display: 'inline-flex', padding: '10px 24px' }}>
-                Explorar convocatorias
+                Explorar castings
               </Link>
             </div>
           ) : (
@@ -138,8 +138,8 @@ export default async function MisPostulacionesPage({ searchParams }: Props) {
                     {castingTerminado && (
                       <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '10px' }}>
                         {p.casting_estado === 'cerrado'
-                          ? 'La organización ha cerrado esta convocatoria. Tu candidatura sigue registrada.'
-                          : 'La organización ha cancelado esta convocatoria.'}
+                          ? 'La organización ha cerrado este casting. Tu candidatura sigue registrada.'
+                          : 'La organización ha cancelado este casting.'}
                       </p>
                     )}
 
