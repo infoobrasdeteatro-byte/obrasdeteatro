@@ -46,3 +46,4 @@ supabase/.branches
 
 # informes internos de desarrollo
 INFORME_POST_BUILD.md
+docs/finanzas/
