@@ -115,7 +115,6 @@ export const PLANES: Plan[] = [
         items: [
           'Todo lo del plan Premium',
           'Perfil destacado en el directorio',
-          'Insignia profesional verificada',
           'Etiqueta «Destacado» visible en resultados',
         ],
       },
@@ -169,7 +168,6 @@ export const PLANES: Plan[] = [
         titulo: 'Perfil Institucional',
         items: [
           'Perfil para compañía, teatro, festival o institución',
-          'Sello de verificación institucional',
           'Página de organización con identidad propia',
           'Gestión de equipo y colaboradores',
         ],
@@ -248,7 +246,6 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
       { label: 'Premios, formación y currículum',      values: [false,      true,         true,         true] },
       { label: 'Disponibilidad profesional activa',    values: [false,      true,         true,         true] },
       { label: 'Perfil destacado en el directorio',    values: [false,      false,        true,         true] },
-      { label: 'Insignia profesional verificada',      values: [false,      false,        true,         true] },
       { label: 'Perfil institucional',                 values: [false,      false,        false,        true] },
       { label: 'Gestión de equipo y colaboradores',    values: [false,      false,        false,        true] },
     ],
@@ -289,6 +286,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
       { label: 'Convocatorias públicas abiertas',      values: [true,       true,         true,         true] },
       { label: 'Acceso a todas las convocatorias',     values: [false,      true,         true,         true] },
       { label: 'Alertas personalizadas',               values: [false,      true,         true,         true] },
+      { label: 'Convocatorias publicadas al mes',      values: ['Hasta 3',  'Ilimitadas', 'Ilimitadas', 'Ilimitadas'] },
     ],
   },
   {
