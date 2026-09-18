@@ -21,6 +21,10 @@ const AUTHORIZED_ROW = {
   created_at: '2026-07-16T00:00:00.000Z',
   current_consumption: 10,
   denial_reason: null,
+  period_start: '2026-07-01T00:00:00.000Z',
+  settled_consumption: 6,
+  reserved_consumption: 4,
+  available_capacity: 15,
 }
 
 const DENIED_ROW = {
@@ -32,7 +36,11 @@ const DENIED_ROW = {
   expires_at: null,
   created_at: null,
   current_consumption: 10,
-  denial_reason: 'consumo_actual(10) + coste_estimado(25) > limite_autorizado(30)',
+  denial_reason: 'presupuesto del periodo agotado: confirmado(6) + comprometido(4) + coste_estimado(25) > limite_autorizado(30)',
+  period_start: '2026-07-01T00:00:00.000Z',
+  settled_consumption: 6,
+  reserved_consumption: 4,
+  available_capacity: 20,
 }
 
 describe('verifyAndReserve', () => {
@@ -56,6 +64,12 @@ describe('verifyAndReserve', () => {
         createdAt: '2026-07-16T00:00:00.000Z',
         settledAt: null,
       },
+      budget: {
+        periodStart: '2026-07-01T00:00:00.000Z',
+        settledConsumption: 6,
+        reservedConsumption: 4,
+        availableCapacity: 15,
+      },
     })
     expect(rpc).toHaveBeenCalledWith('accounting_verify_and_reserve', {
       p_profile_id: 'profile-1',
@@ -75,7 +89,14 @@ describe('verifyAndReserve', () => {
     expect(result).toEqual({
       authorized: false,
       currentConsumption: 10,
-      denialReason: 'consumo_actual(10) + coste_estimado(25) > limite_autorizado(30)',
+      denialReason:
+        'presupuesto del periodo agotado: confirmado(6) + comprometido(4) + coste_estimado(25) > limite_autorizado(30)',
+      budget: {
+        periodStart: '2026-07-01T00:00:00.000Z',
+        settledConsumption: 6,
+        reservedConsumption: 4,
+        availableCapacity: 20,
+      },
     })
   })
 

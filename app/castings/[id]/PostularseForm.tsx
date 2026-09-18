@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 /**
- * Postulación a una convocatoria.
+ * Postulación a un casting.
  *
  * No comprueba de antemano el plan de pago ni el duplicado: esas dos reglas
  * viven en la base (política "Postulación propia - creación" y el UNIQUE
@@ -59,7 +59,7 @@ export default function PostularseForm({
     return (
       <div className="ds-alert-success">
         <strong style={{ display: 'block', marginBottom: '2px' }}>Postulación enviada</strong>
-        La organización recibirá tu candidatura. Ya no puedes volver a postularte a esta convocatoria.
+        La organización recibirá tu candidatura. Ya no puedes volver a postularte a este casting.
       </div>
     )
   }
@@ -87,7 +87,7 @@ export default function PostularseForm({
         <label className="ds-label" htmlFor="cover_letter">Mensaje (opcional)</label>
         <textarea id="cover_letter" className="ds-textarea" rows={4} maxLength={2000}
           value={carta} onChange={e => setCarta(e.target.value)}
-          placeholder="Por qué te interesa esta convocatoria." />
+          placeholder="Por qué te interesa este casting." />
       </div>
 
       <div className="ds-form-group">
@@ -111,10 +111,10 @@ export default function PostularseForm({
 
 function traducir(mensaje: string): string {
   if (mensaje.includes('duplicate key') || mensaje.includes('unique')) {
-    return 'Ya te habías postulado a esta convocatoria.'
+    return 'Ya te habías postulado a este casting.'
   }
   if (mensaje.includes('row-level security')) {
-    return 'Postularse requiere un plan de pago. Revisa tu plan para presentarte a convocatorias.'
+    return 'Postularse requiere un plan de pago. Revisa tu plan para presentarte a castings.'
   }
   return `No se pudo enviar la postulación: ${mensaje}`
 }

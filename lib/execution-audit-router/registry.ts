@@ -13,8 +13,8 @@ import type { ExecutionAuditConsumer } from './types'
 export const REGISTERED_CONSUMERS: readonly ExecutionAuditConsumer[] = [
   {
     category: 'Observabilidad',
-    deliver: async (userId, audit) => {
-      await recordExecutionTrace(userId, audit)
+    deliver: async (userId, audit, context) => {
+      await recordExecutionTrace(userId, audit, context)
     },
   },
 ]

@@ -15,3 +15,83 @@ export interface TechnicalTrace {
   readonly metrics: TechnicalMetricSummary[]
   readonly generatedAt: string
 }
+
+/**
+ * Contexto tecnico de una ejecucion concreta de proveedor. Permite
+ * distinguir las dos ejecuciones que puede tener un mismo turno -- la del
+ * resolutor de vocabulario y la de la respuesta -- que hasta ahora
+ * producian metricas indistinguibles entre si.
+ */
+export interface ExecutionTraceContext {
+  readonly requestId: string
+  readonly stage: 'resolver' | 'response'
+}
+
+/**
+ * Lo que ScenaIA entendio, recupero y respondio en un turno. Solo
+ * vocabulario cerrado del sistema y recuentos: ningun texto de la persona
+ * ni del modelo (ver record-turn-metrics.ts).
+ */
+export interface TurnObservation {
+  /** `NormalizedRequest.requestId` -- correlaciona todas las metricas del turno. */
+  readonly requestId: string
+  readonly domains: readonly string[]
+  readonly isContinuation: boolean
+  readonly resolvedTerms: readonly string[]
+  readonly retrievedEntityCount: number
+  /**
+   * Dominios que Knowledge Assets pudo cubrir realmente en este turno.
+   * Fase 1: es lo unico que separa "no habia ningun dominio que consultar"
+   * de "se consulto el dominio y no devolvio nada" -- dos causas opuestas
+   * que hasta ahora producian el mismo `retrievedEntityCount` de cero y
+   * eran indistinguibles en telemetria.
+   */
+  readonly coveredDomainCount: number
+  readonly knowledgeConfidence: number
+  /** Se cubrio algun dominio y aun asi no habia nada que ofrecer. */
+  readonly isEmptyResult: boolean
+  readonly responseType: string
+  readonly durationMs: number
+  /**
+   * Desviacion de la estimacion (Bloque 4): el coste real supero lo
+   * reservado. `null` cuando no ocurrio, que es lo normal.
+   *
+   * No es un error de la liquidacion -- el coste real es correcto y se
+   * registra intacto -- sino de la ESTIMACION, que se quedo corta. Se
+   * observa para poder recalibrarla; ocultarla capando el importe
+   * convertiria un problema de presupuesto en contabilidad falsa.
+   */
+  readonly settlementAnomaly: SettlementAnomaly | null
+}
+
+export interface SettlementAnomaly {
+  readonly reservationId: string
+  readonly reservedCredits: number
+  readonly settledCredits: number
+  readonly providerIdentifier: string | null
+  readonly providerModel: string | null
+}
+
+
+/**
+ * Como quedo el circuito economico del turno (vocabulario de P1.2, tal
+ * cual: aqui no se reinterpreta ni se resume). `fallo_al_cerrar` es el
+ * unico estado que deja consumo posiblemente sin registrar.
+ */
+export type TurnClosureState = 'sin_reserva' | 'liquidada' | 'liberada' | 'fallo_al_cerrar'
+
+/**
+ * Un turno que termino por excepcion (P1-C).
+ *
+ * NO es una ejecucion de proveedor y no debe confundirse con una:
+ * `executionCount` dice cuantas llegaron a ocurrir -- cero es lo normal --,
+ * y ninguna metrica de la familia `ai_gateway.*` sale de aqui.
+ */
+export interface TurnFailure {
+  /** `turnId` del Orquestador (F5F-1); es el mismo `requestId` que llevan las demas metricas del turno. */
+  readonly turnId: string
+  readonly error: unknown
+  readonly executionCount: number
+  readonly reservationId: string | null
+  readonly closure: TurnClosureState
+}

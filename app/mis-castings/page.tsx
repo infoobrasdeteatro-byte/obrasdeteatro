@@ -57,14 +57,14 @@ export default async function MisCastingsPage() {
             <div className="page-title-group">
               <h1 className="page-title">Mis castings</h1>
               <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-                Tus convocatorias y el estado real de cada una.
+                Tus castings y el estado real de cada uno.
               </span>
             </div>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               {plan !== 'gratuito' && (
                 <Link href="/castings/nuevo" className="ds-btn-primary"
                   style={{ width: 'auto', padding: '10px 20px', fontSize: '13px' }}>
-                  + Nueva convocatoria
+                  + Nuevo casting
                 </Link>
               )}
             </div>

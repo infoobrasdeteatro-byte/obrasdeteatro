@@ -11,7 +11,7 @@ import type { StructuredKnowledgeItem } from './types'
 export async function listStructuredKnowledge(limitPerDomain?: number): Promise<StructuredKnowledgeItem[]> {
   const [works, organizations] = await Promise.all([
     listWorkKnowledge({}, limitPerDomain),
-    listOrganizationKnowledge(limitPerDomain),
+    listOrganizationKnowledge({}, limitPerDomain),
   ])
 
   return [...works, ...organizations]

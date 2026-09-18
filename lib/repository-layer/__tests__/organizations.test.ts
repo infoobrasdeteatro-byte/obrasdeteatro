@@ -73,7 +73,7 @@ describe('listPublicOrganizations', () => {
     const { client, builder } = createFakeSupabaseClient({ data: [SAMPLE_ORG_ROW], error: null })
     vi.mocked(createClient).mockResolvedValue(client as never)
 
-    const result = await listPublicOrganizations(5)
+    const result = await listPublicOrganizations({}, 5)
 
     expect(result).toEqual([
       {

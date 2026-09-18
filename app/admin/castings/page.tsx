@@ -62,7 +62,7 @@ export default async function ModeracionCastingsPage() {
                 Esta página es del equipo de moderación. Tu cuenta no tiene el rol
                 <strong style={{ color: 'var(--text)' }}> admin </strong>ni
                 <strong style={{ color: 'var(--text)' }}> moderator</strong>, así que no
-                puede revisar convocatorias ajenas.
+                puede revisar castings ajenos.
               </p>
               <Link
                 href="/dashboard"
@@ -136,7 +136,7 @@ export default async function ModeracionCastingsPage() {
             <div className="page-title-group">
               <h1 className="page-title">Moderación de castings</h1>
               <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-                Convocatorias en espera de revisión, de la más antigua a la más reciente.
+                Castings en espera de revisión, del más antiguo al más reciente.
               </span>
             </div>
             <span

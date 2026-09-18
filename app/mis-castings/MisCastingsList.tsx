@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import EstadoPill, { AvisoEstado } from '@/components/castings/EstadoPill'
+import EstadoPill, { AvisoEstado } from '@/components/shared/EstadoPill'
 
 export type CastingPropio = {
   id: string
@@ -65,7 +65,7 @@ export default function MisCastingsList({ castings }: { castings: CastingPropio[
       setResultados(p => ({
         ...p,
         [id]: data.estado === 'publicado'
-          ? 'Publicado. Tu convocatoria ya es visible.'
+          ? 'Publicado. Tu casting ya es visible.'
           : data.motivo_filtro
             ? `En revisión: ${data.motivo_filtro}. No está rechazada; la revisará el equipo.`
             : 'En revisión. La revisará el equipo antes de publicarla.',
@@ -78,7 +78,7 @@ export default function MisCastingsList({ castings }: { castings: CastingPropio[
   if (castings.length === 0) {
     return (
       <div className="obras-empty">
-        <p className="obras-empty-text">Todavía no has creado ninguna convocatoria</p>
+        <p className="obras-empty-text">Todavía no has creado ningún casting</p>
         <Link href="/castings/nuevo" className="ds-btn-primary"
           style={{ width: 'auto', display: 'inline-flex', padding: '10px 24px' }}>
           Crear la primera
@@ -146,7 +146,7 @@ export default function MisCastingsList({ castings }: { castings: CastingPropio[
                 <button type="button" className="table-link table-link--danger" disabled={enCurso}
                   style={{ marginLeft: 'auto' }}
                   onClick={() => cambiarEstado(c.id, 'cancelado')}>
-                  Cancelar convocatoria
+                  Cancelar casting
                 </button>
               )}
             </div>

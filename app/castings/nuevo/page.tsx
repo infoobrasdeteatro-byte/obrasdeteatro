@@ -7,12 +7,12 @@ import Sidebar from '@/components/design-system/Sidebar'
 import CastingForm from '@/components/castings/CastingForm'
 
 export const metadata: Metadata = {
-  title: 'Nueva convocatoria | ObrasDeTeatro',
+  title: 'Nuevo casting | ObrasDeTeatro',
   robots: { index: false, follow: false },
 }
 
 /**
- * Creación de convocatoria.
+ * Creación de casting.
  *
  * El gate de plan de esta página NO es la regla: la regla es la política RLS
  * "Casting propio - creación", que ya impide el INSERT a los planes gratuitos.
@@ -35,11 +35,11 @@ export default async function CrearCastingPage() {
 
   if (plan === 'gratuito') {
     return (
-      <Marco titulo="Nueva convocatoria">
+      <Marco titulo="Nuevo casting">
         <div className="obras-empty">
           <p className="obras-empty-text">
             Publicar castings forma parte de los planes de pago. Con tu plan gratuito puedes
-            explorar el directorio y gestionar tus obras, pero no abrir convocatorias.
+            explorar el directorio y gestionar tus obras, pero no abrir castings.
           </p>
           <Link href="/precios" className="ds-btn-primary"
             style={{ width: 'auto', display: 'inline-flex', padding: '10px 24px' }}>
@@ -59,7 +59,7 @@ export default async function CrearCastingPage() {
     .order('orden', { ascending: true })
 
   return (
-    <Marco titulo="Nueva convocatoria">
+    <Marco titulo="Nuevo casting">
       <CastingForm userId={user.id} categorias={categorias ?? []} />
     </Marco>
   )

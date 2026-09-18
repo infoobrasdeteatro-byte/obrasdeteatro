@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { resolveScenaiaAccess } from '@/lib/auth/scenaia-access'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import ScenaiaClient from './ScenaiaClient'
@@ -8,7 +9,32 @@ export default async function ScenaiaPage() {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+
+  /*
+   * Misma decision que el endpoint, tomada en el mismo sitio (P1.3). Esta
+   * comprobacion NO es la proteccion -- lo es la del endpoint --: existe
+   * para que quien no puede usar ScenaIA no llegue a ver la interfaz y
+   * descubra el limite al escribir.
+   *
+   * La pagina solo traduce el veredicto a una redireccion. No lo interpreta
+   * ni lo reimplementa.
+   */
+  const acceso = await resolveScenaiaAccess(user?.id ?? null)
+
+  if (!acceso.allowed) {
+    /*
+     * UX-003 -- cada causa tiene su destino. Antes todas acababan en
+     * `/dashboard`, de modo que a quien solo le faltaba confirmar su correo
+     * se le expulsaba sin decirle nada: un bloqueo correcto vivido como una
+     * averia.
+     *
+     * La pagina no decide nada nuevo: traduce el veredicto que ya trae.
+     */
+    if (acceso.reason === 'no_autenticado') redirect('/auth/login')
+    if (acceso.reason === 'no_verificado') redirect('/verificacion')
+
+    redirect('/dashboard')
+  }
 
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>

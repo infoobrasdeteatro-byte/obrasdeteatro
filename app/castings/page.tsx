@@ -3,10 +3,11 @@ import Link from 'next/link'
 import TopNav from '@/components/design-system/TopNav'
 import { createClient } from '@/lib/supabase/server'
 import { REMUNERACION_CORTA } from '@/components/castings/vocabulario'
-import { InsigniaVerificado, fecha, lugar } from '@/components/castings/publico'
+import { InsigniaVerificado } from '@/components/castings/publico'
+import { fecha, lugar } from '@/components/shared/formato'
 
 export const metadata: Metadata = {
-  title: 'Castings y convocatorias | ObrasDeTeatro',
+  title: 'Castings | ObrasDeTeatro',
 }
 
 type Props = {
@@ -14,7 +15,7 @@ type Props = {
 }
 
 /**
- * Listado público de convocatorias.
+ * Listado público de castings.
  *
  * Accesible SIN sesión: no lleva guard de usuario, y el middleware no cubre
  * /pruebas. La visibilidad la decide la política RLS "Castings públicos"
@@ -65,7 +66,7 @@ export default async function CastingsPublicoPage({ searchParams }: Props) {
 
           <div className="page-header">
             <div className="page-title-group">
-              <h1 className="page-title">Convocatorias abiertas</h1>
+              <h1 className="page-title">Castings abiertos</h1>
               <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
                 Castings publicados en la plataforma.
               </span>
@@ -84,7 +85,7 @@ export default async function CastingsPublicoPage({ searchParams }: Props) {
                     <option key={p.pais} value={p.pais}>{p.pais}</option>
                   ))}
                 </select>
-                <p className="ds-form-hint">Coincidencia exacta. La lista sale de los países con convocatorias abiertas.</p>
+                <p className="ds-form-hint">Coincidencia exacta. La lista sale de los países con castings abiertos.</p>
               </div>
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="ciudad">Ciudad</label>
@@ -119,8 +120,8 @@ export default async function CastingsPublicoPage({ searchParams }: Props) {
             <div className="obras-empty">
               <p className="obras-empty-text" style={{ marginBottom: 0 }}>
                 {hayFiltros
-                  ? 'Ninguna convocatoria coincide con estos filtros.'
-                  : 'No hay convocatorias abiertas en este momento.'}
+                  ? 'Ningún casting coincide con estos filtros.'
+                  : 'No hay castings abiertos en este momento.'}
               </p>
             </div>
           ) : (
@@ -162,7 +163,7 @@ export default async function CastingsPublicoPage({ searchParams }: Props) {
                         <dd style={{ fontSize: '13px', color: 'var(--text)' }}>{lugar(c.ciudad, c.pais)}</dd>
                       </div>
                       <div>
-                        <dt className="obras-stat-label">Convocatoria</dt>
+                        <dt className="obras-stat-label">Plazo</dt>
                         <dd style={{ fontSize: '13px', color: 'var(--text)' }}>
                           {fecha(c.fecha_apertura)} – {fecha(c.fecha_cierre)}
                         </dd>

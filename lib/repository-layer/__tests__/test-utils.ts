@@ -11,6 +11,8 @@ export function createFakeSupabaseClient(result: FakeQueryResult) {
     eq: vi.fn((_column: string, _value: unknown) => builder),
     is: vi.fn((_column: string, _value: unknown) => builder),
     ilike: vi.fn((_column: string, _pattern: string) => builder),
+    neq: vi.fn((_column: string, _value: unknown) => builder),
+    in: vi.fn((_column: string, _values: readonly unknown[]) => builder),
     gte: vi.fn((_column: string, _value: unknown) => builder),
     lte: vi.fn((_column: string, _value: unknown) => builder),
     order: vi.fn((_column: string, _options?: { ascending: boolean }) => builder),

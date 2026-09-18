@@ -7,9 +7,10 @@ describe('isDomainCovered', () => {
     expect(isDomainCovered('Organizaciones')).toBe(true)
   })
 
-  it('reconoce los 6 dominios restantes como no cubiertos', () => {
+  // 'Personas' salio de esta lista al quedar cubierto en la Fase Personas
+  // (pasos 1-3 autorizados): profiles -> Repository Layer -> persons-knowledge.
+  it('reconoce los 5 dominios restantes como no cubiertos', () => {
     const uncovered: Array<Parameters<typeof isDomainCovered>[0]> = [
-      'Personas',
       'Oportunidades',
       'Editorial',
       'Relaciones',
