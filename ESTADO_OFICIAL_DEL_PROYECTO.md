@@ -83,19 +83,22 @@ El proyecto no tiene ningún módulo en producción que esté roto o inaccesible
 
 ### Estado de ramas
 
+*Actualizado el 2026-09-18.*
+
 | Rama | Último commit | Descripción |
 |------|--------------|-------------|
-| `main` | `372f8db` | Micro Sprint UX-001 — shimmer botón Registrarse |
-| `develop` | `69fe818` | OA-1.3 — Biblioteca conectada a Supabase |
+| `main` | `f4d00cd` | Último commit funcional: webhooks de Stripe (PR #9). Los commits posteriores solo tocan `.gitignore` y documentación |
+| `develop` | `3f12127` (2026-08-07) | Sin actividad desde agosto. Su contenido ya está en `main`, reaplicado con otros SHA; no es la rama de integración actual |
+
+El flujo de trabajo actual es rama de feature → PR → squash merge a `main`.
 
 ### Estado de despliegues
 
 | Entorno | URL | Estado |
 |---------|-----|--------|
-| **Producción** | `obrasdeteatro.com` | READY — commit `372f8db` |
-| **Preview (develop)** | `obrasdeteatro-git-develop-obrasdeteatro-s-projects.vercel.app` | READY — commit `69fe818` |
+| **Producción** | `obrasdeteatro.com` | Despliegue automático desde `main`. Último verificado: `ca82efe` (2026-09-18), success |
 
-**Nota importante:** La Biblioteca Oficial (módulo Sistema Obras) está en `develop` únicamente. No ha pasado a producción. El merge a `main` requiere aprobación explícita tras auditoría visual.
+**Nota:** la Biblioteca Oficial (módulo Sistema Obras) está en `main` y en producción desde que el contenido de `develop` se integró en `main`.
 
 ---
 
@@ -458,8 +461,8 @@ El Sistema Editorial 2026 aprobado especifica Newsreader + IBM Plex Serif/Sans. 
 ### Riesgo 5 — Años de composición en el catálogo
 Dos obras del Lote 001 tienen años provisionales o debatidos. Si se despliega contenido que dice "1636" y luego se descubre que es incorrecto, la Biblioteca pierde credibilidad editorial.
 
-### Riesgo 6 — Producción desactualizada
-`main` está en el commit `372f8db` (Micro Sprint UX-001, shimmer), anterior a todo el Sistema Obras. Hay 13 commits de develop que no están en producción. Mientras más tiempo pase sin merge, más diverge el entorno real del entorno de desarrollo.
+### Riesgo 6 — Producción desactualizada — RESUELTO (2026-09-18)
+Resuelto. `main` contiene todo el trabajo de `develop`, incluido el Sistema Obras, y producción despliega automáticamente desde `main`. Riesgo residual: `develop` sigue existiendo sin actividad desde 2026-08-07, y podría confundirse con la rama de integración.
 
 ### Riesgo 7 — `work_files_file_type_check`
 El constraint solo permite 5 tipos de archivo. Si la Biblioteca necesita tipos adicionales en el futuro (por ejemplo, materiales de producción, partituras, etc.), requerirá una migración SQL con análisis de impacto en RLS.
