@@ -1,3 +1,7 @@
 export type { TechnicalTrace, TechnicalMetricSummary, ExecutionAudit } from './types'
 export { recordExecutionTrace } from './record-execution-trace'
 export { buildTechnicalTrace } from './build-technical-trace'
+export { recordTurnMetrics } from './record-turn-metrics'
+export { recordTurnFailure } from './record-turn-failure'
+export type { TurnObservation, SettlementAnomaly, ExecutionTraceContext } from './types'
+export type { TurnFailure, TurnClosureState } from './types'

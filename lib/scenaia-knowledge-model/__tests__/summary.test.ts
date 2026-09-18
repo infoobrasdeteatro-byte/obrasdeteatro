@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { buildKnowledgeSummary } from '../summary'
 
-const WORK_ITEM = { domain: 'Obras' as const, data: { title: 'La Casa de Bernarda Alba' } as never }
-const ORG_ITEM = { domain: 'Organizaciones' as const, data: { name: 'Teatro Español' } as never }
+const WORK_ITEM = { domain: 'Obras' as const, data: { title: 'La Casa de Bernarda Alba' } as never, provenance: { authority: 'CATALOGO_PROPIO' as const, sourceName: null, sourceUrl: null, observedAt: 'T', validUntil: null }, functions: [] }
+const ORG_ITEM = { domain: 'Organizaciones' as const, data: { name: 'Teatro Español' } as never, provenance: { authority: 'CATALOGO_PROPIO' as const, sourceName: null, sourceUrl: null, observedAt: 'T', validUntil: null }, functions: [] }
 
 describe('buildKnowledgeSummary', () => {
   it('sintetiza dominios solicitados/cubiertos/no cubiertos y etiquetas reales por dominio', () => {

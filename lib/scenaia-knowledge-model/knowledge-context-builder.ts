@@ -1,9 +1,10 @@
 import type { NormalizedRequest } from '@/lib/request-interpreter'
+import type { WorkSlotOccupancy } from '@/lib/knowledge-assets'
 import type { KnowledgeCompleteness, KnowledgeContext } from './types'
 import { isDomainCovered } from './domain-coverage'
 import { retrieveKnowledgeForDomain } from './retrieve-knowledge'
 import { buildKnowledgeSummary } from './summary'
-import { unfilteredCriteriaNote } from './unfiltered-note'
+import { unfilteredCriteriaNote, partiallyAppliedCriteriaNote } from './unfiltered-note'
 
 function estimateCompleteness(requestedCount: number, coveredCount: number): KnowledgeCompleteness {
   if (requestedCount === 0 || coveredCount === 0) return 'vacio'
@@ -24,7 +25,10 @@ function completenessToConfidence(completeness: KnowledgeCompleteness): number {
  * posterior, fuera del alcance actual. Objeto efimero: se construye de
  * nuevo en cada invocacion, nunca se cachea ni se reutiliza.
  */
-export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest): Promise<KnowledgeContext> {
+export async function buildKnowledgeContext(
+  normalizedRequest: NormalizedRequest,
+  previousOccupancy: WorkSlotOccupancy = {}
+): Promise<KnowledgeContext> {
   // Deduplicado defensivo: NormalizedRequest no garantiza unicidad a nivel de
   // tipos, aunque el unico productor actual (Request Interpreter) nunca la
   // viola -- evita recuperar el mismo dominio dos veces si eso cambiara.
@@ -33,7 +37,7 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
   const notCoveredDomains = requestedDomains.filter((domain) => !isDomainCovered(domain))
 
   const resultsByDomain = await Promise.all(
-    coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain, normalizedRequest.normalizedIntent))
+    coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy))
   )
   const knowledgeEntities = resultsByDomain.flatMap((result) => result.items)
 
@@ -53,10 +57,21 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
    * la peticion -- direct-content-builder.ts la usa para no presentar ese
    * listado como si cumpliera un criterio que en realidad no aplico.
    */
+  // Cuatro estados, tres resultados distintos -- ninguno inferido: cada uno
+  // se lee de las dos señales explicitas que Knowledge Assets ya calculo.
+  //
+  //   narrowed=true,  unapplied=[]   -> COMPLETO: nada que declarar.
+  //   narrowed=true,  unapplied=[..] -> PARCIAL: se aplico parte del criterio.
+  //   narrowed=false, unapplied=[..] -> se pidio criterio y no se aplico ninguno.
+  //   narrowed=false, unapplied=[]   -> SIN criterio: el usuario no pidio nada
+  //                                     que filtrar, advertirle seria falso.
   coveredDomains.forEach((domain, index) => {
-    if (!resultsByDomain[index].requestWasNarrowed) {
-      knowledgeLimitations.push(unfilteredCriteriaNote(domain))
-    }
+    const { requestWasNarrowed, unappliedCriteria } = resultsByDomain[index]
+    if (unappliedCriteria.length === 0) return
+
+    knowledgeLimitations.push(
+      requestWasNarrowed ? partiallyAppliedCriteriaNote(domain) : unfilteredCriteriaNote(domain)
+    )
   })
 
   const knowledgeCompleteness = estimateCompleteness(requestedDomains.length, coveredDomains.length)
@@ -69,6 +84,10 @@ export async function buildKnowledgeContext(normalizedRequest: NormalizedRequest
     knowledgeConfidence: completenessToConfidence(knowledgeCompleteness),
     knowledgeCompleteness,
     knowledgeLimitations,
+    // Contexto que sobrevive al turno (Fase 3). Se transporta sin
+    // interpretarlo: este componente no decide que significa una ranura,
+    // solo lleva hasta el Orquestador lo que el motor de dominio resolvio.
+    workOccupancy: resultsByDomain.find((resultado) => Object.keys(resultado.workOccupancy).length > 0)?.workOccupancy ?? {},
     knowledgeTimestamp: new Date().toISOString(),
   }
 }

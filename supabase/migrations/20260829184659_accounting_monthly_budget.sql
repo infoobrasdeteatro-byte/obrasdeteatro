@@ -1,31 +1,51 @@
--- Contabilidad: el presupuesto pasa a medirse por mes natural.
+-- -----------------------------------------------------------------------------
+-- ACCOUNTING ENGINE — presupuesto de consumo por periodo (mensual)
 --
--- CAPTURA DE UN CAMBIO YA APLICADO. Esta migración está aplicada en el
--- proyecto remoto y consta en su historial con la versión 20260829184659,
--- pero nunca tuvo fichero en supabase/migrations/. Este archivo NO introduce
--- nada nuevo: existe para que el repo refleje el estado real y no haya deriva
--- entre supabase/migrations/ y producción.
+-- Que faltaba: la operacion de verificar-y-reservar solo miraba las reservas
+-- ACTIVAS y no expiradas, es decir, una ventana de 5 minutos (el TTL). Eso
+-- controla la concurrencia, pero no es una cuota: una vez liquidada o
+-- expirada una reserva dejaba de contar, de modo que el limite del plan
+-- podia superarse indefinidamente dentro de un mes. Ocurrio de verdad: un
+-- perfil con limite 30 acumulo 52 peticiones en julio de 2026.
 --
--- ORIGEN DEL SQL. El texto que sigue es el contenido literal almacenado en
--- supabase_migrations.schema_migrations.statements para esa versión, extraído
--- en modo lectura el 2026-09-16. No se ha reescrito, reordenado ni completado:
--- es exactamente lo que se ejecutó contra la base de datos.
+-- Que define la arquitectura original (ARQUITECTURA_FUNCIONAL v2.0 §9.2,
+-- "Cuotas mensuales por plan"): el control es por MES ACTUAL y por perfil.
+-- Esta migracion implementa exactamente ese periodo. El mecanismo de conteo
+-- documentado alli era `ai_requests`; se conserva la SEMANTICA (cuota
+-- mensual por perfil) sobre `credit_reservations`, que es el mecanismo
+-- economico realmente construido -- misma discusion ya resuelta en IA-005,
+-- donde se identifico a Credit Manager como responsable de la cuota por
+-- periodo. No se introduce ninguna unidad ni semantica nueva.
 --
--- QUÉ HACE. Redefine accounting_verify_and_reserve para que el consumo se
--- calcule sobre el mes natural en curso: fija v_period_start con
--- date_trunc('month', now()) y suma por separado lo confirmado (reservas
--- 'settled' liquidadas dentro del periodo) y lo comprometido (reservas
--- 'active' aún no vencidas). Devuelve ambas cifras junto a la capacidad
--- disponible, y añade el índice parcial credit_reservations_profile_settled_idx
--- que sirve a la primera de esas dos sumas.
+-- El consumo del periodo pasa a ser la suma de dos cosas distintas:
 --
--- NO SE REAPLICARÁ. A diferencia de otras capturas de este directorio, esta
--- migración SÍ consta en el historial del proyecto remoto. El nombre del
--- fichero lleva el timestamp remoto exacto (20260829184659) precisamente para
--- que coincida con esa entrada: `supabase db push` la reconocerá como ya
--- aplicada y la omitirá. Si el fichero se renombrara con otro timestamp, se
--- intentaría ejecutar de nuevo, y el DROP FUNCTION inicial no es inocuo si
--- para entonces la función tuviera otra definición.
+--   CONFIRMADO   lo ya liquidado este mes (`settled_cost` de reservas
+--                `settled`) -- consumo real, irreversible.
+--   COMPROMETIDO lo reservado y todavia sin resolver (`estimated_cost` de
+--                reservas `active` no expiradas) -- capacidad apartada que
+--                aun puede liquidarse o liberarse.
+--
+-- Una reserva `released` no consume nada: devuelve la capacidad.
+-- Una reserva `active` YA EXPIRADA tampoco cuenta, igual que hasta ahora:
+-- el TTL es precisamente la garantia de que una reserva abandonada no
+-- bloquea credito indefinidamente. Esto preserva el comportamiento vigente
+-- y evita que las reservas historicas nunca liquidadas bloqueen a nadie.
+--
+-- La concurrencia sigue resuelta donde ya lo estaba: el advisory lock por
+-- perfil serializa las verificaciones simultaneas del MISMO usuario dentro
+-- de la transaccion, de modo que dos peticiones concurrentes no pueden ver
+-- ambas el mismo saldo. No hay contador en memoria ni estado de aplicacion:
+-- funciona con cualquier numero de instancias.
+--
+-- Se amplia el valor de retorno para que el llamador pueda conocer el
+-- desglose real (periodo, confirmado, comprometido, capacidad restante) en
+-- vez de un unico agregado opaco. Exige DROP + CREATE porque PostgreSQL no
+-- permite cambiar el tipo de retorno con CREATE OR REPLACE.
+--
+-- Sin estructura persistente nueva: `credit_reservations` ya contiene todo
+-- lo necesario (estado, importes y fechas). Ninguna tabla, ninguna columna,
+-- ningun dato modificado.
+-- -----------------------------------------------------------------------------
 
 DROP FUNCTION IF EXISTS public.accounting_verify_and_reserve(uuid, numeric, numeric, integer, uuid);
 
@@ -81,10 +101,16 @@ BEGIN
     RAISE EXCEPTION 'ttl_seconds debe ser positivo';
   END IF;
 
+  -- Serializa las verificaciones concurrentes del mismo perfil: cierra el
+  -- TOCTOU sin necesitar una fila de saldo materializado (ver diseno logico).
   PERFORM pg_advisory_xact_lock(hashtextextended(p_profile_id::text, 0));
 
+  -- Periodo: mes natural en curso (ARQUITECTURA_FUNCIONAL v2.0 §9.2).
   v_period_start := date_trunc('month', now());
 
+  -- CONFIRMADO: lo realmente consumido y liquidado dentro del periodo. Se
+  -- fecha por `settled_at` -- el instante en que el consumo se confirmo --
+  -- y no por la creacion de la reserva, que es solo cuando se pidio.
   SELECT COALESCE(SUM(cr.settled_cost), 0)
     INTO v_settled
     FROM public.credit_reservations cr
@@ -92,6 +118,7 @@ BEGIN
      AND cr.status = 'settled'
      AND cr.settled_at >= v_period_start;
 
+  -- COMPROMETIDO: reservas vivas que todavia pueden convertirse en consumo.
   SELECT COALESCE(SUM(cr.estimated_cost), 0)
     INTO v_reserved
     FROM public.credit_reservations cr
@@ -133,6 +160,9 @@ BEGIN
 END;
 $function$;
 
+-- Consulta del periodo: `settled_at` acotado por mes y por perfil. El indice
+-- existente (profile_id, status) no cubre la fecha; este lo completa sin
+-- duplicarlo, y solo sobre las filas que el calculo recorre.
 CREATE INDEX IF NOT EXISTS credit_reservations_profile_settled_idx
   ON public.credit_reservations (profile_id, settled_at)
   WHERE status = 'settled';

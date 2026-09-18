@@ -2,16 +2,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { retrieveRelevantKnowledge } from '@/lib/knowledge-assets'
 import type { NormalizedRequest } from '@/lib/request-interpreter'
 import { buildKnowledgeContext } from '../knowledge-context-builder'
-import { unfilteredCriteriaNote } from '../unfiltered-note'
+import { partiallyAppliedCriteriaNote, unfilteredCriteriaNote } from '../unfiltered-note'
 
 vi.mock('@/lib/knowledge-assets', () => ({
   retrieveRelevantKnowledge: vi.fn(),
 }))
 
-function mockRetrieval(byDomain: Record<string, { items: unknown[]; requestWasNarrowed?: boolean }>) {
-  vi.mocked(retrieveRelevantKnowledge).mockImplementation(
-    async (domain: string) => (byDomain[domain] ? { requestWasNarrowed: true, ...byDomain[domain] } : { items: [], requestWasNarrowed: false }) as never
-  )
+function mockRetrieval(
+  byDomain: Record<string, { items: unknown[]; requestWasNarrowed?: boolean; unappliedCriteria?: string[]; workOccupancy?: Record<string, string> }>
+) {
+  vi.mocked(retrieveRelevantKnowledge).mockImplementation(async (domain: string) => {
+    const configurado = byDomain[domain]
+    if (!configurado) return { items: [], requestWasNarrowed: false, unappliedCriteria: [] , workOccupancy: {}} as never
+
+    // Por defecto se reproduce la semantica de Obras: si no se aplico ningun
+    // criterio, queda uno pendiente; si se aplico, no queda nada pendiente.
+    const narrowed = configurado.requestWasNarrowed ?? true
+    const unapplied = configurado.unappliedCriteria ?? (narrowed ? [] : ['criterio'])
+
+    return { requestWasNarrowed: narrowed, unappliedCriteria: unapplied, workOccupancy: {}, ...configurado } as never
+  })
 }
 
 beforeEach(() => {
@@ -23,6 +33,7 @@ function fakeRequest(domains: NormalizedRequest['requestedKnowledgeDomains']): N
     requestId: 'req-1',
     originalRequest: 'texto de prueba',
     normalizedIntent: 'texto de prueba',
+    retrievalQuery: 'texto de prueba',
     requestType: domains.length > 0 ? 'RECONOCIDA' : 'NO_RECONOCIDA',
     requestedKnowledgeDomains: domains,
     estimatedComplexity: 'baja',
@@ -51,20 +62,20 @@ describe('buildKnowledgeContext', () => {
       'los dominios cubiertos se enumeran sin relevancia ni relacion con el texto de la peticion -- sin motor de busqueda (IA-003)',
     ])
     expect(typeof result.knowledgeTimestamp).toBe('string')
-    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'texto de prueba')
-    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Organizaciones', 'texto de prueba')
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'texto de prueba', undefined, {})
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Organizaciones', 'texto de prueba', undefined, {})
   })
 
   it('parcial: solo parte de los dominios solicitados están cubiertos', async () => {
     mockRetrieval({ Obras: { items: [WORK_ITEM] } })
 
-    const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Personas']))
+    const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Oportunidades']))
 
     expect(result.knowledgeCompleteness).toBe('parcial')
     expect(result.knowledgeConfidence).toBe(0.5)
     expect(result.knowledgeDomains).toEqual(['Obras'])
     expect(result.knowledgeLimitations).toContain(
-      'dominio Personas solicitado pero no cubierto por Knowledge Assets en esta version'
+      'dominio Oportunidades solicitado pero no cubierto por Knowledge Assets en esta version'
     )
     expect(retrieveRelevantKnowledge).not.toHaveBeenCalledWith('Organizaciones', expect.anything())
   })
@@ -80,12 +91,12 @@ describe('buildKnowledgeContext', () => {
   })
 
   it('vacío: todos los dominios solicitados están fuera de cobertura', async () => {
-    const result = await buildKnowledgeContext(fakeRequest(['Personas', 'Editorial']))
+    const result = await buildKnowledgeContext(fakeRequest(['Oportunidades', 'Editorial']))
 
     expect(result.knowledgeCompleteness).toBe('vacio')
     expect(result.knowledgeConfidence).toBe(0)
     expect(result.knowledgeLimitations).toEqual([
-      'dominio Personas solicitado pero no cubierto por Knowledge Assets en esta version',
+      'dominio Oportunidades solicitado pero no cubierto por Knowledge Assets en esta version',
       'dominio Editorial solicitado pero no cubierto por Knowledge Assets en esta version',
     ])
   })
@@ -99,12 +110,24 @@ describe('buildKnowledgeContext', () => {
     expect(retrieveRelevantKnowledge).toHaveBeenCalledTimes(1)
   })
 
-  it('transporta normalizedIntent como query hasta Knowledge Assets (IA-003)', async () => {
+  it('transporta retrievalQuery como query hasta Knowledge Assets (IA-003)', async () => {
     mockRetrieval({ Obras: { items: [WORK_ITEM] } })
 
-    await buildKnowledgeContext({ ...fakeRequest(['Obras']), normalizedIntent: 'texto distinto' })
+    await buildKnowledgeContext({ ...fakeRequest(['Obras']), retrievalQuery: 'texto distinto' })
 
-    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'texto distinto')
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'texto distinto', undefined, {})
+  })
+
+  it('la recuperacion usa retrievalQuery, nunca normalizedIntent: en un turno de continuacion ambos difieren', async () => {
+    mockRetrieval({ Obras: { items: [WORK_ITEM] } })
+
+    await buildKnowledgeContext({
+      ...fakeRequest(['Obras']),
+      normalizedIntent: 'y alguna mas corta?',
+      retrievalQuery: 'que obras de comedia tienes?. y alguna mas corta?',
+    })
+
+    expect(retrieveRelevantKnowledge).toHaveBeenCalledWith('Obras', 'que obras de comedia tienes?. y alguna mas corta?', undefined, {})
   })
 
   it('SCENAIA-002, correccion definitiva de Caso 1: cuando Obras devuelve requestWasNarrowed=false, anade la nota exacta a knowledgeLimitations', async () => {
@@ -120,6 +143,71 @@ describe('buildKnowledgeContext', () => {
 
     const result = await buildKnowledgeContext(fakeRequest(['Obras']))
 
+    expect(result.knowledgeLimitations).not.toContain(unfilteredCriteriaNote('Obras'))
+  })
+})
+
+describe('buildKnowledgeContext — los cuatro estados del criterio', () => {
+  it('1) CRITERIO COMPLETO: se aplico todo lo pedido -- ninguna nota', async () => {
+    mockRetrieval({ Organizaciones: { items: [ORG_ITEM], requestWasNarrowed: true, unappliedCriteria: [] , workOccupancy: {}} })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Organizaciones']))
+
+    expect(result.knowledgeLimitations).not.toContain(unfilteredCriteriaNote('Organizaciones'))
+    expect(result.knowledgeLimitations).not.toContain(partiallyAppliedCriteriaNote('Organizaciones'))
+  })
+
+  it('2) CRITERIO PARCIAL: se aplico parte -- nota de parcialidad, nunca la de "sin criterio"', async () => {
+    mockRetrieval({
+      Organizaciones: { items: [ORG_ITEM], requestWasNarrowed: true, unappliedCriteria: ['ubicacion'], workOccupancy: {} },
+    })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Organizaciones']))
+
+    expect(result.knowledgeLimitations).toContain(partiallyAppliedCriteriaNote('Organizaciones'))
+    expect(result.knowledgeLimitations).not.toContain(unfilteredCriteriaNote('Organizaciones'))
+  })
+
+  it('3) CRITERIO NO APLICABLE: se pidio y no se aplico ninguno -- nota de "sin criterio"', async () => {
+    mockRetrieval({
+      Organizaciones: { items: [ORG_ITEM], requestWasNarrowed: false, unappliedCriteria: ['ubicacion'], workOccupancy: {} },
+    })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Organizaciones']))
+
+    expect(result.knowledgeLimitations).toContain(unfilteredCriteriaNote('Organizaciones'))
+    expect(result.knowledgeLimitations).not.toContain(partiallyAppliedCriteriaNote('Organizaciones'))
+  })
+
+  it('4) SIN CRITERIO: el usuario no pidio nada que filtrar -- ninguna advertencia falsa', async () => {
+    mockRetrieval({
+      Organizaciones: { items: [ORG_ITEM], requestWasNarrowed: false, unappliedCriteria: [] , workOccupancy: {}},
+    })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Organizaciones']))
+
+    expect(result.knowledgeLimitations).not.toContain(unfilteredCriteriaNote('Organizaciones'))
+    expect(result.knowledgeLimitations).not.toContain(partiallyAppliedCriteriaNote('Organizaciones'))
+  })
+
+  it('6) NO REGRESION de Obras: sigue declarando "sin criterio" cuando no se aplico ninguno', async () => {
+    mockRetrieval({ Obras: { items: [WORK_ITEM], requestWasNarrowed: false } })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Obras']))
+
+    expect(result.knowledgeLimitations).toContain(unfilteredCriteriaNote('Obras'))
+  })
+
+  it('8) MULTIDOMINIO: cada dominio declara su propio estado, sin contagiarse', async () => {
+    mockRetrieval({
+      Obras: { items: [WORK_ITEM], requestWasNarrowed: true, unappliedCriteria: [] , workOccupancy: {}},
+      Organizaciones: { items: [ORG_ITEM], requestWasNarrowed: true, unappliedCriteria: ['ubicacion'], workOccupancy: {} },
+    })
+
+    const result = await buildKnowledgeContext(fakeRequest(['Obras', 'Organizaciones']))
+
+    expect(result.knowledgeLimitations).toContain(partiallyAppliedCriteriaNote('Organizaciones'))
+    expect(result.knowledgeLimitations).not.toContain(partiallyAppliedCriteriaNote('Obras'))
     expect(result.knowledgeLimitations).not.toContain(unfilteredCriteriaNote('Obras'))
   })
 })

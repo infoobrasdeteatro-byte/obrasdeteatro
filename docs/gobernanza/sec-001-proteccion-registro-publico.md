@@ -214,3 +214,62 @@ El descenso de 27 a 11 visibles no es 27→14: de los 14 legítimos, 3 (`julia`,
 ## Riesgos, validación y rollback
 
 Sin cambios respecto al plan ya presentado a Dirección: cada fase se valida en worktree limpio desde `main` (`vitest`, `tsc --noEmit`, `build`), se prueba en Preview Deployment antes de pedir autorización de merge, y cada fase mantiene su propia estrategia de reversión (migración inversa preparada de antemano para Fase 1; `git revert` para el resto). El detalle completo de riesgos por fase se mantiene igual que en el documento de plan ya aprobado por Dirección.
+
+---
+
+## Acta Oficial de Cierre — SEC-001
+
+**Fecha:** 2026-08-06
+**Expediente:** SEC-001 — Protección del Registro Público
+**Estado final:** CERRADO FUNCIONALMENTE
+
+### Objetivo original del expediente
+
+Corregir, a nivel arquitectónico, la ausencia total de fricción o verificación en el registro público, tras detectarse por tercera vez el mismo patrón de incidencia: una auditoría de integridad (modo lectura) confirmó que el registro carecía de cualquier control efectivo y que la columna `verificado` no participaba en ninguna política de visibilidad real. Dirección elevó el problema de incidencia puntual a corrección arquitectónica.
+
+### Alcance finalmente implementado
+
+Tres fases, todas ejecutadas (la Fase 4 originalmente prevista —servicio único de correo de bienvenida— se completó más tarde, dentro del expediente AEC-001, no en este):
+
+1. **Fase 1 — Corrección del modelo de publicación:** la visibilidad pública de un perfil pasa a depender de la confirmación real del email (`verificado=true`), mediante trigger `on_auth_user_email_confirmed` + nueva condición en la política RLS `"Perfiles públicos visibles"`.
+2. **Fase 2 — Honeypot:** campo oculto accesible en el formulario de registro; si llega relleno, el registro se corta sin crear cuenta, mostrando el mismo mensaje de éxito que vería un usuario real.
+3. **Fase 3 — Turnstile + única puerta de entrada:** nuevo `app/api/auth/registro/route.ts` como único camino posible hacia `signUp()`; verifica honeypot y token de Turnstile (fail-closed) en servidor antes de crear la cuenta.
+
+### Decisiones arquitectónicas relevantes
+
+- **Observación Nº1 — Única puerta de entrada al registro**, incorporada como principio permanente: no pueden coexistir dos caminos hacia `supabase.auth.signUp()`.
+- **Principio de Confianza del Directorio**: la pertenencia al Directorio Público deja de depender solo de la existencia del perfil y pasa a depender de una señal de confianza verificada (hoy, confirmación de email) — principio abierto a futuras señales adicionales, no un mecanismo cerrado.
+- Orden de comprobaciones fail-closed en el endpoint de registro, con Turnstile antepuesto a cualquier lógica que pudiera usarse como oráculo de enumeración.
+
+### Validaciones realizadas
+
+- Auditoría de baseline (modo exclusivamente lectura, 2026-08-03) contra `pnsirwtiiurczjwrayza`, antes de tocar nada: 30 perfiles totales, 27 públicos, 16 registros identificados como sospechosos (patrón coincidente: sin confirmar, sin sesión nunca iniciada), 14 legítimos.
+- Tras Fase 1: verificado con datos reales que los 14 legítimos conservan (u obtienen) `verificado=true` sin excepción, y los 16 sospechosos quedan con `verificado=false` y fuera de la política pública — comparativa numérica exacta contra el baseline (27 → 11 públicos, diferencia explicada y verificada, no estimada).
+- Fase 2 y Fase 3, cada una en worktree limpio desde `main`: `tsc --noEmit` sin errores, `vitest run` en verde (84/84 archivos, 407/407 pruebas), `build` correcto. Núcleo de ScenaIA verificado sin cambios en las tres fases.
+- Validación funcional directa del endpoint: honeypot relleno y token de Turnstile inválido, ambos casos verificados también contra Supabase real (0 filas nuevas en `auth.users`).
+
+### Evidencia de finalización
+
+- Migración `20260803120000_sec001_gate_public_profile_on_email_confirmation.sql` aplicada sobre `pnsirwtiiurczjwrayza` y verificada (trigger, política RLS y backfill confirmados contra datos reales).
+- Commit único `7d98e02` en `scenaia-bloque-3`, con exactamente los 5 archivos del expediente.
+
+### Relación con el resto de la arquitectura
+
+- Cero cambios en el Núcleo de ScenaIA (Bloque I), verificado en cada fase.
+- Es el cimiento sobre el que se construyó AEC-001 (que reutiliza y no debilita el orden de protección honeypot→Turnstile ya certificado aquí) y, por tanto, indirectamente, de toda la familia AEC-003/AEC-003B.
+
+### Estado final del expediente
+
+Implementado y validado en las tres fases. Desplegado en `develop` y en `scenaia-bloque-3` (respaldado en `origin`). **No desplegado en `main`/producción** — sin autorización solicitada ni concedida para ese paso, misma disciplina que el resto de expedientes de esta sesión.
+
+### Observaciones documentales
+
+- La "Auditoría de Certificación" de 5 puntos prevista en el plan original de SEC-001 (incluyendo la comprobación explícita de que el Directorio Público, tras el cierre, refleja únicamente perfiles verificados) no aparece registrada como un paso formal independiente ya ejecutado. Su contenido queda cubierto de hecho por las comparativas de baseline de Fase 1 y las validaciones de Fase 2/3. Dirección considera esta evidencia objetiva suficiente y no reabre el expediente por este motivo.
+
+### Observaciones operativas
+
+- Las variables `NEXT_PUBLIC_TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` para el entorno **Preview** de Vercel quedaron señaladas como pendientes en este mismo documento (2026-08-04); no hay evidencia en el expediente de que se hayan confirmado activas desde entonces.
+
+### Declaración
+
+**El expediente SEC-001 — Protección del Registro Público queda CERRADO FUNCIONALMENTE en `develop`/`scenaia-bloque-3`**, con sus tres fases implementadas, validadas y verificadas contra datos reales. Ninguna de las observaciones registradas se considera bloqueante para este cierre. Aprobada por Dirección Técnica el 2026-08-06.
