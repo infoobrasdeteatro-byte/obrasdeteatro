@@ -312,7 +312,7 @@ Los siguientes elementos no pueden modificarse sin sprint explícito y autorizac
 
 ### Prioridad alta
 
-1. **Merge develop → main** — La Biblioteca Oficial está únicamente en `develop`. Requiere auditoría visual aprobada antes del merge.
+1. ✅ ~~**Merge develop → main**~~ — **COMPLETADO.** La Biblioteca Oficial y el resto del trabajo de `develop` están en `main` y en producción (verificado el 2026-09-18). La rama se archivó como `archive/develop-pre-pr-workflow`.
 
 2. **Enforcement de límites por plan** — El plan gratuito en teoría limita a 3 obras, pero no hay lógica que bloquee la creación de más. Riesgo de inconsistencia entre promesas comerciales y comportamiento real.
 
@@ -475,7 +475,7 @@ El orden siguiente representa una propuesta lógica. Ninguno está autorizado ha
 
 ### Nivel 0 — Prerequisito inmediato
 1. **Auditoría visual de `/obras`** — Revisar la Biblioteca y las fichas en preview antes de cualquier merge. Único prerequisito para pasar a producción.
-2. **Merge develop → main** — Tras aprobación de la auditoría visual. Lleva 13 sprints de trabajo a producción.
+2. ✅ ~~**Merge develop → main**~~ — **COMPLETADO.** Todo el trabajo de `develop` está en `main` y en producción (verificado el 2026-09-18).
 
 ### Nivel 1 — Consolidación Biblioteca
 3. **Sprint tipográfico** — Migración DM Serif/DM Sans → Newsreader/IBM Plex según Sistema Editorial 2026. Requiere plantilla visual previa del usuario.
