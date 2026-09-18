@@ -1,6 +1,8 @@
 // components/LegalPage.jsx
 // Componente base reutilizable para todas las páginas legales
 
+import { LEGAL_LINKS } from "@/lib/legal";
+
 export default function LegalPage({ title, lastUpdate, sections }) {
   return (
     <main className="min-h-screen bg-white" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -83,12 +85,7 @@ export default function LegalPage({ title, lastUpdate, sections }) {
             También puede interesarte
           </p>
           <div className="flex flex-wrap gap-3">
-            {[
-              { href: "/legal/aviso-legal", label: "Aviso Legal" },
-              { href: "/legal/privacidad", label: "Política de Privacidad" },
-              { href: "/legal/cookies", label: "Política de Cookies" },
-              { href: "/legal/terminos", label: "Términos y Condiciones" },
-            ].map((link) => (
+            {LEGAL_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}

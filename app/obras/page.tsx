@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import TopNav from '@/components/design-system/TopNav'
 import { createClient } from '@/lib/supabase/server'
 import BibliotecaClient from './BibliotecaClient'
@@ -93,15 +92,6 @@ export default async function ObrasPage() {
           </div>
         </section>
       </main>
-
-      <footer className="app-footer">
-        <Link href="/" className="footer-logo">
-          obras<span>de</span>teatro.com
-        </Link>
-        <p className="footer-copy">
-          © 2026 obrasdeteatro.com — Ecosistema del teatro en español · 20 países
-        </p>
-      </footer>
     </>
   )
 }

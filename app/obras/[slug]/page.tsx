@@ -387,15 +387,6 @@ export default async function ObraPublicaPage({ params }: Props) {
           )}
 
         </main>
-
-        <footer className="app-footer">
-          <Link href="/" className="footer-logo">
-            obras<span>de</span>teatro.com
-          </Link>
-          <p className="footer-copy">
-            © 2026 obrasdeteatro.com — Ecosistema del teatro en español · 20 países
-          </p>
-        </footer>
       </div>
     </>
   )

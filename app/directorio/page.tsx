@@ -471,13 +471,6 @@ export default async function DirectorioPage({ searchParams }: Props) {
         )}
 
       </main>
-
-      <footer className="app-footer" style={{ marginTop: '40px' }}>
-        <Link href="/" className="footer-logo">
-          obras<span>de</span>teatro.com
-        </Link>
-        <p className="footer-copy">Ecosistema del teatro en español · 20 países</p>
-      </footer>
     </div>
   )
 }

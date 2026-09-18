@@ -118,14 +118,6 @@ export default function Home() {
       <EcosistemaPulso />
 
       {/* ── FOOTER ── */}
-      <footer className="app-footer">
-        <Link href="/" className="footer-logo">
-          obras<span>de</span>teatro.com
-        </Link>
-        <p className="footer-copy">
-          © 2026 obrasdeteatro.com — Ecosistema del teatro en español · 20 países
-        </p>
-      </footer>
     </>
   )
 }

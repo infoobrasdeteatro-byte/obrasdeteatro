@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Newsreader, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
 import CookieBanner from "@/components/CookieBanner"
+import SiteFooter from "@/components/SiteFooter"
 
 const newsreader = Newsreader({
   weight: ["300", "400", "500", "600"],
@@ -42,6 +43,7 @@ export default function RootLayout({
     >
       <body>
         {children}
+        <SiteFooter />
         <CookieBanner />
       </body>
     </html>

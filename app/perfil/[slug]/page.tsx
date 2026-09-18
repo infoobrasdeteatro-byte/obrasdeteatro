@@ -545,15 +545,6 @@ export default async function PerfilPublicoPage({ params }: Props) {
         )}
 
       </main>
-
-      <footer style={{
-        borderTop: '1px solid var(--border)', background: 'var(--white)',
-        padding: '20px 24px', textAlign: 'center',
-      }}>
-        <Link href="/" style={{ fontSize: '12px', color: 'var(--muted)', textDecoration: 'none', fontFamily: 'var(--sans)' }}>
-          ObrasDeTeatro.com — Ecosistema del teatro en español
-        </Link>
-      </footer>
     </div>
   )
 }
