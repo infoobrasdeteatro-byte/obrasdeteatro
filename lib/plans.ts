@@ -97,6 +97,7 @@ export const PLANES: Plan[] = [
         items: [
           'Acceso a todas las convocatorias',
           'Alertas de convocatorias personalizadas',
+          'Publica hasta 3 castings activos a la vez',
           'Recursos creativos exclusivos',
         ],
       },
@@ -150,6 +151,7 @@ export const PLANES: Plan[] = [
         titulo: 'Herramientas',
         items: [
           'Acceso prioritario a convocatorias',
+          'Publica hasta 10 castings activos a la vez',
           'Participación en proyectos editoriales',
           'Recursos exclusivos para destacados',
         ],
