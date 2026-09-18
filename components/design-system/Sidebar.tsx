@@ -13,6 +13,7 @@ const NAV_SECTIONS = [
       { href: '/mis-obras',     label: 'Mis obras',          icon: '▣' },
       { href: '/mis-castings',  label: 'Mis castings',       icon: '◉' },
       { href: '/mis-postulaciones', label: 'Mis postulaciones', icon: '◈' },
+      { href: '/mis-convocatorias', label: 'Mis convocatorias', icon: '◉' },
       { href: '/cuenta',        label: 'Gestión de cuenta',  icon: '⚙' },
     ],
   },
@@ -24,6 +25,7 @@ const NAV_SECTIONS = [
       // iniciada la barra publica no se ve, y sin esta entrada habria que
       // cerrar sesion para descubrir castings de otros.
       { href: '/castings',   label: 'Castings',   icon: '◆' },
+      { href: '/convocatoria', label: 'Convocatorias', icon: '◆' },
       { href: '/precios',    label: 'Planes',     icon: '◇' },
     ],
   },

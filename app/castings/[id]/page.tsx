@@ -4,20 +4,21 @@ import { notFound } from 'next/navigation'
 import TopNav from '@/components/design-system/TopNav'
 import { createClient } from '@/lib/supabase/server'
 import { etiquetaRemuneracion, etiquetaIdioma, etiquetaEntidad } from '@/components/castings/vocabulario'
-import { InsigniaVerificado, fecha, lugar, rangoEdad } from '@/components/castings/publico'
+import { InsigniaVerificado, rangoEdad } from '@/components/castings/publico'
+import { fecha, lugar } from '@/components/shared/formato'
 import PostularseForm from './PostularseForm'
 
 export const metadata: Metadata = {
-  title: 'Convocatoria | ObrasDeTeatro',
+  title: 'Casting | ObrasDeTeatro',
 }
 
 type Props = { params: Promise<{ id: string }> }
 
 /**
- * Ficha pública de una convocatoria.
+ * Ficha pública de un casting.
  *
- * Se ve SIN sesión. Lo que cambia con la sesión no es el contenido de la
- * convocatoria, sino solo la llamada a la acción.
+ * Se ve SIN sesión. Lo que cambia con la sesión no es el contenido del
+ * casting, sino solo la llamada a la acción.
  *
  * Los tres campos de contacto (email_recepcion, url_externa,
  * telefono_contacto) NO se piden a la base en ninguna consulta de esta
@@ -98,7 +99,7 @@ export default async function CastingPublicoPage({ params }: Props) {
           <div className="page-header">
             <div className="page-title-group">
               <h1 className="page-title">{casting.titulo}</h1>
-              <Link href="/castings" className="page-back">← Todas las convocatorias</Link>
+              <Link href="/castings" className="page-back">← Todos los castings</Link>
             </div>
             <InsigniaVerificado />
           </div>
@@ -158,7 +159,7 @@ export default async function CastingPublicoPage({ params }: Props) {
               <Dato etiqueta="Modalidad" valor={casting.modalidad} />
               <Dato etiqueta="Lugar de trabajo" valor={casting.lugar_trabajo} />
               <Dato etiqueta="Fechas previstas" valor={casting.fechas_previstas} />
-              <Dato etiqueta="Convocatoria abierta" valor={`${fecha(casting.fecha_apertura)} – ${fecha(casting.fecha_cierre)}`} />
+              <Dato etiqueta="Plazo" valor={`${fecha(casting.fecha_apertura)} – ${fecha(casting.fecha_cierre)}`} />
             </dl>
 
             <Bloque titulo="Proceso de selección" texto={casting.descripcion_proceso} />
@@ -172,7 +173,7 @@ export default async function CastingPublicoPage({ params }: Props) {
             {!user && (
               <>
                 <p style={{ fontSize: '14px', color: 'var(--text)', marginBottom: '14px' }}>
-                  Para presentarte a esta convocatoria necesitas una cuenta.
+                  Para presentarte a este casting necesitas una cuenta.
                 </p>
                 <Link href="/auth/login" className="ds-btn-primary"
                   style={{ width: 'auto', display: 'inline-flex', padding: '12px 28px' }}>
@@ -184,7 +185,7 @@ export default async function CastingPublicoPage({ params }: Props) {
             {user && plan === 'gratuito' && (
               <>
                 <p style={{ fontSize: '14px', color: 'var(--text)', marginBottom: '14px' }}>
-                  Presentarse a convocatorias forma parte de los planes de pago. Con tu plan gratuito
+                  Presentarse a castings forma parte de los planes de pago. Con tu plan gratuito
                   puedes consultarlas, pero no postularte.
                 </p>
                 <Link href="/precios" className="ds-btn-primary"
@@ -228,7 +229,7 @@ export default async function CastingPublicoPage({ params }: Props) {
                       )}
                     </ul>
                     <p className="ds-form-hint" style={{ marginTop: '10px' }}>
-                      Se muestra porque te has presentado a esta convocatoria.
+                      Se muestra porque te has presentado a este casting.
                     </p>
                   </div>
                 )}

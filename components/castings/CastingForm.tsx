@@ -12,7 +12,7 @@ type Casting = Database['public']['Tables']['castings']['Row']
 export type Categoria = { id: string; etiqueta: string }
 
 /**
- * Formulario de convocatoria, compartido por creación y edición.
+ * Formulario de casting, compartido por creación y edición.
  *
  * Una sola pieza para los dos modos, a diferencia de Obras (que tiene
  * NuevaObraForm y EditarObraForm separados): aquí son treinta campos con sus
@@ -109,7 +109,7 @@ function validar(c: Campos): string | null {
   }
 
   if (c.tipo_remuneracion === '') {
-    return 'Indica la condición económica de la convocatoria.'
+    return 'Indica la condición económica del casting.'
   }
 
   if (c.edad_min && c.edad_max && Number(c.edad_min) > Number(c.edad_max)) {
@@ -117,7 +117,7 @@ function validar(c: Campos): string | null {
   }
 
   if (!c.fecha_apertura || !c.fecha_cierre) {
-    return 'Indica las fechas de apertura y cierre de la convocatoria.'
+    return 'Indica las fechas de apertura y cierre del casting.'
   }
 
   if (c.fecha_cierre <= c.fecha_apertura) {
@@ -165,7 +165,7 @@ function aFila(c: Campos, userId: string) {
     formacion_requerida: vacioANulo(c.formacion_requerida),
     habilidades_especiales: vacioANulo(c.habilidades_especiales),
     tipo_remuneracion: c.tipo_remuneracion,
-    // El importe solo existe si la convocatoria es remunerada: si se cambia a
+    // El importe solo existe si el casting es remunerado: si se cambia a
     // otra condición, se borra en vez de quedar un importe huérfano.
     importe: c.tipo_remuneracion === 'remunerado' ? vacioANulo(c.importe) : null,
     fechas_previstas: vacioANulo(c.fechas_previstas),
@@ -276,7 +276,7 @@ export default function CastingForm({
     // trigger puede haber publicado, retenido, o devuelto a revisión un
     // casting publicado cuyo texto cambió.
     if (data.estado === 'publicado') {
-      setExito(publicar ? 'Publicado. Tu convocatoria ya es visible.' : 'Cambios guardados.')
+      setExito(publicar ? 'Publicado. Tu casting ya es visible.' : 'Cambios guardados.')
     } else if (casting.estado === 'publicado' && data.estado === 'pendiente_revision') {
       setAviso(
         data.motivo_filtro
@@ -305,7 +305,7 @@ export default function CastingForm({
       <Seccion titulo="Datos del proyecto" />
 
       <div className="ds-form-group">
-        <label className="ds-label" htmlFor="titulo">Título de la convocatoria *</label>
+        <label className="ds-label" htmlFor="titulo">Título del casting *</label>
         <input id="titulo" className="ds-input" required maxLength={200}
           value={c.titulo} onChange={e => set('titulo', e.target.value)}
           placeholder="Reparto para montaje de cámara" />
@@ -332,7 +332,7 @@ export default function CastingForm({
           {TIPOS_ENTIDAD.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
         <p className="ds-form-hint">
-          Se elige en cada convocatoria: un mismo perfil puede publicar en nombre de entidades distintas.
+          Se elige en cada casting: un mismo perfil puede publicar en nombre de entidades distintas.
         </p>
       </div>
 
@@ -473,7 +473,7 @@ export default function CastingForm({
 
       <div className="ds-form-grid">
         <div className="ds-form-group">
-          <label className="ds-label" htmlFor="fecha_apertura">Apertura de la convocatoria *</label>
+          <label className="ds-label" htmlFor="fecha_apertura">Apertura del casting *</label>
           <input id="fecha_apertura" className="ds-input" type="date" required
             value={c.fecha_apertura} onChange={e => set('fecha_apertura', e.target.value)} />
         </div>
@@ -481,7 +481,7 @@ export default function CastingForm({
           <label className="ds-label" htmlFor="fecha_cierre">Cierre *</label>
           <input id="fecha_cierre" className="ds-input" type="date" required
             value={c.fecha_cierre} onChange={e => set('fecha_cierre', e.target.value)} />
-          <p className="ds-form-hint">Al pasar esta fecha, la convocatoria se cierra sola.</p>
+          <p className="ds-form-hint">Al pasar esta fecha, el casting se cierra solo.</p>
         </div>
       </div>
 
@@ -577,7 +577,7 @@ export default function CastingForm({
           <button type="button" className="ds-btn-primary" disabled={guardando}
             style={{ width: 'auto', padding: '12px 24px' }}
             onClick={() => guardar(true)}>
-            {guardando ? 'Publicando…' : 'Publicar convocatoria'}
+            {guardando ? 'Publicando…' : 'Publicar casting'}
           </button>
         )}
 
@@ -602,7 +602,7 @@ export default function CastingForm({
 
       {esBorrador && (
         <p className="ds-form-hint">
-          «Publicar convocatoria» la guarda y la envía a revisión en un solo paso. Si el texto no
+          «Publicar casting» lo guarda y lo envía a revisión en un solo paso. Si el texto no
           levanta ninguna alerta y tu plan tiene cupo, se publica al instante.
         </p>
       )}
@@ -618,7 +618,7 @@ function mensajeDeError(mensaje?: string): string {
   if (mensaje.includes('Límite de castings activos')) return mensaje
 
   if (mensaje.includes('row-level security')) {
-    return 'Tu plan actual no permite crear convocatorias. Revisa tu plan para publicar castings.'
+    return 'Tu plan actual no permite crear castings. Revisa tu plan para publicarlos.'
   }
 
   return `No se pudo guardar: ${mensaje}`

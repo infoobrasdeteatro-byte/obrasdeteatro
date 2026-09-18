@@ -170,9 +170,14 @@ export default async function DashboardPage({
               <Link href="/mis-obras" className="module-card-link">Ver obras →</Link>
             </div>
             <div className="module-card">
-              <div className="module-card-title">Convocatorias</div>
+              <div className="module-card-title">Castings</div>
               <p className="module-card-desc">Publica castings, revisa las candidaturas recibidas y gestiona su estado.</p>
-              <Link href="/mis-castings" className="module-card-link">Ver convocatorias →</Link>
+              <Link href="/mis-castings" className="module-card-link">Ver castings →</Link>
+            </div>
+            <div className="module-card">
+              <div className="module-card-title">Convocatorias</div>
+              <p className="module-card-desc">Publica festivales, premios, residencias y becas, y sigue su estado de revisión.</p>
+              <Link href="/mis-convocatorias" className="module-card-link">Ver convocatorias →</Link>
             </div>
           </div>
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import EstadoPill from '@/components/castings/EstadoPill'
+import EstadoPill from '@/components/shared/EstadoPill'
 
 export type ReportePendiente = {
   id: string
@@ -83,7 +83,7 @@ export default function ColaReportes({ reportes }: { reportes: ReportePendiente[
 
     if (errorCasting || !casting) {
       setOcupado(null)
-      setErrores(p => ({ ...p, [id]: errorCasting?.message ?? 'No se pudo rechazar la convocatoria.' }))
+      setErrores(p => ({ ...p, [id]: errorCasting?.message ?? 'No se pudo rechazar el casting.' }))
       return
     }
 
@@ -93,7 +93,7 @@ export default function ColaReportes({ reportes }: { reportes: ReportePendiente[
     if (errorReporte) {
       setErrores(p => ({
         ...p,
-        [id]: `La convocatoria quedó en ${casting.estado}, pero el reporte no se pudo marcar como revisado: ${errorReporte.message}`,
+        [id]: `El casting quedó en ${casting.estado}, pero el reporte no se pudo marcar como revisado: ${errorReporte.message}`,
       }))
       return
     }
@@ -150,7 +150,7 @@ export default function ColaReportes({ reportes }: { reportes: ReportePendiente[
 
             {!publicado && (
               <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '10px' }}>
-                Esta convocatoria ya no está publicada. El reporte sigue abierto y hay que resolverlo igualmente.
+                Este casting ya no está publicado. El reporte sigue abierto y hay que resolverlo igualmente.
               </p>
             )}
 
@@ -160,7 +160,7 @@ export default function ColaReportes({ reportes }: { reportes: ReportePendiente[
               <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
                 <label className="ds-label" htmlFor={`motivo-${r.id}`}>Motivo del rechazo</label>
                 <textarea id={`motivo-${r.id}`} className="ds-textarea" rows={2} maxLength={2000}
-                  placeholder="Lo verá el organizador junto a su convocatoria."
+                  placeholder="Lo verá el organizador junto a su casting."
                   value={motivos[r.id] ?? ''}
                   onChange={e => setMotivos(p => ({ ...p, [r.id]: e.target.value }))} />
                 <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
@@ -185,7 +185,7 @@ export default function ColaReportes({ reportes }: { reportes: ReportePendiente[
                 <button type="button" className="table-link table-link--danger" disabled={enCurso}
                   style={{ marginLeft: 'auto' }}
                   onClick={() => { setRechazando(r.id); setMotivos(p => ({ ...p, [r.id]: p[r.id] ?? '' })) }}>
-                  Rechazar convocatoria
+                  Rechazar casting
                 </button>
               </div>
             )}

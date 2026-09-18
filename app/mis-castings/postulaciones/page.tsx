@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import BandejaList, { type PostulacionRecibida } from './BandejaList'
-import { leerCursor, escribirCursor } from '@/components/castings/cursor'
+import { leerCursor, escribirCursor } from '@/components/shared/cursor'
 
 export const metadata: Metadata = {
   title: 'Postulaciones recibidas | ObrasDeTeatro',
@@ -21,7 +21,7 @@ type Props = {
 /**
  * Bandeja de postulaciones recibidas.
  *
- * Una sola pantalla para todas las convocatorias del organizador: con cientos
+ * Una sola pantalla para todos los castings del organizador: con cientos
  * de castings, entrar uno a uno no sería manejable.
  *
  * La página NO consulta casting_applications directamente: llama a
@@ -91,7 +91,7 @@ export default async function PostulacionesRecibidasPage({ searchParams }: Props
     return {
       id: f.id,
       castingId: f.casting_id,
-      castingTitulo: porCasting.get(f.casting_id) ?? 'Convocatoria',
+      castingTitulo: porCasting.get(f.casting_id) ?? 'Casting',
       status: f.status ?? 'pending',
       appliedAt: f.applied_at,
       coverLetter: f.cover_letter,
@@ -121,7 +121,7 @@ export default async function PostulacionesRecibidasPage({ searchParams }: Props
             <div className="page-title-group">
               <h1 className="page-title">Postulaciones recibidas</h1>
               <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-                Candidaturas a todas tus convocatorias, de la más reciente a la más antigua.
+                Candidaturas a todos tus castings, de la más reciente a la más antigua.
               </span>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default async function PostulacionesRecibidasPage({ searchParams }: Props
           <form method="get" className="account-card" style={{ marginBottom: '20px' }}>
             <div className="ds-form-grid">
               <div className="ds-form-group">
-                <label className="ds-label" htmlFor="casting">Convocatoria</label>
+                <label className="ds-label" htmlFor="casting">Casting</label>
                 <select id="casting" name="casting" className="ds-select" defaultValue={casting ?? ''}>
                   <option value="">Todas</option>
                   {(misCastings ?? []).map(mc => (

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import ColaReportes, { type ReportePendiente } from './ColaReportes'
-import { leerCursor, escribirCursor } from '@/components/castings/cursor'
+import { leerCursor, escribirCursor } from '@/components/shared/cursor'
 
 export const metadata: Metadata = {
   title: 'Reportes de castings | ObrasDeTeatro',
