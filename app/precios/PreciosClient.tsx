@@ -137,6 +137,9 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                               <path d="M5 13l4 4L19 7" />
                             </svg>
                             {item}
+                            {bloque.itemsProximamente?.includes(item) && (
+                              <span className="precios-soon-badge precios-soon-badge--item">próx.</span>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -198,7 +201,10 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                   </tr>,
                   ...section.filas.map((fila) => (
                     <tr key={`${section.titulo}-${fila.label}`} className="precios-compare-row">
-                      <td className="precios-compare-label">{fila.label}</td>
+                      <td className="precios-compare-label">
+                        {fila.label}
+                        {fila.proximamente && <span className="precios-compare-soon"> · próx.</span>}
+                      </td>
                       {fila.values.map((val, i) => (
                         <td
                           key={i}

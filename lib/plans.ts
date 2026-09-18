@@ -4,6 +4,9 @@ export interface FeatureGroup {
   titulo: string
   items: string[]
   proximamente?: boolean
+  // Items concretos del bloque que todavía no existen, cuando el bloque
+  // entero no está en `proximamente`. Cada uno debe aparecer también en `items`.
+  itemsProximamente?: string[]
 }
 
 export interface Plan {
@@ -82,6 +85,7 @@ export const PLANES: Plan[] = [
           'Descarga ilimitada de guiones',
           'Listas de lectura y obras favoritas',
         ],
+        itemsProximamente: ['Listas de lectura y obras favoritas'],
       },
       {
         titulo: 'Scena IA',
@@ -100,6 +104,7 @@ export const PLANES: Plan[] = [
           'Publica hasta 3 castings activos a la vez',
           'Recursos creativos exclusivos',
         ],
+        itemsProximamente: ['Alertas de convocatorias personalizadas'],
       },
     ],
     recomendado: false,
@@ -135,6 +140,7 @@ export const PLANES: Plan[] = [
           'Quién visita tu perfil',
           'Informe mensual de rendimiento',
         ],
+        itemsProximamente: ['Informe mensual de rendimiento'],
       },
       {
         titulo: 'Scena IA',
@@ -171,6 +177,7 @@ export const PLANES: Plan[] = [
           'Página de organización con identidad propia',
           'Gestión de equipo y colaboradores',
         ],
+        itemsProximamente: ['Gestión de equipo y colaboradores'],
       },
       {
         titulo: 'Visibilidad Institucional',
@@ -207,6 +214,7 @@ export const PLANES: Plan[] = [
           'Acceso prioritario a nuevas incorporaciones',
           'Descarga masiva de guiones',
         ],
+        itemsProximamente: ['Descarga masiva de guiones'],
       },
       {
         titulo: 'Soporte Dedicado',
@@ -216,6 +224,7 @@ export const PLANES: Plan[] = [
           'Acceso anticipado a nuevas funcionalidades',
           'Panel de administración multi-usuario',
         ],
+        itemsProximamente: ['Panel de administración multi-usuario'],
       },
     ],
     recomendado: false,
@@ -229,6 +238,7 @@ export type CellValue = boolean | string
 export interface CompareRow {
   label: string
   values: [CellValue, CellValue, CellValue, CellValue]
+  proximamente?: boolean
 }
 
 export interface CompareSection {
@@ -247,7 +257,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
       { label: 'Disponibilidad profesional activa',    values: [false,      true,         true,         true] },
       { label: 'Perfil destacado en el directorio',    values: [false,      false,        true,         true] },
       { label: 'Perfil institucional',                 values: [false,      false,        false,        true] },
-      { label: 'Gestión de equipo y colaboradores',    values: [false,      false,        false,        true] },
+      { label: 'Gestión de equipo y colaboradores',    values: [false,      false,        false,        true], proximamente: true },
     ],
   },
   {
@@ -266,7 +276,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
       { label: 'Acceso a la Biblioteca Digital',       values: [true,       true,         true,         true] },
       { label: 'Obras publicadas',                     values: ['Hasta 3',  'Ilimitadas', 'Ilimitadas', 'Ilimitadas'] },
       { label: 'Descarga de guiones',                  values: [true,       true,         true,         true] },
-      { label: 'Listas de lectura propias',            values: [false,      true,         true,         true] },
+      { label: 'Listas de lectura propias',            values: [false,      true,         true,         true], proximamente: true },
       { label: 'Acceso prioritario a novedades',       values: [false,      false,        false,        true] },
     ],
   },
@@ -285,7 +295,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     filas: [
       { label: 'Convocatorias públicas abiertas',      values: [true,       true,         true,         true] },
       { label: 'Acceso a todas las convocatorias',     values: [false,      true,         true,         true] },
-      { label: 'Alertas personalizadas',               values: [false,      true,         true,         true] },
+      { label: 'Alertas personalizadas',               values: [false,      true,         true,         true], proximamente: true },
       { label: 'Convocatorias publicadas al mes',      values: ['Hasta 3',  'Ilimitadas', 'Ilimitadas', 'Ilimitadas'] },
     ],
   },
@@ -301,7 +311,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     filas: [
       { label: 'Estadísticas de visitas al perfil',    values: [false,      false,        true,         true] },
       { label: 'Dashboard de rendimiento',             values: [false,      false,        true,         true] },
-      { label: 'Informe mensual',                      values: [false,      false,        true,         true] },
+      { label: 'Informe mensual',                      values: [false,      false,        true,         true], proximamente: true },
     ],
   },
   {
