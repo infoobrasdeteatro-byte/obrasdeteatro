@@ -74,13 +74,17 @@ export async function buildAuthorizationContext(
   // El resultado es que el unico plan sin techo era tambien el unico del
   // que no se sabia absolutamente nada -- justo donde mas falta hace.
   //
-  // Medir no es limitar. `null` como limite recorre el mismo circuito
+  // Medir no es limitar. Un plan sin techo recorre el mismo circuito
   // atomico que cualquier otra reserva, pero la funcion de base de datos
   // no puede denegarlo: sin techo no hay comparacion posible. La promesa
   // comercial "ilimitado" queda intacta; lo que desaparece es la ceguera.
+  //
+  // El limite YA NO se envia: la funcion de base de datos lo calcula a
+  // partir del plan del perfil con las mismas cifras que subscription.ts, y es
+  // ella la que decide. `authorizedLimit` se sigue usando aqui solo para
+  // negarse antes cuando el plan es desconocido y para informar de la cuota.
   const outcome = await verifyAndReserve(
     professionalContext.identity.userId,
-    authorizedLimit.kind === 'ILIMITADO' ? null : authorizedLimit.value,
     estimatedCost,
     decisionContext.requestId
   )
@@ -93,11 +97,11 @@ export async function buildAuthorizationContext(
     return {
       authorizationStatus: 'DENIED',
       authorizationReason: formatReason('VERIFICACION_NEGATIVA', outcome.denialReason),
-      // La operacion atomica solo tiene UNA forma de devolver `authorized:
-      // false` -- que el presupuesto del periodo no alcance. Cualquier otra
-      // condicion (perfil ajeno, coste no positivo, TTL invalido) lanza
-      // excepcion y no llega hasta aqui. Por eso este codigo es exacto y no
-      // una interpretacion del texto de la razon.
+      // La operacion atomica deniega sin excepcion en dos casos: que el
+      // presupuesto del periodo no alcance, o que el plan del perfil sea
+      // desconocido. El segundo no llega hasta aqui en la practica, porque
+      // `parseAuthorizedLimit` ya deniega antes un plan sin cuota conocida.
+      // Coste no positivo o TTL invalido lanzan excepcion.
       denialCode: 'insufficient_ai_credits',
       reservationId: null,
       availableCredits: available,

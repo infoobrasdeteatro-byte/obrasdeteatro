@@ -38,11 +38,10 @@ describe('verifyAndReserve (Accounting Engine)', () => {
   it('aplica el TTL por defecto cuando no se especifica uno', async () => {
     vi.mocked(repositoryVerifyAndReserve).mockResolvedValue(AUTHORIZED_OUTCOME)
 
-    await verifyAndReserve('profile-1', 30, 5, 'request-1')
+    await verifyAndReserve('profile-1', 5, 'request-1')
 
     expect(repositoryVerifyAndReserve).toHaveBeenCalledWith(
       'profile-1',
-      30,
       5,
       DEFAULT_RESERVATION_TTL_SECONDS,
       'request-1'
@@ -52,19 +51,18 @@ describe('verifyAndReserve (Accounting Engine)', () => {
   it('permite sobrescribir el TTL explícitamente', async () => {
     vi.mocked(repositoryVerifyAndReserve).mockResolvedValue(AUTHORIZED_OUTCOME)
 
-    await verifyAndReserve('profile-1', 30, 5, 'request-1', 60)
+    await verifyAndReserve('profile-1', 5, 'request-1', 60)
 
-    expect(repositoryVerifyAndReserve).toHaveBeenCalledWith('profile-1', 30, 5, 60, 'request-1')
+    expect(repositoryVerifyAndReserve).toHaveBeenCalledWith('profile-1', 5, 60, 'request-1')
   })
 
   it('permite invocarse sin requestId (invocación fuera de una petición viva del Núcleo)', async () => {
     vi.mocked(repositoryVerifyAndReserve).mockResolvedValue(AUTHORIZED_OUTCOME)
 
-    await verifyAndReserve('profile-1', 30, 5)
+    await verifyAndReserve('profile-1', 5)
 
     expect(repositoryVerifyAndReserve).toHaveBeenCalledWith(
       'profile-1',
-      30,
       5,
       DEFAULT_RESERVATION_TTL_SECONDS,
       null
@@ -74,7 +72,7 @@ describe('verifyAndReserve (Accounting Engine)', () => {
   it('propaga el resultado de Repository Layer sin transformarlo', async () => {
     vi.mocked(repositoryVerifyAndReserve).mockResolvedValue(AUTHORIZED_OUTCOME)
 
-    const result = await verifyAndReserve('profile-1', 30, 5, 'request-1')
+    const result = await verifyAndReserve('profile-1', 5, 'request-1')
 
     expect(result).toBe(AUTHORIZED_OUTCOME)
   })

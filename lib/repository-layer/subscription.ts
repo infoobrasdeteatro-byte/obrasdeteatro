@@ -71,9 +71,15 @@ const UNLIMITED_MARKER = 'ILIMITADO'
  * 60 / ILIMITADO. Premium y Destacado quedan sustituidos por las que
  * siguen; Gratuito y Empresas se mantienen.
  *
- * Sigue siendo el unico lugar del repositorio con esta traduccion
+ * Sigue siendo el unico lugar del codigo TypeScript con esta traduccion
  * (Decision de Direccion IA-AUTH-001, Punto 1: Repository Layer es la
  * unica autoridad del dominio Subscription).
+ *
+ * OJO: desde el 2026-09-18 la base de datos aplica estas mismas cifras en
+ * accounting_cuota_ia_del_plan() (migracion
+ * accounting_solo_servidor_y_limite_interno), y es la base la que decide si
+ * se concede una reserva: el usuario podia enviar un limite propio cuando lo
+ * pasaba este codigo. Si cambias una cuota aqui, cambiala tambien alli.
  */
 const PLAN_AI_QUOTAS: Readonly<Record<string, PlanAIQuota>> = {
   gratuito: { kind: 'LIMITADO', creditsPerPeriod: 5 },

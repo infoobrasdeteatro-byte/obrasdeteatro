@@ -10,19 +10,16 @@ import type { Database } from '@/types/supabase'
  *
  * Que corrige y por que. El generador de Supabase deriva los tipos de la
  * firma SQL, y una firma SQL no distingue `numeric` de `numeric que admite
- * NULL` -- ni en los argumentos ni en las columnas de un RETURNS TABLE. Para
- * esta funcion esa distincion es el contrato entero. De la migracion que la
- * define, supabase/migrations/20260831074722_accounting_unlimited_plan_measurement.sql:
- *
- *   "Medir no es limitar. NULL en `p_authorized_limit` significa AUSENCIA DE
- *    LIMITE, no una cifra convenida: la comparacion de denegacion no puede
- *    ser verdadera con un operando nulo, de modo que la imposibilidad de
- *    denegar no es una regla anadida sino una consecuencia del tipo."
- *
- * Asi que `p_authorized_limit` admite NULL, y la funcion devuelve NULL a
+ * NULL` en las columnas de un RETURNS TABLE. Para esta funcion esa
+ * distincion es el contrato entero: un plan sin techo (limite NULL) se mide
+ * igual pero no puede denegarse por cuota, y la funcion devuelve NULL a
  * proposito en los siete campos de `NullableOnPurpose`. El generador los
  * declara no-nulos; creerle significaria dejar de comprobar nulos que llegan
  * de verdad.
+ *
+ * Desde 20260918152046_accounting_solo_servidor_y_limite_interno la funcion ya no
+ * recibe `p_authorized_limit`: calcula el limite a partir de profiles.plan.
+ * Los argumentos generados son, por tanto, correctos tal cual.
  *
  * Todo se deriva del tipo generado mediante Omit + interseccion: si el
  * esquema gana o pierde campos, este override los hereda sin tocarse. Lo
@@ -53,20 +50,9 @@ type NullableOnPurpose =
   | 'reservation_id'
   | 'status'
 
-export type AccountingVerifyAndReserveArgs = Omit<GeneratedArgs, 'p_authorized_limit'> & {
-  /** `null` = plan sin techo, medido igual pero imposible de denegar. */
-  p_authorized_limit: number | null
-}
+export type AccountingVerifyAndReserveArgs = GeneratedArgs
 
 export type AccountingVerifyAndReserveRow = Omit<GeneratedRow, NullableOnPurpose> & {
   [K in NullableOnPurpose]: GeneratedRow[K] | null
 }
 
-/**
- * Unico punto donde se fuerza el tipo generado. `.rpc()` exige el shape
- * generado, que rechaza el NULL que la funcion SQL si acepta; el cast queda
- * encerrado aqui en vez de repartido por cada llamada.
- */
-export function toGeneratedArgs(args: AccountingVerifyAndReserveArgs): GeneratedArgs {
-  return args as unknown as GeneratedArgs
-}

@@ -2920,7 +2920,6 @@ export type Database = {
       }
       accounting_verify_and_reserve: {
         Args: {
-          p_authorized_limit: number
           p_estimated_cost: number
           p_profile_id: string
           p_request_id?: string

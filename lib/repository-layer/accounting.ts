@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
-import { toGeneratedArgs } from './accounting-rpc-types'
+import { createServiceClient } from '@/lib/supabase/service'
 import type { AccountingVerifyAndReserveArgs, AccountingVerifyAndReserveRow } from './accounting-rpc-types'
 import type { CreditReservation, PeriodBudget, ReservationOutcome, ReservationStatus } from './types'
 
@@ -29,37 +28,40 @@ function toReservation(row: {
   }
 }
 
+/*
+ * Las cuatro operaciones van con el cliente de SERVICIO: las funciones
+ * accounting_* solo son ejecutables por service_role. Antes iban con la
+ * sesion del usuario, y eso le permitia llamarlas el mismo por la API con un
+ * limite vacio (cuota ilimitada) o un coste real de 0. `profileId` lo
+ * resuelve quien llama desde la sesion; nunca debe venir de la peticion.
+ */
+
 /**
  * Unica via de escritura de Accounting Engine (SC-005.3): operacion atomica
- * de verificacion y reserva. `authorizedLimit` y `estimatedCost` son los
- * unicos datos de entrada externos legitimos (DA-001) -- el consumo actual
- * se calcula siempre dentro de la funcion de base de datos, nunca aqui.
+ * de verificacion y reserva. `estimatedCost` es el unico dato economico de
+ * entrada: el limite lo calcula la funcion de base de datos a partir de
+ * profiles.plan, y el consumo actual tambien se calcula alli, nunca aqui.
  *
- * `authorizedLimit` en `null` significa PLAN SIN LIMITE: la operacion se
- * mide igual -- reserva, liquidacion, presupuesto del periodo -- pero no
- * puede denegarse por cuota. No es un valor convenido que signifique otra
- * cosa: es la ausencia de limite, dicha en el unico lugar donde puede
- * decirse sin inventar una cifra.
+ * Un plan sin techo (empresas) se mide igual -- reserva, liquidacion,
+ * presupuesto del periodo -- pero no puede denegarse por cuota.
  */
 export async function verifyAndReserve(
   profileId: string,
-  authorizedLimit: number | null,
   estimatedCost: number,
   ttlSeconds: number,
   requestId: string | null = null
 ): Promise<ReservationOutcome> {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const args: AccountingVerifyAndReserveArgs = {
     p_profile_id: profileId,
-    p_authorized_limit: authorizedLimit,
     p_estimated_cost: estimatedCost,
     p_ttl_seconds: ttlSeconds,
     p_request_id: requestId ?? undefined,
   }
 
   const { data: generated, error } = await supabase
-    .rpc('accounting_verify_and_reserve', toGeneratedArgs(args))
+    .rpc('accounting_verify_and_reserve', args)
     .single()
 
   if (error || !generated) {
@@ -107,7 +109,7 @@ export async function verifyAndReserve(
 }
 
 export async function settleReservation(reservationId: string, realCost: number): Promise<CreditReservation> {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data, error } = await supabase.rpc('accounting_settle_reservation', {
     p_reservation_id: reservationId,
@@ -122,7 +124,7 @@ export async function settleReservation(reservationId: string, realCost: number)
 }
 
 export async function releaseReservation(reservationId: string): Promise<CreditReservation> {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data, error } = await supabase.rpc('accounting_release_reservation', {
     p_reservation_id: reservationId,
@@ -137,7 +139,7 @@ export async function releaseReservation(reservationId: string): Promise<CreditR
 
 /** Housekeeping: nunca es la fuente de la garantia de no-bloqueo (ver migracion). */
 export async function expireStaleReservations(): Promise<number> {
-  const supabase = await createClient()
+  const supabase = createServiceClient()
 
   const { data, error } = await supabase.rpc('accounting_expire_stale_reservations')
 

@@ -124,7 +124,7 @@ describe('buildAuthorizationContext', () => {
     expect(result.availableCredits).toBe(2)
     expect(result.remainingQuota).toBe(2)
     // El requestId viaja hasta la reserva desde el cierre del circuito economico.
-    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 30, 5, 'req-1')
+    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 5, 'req-1')
   })
 
   /**
@@ -148,14 +148,13 @@ describe('buildAuthorizationContext', () => {
     expect(verifyAndReserve).toHaveBeenCalled()
   })
 
-  it('ILIMITADO: el limite viaja como AUSENCIA de limite, jamas como una cifra convenida', async () => {
+  it('ILIMITADO: no se envia ningun limite -- la base lo calcula a partir del plan', async () => {
     await buildAuthorizationContext(fakeProfessionalContext('ILIMITADO'), fakeDecisionContext())
 
-    const [, limiteEnviado] = vi.mocked(verifyAndReserve).mock.calls[0]
-
-    expect(limiteEnviado).toBeNull()
-    // Ningun valor magico: ni cero, ni un numero enorme que signifique "sin techo".
-    expect(typeof limiteEnviado).not.toBe('number')
+    // Solo perfil, coste estimado y requestId: el limite ya no viaja, ni
+    // como cifra ni como ausencia, porque quien lo enviaba podia ser el
+    // propio usuario.
+    expect(vi.mocked(verifyAndReserve).mock.calls[0]).toEqual(['user-1', 5, 'req-1'])
   })
 
   it('ILIMITADO: sin techo, cupo y cuota restante no son cero -- no existen', async () => {
@@ -188,10 +187,10 @@ describe('buildAuthorizationContext', () => {
     expect(result.estimatedCost).toBe(5)
   })
 
-  it('LIMITADO: el limite sigue viajando como cifra, sin cambio alguno', async () => {
+  it('LIMITADO: tampoco se envia el limite -- lo aplica la base', async () => {
     await buildAuthorizationContext(fakeProfessionalContext('30'), fakeDecisionContext())
 
-    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 30, 5, 'req-1')
+    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 5, 'req-1')
   })
 
   it('VERIFICADO: autoriza cuando Accounting Engine confirma la reserva', async () => {
@@ -313,9 +312,9 @@ describe('buildAuthorizationContext — cuota de IA y causa de denegacion (Bloqu
       fakeDecisionContext()
     )
 
-    // Reserva REAL -- se mide igual que cualquier otro plan --, con `null`
-    // como techo: ausencia de limite, nunca cero ni un numero grande.
-    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', null, 5, 'req-1')
+    // Reserva REAL -- se mide igual que cualquier otro plan --. El techo ya
+    // no viaja: la base sabe que empresas no tiene.
+    expect(verifyAndReserve).toHaveBeenCalledWith('user-1', 5, 'req-1')
     expect(result.authorizationStatus).toBe('AUTHORIZED')
     expect(result.reservationId).not.toBeNull()
     expect(result.denialCode).toBeNull()
@@ -324,11 +323,13 @@ describe('buildAuthorizationContext — cuota de IA y causa de denegacion (Bloqu
     expect(result.remainingQuota).toBeNull()
   })
 
-  it('EL TECHO QUE SE APLICA es el que declara la fuente unica, no uno propio de Credit Manager', async () => {
-    await buildAuthorizationContext(fakeProfessionalContext(CUOTA_PREMIUM), fakeDecisionContext())
+  it('EL TECHO QUE SE INFORMA es el que declara la fuente unica, no uno propio de Credit Manager', async () => {
+    // Desde 2026-09-18 el techo que se APLICA lo decide la base
+    // (accounting_cuota_ia_del_plan, con las mismas cifras); Credit Manager
+    // ya no lo envia, pero el que comunica sigue saliendo de la fuente unica.
+    const result = await buildAuthorizationContext(fakeProfessionalContext(CUOTA_PREMIUM), fakeDecisionContext())
 
-    const [, techoAplicado] = vi.mocked(verifyAndReserve).mock.calls[0]
-
-    expect(techoAplicado).toBe(Number(CUOTA_PREMIUM))
+    expect(vi.mocked(verifyAndReserve).mock.calls[0]).toEqual(['user-1', 5, 'req-1'])
+    expect(result.availableCredits).toBe(Number(CUOTA_PREMIUM))
   })
 })

@@ -23,14 +23,18 @@ const ORGANIZATIONAL_PROFILE_SOURCE = readFileSync(join(__dirname, '..', 'organi
 
 const MODULE_SOURCE = [READ_ONLY_SOURCE, ACCOUNTING_SOURCE, ACTIVITY_LOG_SOURCE, TELEMETRY_SOURCE].join('\n')
 
+// accounting.ts queda fuera a proposito desde 2026-09-18: es el unico modulo
+// que usa el cliente de servicio (ver su bloque mas abajo).
+const SESSION_MODULE_SOURCE = [READ_ONLY_SOURCE, ACTIVITY_LOG_SOURCE, TELEMETRY_SOURCE].join('\n')
+
 describe('Repository Layer — invariantes de integración (SC-005.1)', () => {
   it('usa exclusivamente el cliente ya existente de lib/supabase/server, sin instanciar otro', () => {
-    expect(MODULE_SOURCE).toMatch(/from '@\/lib\/supabase\/server'/)
+    expect(SESSION_MODULE_SOURCE).toMatch(/from '@\/lib\/supabase\/server'/)
     expect(MODULE_SOURCE).not.toMatch(/createServerClient|createBrowserClient|@supabase\/ssr|@supabase\/supabase-js/)
   })
 
   it('no crea ningún cliente privilegiado (service role)', () => {
-    expect(MODULE_SOURCE).not.toMatch(/service[_-]?role/i)
+    expect(SESSION_MODULE_SOURCE).not.toMatch(/service[_-]?role|supabase\/service/i)
   })
 
   it('no expone ningún dato del dominio Subscription (Incidencia A)', () => {
@@ -53,6 +57,19 @@ describe('Repository Layer — accounting.ts (invariante de componente, aprobado
     expect(ACCOUNTING_SOURCE).toMatch(
       /\.rpc\('accounting_verify_and_reserve'|\.rpc\('accounting_settle_reservation'|\.rpc\('accounting_release_reservation'|\.rpc\('accounting_expire_stale_reservations'/
     )
+  })
+
+  // 2026-09-18: las funciones accounting_* solo son ejecutables por
+  // service_role. Con la sesion del usuario, este podia llamarlas el mismo
+  // por la API con un limite vacio o un coste real de 0.
+  it('llama a las funciones con el cliente de servicio, nunca con la sesion del usuario', () => {
+    expect(ACCOUNTING_SOURCE).toMatch(/from '@\/lib\/supabase\/service'/)
+    expect(ACCOUNTING_SOURCE).not.toMatch(/@\/lib\/supabase\/server/)
+  })
+
+  it('no envia ningun limite de plan: lo calcula la base', () => {
+    const codigo = ACCOUNTING_SOURCE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '')
+    expect(codigo).not.toMatch(/p_authorized_limit|\bauthorizedLimit\b/)
   })
 })
 
@@ -229,15 +246,58 @@ describe('Repository Layer — cuota de IA, fuente unica (Bloque 5)', () => {
 describe('Accounting SQL — periodo y cuota (Bloque 5)', () => {
   const MIGRATIONS_DIR = join(__dirname, '..', '..', '..', 'supabase', 'migrations')
   const SEPARADOR = String.fromCharCode(10)
-  const ACCOUNTING_SQL = readdirSync(MIGRATIONS_DIR)
+  const FICHEROS_ACCOUNTING = readdirSync(MIGRATIONS_DIR)
     .filter((fichero) => fichero.includes('accounting'))
+    .sort()
+  const ACCOUNTING_SQL = FICHEROS_ACCOUNTING.map((fichero) => readFileSync(join(MIGRATIONS_DIR, fichero), 'utf-8')).join(
+    SEPARADOR
+  )
+  // La definicion VIGENTE es la de la ultima migracion que la crea.
+  const SQL_VIGENTE = [...FICHEROS_ACCOUNTING]
+    .reverse()
     .map((fichero) => readFileSync(join(MIGRATIONS_DIR, fichero), 'utf-8'))
-    .join(SEPARADOR)
+    .find((sql) => /function public\.accounting_verify_and_reserve\s*\(/.test(sql)) ?? ''
 
-  it('SQL no conoce ninguna cuota: recibe el techo como parametro en cada invocacion', () => {
-    // Por eso cambiar una cuota comercial NUNCA exige una migracion.
-    expect(ACCOUNTING_SQL).toMatch(/p_authorized_limit/)
-    expect(ACCOUNTING_SQL).not.toMatch(/gratuito|premium|destacado|empresas/i)
+  /*
+   * Decision revertida el 2026-09-18. Antes: "SQL no conoce ninguna cuota:
+   * recibe el techo como parametro", para que cambiar una cuota no exigiera
+   * migracion. Ese parametro lo podia enviar el propio usuario (limite vacio
+   * = cuota ilimitada), asi que ahora la base calcula el limite a partir de
+   * profiles.plan. El precio es que cambiar una cuota exige tocar dos sitios;
+   * el test de mas abajo impide que diverjan.
+   */
+  it('la reserva vigente no recibe el limite: lo calcula a partir del plan', () => {
+    const firma = SQL_VIGENTE.match(/function public\.accounting_verify_and_reserve\s*\(([\s\S]*?)\)\s*returns/i)?.[1] ?? ''
+    expect(firma).not.toBe('')
+    expect(firma).not.toMatch(/p_authorized_limit/)
+    expect(SQL_VIGENTE).toMatch(/accounting_cuota_ia_del_plan\(v_plan\)/)
+  })
+
+  it('las cuotas de la base coinciden con PLAN_AI_QUOTAS', () => {
+    const cuotaSql = (plan: string) =>
+      SQL_VIGENTE.match(new RegExp(`when '${plan}'\\s+then (\\d+)`))?.[1]
+    const cuotaTs = (plan: string) =>
+      SUBSCRIPTION_SOURCE.match(new RegExp(`${plan}: \\{ kind: 'LIMITADO', creditsPerPeriod: (\\d+) \\}`))?.[1]
+
+    for (const plan of ['gratuito', 'premium', 'destacado']) {
+      expect(cuotaSql(plan), plan).toBeDefined()
+      expect(cuotaSql(plan), plan).toBe(cuotaTs(plan))
+    }
+    // Empresas: sin techo en los dos lados.
+    expect(SUBSCRIPTION_SOURCE).toMatch(/empresas:\s*\{\s*kind:\s*'ILIMITADO'\s*\}/)
+    expect(SQL_VIGENTE).not.toMatch(/when 'empresas'\s+then \d/)
+  })
+
+  it('solo service_role puede ejecutar las funciones accounting_*', () => {
+    for (const fn of [
+      'accounting_verify_and_reserve',
+      'accounting_settle_reservation',
+      'accounting_release_reservation',
+      'accounting_expire_stale_reservations',
+    ]) {
+      expect(SQL_VIGENTE, fn).toMatch(new RegExp(`revoke execute on function public\\.${fn}\\([^)]*\\) from public, anon, authenticated`))
+      expect(SQL_VIGENTE, fn).toMatch(new RegExp(`grant execute on function public\\.${fn}\\([^)]*\\) to service_role`))
+    }
   })
 
   it('el periodo es el mes natural ya existente, no uno nuevo', () => {
@@ -247,6 +307,6 @@ describe('Accounting SQL — periodo y cuota (Bloque 5)', () => {
 
   it('un plan sin techo no puede denegarse por cuota', () => {
     // La comparacion contra el limite solo ocurre cuando hay limite.
-    expect(ACCOUNTING_SQL).toMatch(/IF p_authorized_limit IS NOT NULL[\s\S]{0,20}AND v_current_consumption \+ p_estimated_cost > p_authorized_limit/)
+    expect(SQL_VIGENTE).toMatch(/IF v_authorized_limit IS NOT NULL[\s\S]{0,20}AND v_current_consumption \+ p_estimated_cost > v_authorized_limit/)
   })
 })

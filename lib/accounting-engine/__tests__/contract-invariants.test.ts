@@ -22,7 +22,7 @@ describe('Accounting Engine — invariantes de integración (SC-005.3)', () => {
     )
   })
 
-  it('nunca lee ni deriva el límite de plan (DA-001): solo lo recibe como parámetro', () => {
+  it('nunca lee ni deriva el límite de plan (DA-001): desde 2026-09-18 lo aplica la base, no este módulo', () => {
     expect(MODULE_SOURCE).not.toMatch(/profiles\.plan|subscriptions\.plan|\.subscription\b/i)
   })
 })

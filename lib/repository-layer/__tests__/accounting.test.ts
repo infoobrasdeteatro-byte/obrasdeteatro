@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { verifyAndReserve, settleReservation, releaseReservation, expireStaleReservations } from '../accounting'
 import { createFakeSupabaseRpcClient } from './test-utils'
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(),
+vi.mock('@/lib/supabase/service', () => ({
+  createServiceClient: vi.fn(),
 }))
 
 beforeEach(() => {
-  vi.mocked(createClient).mockReset()
+  vi.mocked(createServiceClient).mockReset()
 })
 
 const AUTHORIZED_ROW = {
@@ -46,9 +46,9 @@ const DENIED_ROW = {
 describe('verifyAndReserve', () => {
   it('mapea una fila autorizada al contrato ReservationOutcome (authorized: true)', async () => {
     const { client, rpc } = createFakeSupabaseRpcClient({ data: AUTHORIZED_ROW, error: null })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
-    const result = await verifyAndReserve('profile-1', 30, 5, 300, 'request-1')
+    const result = await verifyAndReserve('profile-1', 5, 300, 'request-1')
 
     expect(result).toEqual({
       authorized: true,
@@ -73,7 +73,6 @@ describe('verifyAndReserve', () => {
     })
     expect(rpc).toHaveBeenCalledWith('accounting_verify_and_reserve', {
       p_profile_id: 'profile-1',
-      p_authorized_limit: 30,
       p_estimated_cost: 5,
       p_ttl_seconds: 300,
       p_request_id: 'request-1',
@@ -82,9 +81,9 @@ describe('verifyAndReserve', () => {
 
   it('mapea una fila denegada al contrato ReservationOutcome (authorized: false), sin inventar una reserva', async () => {
     const { client } = createFakeSupabaseRpcClient({ data: DENIED_ROW, error: null })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
-    const result = await verifyAndReserve('profile-1', 30, 25, 300)
+    const result = await verifyAndReserve('profile-1', 25, 300)
 
     expect(result).toEqual({
       authorized: false,
@@ -101,10 +100,20 @@ describe('verifyAndReserve', () => {
   })
 
   it('lanza si la función RPC devuelve error', async () => {
-    const { client } = createFakeSupabaseRpcClient({ data: null, error: { message: 'no autorizado a reservar credito para otro perfil' } })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    const { client } = createFakeSupabaseRpcClient({ data: null, error: { message: 'permission denied for function accounting_verify_and_reserve' } })
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
-    await expect(verifyAndReserve('profile-1', 30, 5, 300)).rejects.toThrow(/no autorizado/)
+    await expect(verifyAndReserve('profile-1', 5, 300)).rejects.toThrow(/permission denied/)
+  })
+
+  it('no envia ningun limite: la base lo calcula a partir del plan', async () => {
+    const { client, rpc } = createFakeSupabaseRpcClient({ data: AUTHORIZED_ROW, error: null })
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
+
+    await verifyAndReserve('profile-1', 5, 300, 'request-1')
+
+    const [, args] = rpc.mock.calls[0]
+    expect(args).not.toHaveProperty('p_authorized_limit')
   })
 })
 
@@ -123,7 +132,7 @@ describe('settleReservation', () => {
       settled_at: '2026-07-16T00:01:00.000Z',
     }
     const { client, rpc } = createFakeSupabaseRpcClient({ data: row, error: null })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
     const result = await settleReservation('reservation-1', 4.2)
 
@@ -150,7 +159,7 @@ describe('settleReservation', () => {
       data: null,
       error: { message: 'reserva reservation-1 no esta activa, no se puede liquidar' },
     })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
     await expect(settleReservation('reservation-1', 4.2)).rejects.toThrow(/no esta activa/)
   })
@@ -171,7 +180,7 @@ describe('releaseReservation', () => {
       settled_at: '2026-07-16T00:01:00.000Z',
     }
     const { client } = createFakeSupabaseRpcClient({ data: row, error: null })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
     const result = await releaseReservation('reservation-1')
 
@@ -183,7 +192,7 @@ describe('releaseReservation', () => {
 describe('expireStaleReservations', () => {
   it('devuelve el número de reservas caducadas marcadas', async () => {
     const { client } = createFakeSupabaseRpcClient({ data: 3, error: null })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
     const result = await expireStaleReservations()
 
@@ -192,7 +201,7 @@ describe('expireStaleReservations', () => {
 
   it('lanza si la función RPC devuelve error', async () => {
     const { client } = createFakeSupabaseRpcClient({ data: null, error: { message: 'boom' } })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
     await expect(expireStaleReservations()).rejects.toThrow(/boom/)
   })

@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { verifyAndReserve } from '../accounting'
 import { createFakeSupabaseRpcClient } from './test-utils'
 
-vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }))
+vi.mock('@/lib/supabase/service', () => ({ createServiceClient: vi.fn() }))
 
-beforeEach(() => vi.mocked(createClient).mockReset())
+beforeEach(() => vi.mocked(createServiceClient).mockReset())
 
 /**
  * Presupuesto de consumo por periodo.
@@ -38,8 +38,8 @@ function filaDePresupuesto(overrides: Record<string, unknown> = {}) {
 
 async function reservar(fila: Record<string, unknown>) {
   const { client } = createFakeSupabaseRpcClient({ data: fila, error: null })
-  vi.mocked(createClient).mockResolvedValue(client as never)
-  return verifyAndReserve('profile-1', 30, 1, 300, 'req-1')
+  vi.mocked(createServiceClient).mockReturnValue(client as never)
+  return verifyAndReserve('profile-1', 1, 300, 'req-1')
 }
 
 describe('presupuesto del periodo — capacidad disponible', () => {
@@ -128,13 +128,13 @@ describe('presupuesto del periodo — capacidad disponible', () => {
 
   it('el requestId viaja hasta la operacion economica', async () => {
     const { client, rpc } = createFakeSupabaseRpcClient({ data: filaDePresupuesto(), error: null })
-    vi.mocked(createClient).mockResolvedValue(client as never)
+    vi.mocked(createServiceClient).mockReturnValue(client as never)
 
-    await verifyAndReserve('profile-1', 30, 1, 300, 'req-1')
+    await verifyAndReserve('profile-1', 1, 300, 'req-1')
 
     expect(rpc).toHaveBeenCalledWith(
       'accounting_verify_and_reserve',
-      expect.objectContaining({ p_request_id: 'req-1', p_profile_id: 'profile-1', p_authorized_limit: 30 })
+      expect.objectContaining({ p_request_id: 'req-1', p_profile_id: 'profile-1' })
     )
   })
 
