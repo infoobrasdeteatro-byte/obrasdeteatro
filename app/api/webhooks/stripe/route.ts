@@ -55,6 +55,69 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 }
 
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const supabase = getServiceClient()
+
+  const priceId = subscription.items.data[0]?.price.id
+  const plan =
+    priceId === process.env.STRIPE_PRICE_PREMIUM_ID ? 'premium' :
+    priceId === process.env.STRIPE_PRICE_DESTACADO_ID ? 'destacado' :
+    priceId === process.env.STRIPE_PRICE_EMPRESAS_ID ? 'empresas' :
+    null
+
+  const status = subscription.status
+
+  // 1. subscriptions siempre se actualiza, sea cual sea el estado
+  const { data: subRow, error: subError } = await supabase
+    .from('subscriptions')
+    .update({
+      status,
+      plan: plan ?? undefined, // si no coincide con ningún price conocido, no se pisa
+      stripe_price_id: priceId ?? null,
+      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('stripe_subscription_id', subscription.id)
+    .select('profile_id')
+    .maybeSingle()
+
+  if (subError) {
+    console.error('Error actualizando subscription:', subError)
+    throw subError
+  }
+
+  if (!subRow) {
+    console.warn(`subscription.updated sin fila en subscriptions: ${subscription.id}`)
+    return
+  }
+
+  // 2. profiles solo se toca en estados que cambian el acceso de forma definitiva.
+  //    past_due / incomplete / paused = periodo de gracia: Stripe sigue reintentando
+  //    el cobro, así que todavía no se degrada el acceso.
+  const grantsAccess = status === 'active' || status === 'trialing'
+  const revokesAccess = status === 'canceled' || status === 'unpaid' || status === 'incomplete_expired'
+
+  if (grantsAccess && plan) {
+    const { error } = await supabase.from('profiles')
+      .update({ plan, is_premium: true })
+      .eq('id', subRow.profile_id)
+    if (error) {
+      console.error('Error sincronizando profile (grant):', error)
+      throw error
+    }
+  } else if (revokesAccess) {
+    const { error } = await supabase.from('profiles')
+      .update({ plan: 'gratuito', is_premium: false })
+      .eq('id', subRow.profile_id)
+    if (error) {
+      console.error('Error sincronizando profile (revoke):', error)
+      throw error
+    }
+  }
+}
+
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const supabase = getServiceClient()
   const subscriptionId = typeof invoice.subscription === 'string'
@@ -93,6 +156,9 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed':
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session)
+        break
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
         break
       case 'customer.subscription.deleted':
         await handleSubscriptionDeleted(event.data.object as Stripe.Subscription)
