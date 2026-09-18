@@ -11,10 +11,13 @@ import { getStripe } from '@/lib/stripe'
  * cancelación real, nunca reintenta cancelar dos veces: solo completa la
  * sincronización local pendiente).
  *
- * No forma parte todavía de ningún flujo accesible por el usuario -- se
- * invoca únicamente como función de librería, para no completar la cadena
- * hacia el Evento Arquitectónico Atómico antes de que esa fase esté
- * autorizada.
+ * La invoca el Evento Arquitectónico Atómico (AEC-003B Fase 6,
+ * app/api/cuenta/eliminar/ejecutar/route.ts), al que el usuario llega desde
+ * /cuenta/eliminar. Hoy es la única vía por la que un usuario cancela su
+ * suscripción, y la cancelación es inmediata (no al final del período
+ * abonado). Los textos de /legal/suscripciones, /legal/reembolsos y
+ * /legal/terminos describen este comportamiento: si cambia, hay que
+ * actualizarlos.
  */
 export type AccionCancelacionStripe =
   | 'cancelada_ahora'
