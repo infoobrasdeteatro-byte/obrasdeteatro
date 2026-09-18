@@ -89,7 +89,9 @@ const SECTIONS = [
     title: "11. Suscripciones y renovaciones",
     content: [
       { type: "text", text: "La plataforma ofrece planes gratuitos y planes de pago. Los planes de pago pueden incluir mayor visibilidad, herramientas avanzadas, funciones premium, servicios de inteligencia artificial, estadísticas y perfiles destacados." },
-      { type: "text", text: "Las suscripciones se renovarán automáticamente salvo cancelación expresa por parte del usuario. La cancelación impedirá futuras renovaciones pero no dará derecho a devolución de cantidades ya abonadas, salvo obligación legal." },
+      { type: "text", text: "Las suscripciones se renovarán automáticamente al finalizar cada período contratado." },
+      { type: "highlight", text: "Actualmente la plataforma no ofrece una opción para cancelar solo la suscripción o su renovación automática manteniendo la cuenta. La única forma de cancelar una suscripción desde la cuenta es eliminar la cuenta (Cuenta → Eliminar cuenta)." },
+      { type: "text", text: "Solicitar la eliminación no cancela todavía la suscripción. La suscripción se cancela en el momento en que el usuario completa la eliminación de la cuenta, sin esperar al final del período abonado, y no dará derecho a devolución de cantidades ya abonadas, salvo obligación legal. Las condiciones completas figuran en las Condiciones de Suscripción y en la Política de Reembolsos." },
       { type: "highlight", text: "La contratación de servicios premium no garantiza contrataciones, audiciones, representaciones, ventas, visibilidad específica ni resultados económicos." },
     ],
   },
@@ -117,7 +119,7 @@ export default function TerminosPage() {
   return (
     <LegalPage
       title="Términos y Condiciones de Uso"
-      lastUpdate="15 de junio de 2026"
+      lastUpdate="18 de septiembre de 2026"
       sections={SECTIONS}
     />
   );

@@ -31,9 +31,11 @@ const SECTIONS = [
       { type: "highlight", text: "3.2 Cookies de preferencias — Requieren consentimiento" },
       { type: "text", text: "Permiten recordar configuraciones elegidas por el usuario como idioma, zona geográfica y configuración de visualización." },
       { type: "highlight", text: "3.3 Cookies analíticas — Requieren consentimiento" },
-      { type: "text", text: "Recopilan información estadística sobre la utilización de la plataforma mediante herramientas como Google Analytics y Google Tag Manager. Información recopilada: número de visitas, páginas visitadas, tiempo de navegación, procedencia del tráfico y dispositivos utilizados." },
+      { type: "text", text: "Actualmente ObrasDeTeatro® no utiliza ninguna cookie analítica: herramientas como Google Analytics o Google Tag Manager no están instaladas en el sitio y no se recopilan estadísticas de navegación mediante cookies." },
+      { type: "text", text: "Si en el futuro se incorporan, recopilarán información estadística sobre la utilización de la plataforma (número de visitas, páginas visitadas, tiempo de navegación, procedencia del tráfico y dispositivos utilizados), solo se activarán con el consentimiento del usuario y esta Política se actualizará antes de su puesta en marcha." },
       { type: "highlight", text: "3.4 Cookies de marketing y publicidad — Requieren consentimiento" },
-      { type: "text", text: "Permiten mostrar contenidos promocionales relevantes para los usuarios. Podrán utilizarse para campañas publicitarias, remarketing, medición de conversiones y promoción de servicios." },
+      { type: "text", text: "Actualmente ObrasDeTeatro® no utiliza ninguna cookie de marketing o publicidad." },
+      { type: "text", text: "Si en el futuro se incorporan, permitirán mostrar contenidos promocionales relevantes para los usuarios y podrán utilizarse para campañas publicitarias, remarketing, medición de conversiones y promoción de servicios, siempre con el consentimiento del usuario." },
       { type: "highlight", text: "3.5 Cookies de redes sociales" },
       { type: "text", text: "Cuando el usuario interactúe con servicios externos como Facebook, Instagram, LinkedIn, TikTok, YouTube o WhatsApp, dichos servicios podrán instalar sus propias cookies. ObrasDeTeatro® no controla directamente estas cookies." },
     ],
@@ -108,7 +110,7 @@ export default function CookiesPage() {
   return (
     <LegalPage
       title="Política de Cookies"
-      lastUpdate="15 de junio de 2026"
+      lastUpdate="18 de septiembre de 2026"
       sections={SECTIONS}
     />
   );

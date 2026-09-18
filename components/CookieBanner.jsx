@@ -105,7 +105,7 @@ export default function CookieBanner() {
                     Utilizamos cookies en ObrasDeTeatro®
                   </p>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Usamos cookies propias y de terceros para garantizar el funcionamiento de la plataforma, analizar el uso del sitio y mejorar tu experiencia. Puedes aceptar todas, rechazarlas o configurar tus preferencias.{" "}
+                    Usamos cookies propias y de terceros para garantizar el funcionamiento de la plataforma y recordar tus preferencias. Hoy no utilizamos cookies analíticas ni publicitarias. Puedes aceptar todas, rechazarlas o configurar tus preferencias.{" "}
                     <a
                       href="/legal/cookies"
                       className="text-red-700 underline hover:text-red-900 font-medium"
