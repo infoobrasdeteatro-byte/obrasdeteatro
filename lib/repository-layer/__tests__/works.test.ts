@@ -21,6 +21,8 @@ const SAMPLE_WORK_ROW = {
   min_age: 14,
   duration_minutes: 100,
   cast_size_max: 9,
+  source_name: null,
+  source_url: null,
 }
 
 const SAMPLE_WORK = {
@@ -35,7 +37,7 @@ const SAMPLE_WORK = {
   slug: 'la-casa-de-bernarda-alba',
   minAge: 14,
   durationMinutes: 100,
-  castSizeMax: 9,
+  castSizeMax: 9, sourceName: null, sourceUrl: null,
 }
 
 describe('getPublishedWorkById', () => {

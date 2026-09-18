@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -98,16 +98,21 @@ export type Database = {
       }
       calls: {
         Row: {
-          call_type: string | null
+          category: string | null
           created_at: string | null
           deadline: string | null
           deleted_at: string | null
           description: string | null
+          estado: string
+          fecha_publicacion: string | null
           id: string
           is_featured: boolean | null
           is_published: boolean | null
           location: string | null
-          prize_amount: number | null
+          moderacion_entrada_at: string | null
+          motivo_filtro: string | null
+          motivo_rechazo: string | null
+          prize: string | null
           profile_id: string
           slug: string | null
           title: string
@@ -115,16 +120,21 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
-          call_type?: string | null
+          category?: string | null
           created_at?: string | null
           deadline?: string | null
           deleted_at?: string | null
           description?: string | null
+          estado?: string
+          fecha_publicacion?: string | null
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
           location?: string | null
-          prize_amount?: number | null
+          moderacion_entrada_at?: string | null
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
+          prize?: string | null
           profile_id: string
           slug?: string | null
           title: string
@@ -132,16 +142,21 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
-          call_type?: string | null
+          category?: string | null
           created_at?: string | null
           deadline?: string | null
           deleted_at?: string | null
           description?: string | null
+          estado?: string
+          fecha_publicacion?: string | null
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
           location?: string | null
-          prize_amount?: number | null
+          moderacion_entrada_at?: string | null
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
+          prize?: string | null
           profile_id?: string
           slug?: string | null
           title?: string
@@ -2976,6 +2991,7 @@ export type Database = {
         }[]
       }
       cerrar_castings_vencidos: { Args: never; Returns: undefined }
+      cerrar_convocatorias_vencidas: { Args: never; Returns: undefined }
       cola_reportes: {
         Args: {
           p_cursor_created_at?: string
@@ -3000,6 +3016,10 @@ export type Database = {
           telefono_contacto: string
           url_externa: string
         }[]
+      }
+      cupo_mensual_convocatorias_agotado: {
+        Args: { p_profile: string }
+        Returns: boolean
       }
       es_mi_casting: { Args: { p_casting: string }; Returns: boolean }
       es_moderador: { Args: never; Returns: boolean }
@@ -3034,6 +3054,10 @@ export type Database = {
         }[]
       }
       plan_de_pago: { Args: never; Returns: boolean }
+      plan_destacado_o_superior: {
+        Args: { p_profile?: string }
+        Returns: boolean
+      }
       se_postulo_a_mis_castings: {
         Args: { p_perfil: string }
         Returns: boolean

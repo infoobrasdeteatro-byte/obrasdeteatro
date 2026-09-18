@@ -3,6 +3,7 @@ import {
   getIdentity,
   getProfessionalProfilePublic,
   getSubscription,
+  getProfilePlan,
   getUsageLimit,
   getIndividualProfileData,
   getOrganizationalProfileData,
@@ -13,6 +14,7 @@ vi.mock('@/lib/repository-layer', () => ({
   getIdentity: vi.fn(),
   getProfessionalProfilePublic: vi.fn(),
   getSubscription: vi.fn(),
+  getProfilePlan: vi.fn(),
   getUsageLimit: vi.fn(),
   getIndividualProfileData: vi.fn(),
   getOrganizationalProfileData: vi.fn(),
@@ -37,6 +39,7 @@ describe('buildProfessionalContext', () => {
       timezone: null,
     })
     vi.mocked(getProfessionalProfilePublic).mockResolvedValue(null)
+    vi.mocked(getProfilePlan).mockResolvedValue('premium')
     vi.mocked(getSubscription).mockResolvedValue({
       plan: 'premium',
       status: 'active',
@@ -44,13 +47,13 @@ describe('buildProfessionalContext', () => {
       cancelAtPeriodEnd: false,
     })
     vi.mocked(getIndividualProfileData).mockResolvedValue(null)
-    vi.mocked(getUsageLimit).mockReturnValue('30')
+    vi.mocked(getUsageLimit).mockReturnValue('CUOTA-DE-LA-FUENTE')
 
     const result = await buildProfessionalContext('user-1', { route: '/scenaia', module: 'biblioteca', locale: 'es' })
 
     expect(result.identity.userId).toBe('user-1')
     expect(result.identity.authenticationStatus).toBe('autenticado')
-    expect(result.subscription).toEqual({ plan: 'premium', status: 'active', availableCapabilities: null, usageLimits: '30' })
+    expect(result.subscription).toEqual({ plan: 'premium', status: 'active', availableCapabilities: null, usageLimits: 'CUOTA-DE-LA-FUENTE' })
     expect(result.professionalProfile).toEqual({
       specialty: null,
       disciplines: null,
@@ -64,6 +67,8 @@ describe('buildProfessionalContext', () => {
   it('nunca lanza excepción cuando no existe fila de profiles ni de subscriptions: construye un contexto degradado completo', async () => {
     vi.mocked(getIdentity).mockResolvedValue(null)
     vi.mocked(getProfessionalProfilePublic).mockResolvedValue(null)
+    // Perfil inexistente: sin plan y sin relacion comercial.
+    vi.mocked(getProfilePlan).mockResolvedValue(null)
     vi.mocked(getSubscription).mockResolvedValue(null)
     vi.mocked(getUsageLimit).mockReturnValue(null)
 

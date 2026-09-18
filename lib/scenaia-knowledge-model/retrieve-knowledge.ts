@@ -1,5 +1,5 @@
 import { retrieveRelevantKnowledge } from '@/lib/knowledge-assets'
-import type { KnowledgeDomain, KnowledgeRetrievalResult } from '@/lib/knowledge-assets'
+import type { KnowledgeDomain, KnowledgeRetrievalResult, WorkSlotOccupancy } from '@/lib/knowledge-assets'
 
 /**
  * IA-003 (Plan Tecnico aprobado 2026-07-22): transporta el texto de la
@@ -12,6 +12,10 @@ import type { KnowledgeDomain, KnowledgeRetrievalResult } from '@/lib/knowledge-
  * (SCENAIA-002, correccion definitiva de Caso 1) se transporta sin
  * modificar, junto con `items`.
  */
-export async function retrieveKnowledgeForDomain(domain: KnowledgeDomain, query: string): Promise<KnowledgeRetrievalResult> {
-  return retrieveRelevantKnowledge(domain, query)
+export async function retrieveKnowledgeForDomain(
+  domain: KnowledgeDomain,
+  query: string,
+  previousOccupancy?: WorkSlotOccupancy
+): Promise<KnowledgeRetrievalResult> {
+  return retrieveRelevantKnowledge(domain, query, undefined, previousOccupancy)
 }
