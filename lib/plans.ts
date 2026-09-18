@@ -287,8 +287,13 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
       { label: 'Convocatorias públicas abiertas',      values: [true,       true,         true,         true] },
       { label: 'Acceso a todas las convocatorias',     values: [false,      true,         true,         true] },
       { label: 'Alertas personalizadas',               values: [false,      true,         true,         true] },
-      { label: 'Publicar convocatorias propias',       values: [false,      false,        false,        'Ilimitadas'] },
-      { label: 'Gestión de candidaturas recibidas',    values: [false,      false,        false,        true] },
+    ],
+  },
+  {
+    titulo: 'Castings',
+    filas: [
+      { label: 'Castings publicados a la vez',         values: [false,      'Hasta 3',    'Hasta 10',   'Ilimitados'] },
+      { label: 'Gestión de candidaturas recibidas',    values: [false,      true,         true,         true] },
     ],
   },
   {
