@@ -36,11 +36,12 @@ const SECTIONS = [
   {
     title: "4. Cancelación de suscripciones",
     content: [
-      { type: "text", text: "El usuario podrá cancelar la renovación automática en cualquier momento desde su cuenta. La cancelación:" },
+      { type: "highlight", text: "Actualmente la plataforma no ofrece una opción para cancelar solo la suscripción o su renovación automática manteniendo la cuenta. La única forma de cancelar una suscripción desde la cuenta es eliminar la cuenta (Cuenta → Eliminar cuenta)." },
+      { type: "text", text: "Solicitar la eliminación no cancela todavía la suscripción. La cancelación:" },
       { type: "list", items: [
-        "No afectará al período ya abonado.",
+        "Se produce en el momento en que el usuario completa la eliminación de la cuenta, sin esperar al final del período abonado, con la pérdida del acceso a las funcionalidades del plan y a la propia cuenta.",
         "Impedirá futuras renovaciones.",
-        "No generará devolución automática de importes previamente cobrados.",
+        "No generará devolución automática de importes previamente cobrados, incluida la parte no disfrutada del período en curso, salvo obligación legal aplicable.",
       ]},
     ],
   },

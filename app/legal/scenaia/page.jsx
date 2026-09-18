@@ -22,6 +22,7 @@ const SECTIONS = [
         "Recomendar castings, convocatorias y festivales.",
         "Proporcionar sugerencias creativas.",
       ]},
+      { type: "highlight", text: "Estas funciones se habilitan de forma progresiva, por lo que no todas están disponibles todavía. El estado actual de cada una puede consultarse en la página de precios (/precios)." },
     ],
   },
   {

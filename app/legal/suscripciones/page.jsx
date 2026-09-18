@@ -12,10 +12,10 @@ export const metadata = {
 // «Próximamente» en /precios no se enumeran aquí. Los límites de castings son
 // los que aplica el trigger castings_sync_estado: castings activos a la vez.
 const BENEFICIOS = {
-  gratuito: "perfil básico en el directorio, acceso a la Biblioteca Digital y hasta 3 obras publicadas. No incluye la publicación de castings.",
-  premium: "perfil profesional completo, obras publicadas ilimitadas y publicación de hasta 3 castings activos a la vez, con gestión de las candidaturas recibidas.",
+  gratuito: "perfil básico en el directorio, acceso a la Biblioteca Digital, hasta 3 obras publicadas y hasta 3 convocatorias publicadas al mes. No incluye la publicación de castings.",
+  premium: "perfil profesional completo, obras publicadas ilimitadas, convocatorias sin límite mensual y publicación de hasta 3 castings activos a la vez, con gestión de las candidaturas recibidas.",
   destacado: "todo lo del plan Premium, perfil destacado en el directorio, prioridad en búsquedas, analítica del perfil y publicación de hasta 10 castings activos a la vez.",
-  empresas: "perfil institucional con gestión de equipo, prioridad máxima en el directorio, castings activos ilimitados, convocatorias ilimitadas publicadas y soporte prioritario con gestor asignado.",
+  empresas: "perfil institucional con gestión de equipo, prioridad máxima en el directorio, convocatorias sin límite mensual, castings activos ilimitados y soporte prioritario con gestor asignado.",
 };
 
 const formatoPrecio = (precio) =>
@@ -52,7 +52,8 @@ const SECTIONS = [
   {
     title: "5. Cancelación",
     content: [
-      { type: "text", text: "El usuario podrá cancelar la renovación automática en cualquier momento desde su cuenta. La cancelación impedirá futuras renovaciones pero no supondrá la devolución automática de cantidades ya abonadas, salvo obligación legal aplicable." },
+      { type: "highlight", text: "Actualmente la plataforma no ofrece una opción para cancelar solo la suscripción o su renovación automática manteniendo la cuenta. La única forma de cancelar una suscripción desde la cuenta es eliminar la cuenta (Cuenta → Eliminar cuenta)." },
+      { type: "text", text: "Solicitar la eliminación no cancela todavía la suscripción. La suscripción se cancela en el momento en que el usuario completa la eliminación de la cuenta, sin esperar al final del período abonado: se pierde el acceso a las funcionalidades del plan y a la propia cuenta, y no se producirán futuras renovaciones. La cancelación no supondrá la devolución automática de cantidades ya abonadas, salvo obligación legal aplicable." },
     ],
   },
   {

@@ -35,7 +35,8 @@ const SECTIONS = [
   {
     title: "4. Uso de la mensajería",
     content: [
-      { type: "text", text: "La mensajería interna deberá utilizarse exclusivamente para fines relacionados con la actividad profesional y artística. Queda prohibido el spam, publicidad masiva no solicitada, mensajes fraudulentos, solicitudes engañosas y acoso reiterado." },
+      { type: "highlight", text: "La mensajería interna es una funcionalidad planificada que todavía no está activa en la plataforma." },
+      { type: "text", text: "Cuando esté disponible, la mensajería interna deberá utilizarse exclusivamente para fines relacionados con la actividad profesional y artística. Quedará prohibido el spam, publicidad masiva no solicitada, mensajes fraudulentos, solicitudes engañosas y acoso reiterado." },
     ],
   },
   {

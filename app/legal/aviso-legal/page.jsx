@@ -36,7 +36,6 @@ const SECTIONS = [
         "Herramientas basadas en inteligencia artificial (ScenaIA).",
         "Servicios de visibilidad y promoción.",
         "Suscripciones premium.",
-        "Venta de entradas y servicios relacionados.",
         "Solicitudes de derechos de representación teatral.",
       ]},
     ],
@@ -109,7 +108,7 @@ export default function AvisoLegalPage() {
   return (
     <LegalPage
       title="Aviso Legal"
-      lastUpdate="15 de junio de 2026"
+      lastUpdate="18 de septiembre de 2026"
       sections={SECTIONS}
     />
   );
