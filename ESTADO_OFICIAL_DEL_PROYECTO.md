@@ -88,7 +88,7 @@ El proyecto no tiene ningún módulo en producción que esté roto o inaccesible
 | Rama | Último commit | Descripción |
 |------|--------------|-------------|
 | `main` | `f4d00cd` | Último commit funcional: webhooks de Stripe (PR #9). Los commits posteriores solo tocan `.gitignore` y documentación |
-| `develop` | `3f12127` (2026-08-07) | Sin actividad desde agosto. Su contenido ya está en `main`, reaplicado con otros SHA; no es la rama de integración actual |
+| `archive/develop-pre-pr-workflow` | `3f12127` (2026-08-07) | Antigua `develop`, archivada con este nombre el 2026-09-18. Su contenido ya está en `main`, reaplicado con otros SHA. Solo se conserva como referencia histórica |
 
 El flujo de trabajo actual es rama de feature → PR → squash merge a `main`.
 
@@ -462,7 +462,7 @@ El Sistema Editorial 2026 aprobado especifica Newsreader + IBM Plex Serif/Sans. 
 Dos obras del Lote 001 tienen años provisionales o debatidos. Si se despliega contenido que dice "1636" y luego se descubre que es incorrecto, la Biblioteca pierde credibilidad editorial.
 
 ### Riesgo 6 — Producción desactualizada — RESUELTO (2026-09-18)
-Resuelto. `main` contiene todo el trabajo de `develop`, incluido el Sistema Obras, y producción despliega automáticamente desde `main`. Riesgo residual: `develop` sigue existiendo sin actividad desde 2026-08-07, y podría confundirse con la rama de integración.
+Resuelto. `main` contiene todo el trabajo de `develop`, incluido el Sistema Obras, y producción despliega automáticamente desde `main`. El riesgo residual de confundir `develop` con la rama de integración también está cerrado: el 2026-09-18 se renombró a `archive/develop-pre-pr-workflow`, en local y en GitHub.
 
 ### Riesgo 7 — `work_files_file_type_check`
 El constraint solo permite 5 tipos de archivo. Si la Biblioteca necesita tipos adicionales en el futuro (por ejemplo, materiales de producción, partituras, etc.), requerirá una migración SQL con análisis de impacto en RLS.
