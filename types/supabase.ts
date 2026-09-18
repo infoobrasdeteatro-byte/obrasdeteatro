@@ -3027,6 +3027,7 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: undefined
       }
+      mis_convocatorias_publicadas_en_mes: { Args: never; Returns: number }
       mis_postulaciones: {
         Args: {
           p_cursor_applied_at?: string

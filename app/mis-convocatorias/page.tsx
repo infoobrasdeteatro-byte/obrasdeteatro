@@ -17,9 +17,9 @@ export const metadata: Metadata = {
  * El cupo que se enseña arriba es el ÚNICO límite del módulo, y solo afecta al
  * plan gratuito: 3 publicadas por mes natural. No es una tabla de límites en
  * el cliente como la de /mis-castings -- que además no coincide con
- * lib/plans.ts -- sino la misma cuenta que hace
- * cupo_mensual_convocatorias_agotado() en la base. Si las dos se separasen,
- * manda la base: aquí solo se informa.
+ * lib/plans.ts -- sino la cifra que devuelve la propia base con
+ * mis_convocatorias_publicadas_en_mes(), la misma que usa
+ * cupo_mensual_convocatorias_agotado() para decidir.
  */
 export default async function MisConvocatoriasPage() {
   const supabase = await createClient()
@@ -50,14 +50,11 @@ export default async function MisConvocatoriasPage() {
   const publicadas = lista.filter(c => c.estado === 'publicado').length
   const enRevision = lista.filter(c => c.estado === 'pendiente_revision').length
 
-  const inicioDeMes = new Date()
-  inicioDeMes.setDate(1)
-  inicioDeMes.setHours(0, 0, 0, 0)
-  const publicadasEsteMes = lista.filter(
-    c => c.estado === 'publicado'
-      && c.fecha_publicacion !== null
-      && new Date(c.fecha_publicacion).getTime() >= inicioDeMes.getTime()
-  ).length
+  // La cifra del cupo la da la base (calls_publicaciones): cuenta las
+  // primeras publicaciones del mes natural aunque después se hayan cerrado,
+  // cancelado o borrado, que no aparecen como 'publicado' en `lista`.
+  const { data: publicadasEsteMesRpc } = await supabase.rpc('mis_convocatorias_publicadas_en_mes')
+  const publicadasEsteMes = publicadasEsteMesRpc ?? 0
 
   const limiteMensual = plan === 'gratuito' ? 3 : null
   const cupoAgotado = limiteMensual !== null && publicadasEsteMes >= limiteMensual

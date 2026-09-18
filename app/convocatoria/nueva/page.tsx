@@ -41,20 +41,11 @@ export default async function NuevaConvocatoriaPage() {
   // la casilla como disponible o no. Quien decide sigue siendo el trigger.
   const puedeDestacar = plan === 'destacado' || plan === 'empresas'
 
-  // Cuántas lleva publicadas este mes, para avisar ANTES de que el trigger
-  // aborte. Es la misma cuenta que hace cupo_mensual_convocatorias_agotado(),
-  // pero aquí solo sirve para informar: si esta cifra y la de la base se
-  // separasen, manda la base.
-  const inicioDeMes = new Date()
-  inicioDeMes.setDate(1)
-  inicioDeMes.setHours(0, 0, 0, 0)
-
-  const { count: publicadasEsteMes } = await supabase
-    .from('calls')
-    .select('id', { count: 'exact', head: true })
-    .eq('profile_id', user.id)
-    .eq('estado', 'publicado')
-    .gte('fecha_publicacion', inicioDeMes.toISOString())
+  // Cuántas ha publicado este mes, para avisar ANTES de que el trigger aborte.
+  // La cifra la da la propia base (calls_publicaciones), no una cuenta
+  // repetida aquí: cerrar, cancelar o borrar una convocatoria no libera plaza,
+  // y eso no se puede reconstruir desde las filas visibles de `calls`.
+  const { data: publicadasEsteMes } = await supabase.rpc('mis_convocatorias_publicadas_en_mes')
 
   const cupoAgotado = plan === 'gratuito' && (publicadasEsteMes ?? 0) >= 3
 
