@@ -3,7 +3,27 @@
 
 ---
 
-## ÚLTIMA ACTUALIZACIÓN — 2026-07-10
+## ÚLTIMA ACTUALIZACIÓN — 2026-09-18
+
+### Webhooks de Stripe — CERRADO EN PRODUCCIÓN
+
+| Entrega | Estado | Commit | Fecha |
+|---------|--------|--------|-------|
+| `customer.subscription.updated` + `customer.subscription.deleted` en `/api/webhooks/stripe` | ✅ **CERRADO EN PRODUCCIÓN** | `f4d00cd` (PR #9, squash a `main`) | 2026-09-18 |
+
+**Alcance:**
+- `customer.subscription.deleted` y `customer.subscription.updated` implementados y verificados en `app/api/webhooks/stripe/route.ts`.
+- Migración `20260918094010_widen_subscriptions_status_check` aplicada en Supabase: el CHECK de `subscriptions.status` admite los 8 estados reales de Stripe (`active`, `canceled`, `past_due`, `trialing`, `incomplete`, `incomplete_expired`, `unpaid`, `paused`).
+- Bug corregido: las 3 variables `STRIPE_PRICE_*_ID` de Vercel contenían un valor equivocado (una secret key en lugar del price ID). Corregidas en Production y Preview.
+- Test unitario con 15 casos en `app/api/webhooks/stripe/__tests__/route.test.ts` (Supabase mockeado, sin tocar producción).
+
+**Decisión explícita:** no se hizo prueba end-to-end con Stripe CLI; se sustituyó por el test unitario.
+
+**Estado del repositorio tras el cierre:** sin ramas huérfanas. El único clon de trabajo es `Desktop\obrasdeteatro` (el clon obsoleto de `Documents\obrasdeteatro` se eliminó el 2026-09-18).
+
+---
+
+## ACTUALIZACIÓN — 2026-07-10
 
 ### Sprint PP2-C — Perfil Público Profesional — CERRADO Y CONGELADO
 
