@@ -221,6 +221,9 @@ describe('B · dominio heredado del estado conversacional', () => {
 })
 
 describe('K · compatibilidad de NormalizedRequest', () => {
+  // `requestsFullCatalog` es el unico campo anadido despues de la Fase 3,
+  // por aprobacion expresa de Direccion (catalogo completo sin filtros
+  // heredados).
   it('el contrato conserva EXACTAMENTE sus campos: la Fase 3 no anade ninguno', () => {
     expect(Object.keys(interpretar('¿Qué obras tienes?', [], 'Obras')).sort()).toEqual([
       'detectedAmbiguities',
@@ -232,6 +235,7 @@ describe('K · compatibilidad de NormalizedRequest', () => {
       'requestId',
       'requestType',
       'requestedKnowledgeDomains',
+      'requestsFullCatalog',
       'retrievalQuery',
       'timestamp',
     ])
@@ -251,5 +255,40 @@ describe('K · compatibilidad de NormalizedRequest', () => {
 
     expect(query).not.toContain('uno obras')
     expect(query).toContain('dos')
+  })
+})
+
+describe('requestsFullCatalog — catalogo completo sin filtros heredados', () => {
+  const CALDERON = ['dame una lista de obras de Calderón de la Barca']
+
+  it('"dame todo el catalogo" tras Calderon no es continuacion: se recupera solo sobre su texto', () => {
+    const peticion = interpretar('dame todo el catálogo', CALDERON)
+
+    expect(peticion.requestsFullCatalog).toBe(true)
+    expect(peticion.retrievalQuery).toBe('dame todo el catalogo')
+    expect(peticion.retrievalQuery).not.toContain('calderon')
+  })
+
+  it('conserva el dominio de la conversacion: "todo el catalogo" sigue siendo Obras', () => {
+    expect(interpretar('dame todo el catálogo', CALDERON).requestedKnowledgeDomains).toEqual(['Obras'])
+    expect(interpretar('dame todo el catálogo', [], 'Obras').requestedKnowledgeDomains).toEqual(['Obras'])
+  })
+
+  it('"¿y alguna mas corta?" sigue siendo continuacion: la herencia util no cambia', () => {
+    const peticion = interpretar('¿y alguna más corta?', CALDERON)
+
+    expect(peticion.requestsFullCatalog).toBe(false)
+    expect(peticion.retrievalQuery).toContain('calderon')
+  })
+
+  it('una peticion con criterio propio no activa el campo', () => {
+    expect(interpretar('todas las obras cortas', ['comedias']).requestsFullCatalog).toBe(false)
+  })
+
+  it('en el primer turno el campo se declara igual, sin cambiar la recuperacion', () => {
+    const peticion = interpretar('dame una lista de todas las obras')
+
+    expect(peticion.requestsFullCatalog).toBe(true)
+    expect(peticion.retrievalQuery).toBe(peticion.normalizedIntent)
   })
 })

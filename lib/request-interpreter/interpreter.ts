@@ -3,6 +3,7 @@ import type { EstimatedComplexity, NormalizedRequest, ProfessionalContextLevel, 
 import { normalizeText } from './normalize-text'
 import { detectKnowledgeDomains } from './domain-rules'
 import { detectRequestType } from './request-type-rules'
+import { detectFullCatalogRequest } from './full-catalog-rules'
 
 function estimateComplexity(domainsFound: number, textLength: number): EstimatedComplexity {
   if (domainsFound >= 2 || textLength > 200) return 'alta'
@@ -144,8 +145,13 @@ export function normalizeRequest(
   const ownDomains = detectKnowledgeDomains(normalizedIntent)
 
   const isFollowUp = ownDomains.length === 0 && previousUserRequests.length > 0
-  const retrievalQuery = isFollowUp ? resolveRetrievalQuery(originalRequest, previousUserRequests) : normalizedIntent
-  const domainsFromHistory = isFollowUp ? detectKnowledgeDomains(retrievalQuery) : ownDomains
+  const conversationQuery = isFollowUp ? resolveRetrievalQuery(originalRequest, previousUserRequests) : normalizedIntent
+  const domainsFromHistory = isFollowUp ? detectKnowledgeDomains(conversationQuery) : ownDomains
+  // Quien pide el catalogo completo conserva el dominio de la conversacion
+  // ("dame todo el catalogo" sigue siendo Obras), pero no sus criterios: la
+  // recuperacion se hace solo sobre el texto de este turno.
+  const requestsFullCatalog = detectFullCatalogRequest(normalizedIntent)
+  const retrievalQuery = requestsFullCatalog ? normalizedIntent : conversationQuery
   const requestedKnowledgeDomains = resolveDomains(ownDomains, domainsFromHistory, previousDomain)
   const requestType = detectRequestType(requestedKnowledgeDomains.length)
   const detectedAmbiguities = detectAmbiguities(originalRequest, requestedKnowledgeDomains, requestType)
@@ -155,6 +161,7 @@ export function normalizeRequest(
     originalRequest,
     normalizedIntent,
     retrievalQuery,
+    requestsFullCatalog,
     requestType,
     requestedKnowledgeDomains,
     estimatedComplexity: estimateComplexity(requestedKnowledgeDomains.length, originalRequest.length),

@@ -240,6 +240,15 @@ function formatUnappliedCriteria(knowledgeContext: KnowledgeContext): string | n
 }
 
 /**
+ * Se envia solo cuando Request Interpreter declara `requestsFullCatalog`.
+ * El conocimiento de este turno ya llega sin los criterios heredados, pero
+ * el historial sigue en el prompt: sin esta linea, el proveedor podia
+ * volver a filtrar por lo que se pidio en turnos anteriores.
+ */
+const FULL_CATALOG_INSTRUCTION =
+  'El usuario pide el catalogo completo, sin los filtros de turnos anteriores: no filtres por criterios del historial.'
+
+/**
  * Formatea el historial ya cerrado de la conversacion (UX-001A) -- cada
  * turno tal cual se muestra al usuario, nunca reinterpretado. Ausencia de
  * historial (array vacio, primera pregunta de la sesion) se trata igual
@@ -296,6 +305,10 @@ export function composePrompt(
 
   if (historySection !== null) {
     parts.push(`Historial de la conversacion (turnos anteriores, para mantener continuidad):\n${historySection}`)
+  }
+
+  if (normalizedRequest.requestsFullCatalog) {
+    parts.push(`Alcance de la peticion:\n${FULL_CATALOG_INSTRUCTION}`)
   }
 
   parts.push(`Peticion del usuario: ${normalizedRequest.originalRequest}`)

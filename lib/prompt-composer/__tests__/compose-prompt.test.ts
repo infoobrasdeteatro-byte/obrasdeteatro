@@ -12,6 +12,7 @@ function fakeNormalizedRequest(overrides: Partial<NormalizedRequest> = {}): Norm
     originalRequest: '¿Qué obras me recomiendas de Lorca?',
     normalizedIntent: 'que obras me recomiendas de lorca?',
     retrievalQuery: 'que obras me recomiendas de lorca?',
+    requestsFullCatalog: false,
     requestType: 'RECONOCIDA',
     requestedKnowledgeDomains: ['Obras'],
     estimatedComplexity: 'media',
@@ -638,5 +639,38 @@ describe('composePrompt — politica de procedencia del conocimiento', () => {
 
   it('sigue siendo determinista: la politica no introduce variacion alguna', () => {
     expect(prompt()).toBe(prompt())
+  })
+})
+
+describe('composePrompt — catalogo completo sin filtros heredados', () => {
+  const HISTORIAL = [
+    { role: 'user' as const, content: 'Dame una lista de obras de Calderón de la Barca' },
+    { role: 'assistant' as const, content: 'Estas son las obras de Calderón...' },
+  ]
+  const INSTRUCCION =
+    'Alcance de la peticion:\nEl usuario pide el catalogo completo, sin los filtros de turnos anteriores: no filtres por criterios del historial.'
+
+  it('con el campo activo, pide al proveedor no filtrar por el historial', () => {
+    const request = fakeNormalizedRequest({ originalRequest: 'dame una lista de todas las obras', requestsFullCatalog: true })
+
+    expect(composePrompt(request, fakeKnowledgeContext(), HISTORIAL)).toContain(INSTRUCCION)
+  })
+
+  it('sin el campo, el prompt es identico al actual: la unica diferencia es esa seccion', () => {
+    const conCampo = composePrompt(
+      fakeNormalizedRequest({ originalRequest: 'dame una lista de todas las obras', requestsFullCatalog: true }),
+      fakeKnowledgeContext(),
+      HISTORIAL
+    )
+    const sinCampo = composePrompt(
+      fakeNormalizedRequest({ originalRequest: 'dame una lista de todas las obras' }),
+      fakeKnowledgeContext(),
+      HISTORIAL
+    )
+
+    expect(sinCampo).not.toContain('Alcance de la peticion')
+    expect(conCampo).toBe(
+      sinCampo.replace('Peticion del usuario:', `${INSTRUCCION}\n\nPeticion del usuario:`)
+    )
   })
 })

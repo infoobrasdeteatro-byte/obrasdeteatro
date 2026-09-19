@@ -188,7 +188,13 @@ export async function coordinateFlow(
   const turnId = crypto.randomUUID()
   let normalizedRequest = normalizeRequest(originalRequest, turnId, previousUserRequests, dominioPrevio)
   const professionalContext = await buildProfessionalContext(userId, session)
-  let knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
+  // Quien pide el catalogo completo no hereda los criterios guardados: el
+  // turno empieza sin ellos, y por eso tampoco los deja al siguiente. El
+  // interprete es quien lo decide; aqui solo se lee su campo.
+  let knowledgeContext = await buildKnowledgeContext(
+    normalizedRequest,
+    normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia
+  )
   // Senal de continuacion, ya declarada en el contrato. Se deriva aqui
   // porque la reserva preventiva necesita saber si el resolutor puede
   // llegar a ejecutarse antes de estimar el coste del turno.
@@ -449,7 +455,10 @@ export async function coordinateFlow(
           turnId,
           previousUserRequests
         )
-        knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
+        knowledgeContext = await buildKnowledgeContext(
+          normalizedRequest,
+          normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia
+        )
       }
     }
 
