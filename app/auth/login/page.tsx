@@ -5,12 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { translateAuthError } from '@/lib/auth-errors'
+import { safeNextPath, withNext } from '@/lib/auth/next-param'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  // Ruta de vuelta ya validada; se conserva también en el enlace a registro.
+  const [next, setNext] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -18,6 +21,7 @@ export default function LoginPage() {
     if (params.get('error') === 'auth_error') {
       setMessage('El enlace ha expirado o no es válido. Solicita uno nuevo.')
     }
+    setNext(safeNextPath(params.get('next')))
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -35,7 +39,10 @@ export default function LoginPage() {
     if (error) {
       setMessage(translateAuthError(error.message, error.code))
     } else {
-      router.push('/dashboard')
+      // Vuelta a donde estaba el usuario (p. ej. /precios tras un 401 del
+      // checkout). Solo rutas internas: ver lib/auth/next-param.ts.
+      const next = safeNextPath(new URLSearchParams(window.location.search).get('next'))
+      router.push(next ?? '/dashboard')
     }
     setLoading(false)
   }
@@ -80,7 +87,7 @@ export default function LoginPage() {
         <div className="auth-footer">
           <p>
             ¿No tienes cuenta?{' '}
-            <Link href="/auth/registro">Regístrate gratis</Link>
+            <Link href={withNext('/auth/registro', next)}>Regístrate gratis</Link>
           </p>
           <p style={{ marginTop: '6px' }}>
             <Link href="/auth/recuperar">¿Olvidaste tu contraseña?</Link>
