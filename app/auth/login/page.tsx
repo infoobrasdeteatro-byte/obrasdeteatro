@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { translateAuthError } from '@/lib/auth-errors'
+import { safeNextPath } from '@/lib/auth/next-param'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -35,7 +36,10 @@ export default function LoginPage() {
     if (error) {
       setMessage(translateAuthError(error.message, error.code))
     } else {
-      router.push('/dashboard')
+      // Vuelta a donde estaba el usuario (p. ej. /precios tras un 401 del
+      // checkout). Solo rutas internas: ver lib/auth/next-param.ts.
+      const next = safeNextPath(new URLSearchParams(window.location.search).get('next'))
+      router.push(next ?? '/dashboard')
     }
     setLoading(false)
   }
