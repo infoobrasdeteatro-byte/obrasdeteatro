@@ -5,6 +5,7 @@ import Script from 'next/script'
 import Link from 'next/link'
 import { translateAuthError } from '@/lib/auth-errors'
 import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
+import { safeNextPath } from '@/lib/auth/next-param'
 
 declare global {
   interface Window {
@@ -35,6 +36,12 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
+  // Ruta de vuelta tras confirmar el email (p. ej. /precios), ya validada.
+  const [next, setNext] = useState<string | null>(null)
+
+  useEffect(() => {
+    setNext(safeNextPath(new URLSearchParams(window.location.search).get('next')))
+  }, [])
 
   const turnstileContainer = useRef<HTMLDivElement>(null)
   const turnstileWidgetId = useRef<string | null>(null)
@@ -90,7 +97,7 @@ export default function RegistroPage() {
       const res = await fetch('/api/auth/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, nombre, website, turnstileToken }),
+        body: JSON.stringify({ email, password, nombre, website, turnstileToken, next }),
       })
       const data = await res.json()
 

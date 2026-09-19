@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { PASSWORD_POLICY } from '@/lib/auth/password-policy'
+import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE, NEXT_TRAS_REGISTRO_MAX_AGE_S } from '@/lib/auth/next-param'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
@@ -49,7 +50,7 @@ async function emailAlreadyRegistered(email: string): Promise<boolean> {
 }
 
 export async function POST(req: NextRequest) {
-  const { email, password, nombre, website, turnstileToken } = await req.json()
+  const { email, password, nombre, website, turnstileToken, next } = await req.json()
 
   // Honeypot: verificado también en servidor, no solo en el cliente.
   if (typeof website === 'string' && website.trim() !== '') {
@@ -96,5 +97,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: 'signup_error', message: error.message }, { status: 400 })
   }
 
-  return NextResponse.json({ ok: true })
+  const respuesta = NextResponse.json({ ok: true })
+
+  // Vuelta tras confirmar el email: la lee y la borra /auth/callback (ver
+  // NEXT_TRAS_REGISTRO_COOKIE). Solo rutas internas.
+  const destino = safeNextPath(typeof next === 'string' ? next : null)
+  if (destino !== null) {
+    respuesta.cookies.set(NEXT_TRAS_REGISTRO_COOKIE, destino, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: NEXT_TRAS_REGISTRO_MAX_AGE_S,
+    })
+  }
+
+  return respuesta
 }
