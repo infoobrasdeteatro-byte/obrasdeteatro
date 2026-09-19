@@ -12,7 +12,14 @@ const INTERPRETER_SOURCE = readFileSync(join(__dirname, '..', 'interpreter.ts'),
 // un import prohibido en el contrato habria pasado inadvertido. Incorporado
 // por autorizacion expresa de Direccion (Fase 3) -- endurecimiento del
 // invariante existente, sin ampliar ningun permiso.
-const MODULE_SOURCE = ['normalize-text.ts', 'domain-rules.ts', 'request-type-rules.ts', 'interpreter.ts', 'types.ts']
+const MODULE_SOURCE = [
+  'normalize-text.ts',
+  'domain-rules.ts',
+  'request-type-rules.ts',
+  'full-catalog-rules.ts',
+  'interpreter.ts',
+  'types.ts',
+]
   .map((file) => readFileSync(join(__dirname, '..', file), 'utf-8'))
   .join('\n')
 

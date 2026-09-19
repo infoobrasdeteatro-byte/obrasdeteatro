@@ -23,8 +23,9 @@ export interface NormalizedRequest {
   normalizedIntent: string
   /**
    * Texto sobre el que se ejecuta la recuperacion de conocimiento. Coincide
-   * con `normalizedIntent` en todo turno que nombra su propio dominio. Solo
-   * difiere en un turno de continuacion -- aquel que por si mismo no nombra
+   * con `normalizedIntent` en todo turno que nombra su propio dominio o que
+   * pide el catalogo completo. Solo difiere en un turno de continuacion --
+   * aquel que por si mismo no nombra
    * ningun dominio -- donde incorpora los turnos previos del usuario para
    * que la peticion siga siendo interpretable en su contexto. Campo
    * explicito por PRD-001: el estado "esta peticion se interpreta sobre la
@@ -32,6 +33,16 @@ export interface NormalizedRequest {
    * implicita sobre otro campo.
    */
   retrievalQuery: string
+  /**
+   * El usuario pide el catalogo completo, sin los filtros de turnos
+   * anteriores ("dame una lista de todas las obras", "todo el catalogo").
+   * Solo es true con una expresion de una lista cerrada y sin ningun
+   * criterio propio en la peticion. Cuando lo es, `retrievalQuery` es el
+   * texto del turno, quien custodia los criterios guardados no los hereda y
+   * el prompt pide no filtrar por el historial. Nadie mas interpreta texto
+   * para decidirlo: los demas componentes solo leen este campo.
+   */
+  requestsFullCatalog: boolean
   requestType: RequestType
   requestedKnowledgeDomains: KnowledgeDomain[]
   estimatedComplexity: EstimatedComplexity

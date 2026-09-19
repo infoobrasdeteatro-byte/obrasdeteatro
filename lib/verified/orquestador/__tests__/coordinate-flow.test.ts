@@ -558,6 +558,42 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
       expect(llamada[1]).toEqual({ genero: 'COMEDIA' })
     }
   })
+
+  it('quien pide el catalogo completo empieza el turno sin la ocupacion previa', async () => {
+    vi.mocked(normalizeRequest).mockReturnValue({ ...(normalizedRequest as object), requestsFullCatalog: true } as never)
+
+    await coordinateFlow('profile-1', session, 'dame una lista de todas las obras', [], ESTADO_ENTRANTE)
+
+    expect(buildKnowledgeContext).toHaveBeenCalledWith(expect.anything(), {})
+  })
+
+  it('tampoco la hereda si el turno se reinterpreta con los terminos del resolutor', async () => {
+    vi.mocked(normalizeRequest).mockReturnValue({ ...(normalizedRequest as object), requestsFullCatalog: true } as never)
+    vi.mocked(resolveVocabulary).mockResolvedValue(['obra'])
+    vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: true } as never)
+
+    await coordinateFlow('profile-1', session, 'dame todo el catalogo', [], ESTADO_ENTRANTE)
+
+    expect(vi.mocked(buildKnowledgeContext).mock.calls.length).toBe(2)
+    for (const llamada of vi.mocked(buildKnowledgeContext).mock.calls) {
+      expect(llamada[1]).toEqual({})
+    }
+  })
+
+  it('el estado saliente no conserva criterios de Obras tras pedir el catalogo completo', async () => {
+    vi.mocked(normalizeRequest).mockReturnValue({ ...(normalizedRequest as object), requestsFullCatalog: true } as never)
+    vi.mocked(buildKnowledgeContext).mockResolvedValue({ ...(knowledgeContext as object), workOccupancy: {} } as never)
+
+    const { conversationState } = await coordinateFlow(
+      'profile-1',
+      session,
+      'dame una lista de todas las obras',
+      [],
+      ESTADO_ENTRANTE
+    )
+
+    expect(conversationState.occupancyByDomain.find((entrada) => entrada.domain === 'Obras')).toBeUndefined()
+  })
 })
 
 /**
