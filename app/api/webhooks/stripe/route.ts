@@ -55,6 +55,22 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 }
 
+// Stripe dejó de enviar current_period_start/end en la suscripción a partir de
+// la versión de API 2025-03-31 y los envía en cada línea (items.data[i]). La
+// versión con la que llegan los webhooks la decide la configuración del
+// endpoint en Stripe, no el SDK (fijado a 2025-02-24.acacia, cuyos tipos aún
+// los declaran en la suscripción), así que se aceptan los dos formatos. Sin
+// fecha en ninguno de los dos sitios se guarda null: una fecha que falta no
+// debe tumbar el evento entero con un 500.
+type PeriodoStripe = { current_period_start?: number | null; current_period_end?: number | null }
+
+function fechaDePeriodo(subscription: Stripe.Subscription, campo: keyof PeriodoStripe): string | null {
+  const enSuscripcion = (subscription as unknown as PeriodoStripe)[campo]
+  const enLinea = (subscription.items?.data[0] as unknown as PeriodoStripe | undefined)?.[campo]
+  const segundos = enSuscripcion ?? enLinea
+  return typeof segundos === 'number' ? new Date(segundos * 1000).toISOString() : null
+}
+
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const supabase = getServiceClient()
 
@@ -74,8 +90,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       status,
       plan: plan ?? undefined, // si no coincide con ningún price conocido, no se pisa
       stripe_price_id: priceId ?? null,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: fechaDePeriodo(subscription, 'current_period_start'),
+      current_period_end: fechaDePeriodo(subscription, 'current_period_end'),
       cancel_at_period_end: subscription.cancel_at_period_end,
       updated_at: new Date().toISOString(),
     })
