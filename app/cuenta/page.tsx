@@ -16,10 +16,42 @@ const SECCIONES = [
   { href: '/cuenta/eliminar', titulo: 'Eliminar cuenta', desc: 'Solicita la eliminación de tu cuenta.' },
 ]
 
-export default async function CuentaPage() {
+const TARJETA = {
+  display: 'block',
+  background: 'var(--white)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-lg)',
+  padding: '20px',
+  textDecoration: 'none',
+} as const
+
+const AVISOS_PORTAL: Record<string, string> = {
+  sin_suscripcion: 'No encontramos ninguna suscripción de pago asociada a tu cuenta.',
+  error: 'No se pudo abrir la gestión de la suscripción. Inténtalo de nuevo en unos minutos.',
+}
+
+type Props = { searchParams: Promise<{ portal?: string }> }
+
+export default async function CuentaPage({ searchParams }: Props) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
+
+  // Portal de cliente de Stripe (app/api/stripe/portal): solo si está activado
+  // y el usuario tiene cliente en Stripe, que es lo único que el portal necesita.
+  const portalActivo = process.env.STRIPE_PORTAL_ENABLED === 'true'
+  let tieneClienteStripe = false
+  if (portalActivo) {
+    const { data: suscripcion } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id')
+      .eq('profile_id', user.id)
+      .maybeSingle()
+    tieneClienteStripe = Boolean(suscripcion?.stripe_customer_id)
+  }
+
+  const { portal } = await searchParams
+  const avisoPortal = portal ? AVISOS_PORTAL[portal] : undefined
 
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
@@ -36,19 +68,31 @@ export default async function CuentaPage() {
             </h1>
           </div>
 
+          {avisoPortal && (
+            <p className="auth-message auth-message--error" style={{ marginBottom: '16px' }}>{avisoPortal}</p>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+            {portalActivo && tieneClienteStripe && (
+              <form action="/api/stripe/portal" method="POST" style={{ margin: 0 }}>
+                <button
+                  type="submit"
+                  style={{ ...TARJETA, width: '100%', height: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit' }}
+                >
+                  <h2 style={{ fontFamily: 'var(--serif)', fontSize: '17px', color: 'var(--black)', letterSpacing: '-0.3px', marginBottom: '6px' }}>
+                    Suscripción y facturación
+                  </h2>
+                  <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)', lineHeight: 1.5 }}>
+                    Cambia tu método de pago, descarga tus facturas o cancela tu suscripción.
+                  </p>
+                </button>
+              </form>
+            )}
             {SECCIONES.map(s => (
               <Link
                 key={s.href}
                 href={s.href}
-                style={{
-                  display: 'block',
-                  background: 'var(--white)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '20px',
-                  textDecoration: 'none',
-                }}
+                style={TARJETA}
               >
                 <h2 style={{ fontFamily: 'var(--serif)', fontSize: '17px', color: 'var(--black)', letterSpacing: '-0.3px', marginBottom: '6px' }}>
                   {s.titulo}
