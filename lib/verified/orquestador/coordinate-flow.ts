@@ -156,7 +156,11 @@ export async function coordinateFlow(
   // antes de esta fase.
   const estadoPrevio = incomingState ?? emptyConversationState(crypto.randomUUID())
   const dominioPrevio = estadoPrevio.activeDomain
-  const ocupacionPrevia = workOccupancyOf(estadoPrevio, 'Obras')
+  // Una conversacion nueva -- sin ningun turno previo del usuario -- empieza
+  // siempre sin criterios de Obras heredados, aunque llegue un estado: no
+  // hay turno anterior del que pudieran venir.
+  const esConversacionNueva = !conversationHistory.some((turn) => turn.role === 'user')
+  const ocupacionPrevia = esConversacionNueva ? {} : workOccupancyOf(estadoPrevio, 'Obras')
   // Continuidad contextual: los turnos previos del usuario -- nunca los de
   // ScenaIA, que son respuestas, no peticiones -- se ofrecen al interprete
   // para que un turno de continuacion siga siendo interpretable. El
@@ -513,9 +517,13 @@ export async function coordinateFlow(
     // Estado que queda vigente para el turno siguiente. `stateVersion` y
     // `updatedAt` los fija aqui el servidor: los valores que hubiera enviado
     // el cliente no se leen en ningun momento.
+    // Los criterios de Obras solo se guardan si este turno encontro al menos
+    // una obra. Si dieron 0 resultados, heredarlos haria que toda pregunta
+    // siguiente que no nombre esas dimensiones diera 0 tambien.
+    const obrasRecuperadas = (knowledgeContext.knowledgeEntities ?? []).filter((item) => item.domain === 'Obras').length
     const conversationState = nextConversationState(estadoPrevio, {
       activeDomain: normalizedRequest.requestedKnowledgeDomains[0] ?? null,
-      workOccupancy: knowledgeContext.workOccupancy ?? {},
+      workOccupancy: obrasRecuperadas > 0 ? (knowledgeContext.workOccupancy ?? {}) : {},
       // La version es el indice de turno, derivado del historial que el
       // cliente ya envia. No se acepta la version entrante: se RECONSTRUYE,
       // que es lo unico que puede hacerse sin autoridad en servidor.

@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { sendWelcomeEmail } from '@/lib/email/welcome-email'
+import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE } from '@/lib/auth/next-param'
 
 /**
  * AEC-001: tras un intercambio de código/OTP exitoso, esta es la confirmación
@@ -28,7 +29,19 @@ async function notifyWelcomeIfFirstConfirmation(
   }
 }
 
-export async function GET(request: Request) {
+/**
+ * Destino tras confirmar: la ruta que el usuario traía al registrarse (cookie
+ * NEXT_TRAS_REGISTRO_COOKIE, p. ej. /precios), si es una ruta interna válida;
+ * si no, el de siempre. La cookie se borra en cualquier caso: sirve una vez.
+ */
+function redirigirTrasConfirmar(request: NextRequest, origin: string): NextResponse {
+  const destino = safeNextPath(request.cookies.get(NEXT_TRAS_REGISTRO_COOKIE)?.value) ?? '/auth/update-password'
+  const respuesta = NextResponse.redirect(`${origin}${destino}`)
+  respuesta.cookies.delete(NEXT_TRAS_REGISTRO_COOKIE)
+  return respuesta
+}
+
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
@@ -41,7 +54,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
-      return NextResponse.redirect(`${origin}/auth/update-password`)
+      return redirigirTrasConfirmar(request, origin)
     }
   }
 
@@ -50,7 +63,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
-      return NextResponse.redirect(`${origin}/auth/update-password`)
+      return redirigirTrasConfirmar(request, origin)
     }
   }
 

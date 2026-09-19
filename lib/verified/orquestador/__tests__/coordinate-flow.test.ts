@@ -475,6 +475,11 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
     activeDomain: 'Obras' as const,
     occupancyByDomain: [{ domain: 'Obras' as const, slots: { genero: 'COMEDIA' as const } }],
   }
+  // Un estado entrante solo existe despues de al menos un turno del usuario.
+  const TURNO_PREVIO = [
+    { role: 'user' as const, content: 'comedias' },
+    { role: 'assistant' as const, content: 'respuesta' },
+  ]
 
   it('G · SIN ESTADO: el turno se resuelve exactamente como antes de esta fase', async () => {
     await coordinateFlow('profile-1', session, 'hola')
@@ -492,9 +497,9 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
   })
 
   it('DESCOMPONE el estado: al interprete un dominio, al conocimiento una ocupacion', async () => {
-    await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+    await coordinateFlow('profile-1', session, 'hola', TURNO_PREVIO, ESTADO_ENTRANTE)
 
-    expect(normalizeRequest).toHaveBeenCalledWith('hola', expect.any(String), [], 'Obras')
+    expect(normalizeRequest).toHaveBeenCalledWith('hola', expect.any(String), ['comedias'], 'Obras')
     expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, { genero: 'COMEDIA' })
   })
 
@@ -552,17 +557,66 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
     vi.mocked(resolveVocabulary).mockResolvedValue(['obra'])
     vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: true } as never)
 
-    await coordinateFlow('profile-1', session, 'hola', [], ESTADO_ENTRANTE)
+    await coordinateFlow('profile-1', session, 'hola', TURNO_PREVIO, ESTADO_ENTRANTE)
 
     for (const llamada of vi.mocked(buildKnowledgeContext).mock.calls) {
       expect(llamada[1]).toEqual({ genero: 'COMEDIA' })
     }
   })
 
+  it('una conversacion NUEVA (sin turnos previos del usuario) no hereda criterios aunque llegue un estado', async () => {
+    await coordinateFlow('profile-1', session, 'cuantas obras tienes', [], ESTADO_ENTRANTE)
+
+    expect(buildKnowledgeContext).toHaveBeenCalledWith(normalizedRequest, {})
+  })
+
+  describe('criterios de Obras que se guardan para el turno siguiente', () => {
+    const OBRA = { domain: 'Obras', data: { title: 'Obra A' }, provenance: {}, functions: [] }
+
+    it('con al menos una obra recuperada, se guardan', async () => {
+      vi.mocked(buildKnowledgeContext).mockResolvedValue({
+        knowledgeDomains: ['Obras'],
+        knowledgeEntities: [OBRA],
+        knowledgeConfidence: 1,
+        workOccupancy: { genero: 'COMEDIA' },
+      } as never)
+
+      const { conversationState } = await coordinateFlow('profile-1', session, 'comedias', TURNO_PREVIO, ESTADO_ENTRANTE)
+
+      expect(conversationState.occupancyByDomain).toEqual([{ domain: 'Obras', slots: { genero: 'COMEDIA' } }])
+    })
+
+    it('con 0 obras recuperadas, NO se guardan: el turno siguiente empieza sin ellos', async () => {
+      vi.mocked(buildKnowledgeContext).mockResolvedValue({
+        knowledgeDomains: ['Obras'],
+        knowledgeEntities: [],
+        knowledgeConfidence: 1,
+        workOccupancy: { genero: 'COMEDIA', duracion: 'CORTA' },
+      } as never)
+
+      const { conversationState } = await coordinateFlow('profile-1', session, 'cortas', TURNO_PREVIO, ESTADO_ENTRANTE)
+
+      expect(conversationState.occupancyByDomain).toEqual([])
+    })
+
+    it('resultados de otro dominio no cuentan como obras recuperadas', async () => {
+      vi.mocked(buildKnowledgeContext).mockResolvedValue({
+        knowledgeDomains: ['Obras', 'Personas'],
+        knowledgeEntities: [{ domain: 'Personas', data: { name: 'Ana' }, provenance: {}, functions: [] }],
+        knowledgeConfidence: 1,
+        workOccupancy: { genero: 'COMEDIA' },
+      } as never)
+
+      const { conversationState } = await coordinateFlow('profile-1', session, 'comedias', TURNO_PREVIO, ESTADO_ENTRANTE)
+
+      expect(conversationState.occupancyByDomain).toEqual([])
+    })
+  })
+
   it('quien pide el catalogo completo empieza el turno sin la ocupacion previa', async () => {
     vi.mocked(normalizeRequest).mockReturnValue({ ...(normalizedRequest as object), requestsFullCatalog: true } as never)
 
-    await coordinateFlow('profile-1', session, 'dame una lista de todas las obras', [], ESTADO_ENTRANTE)
+    await coordinateFlow('profile-1', session, 'dame una lista de todas las obras', TURNO_PREVIO, ESTADO_ENTRANTE)
 
     expect(buildKnowledgeContext).toHaveBeenCalledWith(expect.anything(), {})
   })
@@ -572,7 +626,7 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
     vi.mocked(resolveVocabulary).mockResolvedValue(['obra'])
     vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: true } as never)
 
-    await coordinateFlow('profile-1', session, 'dame todo el catalogo', [], ESTADO_ENTRANTE)
+    await coordinateFlow('profile-1', session, 'dame todo el catalogo', TURNO_PREVIO, ESTADO_ENTRANTE)
 
     expect(vi.mocked(buildKnowledgeContext).mock.calls.length).toBe(2)
     for (const llamada of vi.mocked(buildKnowledgeContext).mock.calls) {
@@ -582,13 +636,18 @@ describe('coordinateFlow — contexto conversacional (Fase 3)', () => {
 
   it('el estado saliente no conserva criterios de Obras tras pedir el catalogo completo', async () => {
     vi.mocked(normalizeRequest).mockReturnValue({ ...(normalizedRequest as object), requestsFullCatalog: true } as never)
-    vi.mocked(buildKnowledgeContext).mockResolvedValue({ ...(knowledgeContext as object), workOccupancy: {} } as never)
+    vi.mocked(buildKnowledgeContext).mockResolvedValue({
+      knowledgeDomains: ['Obras'],
+      knowledgeEntities: [{ domain: 'Obras', data: { title: 'Obra A' }, provenance: {}, functions: [] }],
+      knowledgeConfidence: 1,
+      workOccupancy: {},
+    } as never)
 
     const { conversationState } = await coordinateFlow(
       'profile-1',
       session,
       'dame una lista de todas las obras',
-      [],
+      TURNO_PREVIO,
       ESTADO_ENTRANTE
     )
 
