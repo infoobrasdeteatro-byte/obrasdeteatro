@@ -56,6 +56,7 @@ function fakeRequest() {
   } as unknown as Parameters<typeof POST>[0]
 }
 
+// Formato ANTIGUO (API anterior a 2025-03-31): el periodo va en la suscripción.
 function subscriptionUpdated(overrides: { priceId?: string; status?: string } = {}) {
   return {
     type: 'customer.subscription.updated',
@@ -67,6 +68,38 @@ function subscriptionUpdated(overrides: { priceId?: string; status?: string } = 
         current_period_start: 1_758_000_000,
         current_period_end: 1_760_592_000,
         cancel_at_period_end: false,
+      },
+    },
+  }
+}
+
+// Formato REAL de 2026-04-22.dahlia, tal como llegó en la prueba en modo test
+// del 2026-09-19: la suscripción ya no trae current_period_*; el periodo va en
+// cada línea. Valores del evento real (evt de customer.subscription.updated
+// tras un checkout de Premium).
+function subscriptionUpdatedDahlia(overrides: { cancelAtPeriodEnd?: boolean } = {}) {
+  return {
+    id: 'evt_dahlia',
+    api_version: '2026-04-22.dahlia',
+    type: 'customer.subscription.updated',
+    data: {
+      object: {
+        id: 'sub_123',
+        object: 'subscription',
+        status: 'active',
+        cancel_at_period_end: overrides.cancelAtPeriodEnd ?? false,
+        items: {
+          object: 'list',
+          data: [
+            {
+              id: 'si_123',
+              object: 'subscription_item',
+              current_period_start: 1_789_818_868,
+              current_period_end: 1_792_410_868,
+              price: { id: 'price_premium_test', recurring: { interval: 'month' } },
+            },
+          ],
+        },
       },
     },
   }
@@ -122,6 +155,53 @@ describe('POST /api/webhooks/stripe — customer.subscription.updated', () => {
         current_period_end: new Date(1_760_592_000 * 1000).toISOString(),
         cancel_at_period_end: false,
       })
+    )
+  })
+
+  describe('formato 2026-04-22.dahlia (periodo en items.data[0])', () => {
+    it('lee el periodo de la línea cuando la suscripción no lo trae, y responde 200', async () => {
+      mockConstructEvent.mockReturnValue(subscriptionUpdatedDahlia())
+
+      const res = await POST(fakeRequest())
+
+      expect(res.status).toBe(200)
+      expect(mockSubscriptionsUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          current_period_start: new Date(1_789_818_868 * 1000).toISOString(),
+          current_period_end: new Date(1_792_410_868 * 1000).toISOString(),
+          plan: 'premium',
+          stripe_price_id: 'price_premium_test',
+        })
+      )
+      expect(mockProfilesUpdate).toHaveBeenCalledWith({ plan: 'premium', is_premium: true })
+    })
+
+    it('cancelar al final del periodo (portal) guarda cancel_at_period_end y mantiene el acceso', async () => {
+      mockConstructEvent.mockReturnValue(subscriptionUpdatedDahlia({ cancelAtPeriodEnd: true }))
+
+      const res = await POST(fakeRequest())
+
+      expect(res.status).toBe(200)
+      expect(mockSubscriptionsUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'active', cancel_at_period_end: true })
+      )
+      // Sigue activa hasta el final del periodo pagado: no se degrada.
+      expect(mockProfilesUpdate).toHaveBeenCalledWith({ plan: 'premium', is_premium: true })
+    })
+  })
+
+  it('sin fechas de periodo en ningún sitio guarda null y no falla', async () => {
+    const evento = subscriptionUpdatedDahlia()
+    const linea = evento.data.object.items.data[0] as Record<string, unknown>
+    delete linea.current_period_start
+    delete linea.current_period_end
+    mockConstructEvent.mockReturnValue(evento)
+
+    const res = await POST(fakeRequest())
+
+    expect(res.status).toBe(200)
+    expect(mockSubscriptionsUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ current_period_start: null, current_period_end: null })
     )
   })
 
