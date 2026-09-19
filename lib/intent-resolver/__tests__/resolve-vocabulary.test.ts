@@ -141,3 +141,37 @@ describe('resolveVocabulary — formulaciones equivalentes producen los mismos c
     expect(proveedor).toHaveBeenCalledTimes(1)
   })
 })
+
+/*
+ * Arreglo B (latencia): en estas peticiones el resolutor real solo devolvia el
+ * dominio que el determinista ya reconocia (medido 2026-09-19). Ya no se
+ * consulta al proveedor, y el resultado del flujo es el mismo: los criterios
+ * con los terminos que devolvia son identicos a los criterios sin ellos.
+ */
+describe('resolveVocabulary — sin llamadas redundantes (arreglo B)', () => {
+  it.each([
+    ['dame la lista de todas las obras', ['obra']],
+    ['muéstrame todas las obras', ['obra']],
+    ['dame el listado de obras', ['obra']],
+    ['¿cuántas obras tienes?', ['obra']],
+    ['dame obras cortas', ['obra', 'corta']],
+    ['dame compañías de teatro', ['compania']],
+  ])('"%s": no consulta al proveedor y el resultado no cambia', async (peticion, terminosQueDevolvia) => {
+    const proveedor = proveedorQueDevuelve('obra :: obras')
+
+    const terminos = await resolveVocabulary(peticion, proveedor)
+
+    expect(proveedor).not.toHaveBeenCalled()
+    expect(terminos).toEqual([])
+    // Mismos dominios y criterios que con los terminos que devolvia el proveedor real.
+    expect(criteriosResultantes(peticion, [])).toEqual(criteriosResultantes(peticion, terminosQueDevolvia))
+  })
+
+  it('las peticiones en las que el resolutor si aporta siguen consultandolo', async () => {
+    for (const peticion of ['dame obras que duren poco', 'algo que podamos montar entre tres', 'necesito personas para el reparto', 'dame la lista']) {
+      const proveedor = proveedorQueDevuelve('NINGUNO')
+      await resolveVocabulary(peticion, proveedor)
+      expect(proveedor, peticion).toHaveBeenCalledTimes(1)
+    }
+  })
+})
