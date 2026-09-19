@@ -255,14 +255,48 @@ export function parseResolvedTerms(rawContent: string | null, originalRequest: s
  */
 export function mayNeedResolution(originalRequest: string): boolean {
   const palabras = normalizarTexto(originalRequest).split(' ').filter((palabra) => palabra.length > 0)
+  const nombraUnDominio = palabras.some((palabra) => UNAMBIGUOUS_DOMAIN_WORDS.has(palabra))
 
   return palabras.some(
     (palabra) =>
       !FUNCTION_WORDS.has(palabra) &&
       !RESOLVABLE_TERMS.some((term) => term.split(' ').includes(palabra)) &&
-      !ALREADY_UNDERSTOOD.has(palabra)
+      !ALREADY_UNDERSTOOD.has(palabra) &&
+      !(nombraUnDominio && REQUEST_FRAMING_WORDS.has(palabra))
   )
 }
+
+/**
+ * Palabras que formulan la PETICION ("dame", "la lista", "muestrame",
+ * "cuantas") pero no expresan dominio ni criterio. Medido con el proveedor
+ * real (2026-09-19): en "dame la lista de todas las obras", "muestrame todas
+ * las obras", "dame el listado de obras", "cuantas obras tienes?", "dame
+ * obras cortas" y "dame companias de teatro" el resolutor solo devolvia el
+ * dominio que el determinista ya habia reconocido, y el conocimiento
+ * resultante era identico con y sin sus terminos. Eran llamadas de ~1-2 s
+ * sin ningun efecto.
+ *
+ * Regla CONSERVADORA: estas palabras solo se ignoran si la peticion nombra
+ * ademas un dominio de forma inequivoca (UNAMBIGUOUS_DOMAIN_WORDS). "dame la
+ * lista" a secas, sin dominio, sigue consultando al proveedor como hasta
+ * ahora.
+ */
+const REQUEST_FRAMING_WORDS = new Set([
+  'dame', 'danos', 'lista', 'listado', 'listar', 'muestrame', 'muestranos', 'mostrar', 'cuanta', 'cuantas',
+])
+
+/**
+ * Sustantivos que por si solos fijan el dominio y nunca funcionan como
+ * criterio. Quedan fuera a proposito las palabras ambiguas: "actor"/"actores"
+ * (tambien son el criterio de reparto, "para pocos actores") y
+ * "teatro"/"teatros" (tambien son complemento, "companias de teatro"). Ante
+ * cualquiera de ellas sin otro dominio inequivoco, se consulta al proveedor
+ * como hasta ahora.
+ */
+const UNAMBIGUOUS_DOMAIN_WORDS = new Set([
+  'obra', 'obras', 'compania', 'companias', 'festival', 'festivales',
+  'casting', 'castings', 'convocatoria', 'convocatorias',
+])
 
 /**
  * Palabras gramaticales del castellano: no aportan criterio por si mismas.

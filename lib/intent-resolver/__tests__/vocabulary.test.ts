@@ -189,6 +189,40 @@ describe('mayNeedResolution — guarda de coste, nunca de significado', () => {
   it('nunca produce ni altera un criterio: solo decide si se gasta una llamada', () => {
     expect(typeof mayNeedResolution('lo que sea')).toBe('boolean')
   })
+
+  /*
+   * Casos medidos con el proveedor real (2026-09-19). En todos los que ya no
+   * consultan, el resolutor solo devolvia el dominio ya reconocido y el
+   * conocimiento era identico con y sin sus terminos.
+   */
+  it.each([
+    ['dame la lista de todas las obras'],
+    ['muéstrame todas las obras'],
+    ['dame el listado de obras'],
+    ['¿cuántas obras tienes?'],
+    ['dame obras cortas'],
+    ['dame compañías de teatro'],
+  ])('palabras de peticion + dominio inequivoco: "%s" ya no consulta al proveedor', (pregunta) => {
+    expect(mayNeedResolution(pregunta)).toBe(false)
+  })
+
+  it.each([
+    // El resolutor SI aporta en estos: se sigue consultando.
+    ['dame obras que duren poco'],
+    ['algo que podamos montar entre tres'],
+    ['tienes alguna pieza breve?'],
+    ['necesito personas para el reparto'],
+    // Palabras de peticion SIN dominio inequivoco: ante la duda, se consulta.
+    ['dame la lista'],
+    ['muéstrame algo'],
+    ['dame algo para pocos actores'],
+    ['dame algo de teatro'],
+    // Palabras de peticion + contenido que el determinista no consume.
+    ['dame la lista de obras de Lorca'],
+    ['¿cuántas obras de humor negro tienes?'],
+  ])('ante la duda o con contenido por traducir: "%s" sigue consultando', (pregunta) => {
+    expect(mayNeedResolution(pregunta)).toBe(true)
+  })
 })
 
 describe('composeAugmentedRequest — la peticion del usuario nunca se altera', () => {
