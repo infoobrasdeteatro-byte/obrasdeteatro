@@ -10,7 +10,7 @@ import type { NormalizedAIRequest, AIExecutionInput, ExecutionAudit, AIExecution
 import { composeResponse } from '@/lib/response-composer'
 import { recordActivity } from '@/lib/procesos-asincronos'
 import { distributeExecutionAudit } from '@/lib/execution-audit-router'
-import { recordTurnMetrics, recordTurnFailure } from '@/lib/verified/observabilidad'
+import { recordTurnMetrics, recordTurnFailure, crearCronometro } from '@/lib/verified/observabilidad'
 import type { SettlementAnomaly } from '@/lib/verified/observabilidad'
 import { emptyConversationState, nextConversationState, workOccupancyOf } from '@/lib/conversation-state'
 import { CREDIT_VALUE } from '@/lib/accounting-engine'
@@ -182,9 +182,10 @@ export async function coordinateFlow(
    * la conversacion y no el turno.
    */
   const turnId = crypto.randomUUID()
+  const crono = crearCronometro('orquestador') // TEMPORAL diag/scenaia-tiempos
   let normalizedRequest = normalizeRequest(originalRequest, turnId, previousUserRequests, dominioPrevio)
-  const professionalContext = await buildProfessionalContext(userId, session)
-  let knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
+  const professionalContext = await crono.medir('1_contexto_profesional', () => buildProfessionalContext(userId, session))
+  let knowledgeContext = await crono.medir('2_conocimiento', () => buildKnowledgeContext(normalizedRequest, ocupacionPrevia))
   // Senal de continuacion, ya declarada en el contrato. Se deriva aqui
   // porque la reserva preventiva necesita saber si el resolutor puede
   // llegar a ejecutarse antes de estimar el coste del turno.
@@ -209,7 +210,7 @@ export async function coordinateFlow(
     resolverPromptCharacters: esTurnoDeContinuacion ? null : buildResolverPrompt(originalRequest).length,
     creditValue: CREDIT_VALUE,
   })
-  const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
+  const authorizationContext = await crono.medir('3_autorizacion_y_reserva', () => buildAuthorizationContext(professionalContext, decisionContext))
 
   /**
    * EJECUCIONES DEL TURNO (F5F-3).
@@ -413,15 +414,15 @@ export async function coordinateFlow(
       !esTurnoDeContinuacion
     ) {
       resolvedTerms = await resolveVocabulary(originalRequest, async (prompt) => {
-        const { result, audit } = await ejecutarOperacion({
+        const { result, audit } = await crono.medir('4_openai_resolutor', () => ejecutarOperacion({
           decisionContext,
           authorizationContext,
           normalizedAIRequest: { userPrompt: prompt, operationKind: 'RESOLVER' },
-        })
-        await distributeExecutionAudit(professionalContext.identity.userId, audit, {
+        }))
+        await crono.medir('5_registro_auditoria_resolutor', () => distributeExecutionAudit(professionalContext.identity.userId, audit, {
           requestId: normalizedRequest.requestId,
           stage: 'resolver',
-        })
+        }))
         return result.generatedContent
       })
 
@@ -445,7 +446,7 @@ export async function coordinateFlow(
           turnId,
           previousUserRequests
         )
-        knowledgeContext = await buildKnowledgeContext(normalizedRequest, ocupacionPrevia)
+        knowledgeContext = await crono.medir('6_conocimiento_de_nuevo', () => buildKnowledgeContext(normalizedRequest, ocupacionPrevia))
       }
     }
 
@@ -453,20 +454,20 @@ export async function coordinateFlow(
       userPrompt: composePrompt(normalizedRequest, knowledgeContext, conversationHistory),
       operationKind: 'TEXT_STANDARD',
     }
-    const { result, audit } = await ejecutarOperacion({ decisionContext, authorizationContext, normalizedAIRequest })
+    const { result, audit } = await crono.medir('7_openai_respuesta', () => ejecutarOperacion({ decisionContext, authorizationContext, normalizedAIRequest }))
     const directContent = buildDirectContent(knowledgeContext)
     const responseContext = composeResponse(decisionContext, authorizationContext, result, directContent)
 
-    await cerrarCircuitoEconomico()
+    await crono.medir('8_cierre_economico', () => cerrarCircuitoEconomico())
 
-    await recordActivity({
+    await crono.medir('9_registro_actividad', () => recordActivity({
       profileId: professionalContext.identity.userId,
       responseType: responseContext.responseType,
-    })
-    await distributeExecutionAudit(professionalContext.identity.userId, audit, {
+    }))
+    await crono.medir('10_registro_auditoria_respuesta', () => distributeExecutionAudit(professionalContext.identity.userId, audit, {
       requestId: normalizedRequest.requestId,
       stage: 'response',
-    })
+    }))
 
     // Fase 0 -- lo que ScenaIA entendio y recupero en este turno. Paso de
     // observacion, como los dos anteriores: se ejecuta con la respuesta ya
@@ -484,7 +485,7 @@ export async function coordinateFlow(
       const entidades = knowledgeContext.knowledgeEntities?.length ?? 0
       const dominiosCubiertos = knowledgeContext.knowledgeDomains?.length ?? 0
 
-      await recordTurnMetrics(professionalContext.identity.userId, {
+      await crono.medir('11_metricas_del_turno', () => recordTurnMetrics(professionalContext.identity.userId, {
         requestId: normalizedRequest.requestId,
         domains: normalizedRequest.requestedKnowledgeDomains ?? [],
         isContinuation: esTurnoDeContinuacion,
@@ -496,10 +497,13 @@ export async function coordinateFlow(
         responseType: responseContext.responseType,
         durationMs: Date.now() - turnStartedAt,
         settlementAnomaly: anomaliaDeLiquidacion,
-      })
+      }))
     } catch {
       // Observar nunca puede impedir responder.
     }
+
+    // TEMPORAL diag/scenaia-tiempos
+    crono.volcar({ requestId: normalizedRequest.requestId, responseType: responseContext.responseType, necesitoIA: decisionContext.needsAI })
 
     // Estado que queda vigente para el turno siguiente. `stateVersion` y
     // `updatedAt` los fija aqui el servidor: los valores que hubiera enviado

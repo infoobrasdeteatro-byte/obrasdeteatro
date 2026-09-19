@@ -35,7 +35,12 @@ vi.mock('@/lib/ai-gateway', async (importOriginal) => ({
 vi.mock('@/lib/response-composer', () => ({ composeResponse: vi.fn() }))
 vi.mock('@/lib/procesos-asincronos', () => ({ recordActivity: vi.fn() }))
 vi.mock('@/lib/execution-audit-router', () => ({ distributeExecutionAudit: vi.fn() }))
-vi.mock('@/lib/verified/observabilidad', () => ({ recordTurnMetrics: vi.fn(), recordTurnFailure: vi.fn() }))
+vi.mock('@/lib/verified/observabilidad', () => ({
+  recordTurnMetrics: vi.fn(),
+  recordTurnFailure: vi.fn(),
+  // TEMPORAL diag/scenaia-tiempos: cronometro neutro, no mide ni escribe nada.
+  crearCronometro: () => ({ medir: (_etapa: string, operacion: () => Promise<unknown>) => operacion(), volcar: () => {} }),
+}))
 vi.mock('@/lib/accounting-engine', () => ({
   settleReservation: vi.fn(),
   releaseReservation: vi.fn(),

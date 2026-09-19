@@ -5,6 +5,7 @@ import type { ConversationTurn } from '@/lib/verified/orquestador'
 import { parseConversationState } from '@/lib/conversation-state'
 import { resolveScenaiaAccess, accessDenialStatus } from '@/lib/auth/scenaia-access'
 import { TEXTO_ERROR_GENERICO } from '@/app/scenaia/turn-notice'
+import { crearCronometro } from '@/lib/verified/observabilidad'
 import {
   MAX_USER_PROMPT_CHARACTERS,
   MAX_HISTORY_TURNS,
@@ -112,10 +113,11 @@ async function leerCuerpo(req: NextRequest): Promise<Record<string, unknown>> {
 }
 
 async function atenderPeticion(req: NextRequest) {
+  const crono = crearCronometro('ruta') // TEMPORAL diag/scenaia-tiempos
   const supabase = await createClient()
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await crono.medir('a_auth_getUser', () => supabase.auth.getUser())
 
   /*
    * FRONTERA DE SEGURIDAD (P1.3). No es la pagina: es esto. La pagina puede
@@ -125,7 +127,7 @@ async function atenderPeticion(req: NextRequest) {
    * La decision NO se toma en este archivo: se delega en el punto unico. Si
    * la politica cambia, cambia alli, y este endpoint no se entera.
    */
-  const acceso = await resolveScenaiaAccess(user?.id ?? null)
+  const acceso = await crono.medir('b_acceso_scenaia', () => resolveScenaiaAccess(user?.id ?? null))
 
   if (!acceso.allowed) {
     // La causa viaja como dato, no como frase: `no_autenticado`,
@@ -198,13 +200,15 @@ async function atenderPeticion(req: NextRequest) {
    */
   const conversationState = parseConversationState(body.conversationState)
 
-  const { responseContext, conversationState: nextState } = await coordinateFlow(
+  const { responseContext, conversationState: nextState } = await crono.medir('c_orquestador_completo', () => coordinateFlow(
     acceso.userId,
     session,
     originalRequest,
     conversationHistory,
     conversationState
-  )
+  ))
+
+  crono.volcar({ turnosDeHistorial: conversationHistory.length }) // TEMPORAL diag/scenaia-tiempos
 
   // El estado viaja junto a la respuesta, no dentro de ella: `ResponseContext`
   // no gana ningun campo (PRD-001, ver TurnOutcome en el Orquestador).

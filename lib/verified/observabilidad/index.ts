@@ -5,3 +5,6 @@ export { recordTurnMetrics } from './record-turn-metrics'
 export { recordTurnFailure } from './record-turn-failure'
 export type { TurnObservation, SettlementAnomaly, ExecutionTraceContext } from './types'
 export type { TurnFailure, TurnClosureState } from './types'
+
+// TEMPORAL diag/scenaia-tiempos
+export { crearCronometro } from './diagnostico-tiempos'
