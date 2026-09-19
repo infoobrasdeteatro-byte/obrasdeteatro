@@ -28,8 +28,26 @@ function tieneCaracteresDeControl(value: string): boolean {
   return false
 }
 
+/** `path` con `?next=` añadido, solo si `next` es una ruta interna válida; si no, `path` tal cual. */
+export function withNext(path: string, next: string | null | undefined): string {
+  const destino = safeNextPath(next)
+  return destino === null ? path : `${path}?next=${encodeURIComponent(destino)}`
+}
+
 /** URL del login que, al terminar, devuelve a `next` (si es una ruta interna válida). */
 export function loginUrlWithNext(next: string): string {
-  const destino = safeNextPath(next)
-  return destino === null ? '/auth/login' : `/auth/login?next=${encodeURIComponent(destino)}`
+  return withNext('/auth/login', next)
 }
+
+/**
+ * Vuelta tras el REGISTRO. El registro no termina en el formulario sino al
+ * confirmar el email, en /auth/callback, así que el `next` se guarda en una
+ * cookie al registrarse y el callback la lee y la borra. No viaja en
+ * `emailRedirectTo`: si la lista de URL permitidas de Supabase Auth no
+ * admitiera parámetros, la confirmación del email dejaría de funcionar.
+ * Si se confirma en otro navegador, no hay cookie y se usa el destino de
+ * siempre.
+ */
+export const NEXT_TRAS_REGISTRO_COOKIE = 'odt_next_registro'
+/** 24 h: lo que dura por defecto el enlace de confirmación de Supabase. */
+export const NEXT_TRAS_REGISTRO_MAX_AGE_S = 60 * 60 * 24

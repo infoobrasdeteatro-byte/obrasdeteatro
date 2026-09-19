@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { safeNextPath, loginUrlWithNext } from '../next-param'
+import { safeNextPath, loginUrlWithNext, withNext } from '../next-param'
 
 describe('safeNextPath', () => {
   it.each(['/precios', '/precios?plan=premium', '/cuenta', '/'])('acepta la ruta interna %s', (ruta) => {
@@ -20,6 +20,19 @@ describe('safeNextPath', () => {
   ])('rechaza %s', (_caso, valor) => {
     expect(safeNextPath(valor as string | null | undefined)).toBeNull()
   })
+})
+
+describe('withNext (enlace "Regístrate gratis" desde el login)', () => {
+  it('conserva un next válido en el enlace a registro', () => {
+    expect(withNext('/auth/registro', '/precios')).toBe('/auth/registro?next=%2Fprecios')
+  })
+
+  it.each([null, undefined, '', '//evil.example.com', 'https://evil.example.com'])(
+    'sin next válido (%s), el enlace va limpio',
+    (next) => {
+      expect(withNext('/auth/registro', next as string | null | undefined)).toBe('/auth/registro')
+    }
+  )
 })
 
 describe('loginUrlWithNext', () => {
