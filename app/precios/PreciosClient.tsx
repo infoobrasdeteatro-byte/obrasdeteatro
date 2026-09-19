@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PLANES, TABLA_COMPARATIVA } from '@/lib/plans'
 import type { CellValue } from '@/lib/plans'
+import { loginUrlWithNext } from '@/lib/auth/next-param'
 import TopNav from '@/components/design-system/TopNav'
 import NavAutenticado from '@/components/NavAutenticado'
 
@@ -35,6 +36,14 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId, userId, email: userEmail }),
       })
+
+      // Sesión caducada o ausente: la API responde 401 (PR #11). En vez de
+      // mostrar un error, se lleva al login y, al entrar, se vuelve aquí para
+      // repetir el pago.
+      if (res.status === 401) {
+        window.location.assign(loginUrlWithNext('/precios'))
+        return
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string }
