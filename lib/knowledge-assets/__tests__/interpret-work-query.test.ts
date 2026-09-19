@@ -177,6 +177,18 @@ describe('hasUnresolvedAuthor — los cuatro estados del criterio en Obras', () 
     }
   })
 
+  it('no confunde con autoria los cuantificadores "todas", "todo" o "cualquier"', () => {
+    const catalogo = ['Lope de Vega', 'Calderón de la Barca', 'Begonya Plaza']
+
+    for (const consulta of ['dame una lista de todas las obras', 'obras de todo tipo', 'de cualquier epoca']) {
+      const criteria = interpretWorkQuery(consulta, catalogo)
+      expect(hasUnresolvedAuthor(consulta, criteria), consulta).toBe(false)
+    }
+
+    const criteria = interpretWorkQuery('obras de lorca', catalogo)
+    expect(hasUnresolvedAuthor('obras de lorca', criteria)).toBe(true)
+  })
+
   it('es puro y determinista, y no conoce ningun nombre propio', () => {
     const criteria = interpretWorkQuery('obras de ibsen', AUTORES)
 
