@@ -217,24 +217,23 @@ describe('listado puro — lo que NO cambia: cada condición que falla devuelve 
   })
 
   /**
-   * LIMITACIÓN CONOCIDA, anterior a SCENAIA-004 y ajena a esta Acta.
+   * DEFECTO YA CORREGIDO (PR #23, Knowledge Assets).
    *
-   * `hasUnresolvedAuthor` (Knowledge Assets) busca el autor tras "de" con
-   * una captura de hasta dos palabras, de modo que en "…de obras de X" la
-   * primera captura se traga el segundo "de" y el autor nunca se examina.
-   * Hoy eso solo hace que falte una advertencia en el prompt; con el
-   * listado puro, además, el turno se responde con el catálogo entero.
+   * `hasUnresolvedAuthor` capturaba hasta dos palabras tras la preposición
+   * y en "…de obras de X" se tragaba el segundo "de", de modo que el autor
+   * no llegaba a examinarse. Mientras duró, este turno se habría respondido
+   * con el catálogo entero, sin decir que ese autor no está.
    *
-   * Esta prueba NO ratifica el comportamiento: lo deja documentado y
-   * visible hasta que se corrija en su propio expediente. Cuando se
-   * corrija, este caso pasará a comportarse como el anterior y habrá que
-   * actualizarla.
+   * La prueba se conserva para que la redacción no vuelva a cambiar el
+   * veredicto: las dos formas de preguntar lo mismo van a la IA.
    */
-  it('LIMITACIÓN CONOCIDA: "de obras de X" no detecta el autor sin resolver', async () => {
-    const r = await preguntar('dame la lista de obras de Shakespeare')
+  it('(c) la redacción no cambia el veredicto: "de obras de X" también va a la IA', async () => {
+    const conLista = await preguntar('dame la lista de obras de Shakespeare')
+    expect(conLista.usoIA).toBe(true)
 
-    expect(r.usoIA).toBe(false)
-    expect(r.contenido).toContain('11 resultados')
+    vi.mocked(executeAIRequest).mockClear()
+    const conTodas = await preguntar('dame todas las obras de Shakespeare')
+    expect(conTodas.usoIA).toBe(true)
   })
 
   it('(e) sin resultados no hay lista: se conserva la respuesta determinista de siempre', async () => {
