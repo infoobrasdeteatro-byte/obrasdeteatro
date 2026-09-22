@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { LANGUAGES } from '@/lib/geo/languages'
 
 const GENEROS = [
   'Teatro clásico',
@@ -21,20 +22,6 @@ const GENEROS = [
   'Teatro documental',
   'Performance',
   'Otro',
-]
-
-const IDIOMAS = [
-  { value: 'es', label: 'Español' },
-  { value: 'ca', label: 'Catalán' },
-  { value: 'eu', label: 'Euskera' },
-  { value: 'gl', label: 'Gallego' },
-  { value: 'va', label: 'Valenciano' },
-  { value: 'en', label: 'Inglés' },
-  { value: 'fr', label: 'Francés' },
-  { value: 'pt', label: 'Portugués' },
-  { value: 'de', label: 'Alemán' },
-  { value: 'it', label: 'Italiano' },
-  { value: 'otro', label: 'Otro' },
 ]
 
 export default function NuevaObraForm({ userId }: { userId: string }) {
@@ -154,8 +141,8 @@ export default function NuevaObraForm({ userId }: { userId: string }) {
             onChange={e => setLanguage(e.target.value)}
             className="ds-select"
           >
-            {IDIOMAS.map(l => (
-              <option key={l.value} value={l.value}>{l.label}</option>
+            {LANGUAGES.map(l => (
+              <option key={l.code} value={l.code}>{l.name}</option>
             ))}
           </select>
         </div>
