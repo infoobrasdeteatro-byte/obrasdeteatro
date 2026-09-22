@@ -59,8 +59,8 @@ describe('getSubscription', () => {
 describe('getUsageLimit — cuota de IA por plan (Bloque 5)', () => {
   it('RATIFICACION: cada plan devuelve exactamente la cuota decidida por Direccion', () => {
     expect(getUsageLimit('gratuito')).toBe('5')
-    expect(getUsageLimit('premium')).toBe('100')
-    expect(getUsageLimit('destacado')).toBe('500')
+    expect(getUsageLimit('premium')).toBe('30')
+    expect(getUsageLimit('destacado')).toBe('60')
     expect(getUsageLimit('empresas')).toBe('ILIMITADO')
   })
 
@@ -95,7 +95,7 @@ describe('getUsageLimit — cuota de IA por plan (Bloque 5)', () => {
     // La cuota viaja como texto por un contrato ya congelado
     // (`SubscriptionSection.usageLimits`). Si las dos puntas dejaran de
     // entenderse, un plan con cuota pasaria a leerse como plan desconocido.
-    expect(parseAuthorizedLimit(getUsageLimit('premium'))).toEqual({ kind: 'LIMITADO', value: 100 })
+    expect(parseAuthorizedLimit(getUsageLimit('premium'))).toEqual({ kind: 'LIMITADO', value: 30 })
     expect(parseAuthorizedLimit(getUsageLimit('empresas'))).toEqual({ kind: 'ILIMITADO' })
     expect(parseAuthorizedLimit(getUsageLimit('plan-inexistente'))).toBeNull()
   })

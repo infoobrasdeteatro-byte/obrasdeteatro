@@ -67,9 +67,11 @@ const UNLIMITED_MARKER = 'ILIMITADO'
  * `nucleo_activity_log`. Agotar la cuota de IA no retira ninguna capacidad
  * determinista.
  *
- * Cifras anteriores (IA-AUTH-001, Tabla Definitiva de Planes v2): 5 / 30 /
- * 60 / ILIMITADO. Premium y Destacado quedan sustituidos por las que
- * siguen; Gratuito y Empresas se mantienen.
+ * Las cifras son las de la Tabla Definitiva de Planes v2, recogidas en
+ * ARQUITECTURA_FUNCIONAL_OBRASDETEATRO_v2.0.md §9.2: 5 / 30 / 60 /
+ * ILIMITADO. Entre el 2026-09-01 y el 2026-09-22 Premium y Destacado
+ * estuvieron en 100 y 500, sin ninguna decision que lo respaldara; se
+ * devuelven a las cifras documentadas.
  *
  * Sigue siendo el unico lugar del codigo TypeScript con esta traduccion
  * (Decision de Direccion IA-AUTH-001, Punto 1: Repository Layer es la
@@ -83,8 +85,8 @@ const UNLIMITED_MARKER = 'ILIMITADO'
  */
 const PLAN_AI_QUOTAS: Readonly<Record<string, PlanAIQuota>> = {
   gratuito: { kind: 'LIMITADO', creditsPerPeriod: 5 },
-  premium: { kind: 'LIMITADO', creditsPerPeriod: 100 },
-  destacado: { kind: 'LIMITADO', creditsPerPeriod: 500 },
+  premium: { kind: 'LIMITADO', creditsPerPeriod: 30 },
+  destacado: { kind: 'LIMITADO', creditsPerPeriod: 60 },
   empresas: { kind: 'ILIMITADO' },
 }
 
