@@ -299,3 +299,60 @@ describe('ranuras semanticas — una dimension, un concepto vigente', () => {
     expect(interpretWorkQuery('obras para pocos actores para dos actores').maxCastSize).toBe(2)
   })
 })
+
+/**
+ * DEFECTO CORREGIDO: el autor escondido tras un segundo "de".
+ *
+ * La captura tras la preposicion admitia dos palabras, y solo se leia la
+ * primera. En "de obras DE Shakespeare" esa captura se tragaba el segundo
+ * "de", de modo que el autor no llegaba a examinarse: la misma pregunta
+ * advertia o no del autor ausente segun como estuviera redactada.
+ */
+describe('hasUnresolvedAuthor — el autor tras un segundo "de"', () => {
+  const CATALOGO = ['Lope de Vega', 'Pedro Calderón de la Barca', 'Begonya Plaza']
+
+  function sinResolver(consulta: string): boolean {
+    return hasUnresolvedAuthor(consulta, interpretWorkQuery(consulta, CATALOGO))
+  }
+
+  it('la redaccion que YA funcionaba sigue funcionando', () => {
+    expect(sinResolver('dame todas las obras de shakespeare')).toBe(true)
+    expect(sinResolver('obras de shakespeare')).toBe(true)
+  })
+
+  it('la redaccion que fallaba ahora detecta al autor no resuelto', () => {
+    for (const consulta of [
+      'dame la lista de obras de shakespeare',
+      'lista de obras de shakespeare',
+      'dame el listado de obras de chejov',
+      'quiero ver el catalogo de obras de ibsen',
+      'tienes algo de teatro de moliere?',
+    ]) {
+      expect(sinResolver(consulta), consulta).toBe(true)
+    }
+  })
+
+  it('las dos redacciones de la misma pregunta dan el MISMO veredicto', () => {
+    expect(sinResolver('dame la lista de obras de shakespeare')).toBe(sinResolver('dame todas las obras de shakespeare'))
+    expect(sinResolver('dame la lista de obras de lope de vega')).toBe(sinResolver('dame todas las obras de lope de vega'))
+  })
+
+  it('un autor del catalogo tras el segundo "de" se resuelve, y no queda pendiente', () => {
+    expect(interpretWorkQuery('dame la lista de obras de calderon', CATALOGO)).toEqual({ author: 'Pedro Calderón de la Barca' })
+    expect(sinResolver('dame la lista de obras de calderon')).toBe(false)
+    expect(sinResolver('dame la lista de obras de lope de vega')).toBe(false)
+  })
+
+  it('no aparecen falsos positivos donde antes no los habia', () => {
+    for (const consulta of [
+      'dame la lista de obras',
+      'dame el listado de obras cortas',
+      'que obras de teatro tienes?',
+      'una obra para una compania de pocos actores',
+      'dame la lista de obras de todo tipo',
+      'obras de mucha duracion',
+    ]) {
+      expect(sinResolver(consulta), consulta).toBe(false)
+    }
+  })
+})
