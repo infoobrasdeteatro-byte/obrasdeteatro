@@ -53,6 +53,16 @@ export interface TurnObservation {
   readonly responseType: string
   readonly durationMs: number
   /**
+   * Milisegundos hasta el primer fragmento con texto del proveedor, en el
+   * turno completo: `durationMs` mide lo que el usuario espera hoy, y este
+   * lo que esperaria si el texto se mostrara segun llega.
+   *
+   * `null` en todo turno sin ejecucion de IA -- los deterministas, los
+   * denegados y los que fallaron antes de llegar al proveedor. La ausencia
+   * de metrica es la afirmacion de que no hubo nada que cronometrar.
+   */
+  readonly firstTokenLatencyMs: number | null
+  /**
    * Desviacion de la estimacion (Bloque 4): el coste real supero lo
    * reservado. `null` cuando no ocurrio, que es lo normal.
    *

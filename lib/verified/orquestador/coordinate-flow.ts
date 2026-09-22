@@ -508,6 +508,10 @@ export async function coordinateFlow(
         isEmptyResult: dominiosCubiertos > 0 && entidades === 0,
         responseType: responseContext.responseType,
         durationMs: Date.now() - turnStartedAt,
+        // Lo observa el adaptador y viaja en el audit de esta ejecucion; el
+        // Orquestador se limita a leerlo, como el resto de valores que ya
+        // tenia en su ambito. `null` en todo turno que no llego al proveedor.
+        firstTokenLatencyMs: audit.firstTokenLatencyMs ?? null,
         settlementAnomaly: anomaliaDeLiquidacion,
       })
     } catch {

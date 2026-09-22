@@ -16,6 +16,7 @@ const OBSERVACION: TurnObservation = {
   isEmptyResult: false,
   responseType: 'RESPONSE_SUCCESS',
   durationMs: 1234,
+  firstTokenLatencyMs: null,
   settlementAnomaly: null,
 }
 
@@ -236,5 +237,26 @@ describe('empty_reason — por que un turno se quedo sin entidades', () => {
     await recordTurnMetrics('profile-1', { ...OBSERVACION, retrievedEntityCount: 0, coveredDomainCount: 0 })
 
     expect(metricasEmitidas().find((m) => m.name === 'scenaia.retrieval.empty_reason')?.tags?.requestId).toBe('req-1')
+  })
+})
+
+describe('recordTurnMetrics — latencia hasta el primer fragmento', () => {
+  it('la emite cuando el turno llego al proveedor, junto a la duracion total', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, firstTokenLatencyMs: 640 })
+
+    const primera = metricasEmitidas().find((m) => m.name === 'scenaia.ai.first_token_ms')
+    expect(primera).toBeDefined()
+    expect(primera?.value).toBe(640)
+    expect(primera?.unit).toBe('ms')
+    // Mismo requestId que el resto: es lo que permite compararla con la
+    // duracion total del turno sin volver a la base de datos.
+    expect(primera?.tags?.requestId).toBe('req-1')
+    expect(metricasEmitidas().some((m) => m.name === 'scenaia.request.duration_ms')).toBe(true)
+  })
+
+  it('NO la emite en un turno que no llego al proveedor: un cero afirmaria una espera instantanea', async () => {
+    await recordTurnMetrics('profile-1', { ...OBSERVACION, responseType: 'RESPONSE_DIRECT', firstTokenLatencyMs: null })
+
+    expect(metricasEmitidas().some((m) => m.name === 'scenaia.ai.first_token_ms')).toBe(false)
   })
 })

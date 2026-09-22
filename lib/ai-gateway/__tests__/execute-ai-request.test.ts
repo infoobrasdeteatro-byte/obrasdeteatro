@@ -45,6 +45,8 @@ const EMPTY_AUDIT = {
   providerIdentifier: null,
   providerModel: null,
   executionLatencyMs: null,
+  // Sin ejecucion no hubo primer fragmento que cronometrar.
+  firstTokenLatencyMs: null,
   tokensConsumed: null,
   // IA-006: el desglose que el proveedor publica cuando ejecuta. En un
   // audit vacio -- no autorizado, sin proveedor, error -- es `null` como

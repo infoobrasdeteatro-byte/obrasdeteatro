@@ -100,6 +100,14 @@ export interface ExecutionAudit {
   readonly providerIdentifier: string | null
   readonly providerModel: string | null
   readonly executionLatencyMs: number | null
+  /**
+   * Milisegundos hasta el primer fragmento con texto del proveedor.
+   *
+   * `executionLatencyMs` mide lo que el usuario espera hoy; este mide lo
+   * que esperaria si la respuesta se mostrara segun llega. `null` cuando
+   * no hubo ejecucion o el adaptador no puede observarlo -- nunca cero.
+   */
+  readonly firstTokenLatencyMs: number | null
   readonly tokensConsumed: number | null
   /** Desglose publicado por el proveedor (IA-006); `null` si no lo aporta. */
   readonly inputTokens: number | null
