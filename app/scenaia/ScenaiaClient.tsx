@@ -7,6 +7,7 @@ import ChatInput from './components/ChatInput'
 import TypingIndicator from './components/TypingIndicator'
 import type { ConversationState } from '@/lib/conversation-state'
 import { resolveTurnNotice, resolveAccessDestination } from './turn-notice'
+import { leerRespuestaDelTurno } from './leer-respuesta'
 import type { TurnNotice } from './turn-notice'
 
 interface ScenaiaResponse {
@@ -134,7 +135,13 @@ export default function ScenaiaClient() {
         return
       }
 
-      const data: ScenaiaResponse = await res.json()
+      /*
+       * Arreglo D, PR 2. El formato lo declara el servidor en su tipo de
+       * contenido: JSON de siempre, o una linea por evento. Aqui no se
+       * decide cual -- el interruptor vive en el servidor -- y la carga
+       * que llega es la misma en los dos casos.
+       */
+      const data = (await leerRespuestaDelTurno(res)) as ScenaiaResponse
       /*
        * UX-002. La decisión de QUÉ se advierte vive en `resolveTurnNotice`,
        * que solo traduce el estado ya clasificado por el backend. Aquí no
