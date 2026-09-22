@@ -13,6 +13,8 @@ function fakeNormalizedRequest(overrides: Partial<NormalizedRequest> = {}): Norm
     normalizedIntent: 'que obras me recomiendas de lorca?',
     retrievalQuery: 'que obras me recomiendas de lorca?',
     requestsFullCatalog: false,
+
+    requestsPlainListing: false,
     requestType: 'RECONOCIDA',
     requestedKnowledgeDomains: ['Obras'],
     estimatedComplexity: 'media',

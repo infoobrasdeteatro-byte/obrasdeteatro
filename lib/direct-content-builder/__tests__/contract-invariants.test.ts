@@ -105,3 +105,45 @@ describe('Direct Content Builder — invariantes de comportamiento (SCENAIA-003,
     expect(MODULE_SOURCE).not.toMatch(/knowledgeLimitations\.(map|join|filter|forEach|some|find|reduce)/)
   })
 })
+
+/**
+ * SCENAIA-004 — la ficha amplía de qué se compone la respuesta, no de
+ * dónde sale. Todo dato sigue procediendo del conocimiento ya recuperado.
+ */
+describe('direct-content-builder — procedencia de los datos de la ficha (SCENAIA-004)', () => {
+  const contextoConObra = {
+    knowledgeSummary: {
+      domainsRequested: ['Obras'],
+      domainsCovered: ['Obras'],
+      domainsNotCovered: [],
+      entryLabelsByDomain: { Obras: ['La dama boba'] },
+    },
+    knowledgeDomains: ['Obras'],
+    knowledgeEntities: [
+      { domain: 'Obras', data: { title: 'La dama boba', author: 'Lope de Vega', synopsis: 'Sinopsis que NO debe salir' }, provenance: {}, functions: [] },
+    ],
+    knowledgeRelations: null,
+    knowledgeConfidence: 1,
+    knowledgeCompleteness: 'completo',
+    knowledgeLimitations: [],
+    workOccupancy: {},
+    knowledgeTimestamp: 'T',
+  } as never
+
+  it('todo dato de la ficha procede de knowledgeEntities: nunca se inventa ni se completa', () => {
+    const salida = buildDirectContent(contextoConObra) as string
+
+    expect(salida).toContain('La dama boba')
+    expect(salida).toContain('Lope de Vega')
+    // Lo que el catálogo no trae en esta entidad no aparece por ningún lado.
+    expect(salida).not.toMatch(/min|años|·\s*\d{4}/)
+  })
+
+  it('no emite campos que el contrato no destina a la ficha, como la sinopsis', () => {
+    expect(buildDirectContent(contextoConObra) as string).not.toContain('Sinopsis')
+  })
+
+  it('sigue sin depender de Repository Layer ni de Knowledge Assets para obtener los datos', () => {
+    expect(MODULE_SOURCE).not.toMatch(/@\/lib\/repository-layer|@\/lib\/knowledge-assets/)
+  })
+})

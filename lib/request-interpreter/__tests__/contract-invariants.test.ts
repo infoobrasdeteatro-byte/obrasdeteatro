@@ -17,6 +17,7 @@ const MODULE_SOURCE = [
   'domain-rules.ts',
   'request-type-rules.ts',
   'full-catalog-rules.ts',
+  'plain-listing-rules.ts',
   'interpreter.ts',
   'types.ts',
 ]

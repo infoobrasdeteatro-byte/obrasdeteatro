@@ -43,6 +43,18 @@ export interface NormalizedRequest {
    * para decidirlo: los demas componentes solo leen este campo.
    */
   requestsFullCatalog: boolean
+  /**
+   * La peticion pide una lista, y nada mas que una lista (SCENAIA-004
+   * §4.1, condiciones (a) y (b)): contiene una expresion de listado de una
+   * lista cerrada y ninguna palabra que pida razonar.
+   *
+   * NO significa que el turno vaya a resolverse sin IA: faltan las tres
+   * condiciones que dependen del conocimiento recuperado -- criterios
+   * aplicados, dominio Obras y al menos un resultado --, que comprueba
+   * Decision Engine. Este campo es solo la parte que se decide con el
+   * texto, que es lo unico que este componente ve.
+   */
+  requestsPlainListing: boolean
   requestType: RequestType
   requestedKnowledgeDomains: KnowledgeDomain[]
   estimatedComplexity: EstimatedComplexity

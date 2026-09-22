@@ -236,6 +236,7 @@ describe('K · compatibilidad de NormalizedRequest', () => {
       'requestType',
       'requestedKnowledgeDomains',
       'requestsFullCatalog',
+      'requestsPlainListing',
       'retrievalQuery',
       'timestamp',
     ])
