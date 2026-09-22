@@ -376,8 +376,16 @@ export function interpretWorkQuery(
  * "obras DE Lorca", "escrita POR Valle-Inclan". Es la unica construccion
  * que este motor reconoce como peticion de autor -- deliberadamente
  * estrecha, para no clasificar como autor lo que no lo es.
+ *
+ * Captura UNA sola palabra tras la preposicion, que es exactamente la que
+ * `hasUnresolvedAuthor` examina. Antes capturaba hasta dos y la segunda no
+ * se leia nunca: solo servia para consumir texto. En "de obras DE
+ * Shakespeare", la primera coincidencia se tragaba el segundo "de", el
+ * autor que venia detras no llegaba a examinarse y la peticion pasaba por
+ * no atribuida a nadie. Verificado: "dame todas las obras de Shakespeare"
+ * advertia del autor ausente y "dame la lista de obras de Shakespeare" no.
  */
-const AUTHORSHIP_PREPOSITION = /\b(?:de|del|por)\s+([a-z0-9]+(?:\s+[a-z0-9]+)?)/g
+const AUTHORSHIP_PREPOSITION = /\b(?:de|del|por)\s+([a-z0-9]+)/g
 
 /**
  * Palabras que siguen a "de/por" sin nombrar a nadie. La lista es corta y
@@ -464,7 +472,8 @@ export function hasUnresolvedAuthor(normalizedQuery: string, criteria: WorkSearc
   if (criteria.author !== undefined) return false
 
   for (const match of normalizedQuery.matchAll(AUTHORSHIP_PREPOSITION)) {
-    const primeraPalabra = match[1].trim().split(/\s+/)[0]
+    // La captura ya es una sola palabra: la que sigue a la preposicion.
+    const primeraPalabra = match[1]
 
     if (primeraPalabra.length <= 3) continue
     if (NON_AUTHOR_COMPLEMENTS.has(primeraPalabra)) continue
