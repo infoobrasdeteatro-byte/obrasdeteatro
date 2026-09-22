@@ -10,6 +10,8 @@ const MODULE_FILES = [
   'recommended-provider.ts',
   'rationale.ts',
   'decision-context-builder.ts',
+  // SCENAIA-004: el listado puro tambien queda bajo la frontera vigilada.
+  'plain-listing.ts',
 ]
 const MODULE_SOURCE = MODULE_FILES.map((file) => readFileSync(join(__dirname, '..', file), 'utf-8')).join('\n')
 const RECOMMENDED_PROVIDER_SOURCE = readFileSync(join(__dirname, '..', 'recommended-provider.ts'), 'utf-8')

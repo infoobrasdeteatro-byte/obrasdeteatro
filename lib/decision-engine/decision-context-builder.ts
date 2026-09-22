@@ -3,6 +3,7 @@ import type { ProfessionalContext } from '@/lib/professional-context-engine'
 import type { KnowledgeContext } from '@/lib/scenaia-knowledge-model'
 import type { DecisionContext } from './types'
 import { needsAI } from './needs-ai'
+import { isPlainListing } from './plain-listing'
 import { derivePriorityLevel } from './priority'
 import { estimateDecisionConfidence } from './confidence'
 import { estimateCost } from './estimated-cost'
@@ -68,7 +69,16 @@ export function buildDecisionContext(
   // de dominios y volumen realmente recuperado. `knowledgeEntities` ya venia
   // en el contrato KnowledgeContext que este constructor recibe -- no hay
   // dato nuevo ni recuperacion adicional.
-  const aiNeeded = needsAI(knowledgeContext.knowledgeCompleteness, knowledgeContext.knowledgeEntities.length)
+  // SCENAIA-004: las cinco condiciones del listado puro se comprueban
+  // aqui, que es el unico punto que ve a la vez la peticion interpretada y
+  // el conocimiento recuperado. `needsAI` recibe el veredicto, no las
+  // señales: sigue sin interpretar texto ni conocimiento.
+  const listadoPuro = isPlainListing(normalizedRequest, knowledgeContext)
+  const aiNeeded = needsAI(
+    knowledgeContext.knowledgeCompleteness,
+    knowledgeContext.knowledgeEntities.length,
+    listadoPuro
+  )
   const executionMode = aiNeeded ? 'IA' : 'DIRECTO'
   const priorityLevel = derivePriorityLevel(normalizedRequest.estimatedComplexity)
   const decisionConfidence = estimateDecisionConfidence(

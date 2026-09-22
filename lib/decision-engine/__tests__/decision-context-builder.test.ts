@@ -11,6 +11,8 @@ function fakeNormalizedRequest(overrides: Partial<NormalizedRequest> = {}): Norm
     normalizedIntent: 'texto de prueba',
     retrievalQuery: 'texto de prueba',
     requestsFullCatalog: false,
+
+    requestsPlainListing: false,
     requestType: 'RECONOCIDA',
     requestedKnowledgeDomains: ['Obras'],
     estimatedComplexity: 'media',

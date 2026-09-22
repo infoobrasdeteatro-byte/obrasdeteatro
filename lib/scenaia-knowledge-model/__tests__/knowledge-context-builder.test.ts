@@ -35,6 +35,8 @@ function fakeRequest(domains: NormalizedRequest['requestedKnowledgeDomains']): N
     normalizedIntent: 'texto de prueba',
     retrievalQuery: 'texto de prueba',
     requestsFullCatalog: false,
+
+    requestsPlainListing: false,
     requestType: domains.length > 0 ? 'RECONOCIDA' : 'NO_RECONOCIDA',
     requestedKnowledgeDomains: domains,
     estimatedComplexity: 'baja',

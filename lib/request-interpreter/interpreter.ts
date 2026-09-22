@@ -4,6 +4,7 @@ import { normalizeText } from './normalize-text'
 import { detectKnowledgeDomains } from './domain-rules'
 import { detectRequestType } from './request-type-rules'
 import { detectFullCatalogRequest } from './full-catalog-rules'
+import { detectPlainListingRequest } from './plain-listing-rules'
 
 function estimateComplexity(domainsFound: number, textLength: number): EstimatedComplexity {
   if (domainsFound >= 2 || textLength > 200) return 'alta'
@@ -152,6 +153,9 @@ export function normalizeRequest(
   // recuperacion se hace solo sobre el texto de este turno.
   const requestsFullCatalog = detectFullCatalogRequest(normalizedIntent)
   const retrievalQuery = requestsFullCatalog ? normalizedIntent : conversationQuery
+  // SCENAIA-004 §4.1 (a) y (b): lo unico que puede decidirse leyendo el
+  // texto. No declara que el turno vaya a resolverse sin IA.
+  const requestsPlainListing = detectPlainListingRequest(normalizedIntent)
   const requestedKnowledgeDomains = resolveDomains(ownDomains, domainsFromHistory, previousDomain)
   const requestType = detectRequestType(requestedKnowledgeDomains.length)
   const detectedAmbiguities = detectAmbiguities(originalRequest, requestedKnowledgeDomains, requestType)
@@ -162,6 +166,7 @@ export function normalizeRequest(
     normalizedIntent,
     retrievalQuery,
     requestsFullCatalog,
+    requestsPlainListing,
     requestType,
     requestedKnowledgeDomains,
     estimatedComplexity: estimateComplexity(requestedKnowledgeDomains.length, originalRequest.length),
