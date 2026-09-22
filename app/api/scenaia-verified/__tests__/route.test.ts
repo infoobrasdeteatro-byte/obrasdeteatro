@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { coordinateFlow } from '@/lib/verified/orquestador'
@@ -823,5 +823,88 @@ describe('POST /api/scenaia-verified — cotas de entrada (H1/H2)', () => {
     expect(res.status).toBe(200)
     expect(historialRecibido()).toEqual(history)
     expect(vi.mocked(coordinateFlow).mock.calls[0][2]).toBe('¿y para dos personas?')
+  })
+})
+
+/**
+ * ARREGLO D, PR 2 -- SOLO TRANSPORTE.
+ *
+ * Lo que estas pruebas custodian no es un comportamiento nuevo, sino que no
+ * haya ninguno: la carga es la misma con el interruptor encendido y
+ * apagado, y apagado la respuesta es la de siempre byte a byte.
+ */
+describe('POST /api/scenaia-verified — canal de respuesta (SCENAIA_STREAMING)', () => {
+  const RESPUESTA = {
+    responseType: 'RESPONSE_SUCCESS',
+    responseContent: 'Estas son las obras del catalogo.',
+    responseMetadata: {},
+    responseWarnings: [],
+    responseTimestamp: 'T',
+  }
+  const VALOR_ORIGINAL = process.env.SCENAIA_STREAMING
+
+  beforeEach(() => {
+    delete process.env.SCENAIA_STREAMING
+    mockAuthenticatedUser('profile-1')
+    vi.mocked(coordinateFlow).mockResolvedValue({ responseContext: RESPUESTA, conversationState: ESTADO_NUEVO } as never)
+  })
+
+  afterEach(() => {
+    if (VALOR_ORIGINAL === undefined) delete process.env.SCENAIA_STREAMING
+    else process.env.SCENAIA_STREAMING = VALOR_ORIGINAL
+  })
+
+  it('APAGADO: la respuesta es exactamente la de siempre, byte a byte', async () => {
+    const res = await POST(buildRequest({ message: 'dame una lista de todas las obras' }))
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('application/json')
+    // El cuerpo literal, no el objeto ya parseado: lo que se custodia es que
+    // no cambie ni un byte de lo que hoy recibe el cliente.
+    expect(await res.text()).toBe(JSON.stringify({ ...RESPUESTA, conversationState: ESTADO_NUEVO }))
+  })
+
+  it('ENCENDIDO: mismo contenido, otro canal -- una sola linea con el evento final', async () => {
+    process.env.SCENAIA_STREAMING = '1'
+
+    const res = await POST(buildRequest({ message: 'dame una lista de todas las obras' }))
+    const lineas = (await res.text()).split('\n').filter((linea) => linea !== '')
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('application/x-ndjson; charset=utf-8')
+    expect(lineas).toHaveLength(1)
+    expect(JSON.parse(lineas[0])).toEqual({
+      event: 'final',
+      data: { ...RESPUESTA, conversationState: ESTADO_NUEVO },
+    })
+  })
+
+  it('la carga es IDENTICA en los dos canales: solo cambia como viaja', async () => {
+    const apagada = await (await POST(buildRequest({ message: 'hola' }))).text()
+
+    process.env.SCENAIA_STREAMING = '1'
+    const encendida = await (await POST(buildRequest({ message: 'hola' }))).text()
+
+    expect(JSON.parse(encendida.trim()).data).toEqual(JSON.parse(apagada))
+  })
+
+  it('el interruptor NO toca el turno: el flujo recibe lo mismo en los dos casos', async () => {
+    await POST(buildRequest({ message: 'hola' }))
+    const apagado = vi.mocked(coordinateFlow).mock.calls[0]
+
+    vi.mocked(coordinateFlow).mockClear()
+    process.env.SCENAIA_STREAMING = '1'
+    await POST(buildRequest({ message: 'hola' }))
+
+    expect(vi.mocked(coordinateFlow).mock.calls[0]).toEqual(apagado)
+  })
+
+  it('ENCENDIDO no cambia las denegaciones: siguen siendo JSON con su estado', async () => {
+    process.env.SCENAIA_STREAMING = '1'
+
+    const res = await POST(buildRequest({ message: '' }))
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'Falta el campo "message"' })
   })
 })

@@ -5,6 +5,7 @@ import type { ConversationTurn } from '@/lib/verified/orquestador'
 import { parseConversationState } from '@/lib/conversation-state'
 import { resolveScenaiaAccess, accessDenialStatus } from '@/lib/auth/scenaia-access'
 import { TEXTO_ERROR_GENERICO } from '@/app/scenaia/turn-notice'
+import { streamingActivado, respuestaNdjson } from './ndjson'
 import {
   MAX_USER_PROMPT_CHARACTERS,
   MAX_HISTORY_TURNS,
@@ -208,7 +209,15 @@ async function atenderPeticion(req: NextRequest) {
 
   // El estado viaja junto a la respuesta, no dentro de ella: `ResponseContext`
   // no gana ningun campo (PRD-001, ver TurnOutcome en el Orquestador).
-  return NextResponse.json({ ...responseContext, conversationState: nextState })
+  const carga = { ...responseContext, conversationState: nextState }
+
+  // Arreglo D, PR 2 -- SOLO TRANSPORTE. La carga es la misma con el
+  // interruptor encendido y apagado; lo unico que cambia es el canal por el
+  // que sale. Apagado, esta linea no se ejecuta y la respuesta es la de
+  // siempre, byte a byte.
+  if (streamingActivado()) return respuestaNdjson(carga)
+
+  return NextResponse.json(carga)
 }
 
 /**
