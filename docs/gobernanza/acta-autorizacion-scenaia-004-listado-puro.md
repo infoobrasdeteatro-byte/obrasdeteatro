@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-004
-**Fecha:** ____________
-**Estado resultante:** PENDIENTE DE AUTORIZACIÓN — LA IMPLEMENTACIÓN NO ESTÁ AUTORIZADA
+**Fecha:** 2026-09-22
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-22):** `SCENAIA-004` no existía en documentación, código, migraciones, material archivado bajo `_incidente-trazabilidad-2026-07-19/`, mensajes de commit de ninguna rama, objetos versionados de ninguna rama, el stash de respaldo `refs/backup/stash-scenaia-bloque-3` (`f6f2caf`) ni el respaldo permanente de `Documentos\respaldos\obrasdeteatro-2026-09-19`. El expediente más alto en uso era `SCENAIA-003`.
 
@@ -94,16 +94,18 @@ Lo que la decisión incluye:
 
 ### 8. Veredicto
 
-**PENDIENTE.** Esta Acta no autoriza nada por sí misma: revisa una decisión vigente y la somete a Dirección. Sin firma, la regla actual sigue intacta.
+**AUTORIZADA CON CONDICIONES.** Dirección revisa la regla vigente de `needsAI()` y autoriza el listado puro sin IA en los términos del §4, con la paginación y la reapertura acotada de Repository Layer incluidas en el alcance (§4.4), sujeto a las condiciones del §7 y a las recogidas en el §9. Fuera de la definición cerrada del §4.1, la regla anterior sigue intacta.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-_______________________________________________________________
+Se autoriza el listado puro sin IA para peticiones que cumplan la definición cerrada del §4.1, incluida la paginación y la reapertura acotada de Repository Layer según §4.4.
 
-**Firma:** ____________________________   **Fecha:** ____________
+Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta que la revise expresamente, con el mismo procedimiento que esta Acta ha seguido para revisar la regla anterior de `needsAI`. Ninguna cifra, umbral o alcance de este documento (tamaño de página, definición de "listado puro", límite del catálogo, etc.) se considera fijo si la evolución de la plataforma lo justifica.
+
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-22
