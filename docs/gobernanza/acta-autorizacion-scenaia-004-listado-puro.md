@@ -79,7 +79,7 @@ Lo que la decisión incluye:
 
 1. **Respuesta menos natural** en las peticiones afectadas. Acotado por §4.1: solo alcanza a quien pide explícitamente una lista.
 2. **Regla demasiado amplia**, que robe a la IA peticiones que sí la necesitan. Acotado por la condición (b) y por el criterio "ante la duda, IA", que debe quedar cubierto por pruebas antes de autorizar.
-3. **Reapertura de Repository Layer** para el orden y la paginación. Si Dirección no la autoriza, la paginación queda fuera de alcance y el listado se limita a las obras que la recuperación ya devuelve.
+3. **Desbordamiento de la reapertura de Repository Layer.** La reapertura ya está autorizada en §4.4, así que el riesgo no es que se deniegue, sino que la implementación aproveche la puerta abierta y toque el componente más allá de lo acotado: **orden estable y desplazamiento en `listPublishedWorks`, y nada más**. Cualquier otro cambio —una consulta nueva, un accesor nuevo, una firma distinta, un filtro adicional— queda fuera de esta Acta aunque parezca conveniente. Se acota con dos comprobaciones: **revisión del diff de Repository Layer contra esas dos capacidades exclusivamente**, antes de fusionar, y las **pruebas sobre el catálogo simulado (§7, condición 8)**, que verifican que lo tocado hace lo que debe —orden estable entre páginas y recuento correcto— bajo la carga real prevista.
 
 ### 7. Condiciones de la futura implementación
 
