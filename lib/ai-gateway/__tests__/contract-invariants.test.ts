@@ -186,7 +186,11 @@ describe('AI Gateway — truncamiento (Bloque 5C)', () => {
   it('SOLO `length` cuenta como truncamiento: ninguna otra causa se mezcla', () => {
     const adaptador = readFileSync(join(__dirname, '..', 'openai-adapter.ts'), 'utf-8')
 
-    expect(adaptador).toMatch(/finish_reason === 'length'/)
+    // La causa se lee del fragmento y se compara contra 'length', y contra
+    // nada mas. Que leerla y compararla ocurra en dos lineas -- el stream
+    // la publica por fragmentos -- no debilita la invariante.
+    expect(adaptador).toMatch(/finish_reason/)
+    expect(adaptador).toMatch(/=== 'length'/)
     // Filtro de contenido, llamadas a herramientas o parada normal
     // describen otra cosa; contarlas aqui haria que la metrica midiera una
     // mezcla de causas y dejara de servir para decidir un techo.

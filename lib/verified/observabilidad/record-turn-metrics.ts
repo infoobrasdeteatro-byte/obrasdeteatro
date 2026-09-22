@@ -104,6 +104,22 @@ export async function recordTurnMetrics(profileId: string, observation: TurnObse
     },
   ]
 
+  // Solo en los turnos que llegaron al proveedor. Un turno determinista o
+  // denegado no emite esta metrica: no hubo primer fragmento, y un cero
+  // afirmaria una espera instantanea que nunca ocurrio.
+  //
+  // Se compara con `scenaia.request.duration_ms`, ya emitida arriba con el
+  // mismo `requestId`: la diferencia entre las dos es lo que el usuario
+  // dejaria de esperar si el texto se mostrara segun llega.
+  if (observation.firstTokenLatencyMs !== null) {
+    metricas.push({
+      name: 'scenaia.ai.first_token_ms',
+      value: observation.firstTokenLatencyMs,
+      unit: 'ms',
+      tags: { ...contexto, responseType: observation.responseType },
+    })
+  }
+
   // Fase 1 -- solo cuando hay un vacio que explicar. Un turno con
   // resultados no emite esta metrica: la ausencia de la metrica ES la
   // afirmacion de que no hubo vacio, y no hace falta un valor "no aplica".

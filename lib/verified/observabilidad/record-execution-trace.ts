@@ -4,6 +4,7 @@ import type { ExecutionAudit, ExecutionTraceContext } from './types'
 
 type NumericAuditField =
   | 'executionLatencyMs'
+  | 'firstTokenLatencyMs'
   | 'tokensConsumed'
   | 'inputTokens'
   | 'outputTokens'
@@ -18,6 +19,12 @@ type NumericAuditField =
  */
 const NUMERIC_FIELDS: Array<{ key: NumericAuditField; name: string; unit: string }> = [
   { key: 'executionLatencyMs', name: 'ai_gateway.execution_latency_ms', unit: 'ms' },
+  // Entra por el mecanismo existente, sin rama propia: `null` -- sin
+  // ejecucion, o adaptador que no emite por fragmentos -- no emite metrica,
+  // igual que el resto. Junto a `execution_latency_ms` da la diferencia
+  // exacta entre lo que el usuario espera hoy y lo que esperaria si el
+  // texto se mostrara segun llega.
+  { key: 'firstTokenLatencyMs', name: 'ai_gateway.first_token_latency_ms', unit: 'ms' },
   { key: 'tokensConsumed', name: 'ai_gateway.tokens_consumed', unit: 'tokens' },
   { key: 'inputTokens', name: 'ai_gateway.input_tokens', unit: 'tokens' },
   { key: 'outputTokens', name: 'ai_gateway.output_tokens', unit: 'tokens' },

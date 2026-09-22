@@ -20,6 +20,18 @@ export interface ProviderExecutionOutcome {
   readonly inputTokens: number | null
   readonly outputTokens: number | null
   /**
+   * Milisegundos hasta el PRIMER fragmento con texto del proveedor.
+   *
+   * Es el dato que decide si merece la pena emitir la respuesta por
+   * fragmentos: mide lo que el usuario esperaria si se le mostrara el
+   * texto segun llega, frente a `latencyMs`, que mide lo que espera hoy.
+   *
+   * `null` cuando no puede observarse -- un adaptador que no emita por
+   * fragmentos, o una ejecucion sin texto alguno. Nunca cero: ausencia de
+   * dato, no instante inmediato.
+   */
+  readonly firstTokenLatencyMs: number | null
+  /**
    * El proveedor detuvo la generacion al alcanzar el techo, en vez de
    * terminar de decir lo que tenia que decir (Bloque 5C).
    *

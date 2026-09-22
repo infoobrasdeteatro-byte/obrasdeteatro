@@ -159,12 +159,20 @@ describe('coordinateFlow', () => {
       isEmptyResult: false,
       responseType: 'RESPONSE_SUCCESS',
       durationMs: expect.any(Number),
+      // El audit simulado de esta prueba no declara latencia de primer
+      // fragmento: el Orquestador la transporta tal cual, sin inventarla.
+      firstTokenLatencyMs: null,
       settlementAnomaly: null,
     })
 
+    // Se miran los VALORES, no el objeto entero: lo que no puede escaparse
+    // es el texto de la peticion ni el de la respuesta, y un nombre de
+    // campo que por casualidad contenga esas letras -- `firstTokenLatencyMs`
+    // contiene "ok" dentro de "Token" -- no es una fuga de nada.
     const [, observacion] = vi.mocked(recordTurnMetrics).mock.calls[0]
-    expect(JSON.stringify(observacion)).not.toContain('hola')
-    expect(JSON.stringify(observacion)).not.toContain('ok')
+    const valores = JSON.stringify(Object.values(observacion))
+    expect(valores).not.toContain('hola')
+    expect(valores).not.toContain('ok')
   })
 
   it('Fase 0: un fallo de observabilidad no altera la respuesta ya construida', async () => {

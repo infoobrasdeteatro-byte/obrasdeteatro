@@ -15,6 +15,7 @@ const EMPTY_AUDIT: ExecutionAudit = {
   providerIdentifier: null,
   providerModel: null,
   executionLatencyMs: null,
+  firstTokenLatencyMs: null,
   tokensConsumed: null,
   inputTokens: null,
   outputTokens: null,
@@ -30,6 +31,7 @@ describe('recordExecutionTrace', () => {
       providerIdentifier: 'anthropic',
       providerModel: 'claude-sonnet-5',
       executionLatencyMs: 340,
+      firstTokenLatencyMs: null,
       tokensConsumed: 1200,
       inputTokens: 900,
       outputTokens: 300,
@@ -71,6 +73,7 @@ describe('recordExecutionTrace', () => {
     await recordExecutionTrace('profile-1', {
       ...EMPTY_AUDIT,
       executionLatencyMs: 100,
+      firstTokenLatencyMs: null,
       truncated: null, maxOutputTokens: null, technicalMetadata: 'texto libre',
     })
 
@@ -93,6 +96,7 @@ describe('recordExecutionTrace', () => {
     const result = await recordExecutionTrace('profile-1', {
       ...EMPTY_AUDIT,
       executionLatencyMs: 100,
+      firstTokenLatencyMs: null,
       tokensConsumed: 50,
     })
 
@@ -147,6 +151,7 @@ describe('recordExecutionTrace — tarificacion de la ejecucion (IA-006)', () =>
     providerIdentifier: 'proveedor-a',
     providerModel: 'modelo-rapido',
     executionLatencyMs: 900,
+    firstTokenLatencyMs: null,
     tokensConsumed: 1500,
     inputTokens: 1000,
     outputTokens: 500,
@@ -212,6 +217,7 @@ describe('recordExecutionTrace — truncamiento (Bloque 5C)', () => {
       providerIdentifier: 'openai',
       providerModel: 'gpt-4o-mini',
       executionLatencyMs: 120,
+      firstTokenLatencyMs: null,
       tokensConsumed: 1000,
       inputTokens: 900,
       outputTokens: 100,
@@ -289,6 +295,7 @@ describe('recordExecutionTrace — techo aplicado (F5F-2)', () => {
       providerIdentifier: 'openai',
       providerModel: 'gpt-4o-mini',
       executionLatencyMs: 120,
+      firstTokenLatencyMs: null,
       tokensConsumed: 1000,
       inputTokens: 900,
       outputTokens: 100,
@@ -363,5 +370,27 @@ describe('recordExecutionTrace — techo aplicado (F5F-2)', () => {
     const identidades = vi.mocked(recordMetric).mock.calls.map((llamada) => llamada[1].tags?.requestId)
     expect(new Set(identidades).size).toBe(1)
     expect(identidades[0]).toBe('turno-1')
+  })
+})
+
+describe('recordExecutionTrace — latencia hasta el primer fragmento', () => {
+  beforeEach(() => {
+    vi.mocked(recordMetric).mockResolvedValue(true)
+  })
+
+  it('la registra como una metrica mas del audit, con su unidad', async () => {
+    await recordExecutionTrace('profile-1', { ...EMPTY_AUDIT, providerIdentifier: 'openai', providerModel: 'gpt-4o-mini', firstTokenLatencyMs: 640 })
+
+    const emitidas = vi.mocked(recordMetric).mock.calls.map(([, metric]) => metric)
+    const primera = emitidas.find((m) => m.name === 'ai_gateway.first_token_latency_ms')
+    expect(primera?.value).toBe(640)
+    expect(primera?.unit).toBe('ms')
+  })
+
+  it('sin ejecucion no emite nada: la ausencia de la metrica es la afirmacion', async () => {
+    await recordExecutionTrace('profile-1', { ...EMPTY_AUDIT, providerIdentifier: 'openai', providerModel: 'gpt-4o-mini', firstTokenLatencyMs: null })
+
+    const emitidas = vi.mocked(recordMetric).mock.calls.map(([, metric]) => metric)
+    expect(emitidas.some((m) => m.name === 'ai_gateway.first_token_latency_ms')).toBe(false)
   })
 })
