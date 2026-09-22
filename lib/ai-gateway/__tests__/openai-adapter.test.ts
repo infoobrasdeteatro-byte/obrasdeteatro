@@ -18,6 +18,33 @@ function peticion(prompt: string, maxOutputTokens = 1024) {
   return { prompt, maxOutputTokens }
 }
 
+/**
+ * El adaptador consume la respuesta por fragmentos, asi que el doble del
+ * SDK tiene que entregar un iterable asincrono, no un objeto ya completo.
+ * `usage` viaja en un fragmento final sin `choices`, exactamente como lo
+ * publica OpenAI con `stream_options: { include_usage: true }`.
+ */
+function streamDe(
+  textos: readonly string[],
+  opciones: { finishReason?: string | null; usage?: Record<string, number> | null } = {}
+) {
+  const { finishReason = 'stop', usage = { total_tokens: 1 } } = opciones
+  const fragmentos: unknown[] = [
+    // El proveedor abre con un fragmento de rol, SIN texto: es el que
+    // distingue 'ha empezado a responder' de 'ha abierto la conexion'.
+    { choices: [{ delta: { role: 'assistant' }, finish_reason: null }] },
+    ...textos.map((texto) => ({ choices: [{ delta: { content: texto }, finish_reason: null }] })),
+    { choices: [{ delta: {}, finish_reason: finishReason }] },
+  ]
+  if (usage !== null) fragmentos.push({ choices: [], usage })
+
+  return {
+    async *[Symbol.asyncIterator]() {
+      for (const fragmento of fragmentos) yield fragmento
+    },
+  }
+}
+
 describe('openaiAdapter', () => {
   beforeEach(async () => {
     vi.resetModules()
@@ -34,10 +61,7 @@ describe('openaiAdapter', () => {
   })
 
   it('normaliza una respuesta exitosa al formato interno, sin exponer la estructura del SDK', async () => {
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: 'respuesta generada' } }],
-      usage: { total_tokens: 123 },
-    })
+    mockCreate.mockResolvedValue(streamDe(['respuesta generada'], { usage: { total_tokens: 123 } }))
 
     const { openaiAdapter } = await import('../openai-adapter')
     const outcome = await openaiAdapter.execute(peticion('hola'))
@@ -49,7 +73,7 @@ describe('openaiAdapter', () => {
   })
 
   it('usa el modelo por defecto cuando OPENAI_MODEL no está configurado', async () => {
-    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'ok' } }], usage: { total_tokens: 1 } })
+    mockCreate.mockResolvedValue(streamDe(['ok'], { usage: { total_tokens: 1 } }))
 
     const { openaiAdapter } = await import('../openai-adapter')
     const outcome = await openaiAdapter.execute(peticion('hola'))
@@ -60,7 +84,7 @@ describe('openaiAdapter', () => {
 
   it('usa el modelo de OPENAI_MODEL cuando está configurado, sin codificarlo en la lógica', async () => {
     process.env.OPENAI_MODEL = 'modelo-configurado-de-prueba'
-    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'ok' } }], usage: { total_tokens: 1 } })
+    mockCreate.mockResolvedValue(streamDe(['ok'], { usage: { total_tokens: 1 } }))
 
     const { openaiAdapter } = await import('../openai-adapter')
     const outcome = await openaiAdapter.execute(peticion('hola'))
@@ -79,7 +103,7 @@ describe('openaiAdapter', () => {
   })
 
   it('reutiliza una única instancia del cliente entre llamadas (cliente singleton)', async () => {
-    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'ok' } }], usage: { total_tokens: 1 } })
+    mockCreate.mockResolvedValue(streamDe(['ok'], { usage: { total_tokens: 1 } }))
     const OpenAIConstructor = (await import('openai')).default
 
     const { openaiAdapter } = await import('../openai-adapter')
@@ -90,13 +114,14 @@ describe('openaiAdapter', () => {
   })
 
   it('nunca expone contenido del prompt en el resultado más allá del propio contenido generado', async () => {
-    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'respuesta' } }], usage: { total_tokens: 5 } })
+    mockCreate.mockResolvedValue(streamDe(['respuesta'], { usage: { total_tokens: 5 } }))
 
     const { openaiAdapter } = await import('../openai-adapter')
     const outcome = await openaiAdapter.execute(peticion('prompt secreto del usuario'))
 
     expect(Object.keys(outcome).sort()).toEqual([
       'content',
+      'firstTokenLatencyMs',
       'inputTokens',
       'latencyMs',
       'maxOutputTokens',
@@ -135,7 +160,7 @@ describe('openaiAdapter', () => {
 
   it('construye el cliente con normalidad cuando OPENAI_API_KEY tiene un valor no vacío', async () => {
     process.env.OPENAI_API_KEY = 'test-openai-key'
-    mockCreate.mockResolvedValue({ choices: [{ message: { content: 'ok' } }], usage: { total_tokens: 1 } })
+    mockCreate.mockResolvedValue(streamDe(['ok'], { usage: { total_tokens: 1 } }))
 
     const { openaiAdapter } = await import('../openai-adapter')
     const outcome = await openaiAdapter.execute(peticion('hola'))
@@ -158,10 +183,7 @@ describe('openaiAdapter — techo de generacion (Bloque 1)', () => {
     mockCreate.mockReset()
     delete process.env.OPENAI_MODEL
     process.env.OPENAI_API_KEY = 'test-openai-key'
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: 'ok' } }],
-      usage: { total_tokens: 10, prompt_tokens: 8, completion_tokens: 2 },
-    })
+    mockCreate.mockResolvedValue(streamDe(['ok'], { usage: { total_tokens: 10, prompt_tokens: 8, completion_tokens: 2 } }))
   })
 
   it('traslada al SDK el techo recibido, sin alterarlo', async () => {
@@ -218,10 +240,10 @@ describe('openaiAdapter — truncamiento (Bloque 5C)', () => {
   })
 
   function respuesta(finishReason: string | undefined) {
-    return {
-      choices: [{ message: { content: 'respuesta' }, finish_reason: finishReason }],
+    return streamDe(['respuesta'], {
+      finishReason: finishReason ?? null,
       usage: { total_tokens: 5, prompt_tokens: 3, completion_tokens: 2 },
-    }
+    })
   }
 
   it('finish_reason="length" es truncamiento', async () => {
@@ -252,10 +274,7 @@ describe('openaiAdapter — truncamiento (Bloque 5C)', () => {
   it('el contenido generado llega INTACTO aunque este truncado', async () => {
     // Se avisa de que falta texto; nunca se altera, recorta ni completa el
     // que si llego.
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: 'una frase a medio ter' }, finish_reason: 'length' }],
-      usage: { total_tokens: 5 },
-    })
+    mockCreate.mockResolvedValue(streamDe(['una frase a medio ter'], { finishReason: 'length', usage: { total_tokens: 5 } }))
     const { openaiAdapter } = await import('../openai-adapter')
 
     const outcome = await openaiAdapter.execute(peticion('prompt del usuario'))
@@ -291,10 +310,7 @@ describe('openaiAdapter — techo aplicado (F5F-2)', () => {
     vi.resetModules()
     mockCreate.mockReset()
     process.env.OPENAI_API_KEY = 'test-openai-key'
-    mockCreate.mockResolvedValue({
-      choices: [{ message: { content: 'respuesta' }, finish_reason: 'stop' }],
-      usage: { total_tokens: 5, prompt_tokens: 3, completion_tokens: 2 },
-    })
+    mockCreate.mockResolvedValue(streamDe(['respuesta'], { usage: { total_tokens: 5, prompt_tokens: 3, completion_tokens: 2 } }))
   })
 
   it('devuelve el techo que recibio, sin alterarlo', async () => {
@@ -331,5 +347,84 @@ describe('openaiAdapter — techo aplicado (F5F-2)', () => {
 
     expect(codigo).not.toMatch(/max_completion_tokens|max_tokens|finish_reason|openai/i)
     expect(codigo).toMatch(/readonly maxOutputTokens: number \| null/)
+  })
+})
+
+/**
+ * La medida que justifica consumir la respuesta por fragmentos: cuanto
+ * tarda el proveedor en decir su primera palabra. Con la respuesta
+ * completa ese instante no consta en ninguna parte.
+ */
+describe('openaiAdapter — latencia hasta el primer fragmento', () => {
+  beforeEach(async () => {
+    vi.resetModules()
+    mockCreate.mockReset()
+    process.env.OPENAI_API_KEY = 'test-openai-key'
+  })
+
+  it('pide el stream Y el desglose de tokens: sin include_usage no habria coste que liquidar', async () => {
+    mockCreate.mockResolvedValue(streamDe(['ok']))
+    const { openaiAdapter } = await import('../openai-adapter')
+
+    await openaiAdapter.execute(peticion('hola'))
+
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ stream: true, stream_options: { include_usage: true } })
+    )
+  })
+
+  it('el texto se reensambla completo: quien invoca recibe lo mismo que antes', async () => {
+    mockCreate.mockResolvedValue(streamDe(['Estas son ', 'las obras ', 'del catalogo.']))
+    const { openaiAdapter } = await import('../openai-adapter')
+
+    const outcome = await openaiAdapter.execute(peticion('hola'))
+
+    expect(outcome.content).toBe('Estas son las obras del catalogo.')
+  })
+
+  it('mide el primer fragmento CON TEXTO, no la apertura del stream', async () => {
+    mockCreate.mockResolvedValue(streamDe(['hola']))
+    const { openaiAdapter } = await import('../openai-adapter')
+
+    const outcome = await openaiAdapter.execute(peticion('hola'))
+
+    expect(typeof outcome.firstTokenLatencyMs).toBe('number')
+    expect(outcome.firstTokenLatencyMs).toBeLessThanOrEqual(outcome.latencyMs)
+  })
+
+  it('sin ningun fragmento con texto, la latencia es null: no se afirma un instante que no ocurrio', async () => {
+    mockCreate.mockResolvedValue(streamDe([]))
+    const { openaiAdapter } = await import('../openai-adapter')
+
+    const outcome = await openaiAdapter.execute(peticion('hola'))
+
+    expect(outcome.content).toBe('')
+    expect(outcome.firstTokenLatencyMs).toBeNull()
+  })
+
+  it('el desglose de tokens llega del fragmento final, intacto', async () => {
+    mockCreate.mockResolvedValue(
+      streamDe(['ok'], { usage: { total_tokens: 42, prompt_tokens: 30, completion_tokens: 12 } })
+    )
+    const { openaiAdapter } = await import('../openai-adapter')
+
+    const outcome = await openaiAdapter.execute(peticion('hola'))
+
+    expect(outcome.tokensConsumed).toBe(42)
+    expect(outcome.inputTokens).toBe(30)
+    expect(outcome.outputTokens).toBe(12)
+  })
+
+  it('un fallo a mitad del stream se normaliza a ProviderAdapterError, como cualquier otro', async () => {
+    mockCreate.mockResolvedValue({
+      async *[Symbol.asyncIterator]() {
+        yield { choices: [{ delta: { content: 'empieza' }, finish_reason: null }] }
+        throw new Error('se corto el stream')
+      },
+    })
+    const { openaiAdapter } = await import('../openai-adapter')
+    const { ProviderAdapterError } = await import('../provider-adapter')
+
+    await expect(openaiAdapter.execute(peticion('hola'))).rejects.toBeInstanceOf(ProviderAdapterError)
   })
 })

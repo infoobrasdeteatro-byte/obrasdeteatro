@@ -18,6 +18,8 @@ const EMPTY_AUDIT: ExecutionAudit = {
   providerIdentifier: null,
   providerModel: null,
   executionLatencyMs: null,
+  // Sin ejecucion no hubo primer fragmento que cronometrar.
+  firstTokenLatencyMs: null,
   tokensConsumed: null,
   realExecutionCost: null,
   // No hubo ejecucion: no se trunco nada, pero tampoco se completo nada.
@@ -115,6 +117,8 @@ export async function executeAIRequest(
         providerIdentifier: adapter.providerId,
         providerModel: outcome.model,
         executionLatencyMs: outcome.latencyMs,
+        // Del OUTCOME, como el resto: lo observado en esta ejecucion.
+        firstTokenLatencyMs: outcome.firstTokenLatencyMs,
         tokensConsumed: outcome.tokensConsumed,
         // IA-006: el desglose que el proveedor publica. El COSTE no se
         // calcula aqui: AI Gateway "invoca, nunca selecciona" y no puede

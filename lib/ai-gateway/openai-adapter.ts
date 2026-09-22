@@ -32,13 +32,31 @@ function resolveModel(): string {
   return process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL
 }
 
+/**
+ * La llamada se hace en streaming y el texto se REENSAMBLA aqui: quien
+ * invoca recibe exactamente lo que recibia antes, una respuesta completa.
+ *
+ * Lo unico que aporta el streaming en esta version es una medida que sin el
+ * no existe: cuanto tarda el proveedor en emitir su primer fragmento. Es el
+ * dato que decide si un streaming real compensa, y medirlo con la respuesta
+ * completa es imposible -- ese instante no consta en ninguna parte.
+ *
+ * `include_usage` es obligatorio: sin el, un stream no publica `usage`, y
+ * sin `usage` no hay `inputTokens` ni `outputTokens`. La liquidacion los
+ * necesita -- sin ellos, `resolveSettlementCost` cobra lo reservado en vez
+ * del coste real.
+ */
 async function execute(request: ProviderExecutionRequest): Promise<ProviderExecutionOutcome> {
   const model = resolveModel()
   const startedAt = Date.now()
 
-  let completion
+  const fragmentos: string[] = []
+  let firstTokenLatencyMs: number | null = null
+  let finishReason: string | null = null
+  let usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null = null
+
   try {
-    completion = await getClient().chat.completions.create({
+    const stream = await getClient().chat.completions.create({
       model,
       messages: [{ role: 'user', content: request.prompt }],
       // Techo de generacion recibido por contrato. Este archivo no elige
@@ -46,7 +64,22 @@ async function execute(request: ProviderExecutionRequest): Promise<ProviderExecu
       // alguna vez apareciera aqui una cifra, seria una politica de coste
       // oculta dentro de la integracion de un proveedor concreto.
       max_completion_tokens: request.maxOutputTokens,
+      stream: true,
+      stream_options: { include_usage: true },
     })
+
+    for await (const chunk of stream) {
+      const texto = chunk.choices[0]?.delta?.content
+      if (texto) {
+        // El PRIMER fragmento con texto, no el primer mensaje del stream:
+        // el proveedor abre con un fragmento de rol, sin contenido, y
+        // medirlo diria que ya hay respuesta cuando todavia no hay ninguna.
+        firstTokenLatencyMs ??= Date.now() - startedAt
+        fragmentos.push(texto)
+      }
+      if (chunk.choices[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason
+      if (chunk.usage) usage = chunk.usage
+    }
   } catch (error) {
     throw new ProviderAdapterError(
       error instanceof Error ? error.message : 'Error desconocido del proveedor OpenAI'
@@ -54,19 +87,22 @@ async function execute(request: ProviderExecutionRequest): Promise<ProviderExecu
   }
 
   return {
-    content: completion.choices[0]?.message?.content ?? '',
+    content: fragmentos.join(''),
     model,
     latencyMs: Date.now() - startedAt,
-    tokensConsumed: completion.usage?.total_tokens ?? null,
+    // Ni cero ni la latencia total cuando no hubo ningun fragmento con
+    // texto: no se afirma un instante que no ocurrio.
+    firstTokenLatencyMs,
+    tokensConsumed: usage?.total_tokens ?? null,
     // El proveedor ya publicaba el desglose; hasta IA-006 se descartaba.
-    inputTokens: completion.usage?.prompt_tokens ?? null,
-    outputTokens: completion.usage?.completion_tokens ?? null,
+    inputTokens: usage?.prompt_tokens ?? null,
+    outputTokens: usage?.completion_tokens ?? null,
     // UNICAMENTE 'length'. 'stop' es un final normal; 'content_filter',
     // 'tool_calls' o cualquier otro valor describen otra cosa, y llamarles
     // truncamiento haria que la metrica midiera una mezcla de causas y
     // dejara de servir para decidir un techo. Ausente o desconocido => no
     // truncado: no se afirma un corte que no consta.
-    truncated: completion.choices[0]?.finish_reason === 'length',
+    truncated: finishReason === 'length',
     // LIMITACION DOCUMENTADA: la respuesta de Chat Completions no devuelve
     // `max_completion_tokens`. La API no publica ningun campo equivalente,
     // de modo que la unica fuente veraz disponible es el valor que este
