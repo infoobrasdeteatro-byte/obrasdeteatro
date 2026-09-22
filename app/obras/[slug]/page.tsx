@@ -4,14 +4,9 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import TopNav from '@/components/design-system/TopNav'
 import { COUNTRIES } from '@/lib/geo/countries'
+import { languageName } from '@/lib/geo/languages'
 import { WORK_RIGHTS_LABELS } from '@/lib/obras-system'
 import type { WorkRightsStatus } from '@/lib/obras-system'
-
-const IDIOMA_LABEL: Record<string, string> = {
-  es: 'Español', ca: 'Catalán', eu: 'Euskera', gl: 'Gallego',
-  va: 'Valenciano', en: 'Inglés', fr: 'Francés', pt: 'Portugués',
-  de: 'Alemán', it: 'Italiano',
-}
 
 const RIGHTS_DOT: Record<string, string> = {
   public_domain: 'obra-rights-dot--green',
@@ -246,7 +241,7 @@ export default async function ObraPublicaPage({ params }: Props) {
                       <div>
                         <p className="obra-data-label">Idioma</p>
                         <p className="obra-data-value">
-                          {IDIOMA_LABEL[obra.language] ?? obra.language}
+                          {languageName(obra.language)}
                         </p>
                       </div>
                     )}

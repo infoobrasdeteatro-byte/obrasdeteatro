@@ -237,8 +237,34 @@ describe('composePrompt — conocimiento estructurado (reconexion AE-CONV-04)', 
     const result = composePrompt(fakeNormalizedRequest(), contextWithEntities([{ domain: 'Obras', data: fakeWork() , provenance: { authority: 'CATALOGO_PROPIO' as const, sourceName: null, sourceUrl: null, observedAt: 'T', validUntil: null }, functions: [] }]))
 
     expect(result).toContain(
-      '- La casa de Bernarda Alba (autor: Federico García Lorca; genero: drama; ano: 1936; duracion: 110 min; reparto maximo: 8; idioma: es)'
+      '- La casa de Bernarda Alba (autor: Federico García Lorca; genero: drama; ano: 1936; duracion: 110 min; reparto maximo: 8; idioma: Español)'
     )
+  })
+
+  it('envia el nombre del idioma, no su codigo', () => {
+    const provenance = { authority: 'CATALOGO_PROPIO' as const, sourceName: null, sourceUrl: null, observedAt: 'T', validUntil: null }
+    const result = composePrompt(
+      fakeNormalizedRequest(),
+      contextWithEntities([
+        { domain: 'Obras', data: fakeWork(), provenance, functions: [] },
+        { domain: 'Obras', data: fakeWork({ id: 'w-2', title: "Teresa's Ecstasy", language: 'en' }), provenance, functions: [] },
+      ])
+    )
+
+    expect(result).toContain('idioma: Español')
+    expect(result).not.toContain('idioma: es')
+    expect(result).toContain('idioma: Inglés')
+    expect(result).not.toContain('idioma: en')
+  })
+
+  it('un codigo de idioma que no esta en la tabla se envia tal cual', () => {
+    const provenance = { authority: 'CATALOGO_PROPIO' as const, sourceName: null, sourceUrl: null, observedAt: 'T', validUntil: null }
+    const result = composePrompt(
+      fakeNormalizedRequest(),
+      contextWithEntities([{ domain: 'Obras', data: fakeWork({ language: 'xx' }), provenance, functions: [] }])
+    )
+
+    expect(result).toContain('idioma: xx)')
   })
 
   it('omite por completo todo atributo que sea null en el dato real -- nunca lo rellena ni lo aproxima', () => {

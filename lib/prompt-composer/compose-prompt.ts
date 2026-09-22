@@ -1,6 +1,7 @@
 import type { NormalizedRequest } from '@/lib/request-interpreter'
 import type { KnowledgeContext } from '@/lib/scenaia-knowledge-model'
 import { partiallyAppliedCriteriaNote, unfilteredCriteriaNote } from '@/lib/scenaia-knowledge-model'
+import { languageName } from '@/lib/geo/languages'
 
 /**
  * UX-001A (Sprint aprobado): un turno ya cerrado de la conversacion --
@@ -90,7 +91,7 @@ function attributesOf(entity: KnowledgeEntity): string[] {
     if (work.durationMinutes !== null) attributes.push(`duracion: ${work.durationMinutes} min`)
     if (work.castSizeMax !== null) attributes.push(`reparto maximo: ${work.castSizeMax}`)
     if (work.minAge !== null) attributes.push(`edad minima: ${work.minAge}`)
-    if (work.language !== null) attributes.push(`idioma: ${work.language}`)
+    if (work.language !== null) attributes.push(`idioma: ${languageName(work.language)}`)
     return attributes
   }
 
