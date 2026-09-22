@@ -257,6 +257,12 @@ describe('Accounting SQL — periodo y cuota (Bloque 5)', () => {
     .reverse()
     .map((fichero) => readFileSync(join(MIGRATIONS_DIR, fichero), 'utf-8'))
     .find((sql) => /function public\.accounting_verify_and_reserve\s*\(/.test(sql)) ?? ''
+  // La cuota puede cambiar en su propia migracion, sin rehacer la reserva,
+  // asi que su definicion vigente no tiene por que estar en el mismo fichero.
+  const SQL_CUOTA_VIGENTE = [...FICHEROS_ACCOUNTING]
+    .reverse()
+    .map((fichero) => readFileSync(join(MIGRATIONS_DIR, fichero), 'utf-8'))
+    .find((sql) => /function public\.accounting_cuota_ia_del_plan\s*\(/.test(sql)) ?? ''
 
   /*
    * Decision revertida el 2026-09-18. Antes: "SQL no conoce ninguna cuota:
@@ -275,7 +281,7 @@ describe('Accounting SQL — periodo y cuota (Bloque 5)', () => {
 
   it('las cuotas de la base coinciden con PLAN_AI_QUOTAS', () => {
     const cuotaSql = (plan: string) =>
-      SQL_VIGENTE.match(new RegExp(`when '${plan}'\\s+then (\\d+)`))?.[1]
+      SQL_CUOTA_VIGENTE.match(new RegExp(`when '${plan}'\\s+then (\\d+)`))?.[1]
     const cuotaTs = (plan: string) =>
       SUBSCRIPTION_SOURCE.match(new RegExp(`${plan}: \\{ kind: 'LIMITADO', creditsPerPeriod: (\\d+) \\}`))?.[1]
 
@@ -285,7 +291,7 @@ describe('Accounting SQL — periodo y cuota (Bloque 5)', () => {
     }
     // Empresas: sin techo en los dos lados.
     expect(SUBSCRIPTION_SOURCE).toMatch(/empresas:\s*\{\s*kind:\s*'ILIMITADO'\s*\}/)
-    expect(SQL_VIGENTE).not.toMatch(/when 'empresas'\s+then \d/)
+    expect(SQL_CUOTA_VIGENTE).not.toMatch(/when 'empresas'\s+then \d/)
   })
 
   it('solo service_role puede ejecutar las funciones accounting_*', () => {

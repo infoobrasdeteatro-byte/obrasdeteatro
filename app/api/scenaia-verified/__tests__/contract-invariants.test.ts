@@ -226,8 +226,8 @@ describe('Cotas de entrada de ScenaIA — H1/H2', () => {
       ['lib/ai-gateway/types.ts', /RESOLVER: 1024/],
       ['lib/decision-engine/operation.ts', /CARACTERES_POR_TOKEN = 3\b/],
       ['lib/repository-layer/subscription.ts', /creditsPerPeriod: 5\b/],
-      ['lib/repository-layer/subscription.ts', /creditsPerPeriod: 100\b/],
-      ['lib/repository-layer/subscription.ts', /creditsPerPeriod: 500\b/],
+      ['lib/repository-layer/subscription.ts', /creditsPerPeriod: 30\b/],
+      ['lib/repository-layer/subscription.ts', /creditsPerPeriod: 60\b/],
     ]
 
     for (const [ruta, patron] of economia) {
