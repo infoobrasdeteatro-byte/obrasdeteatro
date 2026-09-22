@@ -52,10 +52,15 @@ Si falla cualquiera, el turno se comporta exactamente como hoy.
 
 **4.3 Composición.** `direct-content-builder` pasa a componer fichas con los campos ya presentes en `KnowledgeContext`, sin recuperar nada nuevo y sin inventar ninguna etiqueta. El nombre del idioma sale de la tabla compartida `lib/geo/languages.ts`, ya en producción.
 
-**4.4 Paginación.** Diez fichas por turno, con recuento total y continuación explícita. Exige dos cosas que esta Acta somete a decisión por separado:
+**4.4 Paginación.** Diez fichas por turno, con recuento total y continuación explícita. **Queda dentro del alcance de esta Acta**, por decisión de Dirección, y no se tramita por separado.
 
-  - orden estable y desplazamiento en `listPublishedWorks` — **reapertura de Repository Layer**, hoy cerrado;
-  - una señal de continuación en la petición — **contrato congelado**.
+**Motivo de la decisión.** El catálogo de obras crecerá a varios cientos en un plazo máximo de tres meses. La recuperación devuelve hoy un máximo de 20 resultados por dominio, de modo que, sin paginación, el listado puro reproduciría exactamente el síntoma que motiva esta Acta —contenido incompleto entregado sin aviso— en cuanto se supere ese límite. Autorizar el listado sin su paginación sería sustituir un corte por otro.
+
+Lo que la decisión incluye:
+
+  - **orden estable y desplazamiento en `listPublishedWorks`: la reapertura de Repository Layer queda AUTORIZADA como parte de esta Acta**, acotada a esas dos capacidades y a ningún otro cambio del componente. No requiere trámite aparte;
+  - una señal de continuación en la petición — **contrato congelado**, que esta Acta abre con el mismo alcance acotado;
+  - recuento total en la respuesta, para que el usuario sepa siempre cuántas obras hay y cuántas está viendo.
 
 **4.5 Economía.** El turno no reserva ni liquida crédito alguno, por aplicación directa de la regla ya vigente: sin IA no hay operación económica. No se modifica `estimateCost`, ni Credit Manager, ni Accounting Engine.
 
@@ -85,6 +90,7 @@ Si falla cualquiera, el turno se comporta exactamente como hoy.
 5. Pruebas obligatorias: los casos que cambian, los que no, y los límites de la regla.
 6. Suite completa, `tsc`, lint y build en verde.
 7. Aceptación funcional de Dirección tras el despliegue.
+8. Las pruebas de la paginación deben ejecutarse sobre un **catálogo simulado de varios cientos de obras**, no solo sobre las 11 del catálogo actual: hay que comprobar el orden estable entre páginas y el recuento "mostrando X de N" bajo la carga real prevista (§4.4). Un catálogo de 11 obras cabe entero en una sola recuperación y no ejercita nada de lo que la paginación existe para resolver.
 
 ### 8. Veredicto
 
