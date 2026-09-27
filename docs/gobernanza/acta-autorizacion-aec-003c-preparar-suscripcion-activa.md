@@ -3,8 +3,8 @@
 **Proyecto:** Cuenta de usuario – ObrasDeTeatro®
 **Bloque:** Extinción de Identidad Digital (revisión de AEC-003B)
 **Expediente propuesto:** AEC-003C
-**Fecha:** ____________
-**Estado resultante:** PENDIENTE DE AUTORIZACIÓN — LA IMPLEMENTACIÓN NO ESTÁ AUTORIZADA
+**Fecha:** 2026-09-27
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-27):** `AEC-003C` no existía en documentación, código, migraciones, material archivado bajo `_incidente-trazabilidad-2026-07-19/`, mensajes de commit de ninguna rama, objetos versionados de ninguna rama, el stash ni las referencias de respaldo (`refs/backup`), ni el respaldo permanente de `Documentos\respaldos\obrasdeteatro-2026-09-19`. El expediente más alto en uso de la serie era `AEC-003B`.
 
@@ -94,18 +94,18 @@ Quien pulse «Confirmar» con una suscripción activa la cancelará **en el acto
 
 ### 8. Veredicto
 
-**PENDIENTE.** Sin firma, `preparar` sigue bloqueando a cualquier cuenta con suscripción activa, como hasta ahora.
+**AUTORIZADA CON CONDICIONES.** Dirección revisa la regla vigente de `preparar` y autoriza que `stripe_suscripcion` y `stripe_cobros_pendientes` dejen de bloquear el paso «Verificar», en los términos del §4, sujeto a las condiciones del §7 y a las recogidas en el §9. `credit_reservations` sigue bloqueando en `preparar` y `ejecutar/route.ts` no cambia. Hasta que la implementación cumpla esas condiciones y se despliegue, `preparar` sigue bloqueando a cualquier cuenta con suscripción activa, como hasta ahora.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-_______________________________________________________________
+Se autoriza el cambio en preparar/route.ts según los términos del §4, con el aviso de consentimiento del §4.3 como condición obligatoria e ineludible antes de fusionar, y con la validación completa en modo test del §7.5 (incluyendo "Confirmar") como último paso antes del despliegue.
 
-Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta que la revise expresamente, con el mismo procedimiento que esta Acta ha seguido para revisar la regla anterior de `preparar`. Ningún alcance de este documento (qué condiciones se consideran «resueltas en la ejecución», texto del aviso, etc.) se considera fijo si la evolución de la plataforma lo justifica.
+Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta que la revise expresamente, con el mismo procedimiento que esta Acta ha seguido para revisar la regla anterior de preparar. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ____________________________   **Fecha:** ____________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-27
