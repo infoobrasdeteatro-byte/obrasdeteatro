@@ -100,12 +100,18 @@ function obrasDe(knowledgeContext: KnowledgeContext): DatosDeObra[] {
     .filter((obra) => typeof obra?.title === 'string' && obra.title !== '')
 }
 
+/** SCENAIA-004B §4.6 -- pagina de continuacion vacia: el listado ya se entrego entero. */
+const SIN_MAS_OBRAS = 'No hay más obras en este listado.'
+
 export function buildDirectContent(knowledgeContext: KnowledgeContext): string | null {
   const { knowledgeDomains, knowledgeSummary, knowledgeLimitations } = knowledgeContext
 
   if (knowledgeDomains.length === 0) return null
 
   const obras = obrasDe(knowledgeContext)
+  // SCENAIA-004B §4.6: pagina del listado, si la hubo. Su ausencia deja el
+  // texto exactamente como era.
+  const pagina = knowledgeContext.worksPage ?? null
   let hayFichas = false
 
   const frases = knowledgeDomains.map((domain) => {
@@ -113,6 +119,12 @@ export function buildDirectContent(knowledgeContext: KnowledgeContext): string |
     const etiquetas = Array.isArray(posiblesEtiquetas) ? posiblesEtiquetas : []
     const criterioNoAplicado = knowledgeLimitations.includes(unfilteredCriteriaNote(domain))
     const donde = `En ${nombreDominio(domain)}`
+
+    // Una pagina de continuacion vacia no es "ningun resultado": las obras ya
+    // se mostraron en paginas anteriores. Decirlo asi seria falso.
+    if (domain === 'Obras' && pagina !== null && pagina.offset > 0 && obras.length === 0) {
+      return SIN_MAS_OBRAS
+    }
 
     if (etiquetas.length === 0) {
       return criterioNoAplicado
@@ -125,7 +137,19 @@ export function buildDirectContent(knowledgeContext: KnowledgeContext): string |
     // suelto. El resto de dominios conserva el formato de SCENAIA-003.
     if (domain === 'Obras' && obras.length > 0) {
       hayFichas = true
-      const listado = `he encontrado ${recuento(obras.length)}:\n${obras.map(ficha).join('\n')}`
+      const fichas = obras.map(ficha).join('\n')
+
+      // SCENAIA-004B §4.6: con pagina, el recuento es el TOTAL del listado,
+      // no las obras de esta pagina; con total no determinado, no se da
+      // ninguna cifra. Sin pagina, exactamente el texto de siempre.
+      if (pagina !== null && pagina.total === null) {
+        return criterioNoAplicado
+          ? `${donde} no he podido aplicar el criterio que pedías; aun así, estas son las obras encontradas:\n${fichas}`
+          : `${donde}, estas son las obras encontradas:\n${fichas}`
+      }
+
+      const encontradas = pagina !== null && pagina.total !== null ? pagina.total : obras.length
+      const listado = `he encontrado ${recuento(encontradas)}:\n${fichas}`
 
       return criterioNoAplicado
         ? `${donde} no he podido aplicar el criterio que pedías; aun así, ${listado}`

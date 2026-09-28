@@ -44,6 +44,16 @@ import type { KnowledgeCompleteness } from '@/lib/scenaia-knowledge-model'
  * intacta, y el valor por defecto `false` preserva a todo llamador que no
  * la declare.
  *
+ * CONTINUACION DE UN LISTADO (SCENAIA-004B §4.5, Adenda firmada el
+ * 2026-09-28): una pagina siguiente del listado puro NUNCA solicita IA,
+ * tampoco con cero resultados. Sin esta regla, una pagina mas alla del
+ * final dejaria de ser listado puro -- la condicion (e) exige al menos una
+ * obra -- y un simple "Ver mas" acabaria en la IA reservando creditos. Se
+ * comprueba ANTES que la completitud por la misma razon: ninguna señal del
+ * conocimiento puede convertir una continuacion en una llamada con coste.
+ * Llega ya resuelta en `listingContinuation`, como `plainListing`; el valor
+ * por defecto `false` preserva a todo llamador que no la declare.
+ *
  * Funcion pura y sincrona. No conoce credito, plan, proveedor ni coste:
  * Credit Manager sigue siendo posterior y obligatorio antes de cualquier
  * ejecucion con coste real.
@@ -51,8 +61,10 @@ import type { KnowledgeCompleteness } from '@/lib/scenaia-knowledge-model'
 export function needsAI(
   knowledgeCompleteness: KnowledgeCompleteness,
   retrievedEntityCount: number,
-  plainListing = false
+  plainListing = false,
+  listingContinuation = false
 ): boolean {
+  if (listingContinuation) return false
   if (knowledgeCompleteness !== 'completo') return true
   if (plainListing) return false
 
