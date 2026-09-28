@@ -267,3 +267,35 @@ describe('Frontera HTTP de ScenaIA — continuación y página del listado (SCEN
     expect(ENDPOINT).toMatch(/\{ \.\.\.responseContext, conversationState: nextState, \.\.\.\(listingPage !== undefined \? \{ listingPage \} : \{\}\) \}/)
   })
 })
+
+/**
+ * SCENAIA-004B (PR 4) — PAGINACION EN LA INTERFAZ.
+ *
+ * Solo lo que este PR reabre: el cliente pinta `listingPage` y reenvia
+ * `nextOffset`, pero no decide nada de la paginacion.
+ */
+describe('Cliente de ScenaIA — paginación del listado (SCENAIA-004B)', () => {
+  const LISTADO = sinComentarios('app/scenaia/listado.ts')
+  const PIE = sinComentarios('app/scenaia/components/ListingFooter.tsx')
+
+  it('el cliente no conoce el interruptor ni las constantes, ni calcula desplazamientos', () => {
+    for (const [nombre, fuente] of [['cliente', CLIENTE], ['listado', LISTADO], ['pie', PIE]] as const) {
+      expect(fuente, nombre).not.toMatch(/paginacionActivada|SCENAIA_PAGINACION_ENABLED|LISTADO_TAMANO_PAGINA|LISTADO_DESPLAZAMIENTO_MAXIMO/)
+      expect(fuente, nombre).not.toMatch(/offset \+|\+ offset|offset: \d/)
+    }
+  })
+
+  it('"Ver más" reenvía el nextOffset que envió el servidor, tal cual', () => {
+    expect(CLIENTE).toMatch(/turno\.listingPage\?\.nextOffset/)
+    expect(CLIENTE).toMatch(/realizarTurno\(turno\.listingRequest, \{ offset: siguiente \}\)/)
+  })
+
+  it('el historial y el cuerpo del turno salen de las funciones de listado.ts, las mismas que se prueban', () => {
+    expect(CLIENTE).toMatch(/const history = historialEnviable\(messages\)/)
+    expect(CLIENTE).toMatch(/JSON\.stringify\(cuerpoDelTurno\(text, history, conversationState, continuation\)\)/)
+  })
+
+  it('"Ver más" solo en la última respuesta del chat', () => {
+    expect(CLIENTE).toMatch(/onVerMas: esUltimaRespuesta\(i, messages\) \? \(\) => handleVerMas\(turn\) : null/)
+  })
+})
