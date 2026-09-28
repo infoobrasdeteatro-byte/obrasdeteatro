@@ -112,3 +112,23 @@ export type OrganizationKnowledgeItem = KnowledgeItem<'Organizaciones', Organiza
 export type PersonKnowledgeItem = KnowledgeItem<'Personas', Person>
 
 export type StructuredKnowledgeItem = WorkKnowledgeItem | OrganizationKnowledgeItem | PersonKnowledgeItem
+
+/**
+ * SCENAIA-004B §4.4 -- pagina pedida del listado de Obras. Llega como dato:
+ * el tamano lo decide quien orquesta, nunca este modulo.
+ */
+export interface WorksPageRequest {
+  readonly offset: number
+  readonly pageSize: number
+}
+
+/**
+ * SCENAIA-004B §4.4 -- pagina realmente entregada. `total` es null cuando no
+ * pudo determinarse (SCENAIA-004A): nunca se sustituye por un numero.
+ */
+export interface WorksPage {
+  readonly offset: number
+  readonly pageSize: number
+  readonly returned: number
+  readonly total: number | null
+}

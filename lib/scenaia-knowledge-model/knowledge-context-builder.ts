@@ -1,5 +1,5 @@
 import type { NormalizedRequest } from '@/lib/request-interpreter'
-import type { WorkSlotOccupancy } from '@/lib/knowledge-assets'
+import type { WorkSlotOccupancy, WorksPageRequest } from '@/lib/knowledge-assets'
 import type { KnowledgeCompleteness, KnowledgeContext } from './types'
 import { isDomainCovered } from './domain-coverage'
 import { retrieveKnowledgeForDomain } from './retrieve-knowledge'
@@ -27,7 +27,8 @@ function completenessToConfidence(completeness: KnowledgeCompleteness): number {
  */
 export async function buildKnowledgeContext(
   normalizedRequest: NormalizedRequest,
-  previousOccupancy: WorkSlotOccupancy = {}
+  previousOccupancy: WorkSlotOccupancy = {},
+  page?: WorksPageRequest
 ): Promise<KnowledgeContext> {
   // Deduplicado defensivo: NormalizedRequest no garantiza unicidad a nivel de
   // tipos, aunque el unico productor actual (Request Interpreter) nunca la
@@ -36,8 +37,14 @@ export async function buildKnowledgeContext(
   const coveredDomains = requestedDomains.filter(isDomainCovered)
   const notCoveredDomains = requestedDomains.filter((domain) => !isDomainCovered(domain))
 
+  // SCENAIA-004B §4.4: la pagina, si llega, solo se aplica a Obras, el unico
+  // dominio con listado paginado. Sin pagina, la llamada es la de siempre.
   const resultsByDomain = await Promise.all(
-    coveredDomains.map((domain) => retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy))
+    coveredDomains.map((domain) =>
+      page !== undefined && domain === 'Obras'
+        ? retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy, page)
+        : retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy)
+    )
   )
   const knowledgeEntities = resultsByDomain.flatMap((result) => result.items)
 
@@ -88,6 +95,9 @@ export async function buildKnowledgeContext(
     // interpretarlo: este componente no decide que significa una ranura,
     // solo lleva hasta el Orquestador lo que el motor de dominio resolvio.
     workOccupancy: resultsByDomain.find((resultado) => Object.keys(resultado.workOccupancy).length > 0)?.workOccupancy ?? {},
+    // Pagina del listado de Obras (SCENAIA-004B), transportada sin
+    // interpretarla. La ausencia se lee como null: sin pagina pedida.
+    worksPage: resultsByDomain.find((resultado) => resultado.worksPage != null)?.worksPage ?? null,
     knowledgeTimestamp: new Date().toISOString(),
   }
 }

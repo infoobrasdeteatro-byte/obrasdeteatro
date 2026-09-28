@@ -7,6 +7,8 @@ export type {
   OrganizationKnowledgeItem,
   PersonKnowledgeItem,
   StructuredKnowledgeItem,
+  WorksPageRequest,
+  WorksPage,
 } from './types'
 export { getWorkKnowledge, listWorkKnowledge } from './works-knowledge'
 export { getOrganizationKnowledge, listOrganizationKnowledge } from './organizations-knowledge'

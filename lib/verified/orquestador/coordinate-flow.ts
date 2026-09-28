@@ -18,6 +18,7 @@ import { MAX_OUTPUT_TOKENS_BY_OPERATION } from '@/lib/ai-gateway'
 import { buildResolverPrompt } from '@/lib/intent-resolver'
 import type { IncomingConversationState } from '@/lib/conversation-state'
 import type { TurnOutcome } from './types'
+import { LISTADO_TAMANO_PAGINA, paginacionActivada } from './paginacion'
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
 import { composeAugmentedRequest, resolveVocabulary } from '@/lib/intent-resolver'
@@ -191,9 +192,15 @@ export async function coordinateFlow(
   // Quien pide el catalogo completo no hereda los criterios guardados: el
   // turno empieza sin ellos, y por eso tampoco los deja al siguiente. El
   // interprete es quien lo decide; aqui solo se lee su campo.
+  // SCENAIA-004B §4.4: el listado puro de Obras pide su primera pagina solo
+  // con el interruptor encendido; el tamano se pasa como dato. En cualquier
+  // otro caso no se pasa nada y la llamada es exactamente la de siempre.
   let knowledgeContext = await buildKnowledgeContext(
     normalizedRequest,
-    normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia
+    normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
+    ...(normalizedRequest.requestsPlainListing && paginacionActivada()
+      ? ([{ offset: 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
+      : ([] as const))
   )
   // Senal de continuacion, ya declarada en el contrato. Se deriva aqui
   // porque la reserva preventiva necesita saber si el resolutor puede
@@ -457,7 +464,10 @@ export async function coordinateFlow(
         )
         knowledgeContext = await buildKnowledgeContext(
           normalizedRequest,
-          normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia
+          normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
+          ...(normalizedRequest.requestsPlainListing && paginacionActivada()
+            ? ([{ offset: 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
+            : ([] as const))
         )
       }
     }

@@ -7,7 +7,7 @@ import { listPersonKnowledge } from './persons-knowledge'
 import { interpretPersonQuery, hasUnresolvedPersonLocation } from './interpret-person-query'
 import { interpretWorkQuery, hasUnresolvedAuthor } from './interpret-work-query'
 import { interpretOrganizationQuery, hasUnresolvedLocation } from './interpret-organization-query'
-import type { KnowledgeDomain, StructuredKnowledgeItem } from './types'
+import type { KnowledgeDomain, StructuredKnowledgeItem, WorksPage, WorksPageRequest } from './types'
 
 /**
  * Resultado de recuperar un dominio (SCENAIA-002, correccion definitiva de
@@ -56,6 +56,17 @@ export interface KnowledgeRetrievalResult {
    * respalda todavia (Principio de Madurez de la Abstraccion).
    */
   readonly workOccupancy: WorkSlotOccupancy
+  /**
+   * SCENAIA-004B §4.4 -- pagina entregada del listado de Obras, con su
+   * recuento. Mismo patron que `workOccupancy`: se emite aqui y se
+   * transporta sin interpretarlo. `null` cuando no se pidio pagina (la
+   * recuperacion de siempre) o el dominio no es Obras.
+   *
+   * Opcional en el tipo para no reabrir los contratos de quien construye
+   * este resultado en sus propias pruebas; `baseRetrieve` lo rellena
+   * siempre de forma explicita, y la ausencia se lee como `null`.
+   */
+  readonly worksPage?: WorksPage | null
 }
 
 /**
@@ -71,7 +82,8 @@ export interface SemanticRetriever {
     domain: KnowledgeDomain,
     query: string,
     limit?: number,
-    previousOccupancy?: WorkSlotOccupancy
+    previousOccupancy?: WorkSlotOccupancy,
+    page?: WorksPageRequest
   ): Promise<KnowledgeRetrievalResult>
 }
 
@@ -90,7 +102,8 @@ async function baseRetrieve(
   domain: KnowledgeDomain,
   query: string,
   limit?: number,
-  previousOccupancy: WorkSlotOccupancy = {}
+  previousOccupancy: WorkSlotOccupancy = {},
+  page?: WorksPageRequest
 ): Promise<KnowledgeRetrievalResult> {
   switch (domain) {
     case 'Obras': {
@@ -99,13 +112,18 @@ async function baseRetrieve(
       // turno actual solo sobrescribe las dimensiones que menciona.
       const workOccupancy = resolveWorkOccupancy(query, previousOccupancy)
       const criteria = interpretWorkQuery(query, knownAuthors, previousOccupancy)
-      const items = await listWorkKnowledge(criteria, limit)
+      // SCENAIA-004B §4.4: con pagina, la pide tal cual llega y devuelve el
+      // recuento; sin pagina, la llamada es exactamente la de siempre.
+      const { items, worksPage } =
+        page !== undefined
+          ? await listWorkKnowledge(criteria, undefined, page)
+          : { items: await listWorkKnowledge(criteria, limit), worksPage: null }
       // Obras distingue ya los cuatro estados, igual que Organizaciones: sabe
       // cuando el usuario atribuyo una obra a alguien que no esta en el
       // catalogo, y lo separa de "no se pidio ningun criterio".
       const unappliedCriteria = hasUnresolvedAuthor(query, criteria) ? ['autor'] : []
 
-      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy }
+      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy, worksPage }
     }
     case 'Organizaciones': {
       const knownLocations = await listOrganizationLocations()
@@ -116,7 +134,7 @@ async function baseRetrieve(
       // usuario pidio una ubicacion que no ha podido resolver.
       const unappliedCriteria = hasUnresolvedLocation(query, criteria) ? ['ubicacion'] : []
 
-      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {} }
+      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {}, worksPage: null }
     }
     case 'Personas': {
       const knownLocations = await listPersonLocations()
@@ -127,10 +145,10 @@ async function baseRetrieve(
       // ubicacion pedida y no resuelta queda declarada, nunca silenciada.
       const unappliedCriteria = hasUnresolvedPersonLocation(query, criteria) ? ['ubicacion'] : []
 
-      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {} }
+      return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {}, worksPage: null }
     }
     default:
-      return { items: [], requestWasNarrowed: false, unappliedCriteria: [], workOccupancy: {} }
+      return { items: [], requestWasNarrowed: false, unappliedCriteria: [], workOccupancy: {}, worksPage: null }
   }
 }
 
@@ -144,7 +162,10 @@ export async function retrieveRelevantKnowledge(
   domain: KnowledgeDomain,
   query: string,
   limit?: number,
-  previousOccupancy?: WorkSlotOccupancy
+  previousOccupancy?: WorkSlotOccupancy,
+  page?: WorksPageRequest
 ): Promise<KnowledgeRetrievalResult> {
-  return baseSemanticRetriever.retrieve(domain, query, limit, previousOccupancy)
+  return page !== undefined
+    ? baseSemanticRetriever.retrieve(domain, query, limit, previousOccupancy, page)
+    : baseSemanticRetriever.retrieve(domain, query, limit, previousOccupancy)
 }

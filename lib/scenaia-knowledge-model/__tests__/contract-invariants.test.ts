@@ -78,3 +78,15 @@ describe('ScenaIA Knowledge Model — invariantes de integración (SC-002, SC-00
     expect(MODULE_SOURCE).not.toMatch(/authenticationStatus|profileType|is_premium|isPremium|stripe/i)
   })
 })
+
+describe('Scenaia Knowledge Model — página del listado (SCENAIA-004B §4.4, PR 1)', () => {
+  it('transporta la página como dato: no define el tamaño ni lee el interruptor', () => {
+    expect(MODULE_SOURCE).not.toMatch(/process\.env|SCENAIA_PAGINACION_ENABLED|LISTADO_TAMANO_PAGINA|LISTADO_DESPLAZAMIENTO_MAXIMO/)
+    expect(MODULE_SOURCE).not.toMatch(/pageSize\s*[:=]\s*\d/)
+  })
+
+  it('KnowledgeContext transporta worksPage, rellenado siempre de forma explícita por el constructor', () => {
+    const constructor = readFileSync(join(__dirname, '..', 'knowledge-context-builder.ts'), 'utf-8')
+    expect(constructor).toMatch(/worksPage: [^\n]*\?\? null/)
+  })
+})

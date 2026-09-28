@@ -120,3 +120,17 @@ describe('Knowledge Assets — interpret-organization-query.ts (motor de recuper
     for (const clave of claves) expect(ADMITIDOS).toContain(clave)
   })
 })
+
+describe('Knowledge Assets — página del listado (SCENAIA-004B §4.4, PR 1)', () => {
+  it('transporta la página como dato: no define el tamaño ni lee el interruptor', () => {
+    expect(MODULE_SOURCE).not.toMatch(/process\.env|SCENAIA_PAGINACION_ENABLED|LISTADO_TAMANO_PAGINA|LISTADO_DESPLAZAMIENTO_MAXIMO/)
+    expect(MODULE_SOURCE).not.toMatch(/pageSize\s*[:=]\s*\d/)
+  })
+
+  it('worksPage se emite de forma explícita en todos los dominios del recuperador', () => {
+    const retornos = SEMANTIC_RETRIEVER_SOURCE.match(/return \{ items/g) ?? []
+    const conPagina = SEMANTIC_RETRIEVER_SOURCE.match(/return \{ items[^\n]*worksPage/g) ?? []
+    expect(retornos.length).toBeGreaterThan(0)
+    expect(conPagina).toHaveLength(retornos.length)
+  })
+})
