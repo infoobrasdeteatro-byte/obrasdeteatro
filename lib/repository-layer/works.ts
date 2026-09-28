@@ -165,6 +165,34 @@ const OFFSET_BEYOND_TOTAL = /only (\d+) rows?/
  */
 const PAGED_GENRE_FILTER_CANDIDATE_LIMIT = 1000
 
+/**
+ * Valores que encienden el filtro de genero por SQL. Lista CERRADA, mismo
+ * criterio que SCENAIA_PAGINACION_ENABLED: cualquier otra cosa -- vacia,
+ * ausente, 'si', '0', un error de escritura -- lo deja apagado.
+ */
+const GENRE_SQL_ON_VALUES = ['1', 'true']
+
+/**
+ * SCENAIA-006 §4.3 -- interruptor SCENAIA_GENERO_SQL_ENABLED, apagado por
+ * defecto. Se lee en cada llamada, no al cargar el modulo, de modo que puede
+ * cambiarse redesplegando la misma version, sin tocar codigo.
+ */
+function genreSqlEnabled(): boolean {
+  return GENRE_SQL_ON_VALUES.includes((process.env.SCENAIA_GENERO_SQL_ENABLED ?? '').trim().toLowerCase())
+}
+
+/**
+ * SCENAIA-006 §4.4 -- patron ILIKE sobre works.genre_normalizado (columna
+ * generada: lower(f_unaccent(coalesce(genre, '')))). El termino se normaliza
+ * igual que la columna (minusculas, sin acentos) y se escapan los caracteres
+ * que LIKE trataria como comodin o como escape (\, % y _), para que el
+ * termino se busque siempre literal: "contiene", como matchesGenre.
+ */
+function genreSqlPattern(genre: string): string {
+  const term = stripDiacritics(genre.toLowerCase()).replace(/[\\%_]/g, (c) => `\\${c}`)
+  return `%${term}%`
+}
+
 // La firma sin pagina va la ultima a proposito: es la que TypeScript toma
 // cuando infiere el tipo de la funcion (p. ej. vi.mocked en las pruebas de
 // quienes la llaman hoy), que asi sigue siendo exactamente la de siempre.
@@ -181,7 +209,12 @@ export async function listPublishedWorks(
 ): Promise<Work[] | PublishedWorksPage> {
   if (page !== undefined) {
     const offset = Math.max(0, Math.floor(page.offset ?? 0))
-    const pageCacheKey = `works:published:${JSON.stringify(criteria)}:${limit}:offset:${offset}`
+    // SCENAIA-006 §4.4: con el interruptor encendido y criterio de genero, el
+    // genero se filtra en la misma consulta. La clave de cache lleva su propio
+    // sufijo, para que encender o apagar el interruptor no sirva paginas del
+    // camino contrario; sin genero o con el interruptor apagado, es la de siempre.
+    const genreSql = criteria.genre !== undefined && genreSqlEnabled() ? genreSqlPattern(criteria.genre) : null
+    const pageCacheKey = `works:published:${JSON.stringify(criteria)}:${limit}:offset:${offset}${genreSql !== null ? ':genre-sql' : ''}`
 
     return withCache(pageCacheKey, CACHE_TTL_MS, async (): Promise<PublishedWorksPage> => {
       const supabase = await createClient()
@@ -190,15 +223,17 @@ export async function listPublishedWorks(
 
       const baseQuery = supabase
         .from('works')
-        .select(WORK_COLUMNS, genre === undefined ? { count: 'exact' } : undefined)
+        .select(WORK_COLUMNS, genre === undefined || genreSql !== null ? { count: 'exact' } : undefined)
         .eq('is_published', true)
         .is('deleted_at', null)
 
-      const ordered = applyCriteria(baseQuery, sqlCriteria)
+      const filtered = applyCriteria(baseQuery, sqlCriteria)
+
+      const ordered = (genreSql !== null ? filtered.ilike('genre_normalizado', genreSql) : filtered)
         .order('title', { ascending: true })
         .order('id', { ascending: true })
 
-      if (genre !== undefined) {
+      if (genre !== undefined && genreSql === null) {
         // Excepcion de genero (documentada arriba): candidatos ya en orden
         // estable; el recuento y el desplazamiento se aplican despues de
         // filtrar en memoria (SCENAIA-004A §4.1).
