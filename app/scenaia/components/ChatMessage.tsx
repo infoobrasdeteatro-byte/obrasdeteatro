@@ -1,4 +1,6 @@
 import ObrasIsotype from './ObrasIsotype'
+import ListingFooter from './ListingFooter'
+import type { PaginaDelListado } from '../listado'
 
 /**
  * UX-001B: un turno ya renderizado del hilo. Deliberadamente sin ningún
@@ -10,14 +12,29 @@ import ObrasIsotype from './ObrasIsotype'
  * lenguaje del usuario. Sigue sin llegar aquí ningún vocabulario interno:
  * este componente recibe un texto y una naturaleza, nunca un `denialCode`
  * ni un `responseType`.
+ *
+ * SCENAIA-004B §4.8: una respuesta de listado lleva ademas su pie
+ * (`ListingFooter`). Sin `listingPage`, el marcado es exactamente el de
+ * siempre.
  */
 export interface ChatMessageProps {
   readonly role: 'user' | 'assistant'
   readonly content: string
   readonly notice?: { readonly kind: 'cuota' | 'incompleta' | 'error'; readonly text: string } | null
+  readonly listingPage?: PaginaDelListado | null
+  /** Solo en la ultima respuesta del chat: sin el, el pie no ofrece "Ver mas". */
+  readonly onVerMas?: (() => void) | null
+  readonly verMasBloqueado?: boolean
 }
 
-export default function ChatMessage({ role, content, notice = null }: ChatMessageProps) {
+export default function ChatMessage({
+  role,
+  content,
+  notice = null,
+  listingPage = null,
+  onVerMas = null,
+  verMasBloqueado = false,
+}: ChatMessageProps) {
   const isUser = role === 'user'
 
   return (
@@ -45,6 +62,9 @@ export default function ChatMessage({ role, content, notice = null }: ChatMessag
             </span>
             {notice.text}
           </p>
+        )}
+        {!isUser && listingPage && (
+          <ListingFooter pagina={listingPage} onVerMas={onVerMas} bloqueado={verMasBloqueado} />
         )}
       </div>
     </div>

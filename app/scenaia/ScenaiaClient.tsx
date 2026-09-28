@@ -9,6 +9,8 @@ import type { ConversationState } from '@/lib/conversation-state'
 import { resolveTurnNotice, resolveAccessDestination } from './turn-notice'
 import { leerRespuestaDelTurno } from './leer-respuesta'
 import type { TurnNotice } from './turn-notice'
+import { historialEnviable, cuerpoDelTurno, esUltimaRespuesta } from './listado'
+import type { PaginaDelListado, TurnoDelChat } from './listado'
 
 interface ScenaiaResponse {
   responseType: string
@@ -27,14 +29,19 @@ interface ScenaiaResponse {
    * estado por su cuenta.
    */
   conversationState: ConversationState | null
+  /**
+   * SCENAIA-004B §4.7: pagina del listado, al lado de la respuesta. Solo
+   * llega cuando el servidor la envia; sin ella, todo es como antes.
+   */
+  listingPage?: PaginaDelListado
 }
 
-interface ConversationTurn {
-  readonly role: 'user' | 'assistant'
-  readonly content: string
-  /** Aviso ya traducido que acompaña a este turno, si lo hubo (UX-002). */
-  readonly notice?: TurnNotice | null
-}
+/**
+ * Turno del hilo. `notice` es el aviso ya traducido que acompaña a este
+ * turno, si lo hubo (UX-002). Los campos del listado (SCENAIA-004B) solo
+ * existen en las respuestas que traen `listingPage`.
+ */
+type ConversationTurn = TurnoDelChat<TurnNotice>
 
 /**
  * UX-001B (Sprint aprobado): rediseño exclusivamente de presentación sobre
@@ -77,15 +84,24 @@ export default function ScenaiaClient() {
     threadEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, pending])
 
-  async function handleSubmit() {
-    const text = message.trim()
-    if (!text || pending) return
-
+  /**
+   * Un turno completo contra el servidor. Lo usan el envio normal y "Ver mas"
+   * (SCENAIA-004B §4.9). La continuacion:
+   *   - reenvia el MISMO texto del listado, con `continuation` = `nextOffset`
+   *     tal como lo envio el servidor;
+   *   - no anade ningun mensaje del usuario al hilo;
+   *   - y su respuesta se marca como continuacion, para que no entre en el
+   *     historial de los turnos siguientes.
+   */
+  async function realizarTurno(text: string, continuation: { offset: number } | null) {
     // Historial ya cerrado hasta este momento -- nunca incluye el turno que se esta enviando ahora.
-    const history = messages
+    // Sin las paginas de continuacion ni los campos que solo usa la interfaz (SCENAIA-004B).
+    const history = historialEnviable(messages)
 
-    setMessages((prev) => [...prev, { role: 'user', content: text }])
-    setMessage('')
+    if (continuation === null) {
+      setMessages((prev) => [...prev, { role: 'user', content: text }])
+      setMessage('')
+    }
     setPending(true)
     setError(null)
 
@@ -93,13 +109,7 @@ export default function ScenaiaClient() {
       const res = await fetch('/api/scenaia-verified', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
-          history,
-          conversationState,
-          route: '/scenaia',
-          module: 'centro-profesional',
-        }),
+        body: JSON.stringify(cuerpoDelTurno(text, history, conversationState, continuation)),
       })
 
       if (!res.ok) {
@@ -151,7 +161,15 @@ export default function ScenaiaClient() {
       const notice = resolveTurnNotice(data)
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: data.responseContent ?? '(sin contenido)', notice },
+        {
+          role: 'assistant',
+          content: data.responseContent ?? '(sin contenido)',
+          notice,
+          // SCENAIA-004B: solo si la respuesta trae su pagina. Sin ella, el
+          // turno es exactamente el de siempre, sin claves nuevas.
+          ...(data.listingPage ? { listingPage: data.listingPage, listingRequest: text } : {}),
+          ...(continuation !== null ? { esContinuacion: true as const } : {}),
+        },
       ])
       // REEMPLAZO, nunca fusion: el estado vigente es siempre el ultimo que
       // el servidor emitio. Combinarlo con el anterior seria decidir aqui
@@ -164,6 +182,21 @@ export default function ScenaiaClient() {
     }
   }
 
+  async function handleSubmit() {
+    const text = message.trim()
+    if (!text || pending) return
+
+    await realizarTurno(text, null)
+  }
+
+  /** "Ver mas" (SCENAIA-004B §4.9): la pagina siguiente del listado de este turno. */
+  function handleVerMas(turno: ConversationTurn) {
+    const siguiente = turno.listingPage?.nextOffset ?? null
+    if (pending || siguiente === null || turno.listingRequest === undefined) return
+
+    void realizarTurno(turno.listingRequest, { offset: siguiente })
+  }
+
   return (
     <div className="scenaia-shell">
       <div className="scenaia-thread">
@@ -172,7 +205,20 @@ export default function ScenaiaClient() {
         ) : (
           <>
             {messages.map((turn, i) => (
-              <ChatMessage key={i} role={turn.role} content={turn.content} notice={turn.notice ?? null} />
+              <ChatMessage
+                key={i}
+                role={turn.role}
+                content={turn.content}
+                notice={turn.notice ?? null}
+                // SCENAIA-004B: pie del listado, y "Ver mas" solo en la ultima respuesta.
+                {...(turn.listingPage
+                  ? {
+                      listingPage: turn.listingPage,
+                      onVerMas: esUltimaRespuesta(i, messages) ? () => handleVerMas(turn) : null,
+                      verMasBloqueado: pending,
+                    }
+                  : {})}
+              />
             ))}
             {pending && <TypingIndicator />}
           </>
