@@ -1,4 +1,4 @@
-import type { KnowledgeDomain, StructuredKnowledgeItem, WorkSlotOccupancy } from '@/lib/knowledge-assets'
+import type { KnowledgeDomain, StructuredKnowledgeItem, WorkSlotOccupancy, WorksPage } from '@/lib/knowledge-assets'
 
 /**
  * Mide la propia cobertura del SKM (dominios solicitados vs. efectivamente
@@ -47,5 +47,15 @@ export interface KnowledgeContext {
    * explicito, nunca ausencia de dato.
    */
   readonly workOccupancy: WorkSlotOccupancy
+  /**
+   * SCENAIA-004B §4.4 -- pagina entregada del listado de Obras, con su
+   * recuento. Mismo patron que `workOccupancy`: se transporta hasta quien lo
+   * necesite, sin interpretarlo aqui. `null` cuando no se pidio pagina.
+   *
+   * Opcional en el tipo para no reabrir los contratos de los componentes
+   * que construyen un KnowledgeContext en sus propias pruebas;
+   * `buildKnowledgeContext` lo rellena siempre de forma explicita.
+   */
+  readonly worksPage?: WorksPage | null
   readonly knowledgeTimestamp: string
 }
