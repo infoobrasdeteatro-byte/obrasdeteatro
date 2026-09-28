@@ -41,3 +41,13 @@ export function isPlainListing(
 
   return knowledgeEntities.some((item) => item.domain === DOMINIO_AUTORIZADO)
 }
+
+/**
+ * SCENAIA-004B §4.5 -- el turno es una pagina SIGUIENTE de un listado: la
+ * recuperacion entrego una pagina con desplazamiento mayor que cero. Se lee
+ * del conocimiento, que es donde la pagina viaja (`worksPage`); sin pagina,
+ * o en la primera, no hay continuacion y la regla es la de siempre.
+ */
+export function isListingContinuation(knowledgeContext: KnowledgeContext): boolean {
+  return (knowledgeContext.worksPage?.offset ?? 0) > 0
+}

@@ -42,3 +42,22 @@ describe('Decision Engine — invariantes de integración (SC-004.2)', () => {
     expect(RECOMMENDED_PROVIDER_SOURCE).not.toMatch(/'claude'|'openai'|'gpt-|anthropic-ai|@anthropic-ai|openai\//i)
   })
 })
+
+describe('Decision Engine — continuación del listado (SCENAIA-004B §4.5, PR 2)', () => {
+  const NEEDS_AI = readFileSync(join(__dirname, '..', 'needs-ai.ts'), 'utf-8')
+  const PLAIN_LISTING = readFileSync(join(__dirname, '..', 'plain-listing.ts'), 'utf-8')
+
+  it('la continuación se comprueba ANTES que cualquier señal del conocimiento: ninguna puede convertirla en IA', () => {
+    const cuerpo = NEEDS_AI.slice(NEEDS_AI.indexOf('export function needsAI'))
+    const continuacion = cuerpo.indexOf('if (listingContinuation) return false')
+    expect(continuacion).toBeGreaterThan(-1)
+    expect(continuacion).toBeLessThan(cuerpo.indexOf("if (knowledgeCompleteness !== 'completo')"))
+    expect(continuacion).toBeLessThan(cuerpo.indexOf('if (plainListing)'))
+  })
+
+  it('la continuación se lee solo de worksPage.offset, sin interpretar texto', () => {
+    const regla = PLAIN_LISTING.slice(PLAIN_LISTING.indexOf('export function isListingContinuation'))
+    expect(regla).toMatch(/worksPage\?\.offset/)
+    expect(regla).not.toMatch(/normalizedRequest|originalRequest|retrievalQuery/)
+  })
+})

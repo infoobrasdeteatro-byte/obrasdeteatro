@@ -3,7 +3,7 @@ import type { ProfessionalContext } from '@/lib/professional-context-engine'
 import type { KnowledgeContext } from '@/lib/scenaia-knowledge-model'
 import type { DecisionContext } from './types'
 import { needsAI } from './needs-ai'
-import { isPlainListing } from './plain-listing'
+import { isPlainListing, isListingContinuation } from './plain-listing'
 import { derivePriorityLevel } from './priority'
 import { estimateDecisionConfidence } from './confidence'
 import { estimateCost } from './estimated-cost'
@@ -74,10 +74,12 @@ export function buildDecisionContext(
   // el conocimiento recuperado. `needsAI` recibe el veredicto, no las
   // señales: sigue sin interpretar texto ni conocimiento.
   const listadoPuro = isPlainListing(normalizedRequest, knowledgeContext)
+  // SCENAIA-004B §4.5: una pagina siguiente del listado nunca pide IA.
   const aiNeeded = needsAI(
     knowledgeContext.knowledgeCompleteness,
     knowledgeContext.knowledgeEntities.length,
-    listadoPuro
+    listadoPuro,
+    isListingContinuation(knowledgeContext)
   )
   const executionMode = aiNeeded ? 'IA' : 'DIRECTO'
   const priorityLevel = derivePriorityLevel(normalizedRequest.estimatedComplexity)

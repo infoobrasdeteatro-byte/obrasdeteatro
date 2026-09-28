@@ -147,3 +147,18 @@ describe('direct-content-builder — procedencia de los datos de la ficha (SCENA
     expect(MODULE_SOURCE).not.toMatch(/@\/lib\/repository-layer|@\/lib\/knowledge-assets/)
   })
 })
+
+describe('Direct Content Builder — página del listado (SCENAIA-004B §4.6, PR 2)', () => {
+  const FUENTE = readFileSync(join(__dirname, '..', 'build-direct-content.ts'), 'utf-8')
+
+  it('los textos nuevos no exponen jerga interna', () => {
+    const textos = [...FUENTE.matchAll(/'No hay más obras[^']*'|estas son las obras encontradas/g)].map((m) => m[0])
+    expect(textos.length).toBeGreaterThan(0)
+    for (const texto of textos) expect(texto).not.toMatch(/offset|worksPage|pageSize|total|null|página \d/i)
+  })
+
+  it('el recuento con página sale del total transportado, nunca de un número escrito en el código', () => {
+    expect(FUENTE).toMatch(/pagina\.total/)
+    expect(FUENTE).not.toMatch(/recuento\(\s*\d+\s*\)/)
+  })
+})
