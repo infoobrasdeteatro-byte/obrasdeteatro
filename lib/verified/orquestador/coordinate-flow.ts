@@ -17,8 +17,8 @@ import { CREDIT_VALUE } from '@/lib/accounting-engine'
 import { MAX_OUTPUT_TOKENS_BY_OPERATION } from '@/lib/ai-gateway'
 import { buildResolverPrompt } from '@/lib/intent-resolver'
 import type { IncomingConversationState } from '@/lib/conversation-state'
-import type { TurnOutcome } from './types'
-import { LISTADO_TAMANO_PAGINA, paginacionActivada } from './paginacion'
+import type { TurnOutcome, ListingContinuation } from './types'
+import { LISTADO_TAMANO_PAGINA, paginacionActivada, listingPageOf } from './paginacion'
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
 import { composeAugmentedRequest, resolveVocabulary } from '@/lib/intent-resolver'
@@ -144,7 +144,11 @@ export async function coordinateFlow(
   session: SessionInput,
   originalRequest: string,
   conversationHistory: readonly ConversationTurn[] = [],
-  incomingState: IncomingConversationState | null = null
+  incomingState: IncomingConversationState | null = null,
+  // SCENAIA-004B §4.3: continuacion ya validada por la ruta. Solo se aplica
+  // a un listado puro con el interruptor encendido; en cualquier otro caso
+  // se ignora y el turno es el de siempre.
+  continuation: ListingContinuation | null = null
 ): Promise<TurnOutcome> {
   // CONTEXTO CONVERSACIONAL (Fase 3). El Orquestador es el unico componente
   // que ve el estado completo, y lo descompone antes de que cruce ninguna
@@ -199,7 +203,7 @@ export async function coordinateFlow(
     normalizedRequest,
     normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
     ...(normalizedRequest.requestsPlainListing && paginacionActivada()
-      ? ([{ offset: 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
+      ? ([{ offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
       : ([] as const))
   )
   // Senal de continuacion, ya declarada en el contrato. Se deriva aqui
@@ -466,7 +470,7 @@ export async function coordinateFlow(
           normalizedRequest,
           normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
           ...(normalizedRequest.requestsPlainListing && paginacionActivada()
-            ? ([{ offset: 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
+            ? ([{ offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
             : ([] as const))
         )
       }
@@ -544,6 +548,14 @@ export async function coordinateFlow(
       previousVersion: previousUserRequests.length,
       occurredAt: new Date().toISOString(),
     })
+
+    // SCENAIA-004B §4.7: la pagina del listado viaja al lado de la respuesta,
+    // nunca dentro. Solo existe con el interruptor encendido y una pagina
+    // realmente entregada; si no, el resultado es exactamente el de siempre.
+    const paginaEntregada = knowledgeContext.worksPage ?? null
+    if (paginaEntregada !== null && paginacionActivada()) {
+      return { responseContext, conversationState, listingPage: listingPageOf(paginaEntregada) }
+    }
 
     return { responseContext, conversationState }
   } catch (errorDelTurno) {

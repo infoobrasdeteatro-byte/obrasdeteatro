@@ -17,4 +17,30 @@ export type { ConversationTurn } from '@/lib/prompt-composer'
 export interface TurnOutcome {
   readonly responseContext: ResponseContext
   readonly conversationState: ConversationState
+  /**
+   * SCENAIA-004B §4.7 -- pagina del listado puro entregada en este turno.
+   * Viaja al lado de la respuesta, como el estado, y NUNCA dentro de
+   * `ResponseContext` (PRD-001). Ausente -- ni siquiera `null` -- cuando el
+   * interruptor esta apagado o el turno no pidio pagina: asi la respuesta
+   * de esos turnos es la de siempre, byte a byte.
+   */
+  readonly listingPage?: ListingPage
+}
+
+/**
+ * SCENAIA-004B §4.7 -- lo que la interfaz necesita para el pie y el boton.
+ * `from` y `to` son posiciones de 1 en adelante; una pagina vacia tiene
+ * `to < from` (cero obras). `nextOffset` es el desplazamiento de la pagina
+ * siguiente, o `null` cuando no hay mas obras.
+ */
+export interface ListingPage {
+  readonly from: number
+  readonly to: number
+  readonly total: number | null
+  readonly nextOffset: number | null
+}
+
+/** SCENAIA-004B §4.2 -- continuacion ya validada por la ruta. */
+export interface ListingContinuation {
+  readonly offset: number
 }

@@ -379,3 +379,21 @@ describe('Orquestador — rastro del turno fallido (P1-C)', () => {
     expect(COORDINATE_FLOW_SOURCE).toMatch(/recordTurnFailure\([\s\S]{0,200}?turnId,/)
   })
 })
+
+describe('Orquestador — continuación y página del listado (SCENAIA-004B, PR 3)', () => {
+  const TIPOS = readFileSync(join(__dirname, '..', 'types.ts'), 'utf-8')
+  const RESPONSE_CONTEXT = readFileSync(join(__dirname, '..', '..', '..', 'response-composer', 'types.ts'), 'utf-8')
+
+  it('la continuación es un sexto parámetro OPCIONAL: sin ella, el turno es el de siempre', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/continuation: ListingContinuation \| null = null\s*\): Promise<TurnOutcome>/)
+  })
+
+  it('listingPage es parte de TurnOutcome, opcional, y ResponseContext no la conoce', () => {
+    expect(TIPOS).toMatch(/readonly listingPage\?: ListingPage/)
+    expect(RESPONSE_CONTEXT).not.toMatch(/listingPage|ListingPage/)
+  })
+
+  it('listingPage solo se incluye con el interruptor encendido y una página entregada', () => {
+    expect(COORDINATE_FLOW_SOURCE).toMatch(/if \(paginaEntregada !== null && paginacionActivada\(\)\) \{\s*return \{ responseContext, conversationState, listingPage: listingPageOf\(paginaEntregada\) \}/)
+  })
+})

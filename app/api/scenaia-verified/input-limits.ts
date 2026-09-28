@@ -110,3 +110,11 @@ export const HISTORIAL_DEMASIADOS_TURNOS =
 export const HISTORIAL_DEMASIADO_LARGO =
   `La conversación es demasiado larga (máximo ${MAX_HISTORY_CHARACTERS} caracteres). ` +
   'Empieza una conversación nueva e inténtalo de nuevo.'
+
+/**
+ * SCENAIA-004B §4.2 -- continuacion de un listado mal formada. Mismo
+ * contrato de error que el resto (`{ error }` con 400). La cota que la
+ * define (`LISTADO_DESPLAZAMIENTO_MAXIMO`) vive en el Orquestador, fuente
+ * unica del tamano de pagina y del desplazamiento maximo.
+ */
+export const CONTINUACION_NO_VALIDA = 'Continuación no válida'

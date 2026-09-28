@@ -235,3 +235,35 @@ describe('Cotas de entrada de ScenaIA — H1/H2', () => {
     }
   })
 })
+
+/**
+ * SCENAIA-004B (PR 3) — CONTINUACION Y PAGINA DEL LISTADO.
+ *
+ * Solo lo que este PR reabre: el campo `continuation` y su validacion, el
+ * sexto argumento de `coordinateFlow` y `listingPage` en la carga.
+ */
+describe('Frontera HTTP de ScenaIA — continuación y página del listado (SCENAIA-004B)', () => {
+  const ANTES_DEL_FLUJO = ENDPOINT.slice(0, ENDPOINT.indexOf('coordinateFlow('))
+
+  it('la continuación solo se lee con el interruptor encendido', () => {
+    expect(ANTES_DEL_FLUJO).toMatch(/paginacionActivada\(\)\s*\?\s*leerContinuacion\(body\.continuation\)\s*:\s*null/)
+  })
+
+  it('una continuación inválida se rechaza con 400 ANTES del flujo, como las demás cotas', () => {
+    expect(ANTES_DEL_FLUJO).toMatch(/if \(continuacion === 'invalida'\)/)
+    expect(ANTES_DEL_FLUJO).toMatch(/return NextResponse\.json\(\{ error: CONTINUACION_NO_VALIDA \}, \{ status: 400 \}\)/)
+  })
+
+  it('el máximo no se declara en la ruta: se importa de la fuente única del Orquestador', () => {
+    expect(ENDPOINT).toMatch(/LISTADO_DESPLAZAMIENTO_MAXIMO.*from '@\/lib\/verified\/orquestador\/paginacion'/)
+    expect(ENDPOINT).not.toMatch(/50_?000/)
+  })
+
+  it('el flujo recibe la continuación como sexto argumento solo cuando la hay', () => {
+    expect(ENDPOINT).toMatch(/conversationState,\s*\.\.\.\(continuacion !== null \? \(\[continuacion\] as const\) : \(\[\] as const\)\)/)
+  })
+
+  it('listingPage viaja al lado de la respuesta, nunca dentro, y solo cuando existe', () => {
+    expect(ENDPOINT).toMatch(/\{ \.\.\.responseContext, conversationState: nextState, \.\.\.\(listingPage !== undefined \? \{ listingPage \} : \{\}\) \}/)
+  })
+})

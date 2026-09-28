@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { coordinateFlow } from '@/lib/verified/orquestador'
-import type { ConversationTurn } from '@/lib/verified/orquestador'
+// Importacion directa del modulo de paginacion (SCENAIA-004B): interruptor y
+// cota, sin pasar por el punto de entrada del flujo.
+import { paginacionActivada, LISTADO_DESPLAZAMIENTO_MAXIMO } from '@/lib/verified/orquestador/paginacion'
+import type { ConversationTurn, ListingContinuation } from '@/lib/verified/orquestador'
 import { parseConversationState } from '@/lib/conversation-state'
 import { resolveScenaiaAccess, accessDenialStatus } from '@/lib/auth/scenaia-access'
 import { TEXTO_ERROR_GENERICO } from '@/app/scenaia/turn-notice'
@@ -13,6 +16,7 @@ import {
   MENSAJE_DEMASIADO_LARGO,
   HISTORIAL_DEMASIADOS_TURNOS,
   HISTORIAL_DEMASIADO_LARGO,
+  CONTINUACION_NO_VALIDA,
 } from './input-limits'
 
 /**
@@ -84,6 +88,26 @@ function historialInadmisible(conversationHistory: readonly ConversationTurn[]):
   if (caracteres > MAX_HISTORY_CHARACTERS) return HISTORIAL_DEMASIADO_LARGO
 
   return null
+}
+
+/**
+ * SCENAIA-004B §4.2 — CONTINUACION DE UN LISTADO.
+ *
+ * Ausente (`undefined`) significa "primera pagina". Presente, tiene que ser
+ * exactamente `{ offset }` con un entero mayor que 0 y no mayor que
+ * `LISTADO_DESPLAZAMIENTO_MAXIMO`; cualquier otra cosa se rechaza. No se
+ * descarta en silencio, a diferencia del historial: convertir un "Ver mas"
+ * mal formado en la primera pagina mostraria obras repetidas como nuevas.
+ */
+function leerContinuacion(valor: unknown): ListingContinuation | null | 'invalida' {
+  if (valor === undefined) return null
+  if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) return 'invalida'
+
+  const offset = (valor as Record<string, unknown>).offset
+  if (typeof offset !== 'number' || !Number.isInteger(offset)) return 'invalida'
+  if (offset <= 0 || offset > LISTADO_DESPLAZAMIENTO_MAXIMO) return 'invalida'
+
+  return { offset }
 }
 
 /**
@@ -179,6 +203,18 @@ async function atenderPeticion(req: NextRequest) {
     return NextResponse.json({ error: historialRechazado }, { status: 400 })
   }
 
+  /*
+   * SCENAIA-004B §4.2 -- CONTINUACION. Mismo lugar y mismo momento que las
+   * cotas: antes del flujo, de la estimacion, de la reserva y del proveedor.
+   * Con el interruptor apagado el campo no se lee: la peticion se atiende
+   * exactamente como antes, con o sin el.
+   */
+  const continuacion = paginacionActivada() ? leerContinuacion(body.continuation) : null
+
+  if (continuacion === 'invalida') {
+    return NextResponse.json({ error: CONTINUACION_NO_VALIDA }, { status: 400 })
+  }
+
   /**
    * FASE 3 -- contexto conversacional aportado por el cliente.
    *
@@ -199,17 +235,20 @@ async function atenderPeticion(req: NextRequest) {
    */
   const conversationState = parseConversationState(body.conversationState)
 
-  const { responseContext, conversationState: nextState } = await coordinateFlow(
+  const { responseContext, conversationState: nextState, listingPage } = await coordinateFlow(
     acceso.userId,
     session,
     originalRequest,
     conversationHistory,
-    conversationState
+    conversationState,
+    ...(continuacion !== null ? ([continuacion] as const) : ([] as const))
   )
 
   // El estado viaja junto a la respuesta, no dentro de ella: `ResponseContext`
-  // no gana ningun campo (PRD-001, ver TurnOutcome en el Orquestador).
-  const carga = { ...responseContext, conversationState: nextState }
+  // no gana ningun campo (PRD-001, ver TurnOutcome en el Orquestador). La
+  // pagina del listado (SCENAIA-004B §4.7) viaja igual, y solo cuando existe:
+  // sin ella, la carga es exactamente la de siempre.
+  const carga = { ...responseContext, conversationState: nextState, ...(listingPage !== undefined ? { listingPage } : {}) }
 
   // Arreglo D, PR 2 -- SOLO TRANSPORTE. La carga es la misma con el
   // interruptor encendido y apagado; lo unico que cambia es el canal por el
