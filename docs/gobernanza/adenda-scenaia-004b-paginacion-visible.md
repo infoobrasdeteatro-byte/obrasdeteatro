@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-004B (adenda a SCENAIA-004)
-**Fecha:** ____________
-**Estado resultante:** PENDIENTE DE AUTORIZACIÓN — LA IMPLEMENTACIÓN NO ESTÁ AUTORIZADA
+**Fecha:** 2026-09-28
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-28):** `SCENAIA-004B` no existía en documentación, código, migraciones, material archivado bajo `_incidente-trazabilidad-2026-07-19/`, mensajes de commit de ninguna rama, objetos versionados de ninguna rama, el stash ni las referencias de respaldo (`refs/backup`), ni el respaldo permanente de `Documentos\respaldos\obrasdeteatro-2026-09-19`. El sufijo más alto en uso era `SCENAIA-004A`. El nombre `SCENAIA_PAGINACION_ENABLED` tampoco estaba en uso.
 
@@ -139,18 +139,18 @@ Cifras de coste **estimadas**, no medidas, sobre la consulta de la Parte 2 (filt
 
 ### 8. Veredicto
 
-**PENDIENTE.** Sin firma, el listado puro sigue entregando hasta 20 fichas en una sola respuesta, sin pie ni continuación.
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza la Parte 3 del Acta SCENAIA-004 según los puntos 4.1 a 4.9 de esta Adenda, en los términos de las condiciones del §7 y de las recogidas en el §9. Hasta que la implementación cumpla esas condiciones y se despliegue, el comportamiento no cambia: el listado puro sigue entregando hasta 20 fichas en una sola respuesta, sin pie ni continuación.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-_______________________________________________________________
+Se autoriza la Parte 3 del Acta SCENAIA-004 según los puntos 4.1 a 4.9 de esta Adenda, detrás de SCENAIA_PAGINACION_ENABLED, que debe validarse y encenderse antes de la carga masiva de obras. Esta Adenda no autoriza ningún cambio en la base de datos: el filtrado sin acentos y el índice sobre (title, id) requieren expediente propio, que debe estar en producción antes de que el catálogo supere las 1.000 obras.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ____________________________   **Fecha:** ____________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-28
