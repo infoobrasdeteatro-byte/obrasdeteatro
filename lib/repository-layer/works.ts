@@ -128,7 +128,90 @@ function applyCriteria<
   return filtered
 }
 
-export async function listPublishedWorks(criteria: WorkSearchCriteria = {}, limit = 20): Promise<Work[]> {
+/**
+ * SCENAIA-004 §4.4 (Parte 2) -- pagina de obras publicadas: orden estable
+ * (titulo y, en empate, id), desplazamiento y recuento total de las obras
+ * que cumplen el criterio. Solo se activa cuando el llamador pasa `page`;
+ * sin el, listPublishedWorks se comporta exactamente como antes: misma
+ * consulta (sin ORDER BY), mismo limite y misma clave de cache.
+ */
+export interface PublishedWorksPageOptions {
+  /** Obras que se saltan desde el principio del orden estable. Por defecto, 0. */
+  offset?: number
+}
+
+export interface PublishedWorksPage {
+  works: Work[]
+  /** Obras publicadas que cumplen el criterio; null si no pudo determinarse. */
+  total: number | null
+}
+
+/**
+ * Un desplazamiento mayor que el total hace que PostgREST responda 416
+ * (PGRST103) y el cliente descarta el recuento; el total solo viaja en el
+ * detalle: "An offset of N was requested, but there are only M rows."
+ */
+const OFFSET_BEYOND_TOTAL = /only (\d+) rows?/
+
+// La firma sin pagina va la ultima a proposito: es la que TypeScript toma
+// cuando infiere el tipo de la funcion (p. ej. vi.mocked en las pruebas de
+// quienes la llaman hoy), que asi sigue siendo exactamente la de siempre.
+export function listPublishedWorks(
+  criteria: WorkSearchCriteria | undefined,
+  limit: number | undefined,
+  page: PublishedWorksPageOptions
+): Promise<PublishedWorksPage>
+export function listPublishedWorks(criteria?: WorkSearchCriteria, limit?: number): Promise<Work[]>
+export async function listPublishedWorks(
+  criteria: WorkSearchCriteria = {},
+  limit = 20,
+  page?: PublishedWorksPageOptions
+): Promise<Work[] | PublishedWorksPage> {
+  if (page !== undefined) {
+    const offset = Math.max(0, Math.floor(page.offset ?? 0))
+    const pageCacheKey = `works:published:${JSON.stringify(criteria)}:${limit}:offset:${offset}`
+
+    return withCache(pageCacheKey, CACHE_TTL_MS, async (): Promise<PublishedWorksPage> => {
+      const supabase = await createClient()
+
+      const { genre, ...sqlCriteria } = criteria
+
+      const baseQuery = supabase
+        .from('works')
+        .select(WORK_COLUMNS, genre === undefined ? { count: 'exact' } : undefined)
+        .eq('is_published', true)
+        .is('deleted_at', null)
+
+      const ordered = applyCriteria(baseQuery, sqlCriteria)
+        .order('title', { ascending: true })
+        .order('id', { ascending: true })
+
+      if (genre !== undefined) {
+        // Excepcion de genero (documentada arriba): mismos candidatos que el
+        // modo sin pagina, ya en orden estable; el recuento y el
+        // desplazamiento se aplican despues de filtrar en memoria.
+        const { data, error } = await ordered.limit(GENRE_FILTER_CANDIDATE_LIMIT)
+
+        if (error || !data) return { works: [], total: null }
+
+        const rows = data.filter((row) => matchesGenre(row.genre, genre))
+
+        return { works: rows.slice(offset, offset + limit).map(toWork), total: rows.length }
+      }
+
+      const { data, error, count } = await ordered.range(offset, offset + limit - 1)
+
+      if (error?.code === 'PGRST103') {
+        const match = OFFSET_BEYOND_TOTAL.exec(error.details ?? '')
+        return { works: [], total: match ? Number(match[1]) : null }
+      }
+
+      if (error || !data) return { works: [], total: null }
+
+      return { works: data.map(toWork), total: count ?? null }
+    })
+  }
+
   const cacheKey = `works:published:${JSON.stringify(criteria)}:${limit}`
 
   return withCache(cacheKey, CACHE_TTL_MS, async () => {
