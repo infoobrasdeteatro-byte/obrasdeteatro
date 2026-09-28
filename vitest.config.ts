@@ -7,6 +7,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     },
   },
+  oxc: { jsx: { runtime: 'automatic' } },
   test: {
     environment: 'node',
     exclude: [...defaultExclude, '_incidente-trazabilidad-2026-07-19/**'],
