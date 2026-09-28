@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-004A (adenda a SCENAIA-004)
-**Fecha:** ____________
-**Estado resultante:** PENDIENTE DE AUTORIZACIÓN — LA IMPLEMENTACIÓN NO ESTÁ AUTORIZADA
+**Fecha:** 2026-09-28
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-28):** `SCENAIA-004A` no existía en documentación, código, migraciones, material archivado bajo `_incidente-trazabilidad-2026-07-19/`, mensajes de commit de ninguna rama, objetos versionados de ninguna rama, el stash ni las referencias de respaldo (`refs/backup`), ni el respaldo permanente de `Documentos\respaldos\obrasdeteatro-2026-09-19`. Tampoco existía ninguna adenda previa en el proyecto.
 
@@ -74,18 +74,18 @@ Nada más. El resto del Acta SCENAIA-004 sigue vigente sin cambios.
 
 ### 8. Veredicto
 
-**PENDIENTE.** Sin firma, la página con género sigue calculándose sobre 200 candidatos y los tipos siguen sin exportarse desde `index.ts`.
+**AUTORIZADA CON CONDICIONES.** Dirección amplía el §4.4 del Acta SCENAIA-004 y autoriza los puntos 4.1 y 4.2 de esta Adenda, en los términos de las condiciones del §7 y de las recogidas en el §9. Hasta que la implementación cumpla esas condiciones y se despliegue, el comportamiento no cambia: la página con género sigue calculándose sobre 200 candidatos y los tipos siguen sin exportarse desde `index.ts`.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-_______________________________________________________________
+Se autoriza la ampliación del §4.4 del Acta SCENAIA-004 según los puntos 4.1 y 4.2 de esta Adenda, con la opción de ampliar candidatos en modo página y declarar el recuento no determinado al alcanzar el máximo. La solución definitiva (filtrado sin acentos en la base de datos) queda reservada a un expediente propio cuando el catálogo se acerque al límite de 1.000 obras.
 
-Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente, con el mismo procedimiento que esta Adenda ha seguido para ampliar el §4.4 del Acta SCENAIA-004. Ningún alcance de este documento (máximo de candidatos, forma de declarar el recuento no determinado, etc.) se considera fijo si la evolución de la plataforma lo justifica.
+Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ____________________________   **Fecha:** ____________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-28
