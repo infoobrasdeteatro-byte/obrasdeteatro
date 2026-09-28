@@ -24,6 +24,7 @@ export type {
 export { getIdentity } from './identity'
 export { getProfessionalProfilePublic } from './professional-profile'
 export { getPublishedWorkById, listPublishedWorks, listPublishedWorkAuthors } from './works'
+export type { PublishedWorksPage, PublishedWorksPageOptions } from './works'
 export { getPublicOrganizationById, listPublicOrganizations, listOrganizationLocations } from './organizations'
 export { listPublicPersons, listPersonLocations } from './persons'
 export { normalizeLocationValue, resolveLocationVariants } from './location-normalization'

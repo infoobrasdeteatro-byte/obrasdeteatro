@@ -153,6 +153,18 @@ export interface PublishedWorksPage {
  */
 const OFFSET_BEYOND_TOTAL = /only (\d+) rows?/
 
+/**
+ * SCENAIA-004A §4.1 -- candidatos con genero en modo pagina. Con 200 (el
+ * margen del modo sin pagina), mas alla de 200 candidatos el recuento y las
+ * ultimas paginas se quedaban cortos sin aviso. 1.000 coincide con el maximo
+ * de filas por defecto de la API de Supabase. Si la consulta devuelve
+ * exactamente este maximo puede haber candidatos sin evaluar, y el recuento
+ * se declara no determinado (null) en lugar de darse como exacto. La
+ * solucion definitiva (filtrar sin acentos en la base) queda reservada a un
+ * expediente propio.
+ */
+const PAGED_GENRE_FILTER_CANDIDATE_LIMIT = 1000
+
 // La firma sin pagina va la ultima a proposito: es la que TypeScript toma
 // cuando infiere el tipo de la funcion (p. ej. vi.mocked en las pruebas de
 // quienes la llaman hoy), que asi sigue siendo exactamente la de siempre.
@@ -187,16 +199,17 @@ export async function listPublishedWorks(
         .order('id', { ascending: true })
 
       if (genre !== undefined) {
-        // Excepcion de genero (documentada arriba): mismos candidatos que el
-        // modo sin pagina, ya en orden estable; el recuento y el
-        // desplazamiento se aplican despues de filtrar en memoria.
-        const { data, error } = await ordered.limit(GENRE_FILTER_CANDIDATE_LIMIT)
+        // Excepcion de genero (documentada arriba): candidatos ya en orden
+        // estable; el recuento y el desplazamiento se aplican despues de
+        // filtrar en memoria (SCENAIA-004A §4.1).
+        const { data, error } = await ordered.limit(PAGED_GENRE_FILTER_CANDIDATE_LIMIT)
 
         if (error || !data) return { works: [], total: null }
 
         const rows = data.filter((row) => matchesGenre(row.genre, genre))
+        const total = data.length === PAGED_GENRE_FILTER_CANDIDATE_LIMIT ? null : rows.length
 
-        return { works: rows.slice(offset, offset + limit).map(toWork), total: rows.length }
+        return { works: rows.slice(offset, offset + limit).map(toWork), total }
       }
 
       const { data, error, count } = await ordered.range(offset, offset + limit - 1)

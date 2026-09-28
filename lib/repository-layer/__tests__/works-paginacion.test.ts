@@ -268,7 +268,7 @@ describe('listPublishedWorks — página (orden estable, desplazamiento, recuent
     expect(a.total).toBe(comedias.length)
     expect([...a.works, ...b.works].map((w) => w.id)).toEqual(comedias.slice(0, 20).map((w) => w.id))
     expect(fuera).toEqual({ works: [], total: comedias.length })
-    expect(llamadas).toContain('limit:200')
+    expect(llamadas).toContain('limit:1000')
     expect(llamadas.some((l) => l.startsWith('range:'))).toBe(false)
   })
 })
