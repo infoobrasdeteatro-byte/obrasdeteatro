@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-006
-**Fecha:** ____________
-**Estado resultante:** ____________
+**Fecha:** 2026-09-28
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-28):** `SCENAIA-006` no existía en ninguno de estos sitios:
 - la documentación, el código, las migraciones ni el material archivado bajo `_incidente-trazabilidad-2026-07-19/`;
@@ -182,18 +182,18 @@ Se suman tres vocabularios distintos:
 
 ### 8. Veredicto
 
-____________
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza los puntos del §4 de esta Acta, en los términos de las condiciones del §7 y de las recogidas en el §9. El PR 3 (modo sin página) no queda autorizado por esta Acta. Hasta que la implementación cumpla esas condiciones y se despliegue, no cambia ningún comportamiento: el género se sigue comparando en memoria con `matchesGenre`, y la base de datos no tiene ni la columna `genre_normalizado` ni los índices nuevos.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-____________
+Se autoriza el filtrado de género sin acentos según los términos del §4, con la opción (b): columna generada genre_normalizado, índice de trigramas e índice parcial sobre (title, id), en dos migraciones, y el filtro por SQL detrás de SCENAIA_GENERO_SQL_ENABLED, apagado por defecto. El modo sin página queda fuera de esta Acta y exige autorización propia. La época como género (teatro clásico, Siglo de Oro) queda señalada como el siguiente expediente prioritario tras este. SCENAIA_GENERO_SQL_ENABLED debe encenderse en Production antes de que el catálogo supere las 1.000 obras, y solo puede activarse con SCENAIA_PAGINACION_ENABLED ya encendido.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ____________________________   **Fecha:** ____________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-28
