@@ -27,7 +27,7 @@ import { createClient } from '@/lib/supabase/client'
 type ResultadoPreparar =
   | { estado: 'idle' }
   | { estado: 'cargando' }
-  | { estado: 'listo' }
+  | { estado: 'listo'; suscripcionSeCancelara: boolean }
   | { estado: 'bloqueado_condiciones'; detalle: string[] }
   | { estado: 'error'; mensaje: string }
 
@@ -86,7 +86,7 @@ export default function PrepararExtincionPanel() {
     const data = await res.json()
 
     if (res.ok && data.ok) {
-      setPreparar({ estado: 'listo' })
+      setPreparar({ estado: 'listo', suscripcionSeCancelara: data.suscripcionSeCancelara === true })
       return
     }
 
@@ -170,6 +170,15 @@ export default function PrepararExtincionPanel() {
           <p className="auth-message auth-message--success" style={{ marginTop: '12px' }}>
             Verificación completada correctamente. Puedes confirmar la eliminación definitiva.
           </p>
+          {/* AEC-003C §4.3 -- consentimiento informado sobre la consecuencia económica, antes del botón */}
+          {preparar.suscripcionSeCancelara && (
+            <div className="auth-message auth-message--error" role="alert" style={{ marginTop: '12px' }}>
+              <p style={{ fontWeight: 600, marginBottom: '4px' }}>Tu suscripción se cancelará en ese momento.</p>
+              <p style={{ margin: 0 }}>
+                Al confirmar la eliminación, tu suscripción de pago se cancela en el acto, sin esperar al final del período abonado y sin reembolso automático de los días restantes.
+              </p>
+            </div>
+          )}
           <button
             onClick={confirmarEliminacion}
             disabled={ejecutar.estado === 'cargando' || ejecutar.estado === 'extinguida' || ejecutar.estado === 'ya_extinguida'}
