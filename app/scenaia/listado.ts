@@ -53,10 +53,17 @@ export function esPaginaVacia(pagina: PaginaDelListado): boolean {
  * Texto del pie (SCENAIA-004B §4.9):
  *   - con total: "Mostrando 1-10 de 11"; una sola obra, "Mostrando 11 de 11";
  *   - con total no determinado: "Mostrando 1-10", NUNCA "de N";
- *   - pagina vacia: "No hay más obras en este listado".
+ *   - pagina siguiente vacia (from > 1): "No hay más obras en este listado";
+ *   - primera pagina vacia (from === 1): "Ninguna obra coincide con esta
+ *     búsqueda". No hay "más" obras que no haya: el listado no tuvo ninguna.
+ *     Se decide por `from`, no por `total`, porque una primera pagina puede
+ *     llegar vacia con total null; es la misma regla que usa la composicion
+ *     (desplazamiento mayor que cero = continuacion).
  */
 export function textoDelPie(pagina: PaginaDelListado): string {
-  if (esPaginaVacia(pagina)) return 'No hay más obras en este listado'
+  if (esPaginaVacia(pagina)) {
+    return pagina.from === 1 ? 'Ninguna obra coincide con esta búsqueda' : 'No hay más obras en este listado'
+  }
 
   const rango = pagina.from === pagina.to ? conMiles(pagina.from) : `${conMiles(pagina.from)}-${conMiles(pagina.to)}`
 
