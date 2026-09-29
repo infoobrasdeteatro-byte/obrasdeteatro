@@ -508,15 +508,23 @@ describe('listPublishedWorks — criterio epocas (SCENAIA-007 §4.3)', () => {
       expect(columnas).not.toMatch(/epocas/)
     })
 
-    it('hasta el PR 3, nadie fuera de Repository Layer emite el criterio epocas (el PR 3 debe revisar este invariante)', () => {
+    // Revisado en SCENAIA-007 PR 3: hasta entonces nadie emitia el criterio.
+    // Desde el PR 3 lo emite el interprete -- y solo el --, y el interruptor
+    // solo se lee en el Orquestador (adenda al §4.2).
+    it('solo el intérprete emite el criterio epocas, y SCENAIA_EPOCA_ENABLED solo se lee en el Orquestador (revisado en el PR 3)', () => {
+      expect(fuente('lib/knowledge-assets/interpret-work-query.ts')).toMatch(/criteria\.epocas = /)
       for (const ruta of [
-        'lib/knowledge-assets/interpret-work-query.ts',
         'lib/knowledge-assets/semantic-retriever.ts',
         'lib/intent-resolver/vocabulary.ts',
         'lib/conversation-state/validate.ts',
+        'lib/scenaia-knowledge-model/retrieve-knowledge.ts',
+        'lib/scenaia-knowledge-model/knowledge-context-builder.ts',
+        'lib/verified/orquestador/coordinate-flow.ts',
+        'app/api/scenaia-verified/route.ts',
       ]) {
-        expect(fuente(ruta), ruta).not.toMatch(/epocas|epocaYearFrom|SCENAIA_EPOCA_ENABLED/)
+        expect(fuente(ruta), ruta).not.toMatch(/criteria\.epocas|epocaYearFrom|process\.env\.SCENAIA_EPOCA_ENABLED/)
       }
+      expect(fuente('lib/verified/orquestador/epoca.ts')).toMatch(/process\.env\.SCENAIA_EPOCA_ENABLED/)
     })
   })
 

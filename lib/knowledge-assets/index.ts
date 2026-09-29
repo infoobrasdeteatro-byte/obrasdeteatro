@@ -34,8 +34,9 @@ export {
   resolveWorkOccupancy,
   isWorkConcept,
   isWorkSlot,
+  isWorkConceptInSlot,
 } from './interpret-work-query'
-export type { WorkConcept, WorkSlot, WorkSlotOccupancy } from './interpret-work-query'
+export type { WorkConcept, WorkSlot, WorkSlotOccupancy, OpcionesEpoca } from './interpret-work-query'
 export { interpretOrganizationQuery, hasUnresolvedLocation } from './interpret-organization-query'
 export type { KnowledgeRetrievalResult } from './semantic-retriever'
 export { retrieveRelevantKnowledge } from './semantic-retriever'

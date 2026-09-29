@@ -1,4 +1,5 @@
 import { buildResolverPrompt, mayNeedResolution, parseResolvedTerms } from './vocabulary'
+import type { OpcionesVocabulario } from './vocabulary'
 
 /**
  * Ejecutor de proveedor inyectado por el llamador. El resolutor NUNCA
@@ -24,17 +25,24 @@ export type VocabularyExecutor = (prompt: string) => Promise<string | null>
  * responde, responde vacio, se equivoca de formato o inventa terminos, el
  * resultado es una lista vacia y el flujo continua exactamente como antes
  * de esta capa. Nunca lanza.
+ *
+ * SCENAIA-007: la opcion de epoca llega como dato desde el Orquestador y se
+ * reenvia tal cual; sin ella, el vocabulario es exactamente el anterior.
  */
-export async function resolveVocabulary(originalRequest: string, execute: VocabularyExecutor): Promise<string[]> {
+export async function resolveVocabulary(
+  originalRequest: string,
+  execute: VocabularyExecutor,
+  opciones?: OpcionesVocabulario
+): Promise<string[]> {
   if (originalRequest.trim().length === 0) return []
 
   // Guarda de coste: si la peticion no contiene nada que los motores no
   // consuman ya, no hay nada que traducir y no se consulta al proveedor.
-  if (!mayNeedResolution(originalRequest)) return []
+  if (!mayNeedResolution(originalRequest, opciones)) return []
 
   try {
-    const contenido = await execute(buildResolverPrompt(originalRequest))
-    return parseResolvedTerms(contenido, originalRequest)
+    const contenido = await execute(buildResolverPrompt(originalRequest, opciones))
+    return parseResolvedTerms(contenido, originalRequest, opciones)
   } catch {
     return []
   }

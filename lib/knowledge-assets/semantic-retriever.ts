@@ -1,7 +1,7 @@
 import { listPublishedWorkAuthors, listOrganizationLocations, listPersonLocations } from '@/lib/repository-layer'
 import { listWorkKnowledge } from './works-knowledge'
 import { resolveWorkOccupancy } from './interpret-work-query'
-import type { WorkSlotOccupancy } from './interpret-work-query'
+import type { WorkSlotOccupancy, OpcionesEpoca } from './interpret-work-query'
 import { listOrganizationKnowledge } from './organizations-knowledge'
 import { listPersonKnowledge } from './persons-knowledge'
 import { interpretPersonQuery, hasUnresolvedPersonLocation } from './interpret-person-query'
@@ -83,7 +83,8 @@ export interface SemanticRetriever {
     query: string,
     limit?: number,
     previousOccupancy?: WorkSlotOccupancy,
-    page?: WorksPageRequest
+    page?: WorksPageRequest,
+    opciones?: OpcionesEpoca
   ): Promise<KnowledgeRetrievalResult>
 }
 
@@ -103,15 +104,19 @@ async function baseRetrieve(
   query: string,
   limit?: number,
   previousOccupancy: WorkSlotOccupancy = {},
-  page?: WorksPageRequest
+  page?: WorksPageRequest,
+  opciones?: OpcionesEpoca
 ): Promise<KnowledgeRetrievalResult> {
   switch (domain) {
     case 'Obras': {
       const knownAuthors = await listPublishedWorkAuthors()
+      // SCENAIA-007: la opcion de epoca llega como dato y se reenvia tal cual
+      // al interprete; sin ella, las llamadas son exactamente las de siempre.
+      const epoca = opciones !== undefined ? ([opciones] as const) : ([] as const)
       // Las ranuras vigentes del turno anterior son el punto de partida; el
       // turno actual solo sobrescribe las dimensiones que menciona.
-      const workOccupancy = resolveWorkOccupancy(query, previousOccupancy)
-      const criteria = interpretWorkQuery(query, knownAuthors, previousOccupancy)
+      const workOccupancy = resolveWorkOccupancy(query, previousOccupancy, ...epoca)
+      const criteria = interpretWorkQuery(query, knownAuthors, previousOccupancy, ...epoca)
       // SCENAIA-004B §4.4: con pagina, la pide tal cual llega y devuelve el
       // recuento; sin pagina, la llamada es exactamente la de siempre.
       const { items, worksPage } =
@@ -121,7 +126,7 @@ async function baseRetrieve(
       // Obras distingue ya los cuatro estados, igual que Organizaciones: sabe
       // cuando el usuario atribuyo una obra a alguien que no esta en el
       // catalogo, y lo separa de "no se pidio ningun criterio".
-      const unappliedCriteria = hasUnresolvedAuthor(query, criteria) ? ['autor'] : []
+      const unappliedCriteria = hasUnresolvedAuthor(query, criteria, ...epoca) ? ['autor'] : []
 
       return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy, worksPage }
     }
@@ -163,8 +168,10 @@ export async function retrieveRelevantKnowledge(
   query: string,
   limit?: number,
   previousOccupancy?: WorkSlotOccupancy,
-  page?: WorksPageRequest
+  page?: WorksPageRequest,
+  opciones?: OpcionesEpoca
 ): Promise<KnowledgeRetrievalResult> {
+  if (opciones !== undefined) return baseSemanticRetriever.retrieve(domain, query, limit, previousOccupancy, page, opciones)
   return page !== undefined
     ? baseSemanticRetriever.retrieve(domain, query, limit, previousOccupancy, page)
     : baseSemanticRetriever.retrieve(domain, query, limit, previousOccupancy)

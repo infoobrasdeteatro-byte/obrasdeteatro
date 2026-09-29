@@ -1,5 +1,5 @@
 import type { NormalizedRequest } from '@/lib/request-interpreter'
-import type { WorkSlotOccupancy, WorksPageRequest } from '@/lib/knowledge-assets'
+import type { OpcionesEpoca, WorkSlotOccupancy, WorksPageRequest } from '@/lib/knowledge-assets'
 import type { KnowledgeCompleteness, KnowledgeContext } from './types'
 import { isDomainCovered } from './domain-coverage'
 import { retrieveKnowledgeForDomain } from './retrieve-knowledge'
@@ -28,7 +28,8 @@ function completenessToConfidence(completeness: KnowledgeCompleteness): number {
 export async function buildKnowledgeContext(
   normalizedRequest: NormalizedRequest,
   previousOccupancy: WorkSlotOccupancy = {},
-  page?: WorksPageRequest
+  page?: WorksPageRequest,
+  opciones?: OpcionesEpoca
 ): Promise<KnowledgeContext> {
   // Deduplicado defensivo: NormalizedRequest no garantiza unicidad a nivel de
   // tipos, aunque el unico productor actual (Request Interpreter) nunca la
@@ -39,11 +40,16 @@ export async function buildKnowledgeContext(
 
   // SCENAIA-004B §4.4: la pagina, si llega, solo se aplica a Obras, el unico
   // dominio con listado paginado. Sin pagina, la llamada es la de siempre.
+  // SCENAIA-007: la opcion de epoca, si llega, se transporta tal cual y solo
+  // a Obras, el unico dominio que la interpreta; sin ella, las llamadas son
+  // las de siempre.
   const resultsByDomain = await Promise.all(
     coveredDomains.map((domain) =>
-      page !== undefined && domain === 'Obras'
-        ? retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy, page)
-        : retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy)
+      opciones !== undefined && domain === 'Obras'
+        ? retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy, page, opciones)
+        : page !== undefined && domain === 'Obras'
+          ? retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy, page)
+          : retrieveKnowledgeForDomain(domain, normalizedRequest.retrievalQuery, previousOccupancy)
     )
   )
   const knowledgeEntities = resultsByDomain.flatMap((result) => result.items)

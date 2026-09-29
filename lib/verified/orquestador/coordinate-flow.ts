@@ -19,6 +19,7 @@ import { buildResolverPrompt } from '@/lib/intent-resolver'
 import type { IncomingConversationState } from '@/lib/conversation-state'
 import type { TurnOutcome, ListingContinuation } from './types'
 import { LISTADO_TAMANO_PAGINA, paginacionActivada, listingPageOf } from './paginacion'
+import { argumentosEpoca, epocaActivada } from './epoca'
 import { buildDirectContent } from '@/lib/direct-content-builder'
 import { composePrompt } from '@/lib/prompt-composer'
 import { composeAugmentedRequest, resolveVocabulary } from '@/lib/intent-resolver'
@@ -193,19 +194,34 @@ export async function coordinateFlow(
   const turnId = crypto.randomUUID()
   let normalizedRequest = normalizeRequest(originalRequest, turnId, previousUserRequests, dominioPrevio)
   const professionalContext = await buildProfessionalContext(userId, session)
+  // SCENAIA-007 §4.2 (corregido por su adenda): el interruptor de epoca se lee
+  // una vez por turno y viaja como dato al interprete y al resolutor. Apagado,
+  // no se anade ningun argumento: las llamadas son exactamente las de siempre.
+  const epoca = argumentosEpoca(epocaActivada())
   // Quien pide el catalogo completo no hereda los criterios guardados: el
   // turno empieza sin ellos, y por eso tampoco los deja al siguiente. El
   // interprete es quien lo decide; aqui solo se lee su campo.
   // SCENAIA-004B §4.4: el listado puro de Obras pide su primera pagina solo
   // con el interruptor encendido; el tamano se pasa como dato. En cualquier
   // otro caso no se pasa nada y la llamada es exactamente la de siempre.
-  let knowledgeContext = await buildKnowledgeContext(
-    normalizedRequest,
-    normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
-    ...(normalizedRequest.requestsPlainListing && paginacionActivada()
-      ? ([{ offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
-      : ([] as const))
-  )
+  // SCENAIA-007: con el interruptor de epoca encendido se anade la opcion (y
+  // la pagina, o `undefined`, delante); apagado, la llamada es la de siempre.
+  let knowledgeContext = await (epoca.length > 0
+    ? buildKnowledgeContext(
+        normalizedRequest,
+        normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
+        normalizedRequest.requestsPlainListing && paginacionActivada()
+          ? { offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }
+          : undefined,
+        epoca[0]
+      )
+    : buildKnowledgeContext(
+        normalizedRequest,
+        normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
+        ...(normalizedRequest.requestsPlainListing && paginacionActivada()
+          ? ([{ offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
+          : ([] as const))
+      ))
   // Senal de continuacion, ya declarada en el contrato. Se deriva aqui
   // porque la reserva preventiva necesita saber si el resolutor puede
   // llegar a ejecutarse antes de estimar el coste del turno.
@@ -227,7 +243,7 @@ export async function coordinateFlow(
     // ninguna cifra: el Orquestador sabe QUE operaciones puede haber, nunca
     // cuanto puede generar cada una.
     maxOutputTokensByOperation: MAX_OUTPUT_TOKENS_BY_OPERATION,
-    resolverPromptCharacters: esTurnoDeContinuacion ? null : buildResolverPrompt(originalRequest).length,
+    resolverPromptCharacters: esTurnoDeContinuacion ? null : buildResolverPrompt(originalRequest, ...epoca).length,
     creditValue: CREDIT_VALUE,
   })
   const authorizationContext = await buildAuthorizationContext(professionalContext, decisionContext)
@@ -444,7 +460,7 @@ export async function coordinateFlow(
           stage: 'resolver',
         })
         return result.generatedContent
-      })
+      }, ...epoca)
 
       if (resolvedTerms.length > 0) {
         // El texto original nunca se altera: los terminos resueltos se anaden
@@ -462,17 +478,26 @@ export async function coordinateFlow(
         // exacto donde antes se acuñaba una segunda identidad y la
         // trazabilidad del turno se partia en dos.
         normalizedRequest = normalizeRequest(
-          composeAugmentedRequest(originalRequest, resolvedTerms),
+          composeAugmentedRequest(originalRequest, resolvedTerms, ...epoca),
           turnId,
           previousUserRequests
         )
-        knowledgeContext = await buildKnowledgeContext(
-          normalizedRequest,
-          normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
-          ...(normalizedRequest.requestsPlainListing && paginacionActivada()
-            ? ([{ offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
-            : ([] as const))
-        )
+        knowledgeContext = await (epoca.length > 0
+          ? buildKnowledgeContext(
+              normalizedRequest,
+              normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
+              normalizedRequest.requestsPlainListing && paginacionActivada()
+                ? { offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }
+                : undefined,
+              epoca[0]
+            )
+          : buildKnowledgeContext(
+              normalizedRequest,
+              normalizedRequest.requestsFullCatalog ? {} : ocupacionPrevia,
+              ...(normalizedRequest.requestsPlainListing && paginacionActivada()
+                ? ([{ offset: continuation?.offset ?? 0, pageSize: LISTADO_TAMANO_PAGINA }] as const)
+                : ([] as const))
+            ))
       }
     }
 

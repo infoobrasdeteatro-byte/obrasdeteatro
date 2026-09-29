@@ -4,6 +4,9 @@ import { coordinateFlow } from '@/lib/verified/orquestador'
 // Importacion directa del modulo de paginacion (SCENAIA-004B): interruptor y
 // cota, sin pasar por el punto de entrada del flujo.
 import { paginacionActivada, LISTADO_DESPLAZAMIENTO_MAXIMO } from '@/lib/verified/orquestador/paginacion'
+// SCENAIA-007 (adenda al §4.2): interruptor de epoca, leido aqui para validar
+// el estado heredado contra las ranuras vigentes.
+import { argumentosEpoca, epocaActivada } from '@/lib/verified/orquestador/epoca'
 import type { ConversationTurn, ListingContinuation } from '@/lib/verified/orquestador'
 import { parseConversationState } from '@/lib/conversation-state'
 import { resolveScenaiaAccess, accessDenialStatus } from '@/lib/auth/scenaia-access'
@@ -233,7 +236,7 @@ async function atenderPeticion(req: NextRequest) {
    * manipulado solo puede expresar criterios que quien lo envia ya podria
    * haber pedido escribiendolos.
    */
-  const conversationState = parseConversationState(body.conversationState)
+  const conversationState = parseConversationState(body.conversationState, ...argumentosEpoca(epocaActivada()))
 
   const { responseContext, conversationState: nextState, listingPage } = await coordinateFlow(
     acceso.userId,
