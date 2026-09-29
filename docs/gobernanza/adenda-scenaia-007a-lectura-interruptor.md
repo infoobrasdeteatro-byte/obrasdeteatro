@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-007A (adenda a SCENAIA-007)
-**Fecha:** __________
-**Estado resultante:** BORRADOR — PENDIENTE DE FIRMA
+**Fecha:** 2026-09-29
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-29):** `SCENAIA-007A` no existía en ninguno de estos sitios:
 - la documentación, el código, las migraciones ni el material archivado bajo `_incidente-trazabilidad-2026-07-19/`;
@@ -82,18 +82,18 @@ Leer el interruptor en `semantic-retriever`, como decía el §4.2, rompería el 
 
 ### 8. Veredicto
 
-**[Pendiente de decisión de Dirección.]** Hasta su firma, el §4.2 del Acta SCENAIA-007 rige en su redacción original, y el PR 3 no debe fusionarse.
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza los puntos del §4 de esta Adenda, en los términos de las condiciones del §7 y de las recogidas en el §9. El resto del Acta SCENAIA-007 sigue vigente sin cambios.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-____________________________________________
+Se autoriza la corrección del §4.2 del Acta SCENAIA-007 y la ampliación de alcance del PR 3 según los términos del §4 de esta Adenda. El resto del Acta SCENAIA-007 sigue vigente sin cambios.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ______________________   **Fecha:** __________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-29
