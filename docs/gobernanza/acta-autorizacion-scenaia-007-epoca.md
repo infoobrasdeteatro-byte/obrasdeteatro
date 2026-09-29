@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-007
-**Fecha:** __________
-**Estado resultante:** BORRADOR — PENDIENTE DE FIRMA
+**Fecha:** 2026-09-29
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-29):** `SCENAIA-007` no existía en ninguno de estos sitios:
 - la documentación, el código, las migraciones ni el material archivado bajo `_incidente-trazabilidad-2026-07-19/`, incluidos los ficheros ignorados por git;
@@ -272,7 +272,7 @@ Nada más. Quedan **fuera** de esta Acta:
 
 ### 8. Veredicto
 
-**[Pendiente de decisión de Dirección.]** Hasta que la implementación cumpla las condiciones del §7 y se despliegue con el interruptor encendido, no cambia ningún comportamiento:
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza los puntos del §4 de esta Acta, en los términos de las condiciones del §7 y de las recogidas en el §9. El PR de formularios (selector de época) no queda autorizado por esta Acta. Hasta que la implementación cumpla esas condiciones y se despliegue con el interruptor encendido, no cambia ningún comportamiento:
 - «clásico» se sigue interpretando como género;
 - «contemporáneo» como `year >= 1950`;
 - la base de datos no tiene ni la columna `epocas` ni su índice.
@@ -281,12 +281,12 @@ Nada más. Quedan **fuera** de esta Acta:
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-____________________________________________
+Se autoriza el tratamiento de la época como dimensión propia según los términos del §4, con las decisiones del §4.7 tomadas por Dirección. El PR de formularios (selector de época) no queda autorizado por esta Acta. SCENAIA_EPOCA_ENABLED se enciende según el orden que fija la Adenda SCENAIA-006A.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ______________________   **Fecha:** __________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-29
