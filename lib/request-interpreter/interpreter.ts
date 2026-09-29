@@ -4,7 +4,7 @@ import { normalizeText } from './normalize-text'
 import { detectKnowledgeDomains } from './domain-rules'
 import { detectRequestType } from './request-type-rules'
 import { detectFullCatalogRequest } from './full-catalog-rules'
-import { detectPlainListingRequest } from './plain-listing-rules'
+import { detectPlainListingRequest, detectSoloGeneroRequest } from './plain-listing-rules'
 
 function estimateComplexity(domainsFound: number, textLength: number): EstimatedComplexity {
   if (domainsFound >= 2 || textLength > 200) return 'alta'
@@ -156,7 +156,13 @@ export function normalizeRequest(
   // SCENAIA-004 §4.1 (a) y (b): lo unico que puede decidirse leyendo el
   // texto. No declara que el turno vaya a resolverse sin IA.
   const requestsPlainListing = detectPlainListingRequest(normalizedIntent)
-  const requestedKnowledgeDomains = resolveDomains(ownDomains, domainsFromHistory, previousDomain)
+  // SCENAIA-004C §4.2: una peticion de solo criterio de genero que no abre
+  // ningun dominio por si misma pide obras. Solo se consume el resultado de
+  // la deteccion; las palabras clave de dominio no cambian.
+  const requestedKnowledgeDomains: KnowledgeDomain[] =
+    ownDomains.length === 0 && detectSoloGeneroRequest(normalizedIntent)
+      ? ['Obras']
+      : resolveDomains(ownDomains, domainsFromHistory, previousDomain)
   const requestType = detectRequestType(requestedKnowledgeDomains.length)
   const detectedAmbiguities = detectAmbiguities(originalRequest, requestedKnowledgeDomains, requestType)
 
