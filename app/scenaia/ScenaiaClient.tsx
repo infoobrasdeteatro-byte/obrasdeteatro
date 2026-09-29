@@ -5,12 +5,19 @@ import ChatMessage from './components/ChatMessage'
 import ChatWelcome from './components/ChatWelcome'
 import ChatInput from './components/ChatInput'
 import TypingIndicator from './components/TypingIndicator'
+import NuevaConversacion from './components/NuevaConversacion'
 import type { ConversationState } from '@/lib/conversation-state'
 import { resolveTurnNotice, resolveAccessDestination } from './turn-notice'
 import { leerRespuestaDelTurno } from './leer-respuesta'
 import type { TurnNotice } from './turn-notice'
 import { historialEnviable, cuerpoDelTurno, esUltimaRespuesta } from './listado'
 import type { PaginaDelListado, TurnoDelChat } from './listado'
+import {
+  CONFIRMACION_NUEVA_CONVERSACION,
+  estadoDeConversacionNueva,
+  puedeEmpezarNueva,
+  requiereConfirmacion,
+} from './conversacion'
 
 interface ScenaiaResponse {
   responseType: string
@@ -197,8 +204,24 @@ export default function ScenaiaClient() {
     void realizarTurno(turno.listingRequest, { offset: siguiente })
   }
 
+  /**
+   * "Nueva conversacion": vacia el hilo, el estado conversacional y el aviso
+   * de error, y conserva lo que se este escribiendo. Sin llamada al servidor
+   * ni almacenamiento: el turno siguiente sale con `conversationState: null`.
+   */
+  function handleNuevaConversacion() {
+    if (!puedeEmpezarNueva(messages, pending)) return
+    if (requiereConfirmacion(messages) && !window.confirm(CONFIRMACION_NUEVA_CONVERSACION)) return
+
+    const inicial = estadoDeConversacionNueva()
+    setMessages(inicial.messages)
+    setConversationState(inicial.conversationState)
+    setError(inicial.error)
+  }
+
   return (
     <div className="scenaia-shell">
+      <NuevaConversacion mensajes={messages} pendiente={pending} onNueva={handleNuevaConversacion} />
       <div className="scenaia-thread">
         {messages.length === 0 && !pending ? (
           <ChatWelcome />
