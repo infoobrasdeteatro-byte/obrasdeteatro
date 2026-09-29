@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-004C (adenda a SCENAIA-004)
-**Fecha:** __________
-**Estado resultante:** BORRADOR — PENDIENTE DE FIRMA
+**Fecha:** 2026-09-29
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-29):** `SCENAIA-004C` no existía en ninguno de estos sitios:
 - la documentación, el código, las migraciones ni el material archivado bajo `_incidente-trazabilidad-2026-07-19/`, incluidos los ficheros ignorados por git;
@@ -143,18 +143,18 @@ Cualquier otra palabra, o un segundo término de criterio, hace que la forma no 
 
 ### 8. Veredicto
 
-**[Pendiente de decisión de Dirección.]** Hasta su firma, el §4.1 y el §6.1 del Acta SCENAIA-004 rigen en su redacción original, y «comedias» a secas sigue comportándose como hoy.
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza los puntos del §4 de esta Adenda, en los términos de las condiciones del §7 y de las recogidas en el §9. El resto del Acta SCENAIA-004 y de sus adendas 004A y 004B sigue vigente sin cambios. Hasta que la implementación cumpla esas condiciones y se despliegue, no cambia ningún comportamiento: «comedias» a secas sigue comportándose como hoy.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-____________________________________________
+Se autoriza la forma "petición de solo criterio de género" según los términos del §4 de esta Adenda, con dominio Obras implícito y sin modificar DOMAIN_KEYWORDS. Las épocas y los demás casos ambiguos señalados en el §1 y el §6.4 quedan como riesgo residual conocido, para un expediente futuro.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ______________________   **Fecha:** __________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-29
