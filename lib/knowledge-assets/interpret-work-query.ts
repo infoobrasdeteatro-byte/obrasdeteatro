@@ -34,6 +34,29 @@ export type WorkConcept =
   | 'CORTA'
   | 'LARGA'
   | 'POCOS_ACTORES'
+  // Epocas (SCENAIA-007 §4.4): solo se reconocen con el interruptor
+  // SCENAIA_EPOCA_ENABLED encendido.
+  | 'GRECOLATINO'
+  | 'MEDIEVAL'
+  | 'RENACIMIENTO'
+  | 'SIGLO_DE_ORO'
+  | 'BARROCO'
+  | 'ISABELINO'
+  | 'NEOCLASICO'
+  | 'ROMANTICISMO'
+  | 'REALISMO_NATURALISMO'
+  | 'VANGUARDIAS'
+  | 'POSGUERRA'
+
+/**
+ * Opcion de interpretacion que llega como DATO desde el Orquestador
+ * (SCENAIA-007 §4.2, corregido por su adenda): este archivo nunca lee el
+ * entorno. Ausente, o con `epocaHabilitada: false`, el comportamiento es
+ * exactamente el anterior a SCENAIA-007.
+ */
+export interface OpcionesEpoca {
+  readonly epocaHabilitada: boolean
+}
 
 /** Dimensiones del dominio Obras. Cada una admite un unico concepto vigente. */
 export type WorkSlot = 'genero' | 'duracion' | 'edad' | 'epoca' | 'reparto'
@@ -45,7 +68,13 @@ export type WorkSlot = 'genero' | 'duracion' | 'edad' | 'epoca' | 'reparto'
  */
 export type WorkSlotOccupancy = Partial<Readonly<Record<WorkSlot, WorkConcept>>>
 
-const CANONICAL_TERMS: Readonly<Record<WorkConcept, readonly string[]>> = {
+/** Conceptos anteriores a SCENAIA-007: los unicos que existen con el interruptor apagado. */
+type ConceptoBase = 'COMEDIA' | 'MUSICAL' | 'CLASICO' | 'CONTEMPORANEO' | 'INFANTIL' | 'CORTA' | 'LARGA' | 'POCOS_ACTORES'
+
+/** Conceptos de epoca nuevos (SCENAIA-007 §4.4). */
+type ConceptoEpoca = Exclude<WorkConcept, ConceptoBase>
+
+const CANONICAL_TERMS: Readonly<Record<ConceptoBase, readonly string[]>> = {
   COMEDIA: ['comedia', 'comedias', 'humoristica', 'humoristicas', 'divertida', 'divertidas'],
   MUSICAL: ['musical', 'musicales'],
   INFANTIL: ['infantil', 'infantiles', 'ninos', 'para ninos'],
@@ -56,9 +85,77 @@ const CANONICAL_TERMS: Readonly<Record<WorkConcept, readonly string[]>> = {
   POCOS_ACTORES: ['pocos actores', 'reparto reducido', 'pocos personajes'],
 }
 
-function detectCanonicalTerms(normalizedQuery: string): WorkConcept[] {
-  return (Object.keys(CANONICAL_TERMS) as WorkConcept[]).filter((canonical) =>
-    CANONICAL_TERMS[canonical].some((synonym) => normalizedQuery.includes(synonym))
+/**
+ * Sinonimos de los conceptos de epoca nuevos (SCENAIA-007 §4.4), ya sin
+ * acentos. Quedan fuera a proposito "romantico/a" ("comedia romantica" no es
+ * el Romanticismo), "realista" (describe un estilo) y "romano" (el teatro
+ * romano de Merida).
+ */
+const EPOCA_TERMS: Readonly<Record<ConceptoEpoca, readonly string[]>> = {
+  GRECOLATINO: ['grecolatino', 'grecolatina', 'grecolatinos', 'grecolatinas', 'griego', 'griega', 'griegos', 'griegas'],
+  MEDIEVAL: ['medieval', 'medievales'],
+  RENACIMIENTO: ['renacimiento', 'renacentista', 'renacentistas'],
+  SIGLO_DE_ORO: ['siglo de oro', 'siglos de oro', 'aureo'],
+  BARROCO: ['barroco', 'barroca', 'barrocos', 'barrocas'],
+  ISABELINO: ['isabelino', 'isabelina', 'isabelinos', 'isabelinas'],
+  NEOCLASICO: ['neoclasico', 'neoclasica', 'neoclasicos', 'neoclasicas'],
+  ROMANTICISMO: ['romanticismo'],
+  REALISMO_NATURALISMO: ['realismo', 'naturalismo', 'naturalista', 'naturalistas'],
+  VANGUARDIAS: ['vanguardia', 'vanguardias', 'vanguardista', 'vanguardistas'],
+  POSGUERRA: ['posguerra', 'postguerra'],
+}
+
+/** Sinonimos de un concepto, sea anterior o de epoca. */
+function sinonimosDe(canonical: WorkConcept): readonly string[] {
+  return Object.prototype.hasOwnProperty.call(CANONICAL_TERMS, canonical)
+    ? CANONICAL_TERMS[canonical as ConceptoBase]
+    : EPOCA_TERMS[canonical as ConceptoEpoca]
+}
+
+/**
+ * Conceptos que, con el interruptor encendido, ocupan la ranura `epoca` y se
+ * detectan por palabra completa: los nuevos, mas CLASICO (que deja de ser
+ * genero, acta SCENAIA-007 §4.4) y CONTEMPORANEO (que ya estaba en ella).
+ */
+const CONCEPTOS_DE_EPOCA: readonly WorkConcept[] = ['CLASICO', 'CONTEMPORANEO', ...(Object.keys(EPOCA_TERMS) as ConceptoEpoca[])]
+
+/**
+ * Posiciones en que `sinonimo` aparece como PALABRA COMPLETA: ni la precede
+ * ni la sigue una letra o cifra. Es lo que impide que "neoclasico" active
+ * tambien "clasico" (SCENAIA-007 §6.5).
+ */
+function posicionesPorPalabra(texto: string, sinonimo: string): number[] {
+  const posiciones: number[] = []
+  for (let desde = 0; ; ) {
+    const i = texto.indexOf(sinonimo, desde)
+    if (i === -1) return posiciones
+    const antes = i === 0 ? '' : texto[i - 1]
+    const despues = texto[i + sinonimo.length] ?? ''
+    if (!/[a-z0-9]/.test(antes) && !/[a-z0-9]/.test(despues)) posiciones.push(i)
+    desde = i + 1
+  }
+}
+
+/** Conceptos que existen en este modo: con el interruptor apagado, solo los anteriores. */
+function conceptosDelModo(epocaHabilitada: boolean): WorkConcept[] {
+  const base = Object.keys(CANONICAL_TERMS) as WorkConcept[]
+  return epocaHabilitada ? [...base, ...(Object.keys(EPOCA_TERMS) as ConceptoEpoca[])] : base
+}
+
+/**
+ * Posicion de cada mencion del sinonimo. Con el interruptor encendido, los
+ * conceptos de epoca solo cuentan como palabra completa; el resto, y todos
+ * con el interruptor apagado, conservan la busqueda por subcadena de siempre.
+ */
+function menciones(normalizedQuery: string, canonical: WorkConcept, synonym: string, epocaHabilitada: boolean): number[] {
+  if (epocaHabilitada && CONCEPTOS_DE_EPOCA.includes(canonical)) return posicionesPorPalabra(normalizedQuery, synonym)
+  const ultima = normalizedQuery.lastIndexOf(synonym)
+  return ultima === -1 ? [] : [ultima]
+}
+
+function detectCanonicalTerms(normalizedQuery: string, epocaHabilitada = false): WorkConcept[] {
+  return conceptosDelModo(epocaHabilitada).filter((canonical) =>
+    sinonimosDe(canonical).some((synonym) => menciones(normalizedQuery, canonical, synonym, epocaHabilitada).length > 0)
   )
 }
 
@@ -90,11 +187,27 @@ function detectCanonicalTerms(normalizedQuery: string): WorkConcept[] {
  * siendo propiedad exclusiva de este archivo.
  */
 export function isWorkConcept(value: unknown): value is WorkConcept {
-  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(CANONICAL_TERMS, value)
+  return (
+    typeof value === 'string' &&
+    (Object.prototype.hasOwnProperty.call(CANONICAL_TERMS, value) || Object.prototype.hasOwnProperty.call(EPOCA_TERMS, value))
+  )
 }
 
 export function isWorkSlot(value: unknown): value is WorkSlot {
   return typeof value === 'string' && WORK_SLOTS.includes(value as WorkSlot)
+}
+
+/**
+ * El concepto existe en este modo del interruptor y pertenece a esa ranura
+ * (SCENAIA-007 §4.4 y §6.4). Con el interruptor apagado, CLASICO solo vale
+ * en `genero` y los conceptos de epoca nuevos no valen en ninguna; con el
+ * interruptor encendido, CLASICO solo vale en `epoca`. Quien valida un
+ * estado heredado lo usa para que una pareja incompatible con el interruptor
+ * vigente no pase.
+ */
+export function isWorkConceptInSlot(slot: WorkSlot, concept: WorkConcept, opciones?: OpcionesEpoca): boolean {
+  const epocaHabilitada = opciones?.epocaHabilitada === true
+  return conceptosDelModo(epocaHabilitada).includes(concept) && slotOf(concept, epocaHabilitada) === slot
 }
 
 const WORK_SLOTS: readonly WorkSlot[] = ['genero', 'duracion', 'edad', 'epoca', 'reparto']
@@ -108,6 +221,22 @@ const TERM_SLOTS: Readonly<Record<WorkConcept, WorkSlot>> = {
   INFANTIL: 'edad',
   CONTEMPORANEO: 'epoca',
   POCOS_ACTORES: 'reparto',
+  GRECOLATINO: 'epoca',
+  MEDIEVAL: 'epoca',
+  RENACIMIENTO: 'epoca',
+  SIGLO_DE_ORO: 'epoca',
+  BARROCO: 'epoca',
+  ISABELINO: 'epoca',
+  NEOCLASICO: 'epoca',
+  ROMANTICISMO: 'epoca',
+  REALISMO_NATURALISMO: 'epoca',
+  VANGUARDIAS: 'epoca',
+  POSGUERRA: 'epoca',
+}
+
+/** Ranura del concepto en este modo: con el interruptor encendido, CLASICO pasa a `epoca`. */
+function slotOf(canonical: WorkConcept, epocaHabilitada: boolean): WorkSlot {
+  return epocaHabilitada && canonical === 'CLASICO' ? 'epoca' : TERM_SLOTS[canonical]
 }
 
 /**
@@ -115,8 +244,11 @@ const TERM_SLOTS: Readonly<Record<WorkConcept, WorkSlot>> = {
  * si no aparece. Se toma la ultima aparicion, no la primera: si alguien
  * dice "larga... corta... larga", lo vigente es lo ultimo que dijo.
  */
-function lastMentionIndex(normalizedQuery: string, canonical: WorkConcept): number {
-  return CANONICAL_TERMS[canonical].reduce((posicion, synonym) => Math.max(posicion, normalizedQuery.lastIndexOf(synonym)), -1)
+function lastMentionIndex(normalizedQuery: string, canonical: WorkConcept, epocaHabilitada: boolean): number {
+  return sinonimosDe(canonical).reduce(
+    (posicion, synonym) => Math.max(posicion, ...menciones(normalizedQuery, canonical, synonym, epocaHabilitada)),
+    -1
+  )
 }
 
 /**
@@ -150,8 +282,10 @@ function lastMentionIndex(normalizedQuery: string, canonical: WorkConcept): numb
  */
 export function resolveWorkOccupancy(
   normalizedQuery: string,
-  previousOccupancy: WorkSlotOccupancy = {}
+  previousOccupancy: WorkSlotOccupancy = {},
+  opciones?: OpcionesEpoca
 ): WorkSlotOccupancy {
+  const epocaHabilitada = opciones?.epocaHabilitada === true
   const vigentePorRanura = new Map<WorkSlot, { canonical: WorkConcept; index: number }>()
 
   // Lo heredado entra primero, con la posicion mas baja posible: cualquier
@@ -160,11 +294,11 @@ export function resolveWorkOccupancy(
     vigentePorRanura.set(slot, { canonical, index: -1 })
   }
 
-  for (const canonical of detectCanonicalTerms(normalizedQuery)) {
-    const slot = TERM_SLOTS[canonical]
+  for (const canonical of detectCanonicalTerms(normalizedQuery, epocaHabilitada)) {
+    const slot = slotOf(canonical, epocaHabilitada)
     if (slot === undefined) continue
 
-    const index = lastMentionIndex(normalizedQuery, canonical)
+    const index = lastMentionIndex(normalizedQuery, canonical, epocaHabilitada)
     const vigente = vigentePorRanura.get(slot)
 
     // `>` y no `>=`: ante un empate imposible en la practica, gana el
@@ -280,7 +414,8 @@ function detectAuthor(normalizedQuery: string, knownAuthors: readonly string[]):
 function domainVocabulary(
   normalizedQuery: string,
   knownAuthors: readonly string[],
-  previousOccupancy: WorkSlotOccupancy
+  previousOccupancy: WorkSlotOccupancy,
+  opciones: OpcionesEpoca | undefined
 ): CanonicalConcepts {
   return {
     // Conceptos ya resueltos por ranura (Fase 2): interpretRules() recibe
@@ -288,7 +423,7 @@ function domainVocabulary(
     // combinacion -- campos distintos se acumulan -- vuelve a ser cierto
     // sin excepciones. Desde la Fase 3 la resolucion parte ademas de lo
     // que quedo vigente en el turno anterior.
-    terms: Object.values(resolveWorkOccupancy(normalizedQuery, previousOccupancy)),
+    terms: Object.values(resolveWorkOccupancy(normalizedQuery, previousOccupancy, opciones)),
     author: detectAuthor(normalizedQuery, knownAuthors),
     explicitCastSize: detectExplicitCastSize(normalizedQuery),
   }
@@ -301,6 +436,30 @@ const CORTA_MAX_MINUTES = 60
 const LARGA_MIN_MINUTES = 90
 const CONTEMPORANEO_YEAR_FROM = 1950
 const POCOS_ACTORES_MAX = 4
+
+/**
+ * Epocas que abarca "teatro clasico" (decision de Direccion, acta
+ * SCENAIA-007 §4.7). Solo se aplica con el interruptor encendido.
+ */
+const CLASICO_EPOCAS: readonly string[] = ['grecolatino', 'renacimiento', 'siglo_de_oro', 'barroco', 'isabelino', 'neoclasico']
+
+/**
+ * Clave de works.epocas (lista cerrada de works_epocas_check) de cada
+ * concepto de epoca nuevo. CLASICO y CONTEMPORANEO tienen regla propia.
+ */
+const EPOCA_CLAVES: Readonly<Record<ConceptoEpoca, string>> = {
+  GRECOLATINO: 'grecolatino',
+  MEDIEVAL: 'medieval',
+  RENACIMIENTO: 'renacimiento',
+  SIGLO_DE_ORO: 'siglo_de_oro',
+  BARROCO: 'barroco',
+  ISABELINO: 'isabelino',
+  NEOCLASICO: 'neoclasico',
+  ROMANTICISMO: 'romanticismo',
+  REALISMO_NATURALISMO: 'realismo_naturalismo',
+  VANGUARDIAS: 'vanguardias',
+  POSGUERRA: 'posguerra',
+}
 
 /**
  * Interpretacion por reglas -- fase 3 del flujo (ADR SCENAIA-002C.1):
@@ -325,25 +484,43 @@ const POCOS_ACTORES_MAX = 4
  *     degradacion silenciosa a "sin filtro para ese concepto", nunca un
  *     valor inventado (taxonomia de degradacion, ADR SCENAIA-002C.1).
  *
- * Ambiguedad "clasicos" (genero vs. epoca, senalada en el ADR): resuelta
- * hacia genero -- coincide textualmente con el valor real "Teatro
- * clasico" ya existente en el catalogo. Decision explicita y documentada,
- * no una eleccion arbitraria en tiempo de ejecucion; pendiente de
- * confirmacion de Direccion si se prefiere la interpretacion por epoca.
+ * Ambiguedad "clasicos" (genero vs. epoca, senalada en el ADR). Con el
+ * interruptor SCENAIA_EPOCA_ENABLED encendido se resuelve hacia EPOCA, por
+ * decision de Direccion en el Acta SCENAIA-007 (§2.4 y §4.4): "clasico" deja
+ * de ser un criterio de genero y se expande a las epocas de CLASICO_EPOCAS,
+ * porque las obras del Siglo de Oro llevan la epoca en works.epocas y no en
+ * el genero. Con el interruptor apagado rige la resolucion anterior: hacia
+ * genero, que coincide textualmente con el valor real "Teatro clasico" del
+ * catalogo.
  */
-function interpretRules(concepts: CanonicalConcepts): WorkSearchCriteria {
+function interpretRules(concepts: CanonicalConcepts, epocaHabilitada: boolean): WorkSearchCriteria {
   const criteria: { -readonly [K in keyof WorkSearchCriteria]?: WorkSearchCriteria[K] } = {}
 
   if (concepts.author !== undefined) criteria.author = concepts.author
 
   if (concepts.terms.includes('COMEDIA')) criteria.genre = 'comedia'
   if (concepts.terms.includes('MUSICAL')) criteria.genre = 'musical'
-  if (concepts.terms.includes('CLASICO')) criteria.genre = 'clasico'
+  if (concepts.terms.includes('CLASICO')) {
+    if (epocaHabilitada) criteria.epocas = CLASICO_EPOCAS
+    else criteria.genre = 'clasico'
+  }
 
   if (concepts.terms.includes('INFANTIL')) criteria.maxAge = INFANTIL_MAX_AGE
   if (concepts.terms.includes('CORTA')) criteria.maxDurationMinutes = CORTA_MAX_MINUTES
   if (concepts.terms.includes('LARGA')) criteria.minDurationMinutes = LARGA_MIN_MINUTES
-  if (concepts.terms.includes('CONTEMPORANEO')) criteria.yearFrom = CONTEMPORANEO_YEAR_FROM
+  if (concepts.terms.includes('CONTEMPORANEO')) {
+    // Acta SCENAIA-007 §4.7: con el interruptor encendido, "contemporaneo" es
+    // la clave contemporaneo en epocas O year >= 1950.
+    if (epocaHabilitada) {
+      criteria.epocas = ['contemporaneo']
+      criteria.epocaYearFrom = CONTEMPORANEO_YEAR_FROM
+    } else criteria.yearFrom = CONTEMPORANEO_YEAR_FROM
+  }
+  if (epocaHabilitada) {
+    for (const concepto of Object.keys(EPOCA_CLAVES) as ConceptoEpoca[]) {
+      if (concepts.terms.includes(concepto)) criteria.epocas = [EPOCA_CLAVES[concepto]]
+    }
+  }
   if (concepts.terms.includes('POCOS_ACTORES')) criteria.maxCastSize = POCOS_ACTORES_MAX
 
   if (concepts.explicitCastSize !== undefined) criteria.maxCastSize = concepts.explicitCastSize
@@ -365,10 +542,11 @@ function interpretRules(concepts: CanonicalConcepts): WorkSearchCriteria {
 export function interpretWorkQuery(
   normalizedQuery: string,
   knownAuthors: readonly string[] = [],
-  previousOccupancy: WorkSlotOccupancy = {}
+  previousOccupancy: WorkSlotOccupancy = {},
+  opciones?: OpcionesEpoca
 ): WorkSearchCriteria {
-  const concepts = domainVocabulary(normalizedQuery, knownAuthors, previousOccupancy)
-  return interpretRules(concepts)
+  const concepts = domainVocabulary(normalizedQuery, knownAuthors, previousOccupancy, opciones)
+  return interpretRules(concepts, opciones?.epocaHabilitada === true)
 }
 
 /**
@@ -456,6 +634,13 @@ const NON_AUTHOR_COMPLEMENTS = new Set([
 ])
 
 /**
+ * Complementos que tampoco nombran a nadie, pero solo con el interruptor
+ * SCENAIA_EPOCA_ENABLED encendido (acta SCENAIA-007 §4.4): "obras DEL siglo
+ * de oro" no atribuye la obra a un autor llamado "siglo".
+ */
+const NON_AUTHOR_COMPLEMENTS_EPOCA = new Set(['siglo', 'siglos'])
+
+/**
  * Declara si el usuario atribuyo una obra a alguien y ese alguien NO se ha
  * podido resolver contra el catalogo real.
  *
@@ -468,8 +653,13 @@ const NON_AUTHOR_COMPLEMENTS = new Set([
  * preposicion quedo o no resuelto, y descarta el vocabulario que el propio
  * motor ya consume.
  */
-export function hasUnresolvedAuthor(normalizedQuery: string, criteria: WorkSearchCriteria): boolean {
+export function hasUnresolvedAuthor(
+  normalizedQuery: string,
+  criteria: WorkSearchCriteria,
+  opciones?: OpcionesEpoca
+): boolean {
   if (criteria.author !== undefined) return false
+  const epocaHabilitada = opciones?.epocaHabilitada === true
 
   for (const match of normalizedQuery.matchAll(AUTHORSHIP_PREPOSITION)) {
     // La captura ya es una sola palabra: la que sigue a la preposicion.
@@ -477,7 +667,8 @@ export function hasUnresolvedAuthor(normalizedQuery: string, criteria: WorkSearc
 
     if (primeraPalabra.length <= 3) continue
     if (NON_AUTHOR_COMPLEMENTS.has(primeraPalabra)) continue
-    if (detectCanonicalTerms(primeraPalabra).length > 0) continue
+    if (epocaHabilitada && NON_AUTHOR_COMPLEMENTS_EPOCA.has(primeraPalabra)) continue
+    if (detectCanonicalTerms(primeraPalabra, epocaHabilitada).length > 0) continue
 
     return true
   }

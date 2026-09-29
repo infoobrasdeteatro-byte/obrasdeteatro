@@ -1,5 +1,5 @@
 import { retrieveRelevantKnowledge } from '@/lib/knowledge-assets'
-import type { KnowledgeDomain, KnowledgeRetrievalResult, WorkSlotOccupancy, WorksPageRequest } from '@/lib/knowledge-assets'
+import type { KnowledgeDomain, KnowledgeRetrievalResult, OpcionesEpoca, WorkSlotOccupancy, WorksPageRequest } from '@/lib/knowledge-assets'
 
 /**
  * IA-003 (Plan Tecnico aprobado 2026-07-22): transporta el texto de la
@@ -19,8 +19,12 @@ export async function retrieveKnowledgeForDomain(
   domain: KnowledgeDomain,
   query: string,
   previousOccupancy?: WorkSlotOccupancy,
-  page?: WorksPageRequest
+  page?: WorksPageRequest,
+  opciones?: OpcionesEpoca
 ): Promise<KnowledgeRetrievalResult> {
+  // SCENAIA-007: la opcion de epoca, si llega, se transporta tal cual; sin
+  // ella, la llamada es exactamente la de siempre.
+  if (opciones !== undefined) return retrieveRelevantKnowledge(domain, query, undefined, previousOccupancy, page, opciones)
   return page !== undefined
     ? retrieveRelevantKnowledge(domain, query, undefined, previousOccupancy, page)
     : retrieveRelevantKnowledge(domain, query, undefined, previousOccupancy)

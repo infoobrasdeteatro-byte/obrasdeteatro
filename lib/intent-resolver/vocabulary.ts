@@ -77,6 +77,45 @@ export const CONCEPT_TERMS: readonly string[] = [
 export const RESOLVABLE_TERMS: readonly string[] = [...DOMAIN_TERMS, ...CONCEPT_TERMS]
 
 /**
+ * Opcion que llega como DATO desde el Orquestador (SCENAIA-007 §4.2,
+ * corregido por su adenda): este modulo no lee el entorno. Ausente, o con
+ * `epocaHabilitada: false`, el vocabulario es exactamente el anterior.
+ */
+export interface OpcionesVocabulario {
+  readonly epocaHabilitada: boolean
+}
+
+/**
+ * Terminos de epoca que el resolutor puede emitir SOLO con el interruptor
+ * SCENAIA_EPOCA_ENABLED encendido (SCENAIA-007 §4.4): uno canonico por
+ * concepto de epoca nuevo de interpret-work-query.ts. "clasico" y
+ * "contemporaneo" ya estaban en CONCEPT_TERMS.
+ */
+export const EPOCA_CONCEPT_TERMS: readonly string[] = [
+  'grecolatino',
+  'medieval',
+  'renacimiento',
+  'siglo de oro',
+  'barroco',
+  'isabelino',
+  'neoclasico',
+  'romanticismo',
+  'realismo',
+  'vanguardias',
+  'posguerra',
+]
+
+/** Terminos de criterio emitibles en este modo del interruptor. */
+export function conceptTermsFor(opciones?: OpcionesVocabulario): readonly string[] {
+  return opciones?.epocaHabilitada === true ? [...CONCEPT_TERMS, ...EPOCA_CONCEPT_TERMS] : CONCEPT_TERMS
+}
+
+/** Frontera de validacion en este modo del interruptor. */
+export function resolvableTermsFor(opciones?: OpcionesVocabulario): readonly string[] {
+  return opciones?.epocaHabilitada === true ? [...DOMAIN_TERMS, ...conceptTermsFor(opciones)] : RESOLVABLE_TERMS
+}
+
+/**
  * Compone el texto que se reinterpretara, anadiendo los terminos resueltos
  * al final de la peticion literal del usuario -- que nunca se altera.
  *
@@ -87,9 +126,14 @@ export const RESOLVABLE_TERMS: readonly string[] = [...DOMAIN_TERMS, ...CONCEPT_
  * falso positivo que esa regla existe para evitar. Se reutiliza la
  * gramatica que ya rige la interpretacion, en vez de trabajar contra ella.
  */
-export function composeAugmentedRequest(originalRequest: string, resolvedTerms: readonly string[]): string {
+export function composeAugmentedRequest(
+  originalRequest: string,
+  resolvedTerms: readonly string[],
+  opciones?: OpcionesVocabulario
+): string {
+  const conceptTerms = conceptTermsFor(opciones)
   const dominios = resolvedTerms.filter((term) => DOMAIN_TERMS.includes(term))
-  const conceptos = resolvedTerms.filter((term) => CONCEPT_TERMS.includes(term))
+  const conceptos = resolvedTerms.filter((term) => conceptTerms.includes(term))
 
   // Sin dominio resuelto no se anade ningun criterio: un criterio no tiene
   // sobre que aplicarse, y anadirlo suelto activaria un dominio ajeno --
@@ -186,10 +230,10 @@ function normalizarTexto(texto: string): string {
  * peticion, mismo prompt. No accede a persistencia ni a variables de
  * entorno.
  */
-export function buildResolverPrompt(originalRequest: string): string {
+export function buildResolverPrompt(originalRequest: string, opciones?: OpcionesVocabulario): string {
   return [
     RESOLVER_INSTRUCTIONS,
-    `Lista cerrada de terminos: ${RESOLVABLE_TERMS.join(', ')}`,
+    `Lista cerrada de terminos: ${resolvableTermsFor(opciones).join(', ')}`,
     `Peticion del usuario: ${originalRequest}`,
   ].join('\n\n')
 }
@@ -202,8 +246,13 @@ export function buildResolverPrompt(originalRequest: string): string {
  * Todo lo demas -- explicaciones, terminos inventados, cifras, texto libre
  * -- se descarta. Devolver una lista vacia es un resultado correcto.
  */
-export function parseResolvedTerms(rawContent: string | null, originalRequest: string): string[] {
+export function parseResolvedTerms(
+  rawContent: string | null,
+  originalRequest: string,
+  opciones?: OpcionesVocabulario
+): string[] {
   if (rawContent === null) return []
+  const resolvableTerms = resolvableTermsFor(opciones)
 
   const peticion = normalizarTexto(originalRequest)
   if (peticion.length === 0) return []
@@ -214,7 +263,7 @@ export function parseResolvedTerms(rawContent: string | null, originalRequest: s
     const [ladoTermino, ladoAncla] = linea.split('::')
     if (ladoAncla === undefined) continue
 
-    const termino = RESOLVABLE_TERMS.find((term) =>
+    const termino = resolvableTerms.find((term) =>
       new RegExp(`(^|[^a-z])${term}([^a-z]|$)`).test(normalizarTexto(ladoTermino))
     )
     if (termino === undefined) continue
@@ -233,7 +282,7 @@ export function parseResolvedTerms(rawContent: string | null, originalRequest: s
     aceptados.add(termino)
   }
 
-  return RESOLVABLE_TERMS.filter((term) => aceptados.has(term))
+  return resolvableTerms.filter((term) => aceptados.has(term))
 }
 
 /**
@@ -253,15 +302,18 @@ export function parseResolvedTerms(rawContent: string | null, originalRequest: s
  * Es una decision de COSTE, nunca de significado: lo unico que determina es
  * si se gasta una llamada. Jamas produce, altera ni descarta un criterio.
  */
-export function mayNeedResolution(originalRequest: string): boolean {
+export function mayNeedResolution(originalRequest: string, opciones?: OpcionesVocabulario): boolean {
   const palabras = normalizarTexto(originalRequest).split(' ').filter((palabra) => palabra.length > 0)
   const nombraUnDominio = palabras.some((palabra) => UNAMBIGUOUS_DOMAIN_WORDS.has(palabra))
+  const resolvableTerms = resolvableTermsFor(opciones)
+  const epocaHabilitada = opciones?.epocaHabilitada === true
 
   return palabras.some(
     (palabra) =>
       !FUNCTION_WORDS.has(palabra) &&
-      !RESOLVABLE_TERMS.some((term) => term.split(' ').includes(palabra)) &&
+      !resolvableTerms.some((term) => term.split(' ').includes(palabra)) &&
       !ALREADY_UNDERSTOOD.has(palabra) &&
+      !(epocaHabilitada && ALREADY_UNDERSTOOD_EPOCA.has(palabra)) &&
       !(nombraUnDominio && REQUEST_FRAMING_WORDS.has(palabra))
   )
 }
@@ -325,4 +377,17 @@ const ALREADY_UNDERSTOOD = new Set([
   'comedias', 'musicales', 'infantiles', 'clasicos', 'clasicas', 'contemporaneas', 'contemporaneos',
   'cortas', 'largas', 'breve', 'breves', 'humoristica', 'divertida', 'divertidas', 'actual', 'moderna',
   'editoriales', 'universidades', 'fundaciones', 'plataformas', 'ninos',
+])
+
+/**
+ * Variantes de epoca que el interprete consume directamente, pero solo con
+ * el interruptor SCENAIA_EPOCA_ENABLED encendido (SCENAIA-007 §4.4). Las
+ * formas canonicas ya las cubre EPOCA_CONCEPT_TERMS.
+ */
+const ALREADY_UNDERSTOOD_EPOCA = new Set([
+  'grecolatina', 'grecolatinos', 'grecolatinas', 'griego', 'griega', 'griegos', 'griegas',
+  'medievales', 'renacentista', 'renacentistas', 'siglos', 'aureo',
+  'barroca', 'barrocos', 'barrocas', 'isabelina', 'isabelinos', 'isabelinas',
+  'neoclasica', 'neoclasicos', 'neoclasicas', 'naturalismo', 'naturalista', 'naturalistas',
+  'vanguardia', 'vanguardista', 'vanguardistas', 'postguerra',
 ])

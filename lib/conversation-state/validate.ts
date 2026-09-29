@@ -1,5 +1,5 @@
-import { KNOWLEDGE_DOMAINS, isWorkConcept, isWorkSlot } from '@/lib/knowledge-assets'
-import type { KnowledgeDomain, WorkSlotOccupancy } from '@/lib/knowledge-assets'
+import { KNOWLEDGE_DOMAINS, isWorkConcept, isWorkConceptInSlot, isWorkSlot } from '@/lib/knowledge-assets'
+import type { KnowledgeDomain, OpcionesEpoca, WorkSlotOccupancy } from '@/lib/knowledge-assets'
 import type { DomainOccupancy, IncomingConversationState } from './types'
 
 /**
@@ -41,8 +41,15 @@ function parseActiveDomain(value: unknown): KnowledgeDomain | null | undefined {
  * puede enviar `maxDurationMinutes: 999999` porque no existe ningun campo
  * donde escribirlo; solo puede elegir entre `CORTA` y `LARGA`, que es
  * exactamente lo que podria haber pedido escribiendolo.
+ *
+ * SCENAIA-007 §6.4: ademas, el concepto debe pertenecer a ESA ranura segun
+ * el valor vigente del interruptor SCENAIA_EPOCA_ENABLED, que llega como
+ * dato. Una pareja incompatible -- `{genero: 'CLASICO'}` con el interruptor
+ * encendido, `{epoca: 'CLASICO'}` o cualquier epoca nueva con el interruptor
+ * apagado -- invalida el estado COMPLETO, como cualquier otra parte que no
+ * cumpla el contrato: nunca se descarta solo esa pareja.
  */
-function parseWorkSlots(value: unknown): WorkSlotOccupancy | null {
+function parseWorkSlots(value: unknown, opciones: OpcionesEpoca | undefined): WorkSlotOccupancy | null {
   if (!isRecord(value)) return null
 
   const slots: Record<string, string> = {}
@@ -50,6 +57,7 @@ function parseWorkSlots(value: unknown): WorkSlotOccupancy | null {
   for (const [slot, concepto] of Object.entries(value)) {
     if (!isWorkSlot(slot)) return null
     if (!isWorkConcept(concepto)) return null
+    if (!isWorkConceptInSlot(slot, concepto, opciones)) return null
 
     slots[slot] = concepto
   }
@@ -57,7 +65,7 @@ function parseWorkSlots(value: unknown): WorkSlotOccupancy | null {
   return slots as WorkSlotOccupancy
 }
 
-function parseOccupancy(value: unknown): readonly DomainOccupancy[] | null {
+function parseOccupancy(value: unknown, opciones: OpcionesEpoca | undefined): readonly DomainOccupancy[] | null {
   if (!Array.isArray(value)) return null
 
   const ocupaciones: DomainOccupancy[] = []
@@ -70,7 +78,7 @@ function parseOccupancy(value: unknown): readonly DomainOccupancy[] | null {
     // ocupaciones esta vigente seria una convencion implicita.
     if (dominiosVistos.has(entrada.domain)) return null
 
-    const slots = parseWorkSlots(entrada.slots)
+    const slots = parseWorkSlots(entrada.slots, opciones)
     if (slots === null) return null
 
     dominiosVistos.add(entrada.domain)
@@ -98,8 +106,11 @@ function parseOccupancy(value: unknown): readonly DomainOccupancy[] | null {
  *
  * `stateVersion` y `updatedAt` se ignoran deliberadamente aunque vengan:
  * los fija el servidor.
+ *
+ * `opciones` (SCENAIA-007) la aporta la ruta con el valor vigente del
+ * interruptor de epoca; este modulo no lee el entorno.
  */
-export function parseConversationState(value: unknown): IncomingConversationState | null {
+export function parseConversationState(value: unknown, opciones?: OpcionesEpoca): IncomingConversationState | null {
   if (!isRecord(value)) return null
 
   const conversationId = parseConversationId(value.conversationId)
@@ -108,7 +119,7 @@ export function parseConversationState(value: unknown): IncomingConversationStat
   const activeDomain = parseActiveDomain(value.activeDomain)
   if (activeDomain === undefined) return null
 
-  const occupancyByDomain = parseOccupancy(value.occupancyByDomain)
+  const occupancyByDomain = parseOccupancy(value.occupancyByDomain, opciones)
   if (occupancyByDomain === null) return null
 
   return { conversationId, activeDomain, occupancyByDomain }
