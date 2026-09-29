@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-004D (adenda a SCENAIA-004; revisa la Adenda 004C y la Adenda 007A)
-**Fecha:** __________
-**Estado resultante:** BORRADOR — PENDIENTE DE FIRMA
+**Fecha:** 2026-09-29
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-29):** `SCENAIA-004D` no existía en ninguno de estos sitios:
 - la documentación, el código, las migraciones ni el material archivado bajo `_incidente-trazabilidad-2026-07-19/`, incluidos los ficheros ignorados por git;
@@ -158,18 +158,18 @@ Quedan **fuera** de esta Adenda:
 
 ### 8. Veredicto
 
-**[Pendiente de decisión de Dirección.]** Hasta su firma, el §4.1 de la Adenda 004C y el §4.2 de la Adenda 007A rigen en su redacción actual, y las épocas a secas siguen comportándose como hoy.
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza los puntos del §4 de esta Adenda, en los términos de las condiciones del §7 y de las recogidas en el §9. El resto del Acta SCENAIA-004, de sus adendas 004A, 004B y 004C, del Acta SCENAIA-007 y de la Adenda 007A sigue vigente sin cambios, salvo lo que revisan expresamente el §4.6 y el §4.7. Hasta que la implementación cumpla esas condiciones y se despliegue, no cambia ningún comportamiento: las épocas a secas siguen comportándose como hoy.
 
 ---
 
 ### 9. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
 **Condiciones o exclusiones:**
 
-____________________________________________
+Se autoriza la ampliación de la forma "petición de solo criterio" según los términos del §4 de esta Adenda, con la lista SOLO_EPOCA_TERMINOS del §4.1, los artículos en singular del §4.3, y el Request Interpreter como cuarto destino del interruptor según revisa el §4.7 de la Adenda 007A. Los términos no incluidos en la lista (realismo/naturalismo, renacimiento, griego/a, áureo, vanguardista, postguerra) quedan fuera de esta adenda y pueden añadirse en el futuro mediante una revisión menor de esta misma. "Teatro" + época sigue como expediente futuro independiente.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ______________________   **Fecha:** __________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-29
