@@ -37,6 +37,19 @@ describe('textoDelPie', () => {
     expect(textoDelPie(pag(21, 20, null, null))).toBe('No hay más obras en este listado')
   })
 
+  it('primera página vacía con total 0: "Ninguna obra coincide con esta búsqueda"', () => {
+    expect(textoDelPie(pag(1, 0, 0, null))).toBe('Ninguna obra coincide con esta búsqueda')
+  })
+
+  it('primera página vacía con total null: el mismo texto (se decide por from, no por total)', () => {
+    expect(textoDelPie(pag(1, 0, null, null))).toBe('Ninguna obra coincide con esta búsqueda')
+  })
+
+  it('cualquier página siguiente vacía, incluida la segunda (from 2), conserva "No hay más obras en este listado"', () => {
+    expect(textoDelPie(pag(2, 1, 1, null))).toBe('No hay más obras en este listado')
+    expect(textoDelPie(pag(50_001, 50_000, 11, null))).toBe('No hay más obras en este listado')
+  })
+
   it('con separador de miles', () => {
     expect(textoDelPie(pag(1, 10, 5000, 10))).toBe('Mostrando 1-10 de 5.000')
     expect(textoDelPie(pag(4991, 5000, 5000, null))).toBe('Mostrando 4.991-5.000 de 5.000')
