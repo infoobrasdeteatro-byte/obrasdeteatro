@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { resolveScenaiaAccess } from '@/lib/auth/scenaia-access'
+import { loginUrlWithNext } from '@/lib/auth/next-param'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import ScenaiaClient from './ScenaiaClient'
@@ -30,7 +31,7 @@ export default async function ScenaiaPage() {
      *
      * La pagina no decide nada nuevo: traduce el veredicto que ya trae.
      */
-    if (acceso.reason === 'no_autenticado') redirect('/auth/login')
+    if (acceso.reason === 'no_autenticado') redirect(loginUrlWithNext('/scenaia'))
     if (acceso.reason === 'no_verificado') redirect('/verificacion')
 
     redirect('/dashboard')

@@ -141,7 +141,7 @@ describe('Verificacion — experiencia del bloqueo (UX-003)', () => {
 
   it('la pagina de ScenaIA envia AQUI, y solo por esta causa', () => {
     expect(PAGINA).toMatch(/if \(acceso\.reason === 'no_verificado'\) redirect\('\/verificacion'\)/)
-    expect(PAGINA).toMatch(/if \(acceso\.reason === 'no_autenticado'\) redirect\('\/auth\/login'\)/)
+    expect(PAGINA).toMatch(/if \(acceso\.reason === 'no_autenticado'\) redirect\(loginUrlWithNext\('\/scenaia'\)\)/)
   })
 
   it('9/10 · NO requiere Supabase Auth ni middleware', () => {
