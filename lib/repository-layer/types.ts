@@ -68,6 +68,18 @@ export interface WorkSearchCriteria {
   readonly minDurationMinutes?: number
   readonly yearFrom?: number
   readonly maxCastSize?: number
+  /**
+   * Epocas (SCENAIA-007 §4.3): claves de la lista cerrada de
+   * works_epocas_check. La obra cumple si pertenece a ALGUNA de ellas
+   * (solapamiento). Una lista vacia equivale a no pasar el campo.
+   */
+  readonly epocas?: readonly string[]
+  /**
+   * Solo tiene sentido junto a `epocas` no vacia: la obra cumple si pertenece
+   * a alguna de esas epocas O su year es >= este valor (el caso
+   * "contemporaneo", acta SCENAIA-007 §4.7). Sin `epocas`, se ignora.
+   */
+  readonly epocaYearFrom?: number
 }
 
 /**

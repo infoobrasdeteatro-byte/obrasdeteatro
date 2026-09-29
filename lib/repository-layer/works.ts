@@ -108,12 +108,21 @@ export async function getPublishedWorkById(workId: string): Promise<Work | null>
  * evita nombrar su tipo interno, que cambia con cada clausula encadenada.
  * "genre" queda deliberadamente fuera de esta funcion: se resuelve en
  * memoria via matchesGenre() (excepcion documentada mas arriba).
+ *
+ * "epocas" (SCENAIA-007 §4.3) SI se resuelve aqui, en SQL, igual en el modo
+ * pagina y en el modo sin pagina: sin excepcion en memoria ni tope de
+ * candidatos. Solapamiento (&&) sobre works.epocas, apoyado en el indice GIN
+ * works_epocas_gin_idx; con epocaYearFrom, OR con year >= N. Las claves son
+ * las de la lista cerrada (sin comas ni llaves), asi que el literal {a,b} es
+ * el mismo que construye .overlaps().
  */
 function applyCriteria<
   T extends {
     ilike: (column: string, pattern: string) => T
     gte: (column: string, value: number) => T
     lte: (column: string, value: number) => T
+    overlaps: (column: string, value: string[]) => T
+    or: (filters: string) => T
   }
 >(query: T, criteria: Omit<WorkSearchCriteria, 'genre'>): T {
   let filtered = query
@@ -124,6 +133,13 @@ function applyCriteria<
   if (criteria.minDurationMinutes !== undefined) filtered = filtered.gte('duration_minutes', criteria.minDurationMinutes)
   if (criteria.yearFrom !== undefined) filtered = filtered.gte('year', criteria.yearFrom)
   if (criteria.maxCastSize !== undefined) filtered = filtered.lte('cast_size_max', criteria.maxCastSize)
+
+  if (criteria.epocas !== undefined && criteria.epocas.length > 0) {
+    filtered =
+      criteria.epocaYearFrom !== undefined
+        ? filtered.or(`epocas.ov.{${criteria.epocas.join(',')}},year.gte.${criteria.epocaYearFrom}`)
+        : filtered.overlaps('epocas', [...criteria.epocas])
+  }
 
   return filtered
 }
