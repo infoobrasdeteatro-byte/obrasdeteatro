@@ -119,7 +119,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${nombre} — ${tipo} | ObrasDeTeatro®`,
       description,
-      images: data.avatar_url ? [{ url: data.avatar_url }] : [],
+      // Sin avatar, la imagen de marca (app/opengraph-image.png): una lista
+      // vacía taparía la general, igual que en /directorio.
+      images: data.avatar_url
+        ? [{ url: data.avatar_url }]
+        : [{ url: '/opengraph-image.png', width: 1200, height: 630 }],
     },
   }
 }
