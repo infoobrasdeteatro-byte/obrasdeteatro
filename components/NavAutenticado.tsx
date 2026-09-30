@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import BrandIcon from '@/components/brand/BrandIcon'
 import { usePathname } from 'next/navigation'
 
 export default function NavAutenticado() {
@@ -25,6 +26,7 @@ export default function NavAutenticado() {
     <>
       <nav className="top-nav nav--solid">
         <Link href="/" className="nav-logo">
+          <BrandIcon />
           obras<span>de</span>teatro.com
         </Link>
         <div className="nav-divider" />
