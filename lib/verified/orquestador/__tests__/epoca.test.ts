@@ -244,3 +244,46 @@ describe('coordinateFlow — transporte de la época al Intent Resolver', () => 
     expect(vi.mocked(buildKnowledgeContext).mock.calls[1]).toEqual([noListado, {}])
   })
 })
+
+describe('coordinateFlow — transporte de la época a la primera interpretación (SCENAIA-004D §4.5)', () => {
+  beforeEach(() => {
+    vi.mocked(buildDecisionContext).mockReturnValue({ needsAI: true } as never)
+    vi.mocked(resolveVocabulary).mockResolvedValue(['obra', 'barroco'])
+  })
+
+  it('apagado: la primera llamada es la de siempre, con cuatro argumentos', async () => {
+    await coordinateFlow('profile-1', {} as never, 'barroco')
+
+    const [primera] = vi.mocked(normalizeRequest).mock.calls
+    expect(primera).toHaveLength(4)
+    expect(primera).toEqual(['barroco', expect.any(String), [], null])
+  })
+
+  it('encendido: la primera llamada recibe la opción como último argumento', async () => {
+    process.env.SCENAIA_EPOCA_ENABLED = '1'
+    await coordinateFlow('profile-1', {} as never, 'barroco')
+
+    const [primera] = vi.mocked(normalizeRequest).mock.calls
+    expect(primera).toEqual(['barroco', expect.any(String), [], null, ON])
+  })
+
+  it('la segunda llamada, tras el resolutor, no cambia: tres argumentos, encendido o apagado', async () => {
+    await coordinateFlow('profile-1', {} as never, 'barroco')
+    process.env.SCENAIA_EPOCA_ENABLED = '1'
+    await coordinateFlow('profile-1', {} as never, 'barroco')
+
+    const llamadas = vi.mocked(normalizeRequest).mock.calls
+    expect(llamadas).toHaveLength(4)
+    expect(llamadas[1]).toHaveLength(3)
+    expect(llamadas[3]).toHaveLength(3)
+    expect(llamadas[3][0]).toBe('barroco obra para barroco')
+  })
+
+  it('las dos interpretaciones del turno comparten la identidad (F5F-1), también encendido', async () => {
+    process.env.SCENAIA_EPOCA_ENABLED = '1'
+    await coordinateFlow('profile-1', {} as never, 'barroco')
+
+    const [primera, segunda] = vi.mocked(normalizeRequest).mock.calls
+    expect(segunda[1]).toBe(primera[1])
+  })
+})

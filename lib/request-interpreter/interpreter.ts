@@ -4,7 +4,8 @@ import { normalizeText } from './normalize-text'
 import { detectKnowledgeDomains } from './domain-rules'
 import { detectRequestType } from './request-type-rules'
 import { detectFullCatalogRequest } from './full-catalog-rules'
-import { detectPlainListingRequest, detectSoloGeneroRequest } from './plain-listing-rules'
+import { detectPlainListingRequest, detectSoloEpocaRequest, detectSoloGeneroRequest } from './plain-listing-rules'
+import type { OpcionesSoloCriterio } from './plain-listing-rules'
 
 function estimateComplexity(domainsFound: number, textLength: number): EstimatedComplexity {
   if (domainsFound >= 2 || textLength > 200) return 'alta'
@@ -135,12 +136,17 @@ function resolveDomains(
  *
  * Obligatorio, ni opcional ni con valor por defecto: un defecto que
  * generase identidad aqui reintroduciria el defecto en silencio.
+ *
+ * `opciones` (SCENAIA-004D §4.5): el interruptor de epoca, como dato. Solo se
+ * reenvia a la deteccion de la forma de solo criterio. Ausente, el
+ * comportamiento es el anterior a la 004D.
  */
 export function normalizeRequest(
   originalRequest: string,
   requestId: string,
   previousUserRequests: readonly string[] = [],
-  previousDomain: KnowledgeDomain | null = null
+  previousDomain: KnowledgeDomain | null = null,
+  opciones?: OpcionesSoloCriterio
 ): NormalizedRequest {
   const normalizedIntent = normalizeText(originalRequest)
   const ownDomains = detectKnowledgeDomains(normalizedIntent)
@@ -155,12 +161,15 @@ export function normalizeRequest(
   const retrievalQuery = requestsFullCatalog ? normalizedIntent : conversationQuery
   // SCENAIA-004 §4.1 (a) y (b): lo unico que puede decidirse leyendo el
   // texto. No declara que el turno vaya a resolverse sin IA.
-  const requestsPlainListing = detectPlainListingRequest(normalizedIntent)
+  const requestsPlainListing = detectPlainListingRequest(normalizedIntent, opciones)
   // SCENAIA-004C §4.2: una peticion de solo criterio de genero que no abre
   // ningun dominio por si misma pide obras. Solo se consume el resultado de
-  // la deteccion; las palabras clave de dominio no cambian.
+  // la deteccion; las palabras clave de dominio no cambian. SCENAIA-004D
+  // §4.4: lo mismo con un criterio de epoca, solo con el interruptor
+  // encendido.
+  const pideSoloCriterio = detectSoloGeneroRequest(normalizedIntent) || detectSoloEpocaRequest(normalizedIntent, opciones)
   const requestedKnowledgeDomains: KnowledgeDomain[] =
-    ownDomains.length === 0 && detectSoloGeneroRequest(normalizedIntent)
+    ownDomains.length === 0 && pideSoloCriterio
       ? ['Obras']
       : resolveDomains(ownDomains, domainsFromHistory, previousDomain)
   const requestType = detectRequestType(requestedKnowledgeDomains.length)
