@@ -95,6 +95,10 @@ La aceptación de SCENAIA-008 lo confirmó en producción: «productoras barroca
 
 **4.5 Prueba que se revisa (autorización expresa).** La prueba de `organization-profiles.test.ts:78-84` pasa a comprobar la traducción: `theater` busca `tipo_perfil = 'teatro'`. Un valor ajeno a los dos vocabularios (por ejemplo, `platform`) sigue sin devolver nada y sin consultar la base. Es la única prueba existente que se modifica.
 
+> **Nota del 2026-09-30, durante la implementación.** Implementar el §4.3 hizo necesario revisar también una prueba de SCENAIA-008: `lib/knowledge-assets/__tests__/organizaciones-criterios-obra.test.ts:155`, en el caso «"productoras barrocas" con una institución en el catálogo». «Productoras» es una de las palabras que esta Acta declara como tipo no aplicado, así que `unappliedCriteria` pasa de `['epoca']` a `['epoca', 'tipo']`. Solo cambia esa línea, con autorización expresa de Dirección.
+>
+> El resto de afirmaciones de esa prueba no cambian: el criterio de Organizaciones sigue vacío, se recuperan 2 resultados, la búsqueda sigue sin contar como acotada, el conocimiento lleva la nota de «sin filtrar» y la IA recibe el aviso de «NO filtrado».
+
 **4.6 Lo que NO cambia.**
 - La tabla `institutions`, su consulta y su CHECK.
 - El enum `tipo_perfil` y cualquier dato.
