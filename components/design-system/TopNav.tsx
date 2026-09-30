@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import BrandIcon from '@/components/brand/BrandIcon'
 
 // RC-001A (calibracion continua): heroProgress sustituye al umbral booleano
 // que competia contra la duracion fija de la transicion CSS. progress=0
@@ -129,6 +130,7 @@ export default function TopNav({ heroMode = false }: Props) {
     <>
       <nav ref={navRef} className={`top-nav${isHero ? ' nav--hero' : ' nav--solid'}`}>
         <Link href="/" className="nav-logo" onClick={() => setMobileOpen(false)}>
+          <BrandIcon />
           obras<span>de</span>teatro.com
         </Link>
         <div className="nav-divider" />

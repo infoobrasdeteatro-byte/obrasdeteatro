@@ -70,9 +70,25 @@ body {
   margin-right: 14px; white-space: nowrap;
   text-decoration: none;
   transition: color 0.4s cubic-bezier(0.4,0,0.2,1);
+  /* Isotipo + wordmark alineados; en escritorio la regla del masthead ya
+     lo hace flex. Sin gap: partiría "obras|de|teatro.com". */
+  display: inline-flex; align-items: center;
 }
 .nav-logo span { color: var(--red); }
 .nav--hero .nav-logo { color: rgba(255,255,255,0.92); }
+/* Isotipo del header: escala con el wordmark (28px escritorio, 15px movil).
+   Centrado en la TINTA del texto, no en la caja de linea: el wordmark no
+   tiene descendentes, asi que sin el translateY el icono colgaria bajo la
+   linea base. En modo solido va en el rojo del "de"; en modo hero hereda el
+   blanco del wordmark. */
+.nav-logo .brand-icon {
+  height: 1em; width: auto; flex-shrink: 0;
+  transform: translateY(-0.12em);
+  margin-right: 0.35em;
+  color: var(--red);
+  transition: color 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.nav--hero .nav-logo .brand-icon { color: inherit; }
 .nav-divider {
   width: 1px; height: 20px; background: var(--border); margin: 0 4px;
   transition: background 0.4s ease; flex-shrink: 0;
