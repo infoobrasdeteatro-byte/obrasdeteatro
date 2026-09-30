@@ -79,6 +79,12 @@ Quedan **fuera** de esta Acta:
 
 La ambigüedad de nombres es hoy teórica. El fallo de 3.2 no lo es.
 
+> **Nota del 2026-09-30, tras la aceptación funcional.** La afirmación «0 teatros» solo era correcta para `institutions`. La búsqueda de Organizaciones une dos poblaciones: `institutions` y los perfiles públicos de `profiles` con `tipo_perfil` organizativo (`listPublicOrganizationProfiles`). En producción existe **1 perfil público y activo de tipo `teatro`**.
+>
+> Ese perfil no aparece en las consultas con el tipo `theater` («teatro barroco», «teatros»). El intérprete de Organizaciones emite el vocabulario de `institutions.type` (`theater`), los perfiles usan el de `tipo_perfil` (`teatro`), y la consulta de perfiles devuelve vacío a propósito ante un tipo que no reconoce. En cambio, sí entra cuando el criterio de tipo queda vacío: así ocurrió con «productoras barrocas» en la aceptación, que recuperó 2 entidades.
+>
+> Nada de esto cambia lo autorizado. La declaración del §4 cubre los dos casos: nota parcial con tipo y nota de sin filtrar sin tipo. El desajuste de vocabulario es un asunto aparte, sin expediente.
+
 ### 4. Qué cambia exactamente
 
 **4.1 Detección en el intérprete de Organizaciones.** `interpret-organization-query.ts` incorpora una función pura, en el mismo patrón que `hasUnresolvedLocation`. Devuelve qué criterios de obra menciona la consulta y Organizaciones no sabe aplicar:
