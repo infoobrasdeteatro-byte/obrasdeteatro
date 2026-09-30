@@ -6,7 +6,7 @@ import { listOrganizationKnowledge } from './organizations-knowledge'
 import { listPersonKnowledge } from './persons-knowledge'
 import { interpretPersonQuery, hasUnresolvedPersonLocation } from './interpret-person-query'
 import { interpretWorkQuery, hasUnresolvedAuthor } from './interpret-work-query'
-import { interpretOrganizationQuery, hasUnresolvedLocation } from './interpret-organization-query'
+import { interpretOrganizationQuery, hasUnresolvedLocation, unappliedWorkCriteria } from './interpret-organization-query'
 import type { KnowledgeDomain, StructuredKnowledgeItem, WorksPage, WorksPageRequest } from './types'
 
 /**
@@ -136,8 +136,12 @@ async function baseRetrieve(
       const items = await listOrganizationKnowledge(criteria, limit)
 
       // Organizaciones si distingue los cuatro estados: sabe cuando el
-      // usuario pidio una ubicacion que no ha podido resolver.
-      const unappliedCriteria = hasUnresolvedLocation(query, criteria) ? ['ubicacion'] : []
+      // usuario pidio una ubicacion que no ha podido resolver. SCENAIA-008
+      // §4.4: tambien cuando pidio un genero o una epoca, que no sabe filtrar.
+      const unappliedCriteria = [
+        ...(hasUnresolvedLocation(query, criteria) ? ['ubicacion'] : []),
+        ...unappliedWorkCriteria(query),
+      ]
 
       return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {}, worksPage: null }
     }

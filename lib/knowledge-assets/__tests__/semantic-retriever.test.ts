@@ -23,11 +23,19 @@ vi.mock('@/lib/repository-layer', async () => {
 vi.mock('../works-knowledge', () => ({ listWorkKnowledge: vi.fn() }))
 vi.mock('../organizations-knowledge', () => ({ listOrganizationKnowledge: vi.fn() }))
 vi.mock('../persons-knowledge', () => ({ listPersonKnowledge: vi.fn() }))
-vi.mock('../interpret-work-query', () => ({
-  interpretWorkQuery: vi.fn(),
-  hasUnresolvedAuthor: vi.fn(() => false),
-  resolveWorkOccupancy: vi.fn(() => ({})),
-}))
+// SCENAIA-008: el vocabulario de géneros y épocas se toma del módulo REAL
+// (solo esas dos constantes), porque el intérprete de Organizaciones lo lee.
+vi.mock('../interpret-work-query', async (importOriginal) => {
+  const { VOCABULARIO_GENERO, VOCABULARIO_EPOCA } = await importOriginal<typeof import('../interpret-work-query')>()
+
+  return {
+    VOCABULARIO_GENERO,
+    VOCABULARIO_EPOCA,
+    interpretWorkQuery: vi.fn(),
+    hasUnresolvedAuthor: vi.fn(() => false),
+    resolveWorkOccupancy: vi.fn(() => ({})),
+  }
+})
 
 beforeEach(() => {
   vi.mocked(listPublishedWorkAuthors).mockReset()

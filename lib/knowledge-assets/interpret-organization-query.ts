@@ -1,5 +1,6 @@
 import { COUNTRIES } from '@/lib/geo/countries'
 import type { OrganizationLocations, OrganizationSearchCriteria } from '@/lib/repository-layer'
+import { VOCABULARIO_EPOCA, VOCABULARIO_GENERO } from './interpret-work-query'
 
 /**
  * Motor de interpretacion del dominio Organizaciones, conforme al patron
@@ -186,4 +187,28 @@ export function hasUnresolvedLocation(normalizedQuery: string, criteria: Organiz
   )
 
   return !esVocabularioDeTipo
+}
+
+/** Criterios de obra que Organizaciones reconoce en la consulta pero no sabe aplicar. */
+export type CriterioDeObraNoAplicable = 'genero' | 'epoca'
+
+/**
+ * SCENAIA-008 §4.1 -- declara que criterios de OBRA menciona la consulta:
+ * `'genero'` si nombra un genero y `'epoca'` si nombra una epoca. `institutions`
+ * no tiene columnas para ninguno de los dos, asi que Organizaciones no puede
+ * filtrar por ellos; declararlos evita presentar el dominio entero como si
+ * coincidiera con lo pedido ("teatro barroco" no son todos los teatros).
+ *
+ * El vocabulario es el del interprete de obras (§4.2), leido de alli y nunca
+ * copiado, y cuenta siempre, con el interruptor de epoca encendido o apagado
+ * (§4.3). La comparacion es por palabra completa: "actual" no se reconoce
+ * dentro de "actualmente".
+ */
+export function unappliedWorkCriteria(normalizedQuery: string): CriterioDeObraNoAplicable[] {
+  const declarados: CriterioDeObraNoAplicable[] = []
+
+  if (VOCABULARIO_GENERO.some((term) => containsTerm(normalizedQuery, term))) declarados.push('genero')
+  if (VOCABULARIO_EPOCA.some((term) => containsTerm(normalizedQuery, term))) declarados.push('epoca')
+
+  return declarados
 }

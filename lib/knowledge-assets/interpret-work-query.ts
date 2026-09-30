@@ -105,6 +105,25 @@ const EPOCA_TERMS: Readonly<Record<ConceptoEpoca, readonly string[]>> = {
   POSGUERRA: ['posguerra', 'postguerra'],
 }
 
+/**
+ * SCENAIA-008 §4.2 -- vocabulario de GENERO y de EPOCA de este interprete,
+ * de solo lectura, para que otro motor de Knowledge Assets sepa que criterios
+ * de obra menciona una consulta aunque no pueda aplicarlos. Se deriva de las
+ * tablas de arriba, nunca se copia. Contiene TODOS los sinonimos de epoca,
+ * tambien los que la 004D dejo fuera de su forma cerrada, y no depende del
+ * interruptor de epoca (§4.3): declarar un criterio como no aplicado no filtra
+ * nada. interpretWorkQuery no lo usa y no cambia.
+ */
+export const VOCABULARIO_GENERO: readonly string[] = Object.freeze([
+  ...CANONICAL_TERMS.COMEDIA,
+  ...CANONICAL_TERMS.MUSICAL,
+  ...CANONICAL_TERMS.CLASICO,
+])
+export const VOCABULARIO_EPOCA: readonly string[] = Object.freeze([
+  ...CANONICAL_TERMS.CONTEMPORANEO,
+  ...Object.values(EPOCA_TERMS).flat(),
+])
+
 /** Sinonimos de un concepto, sea anterior o de epoca. */
 function sinonimosDe(canonical: WorkConcept): readonly string[] {
   return Object.prototype.hasOwnProperty.call(CANONICAL_TERMS, canonical)
