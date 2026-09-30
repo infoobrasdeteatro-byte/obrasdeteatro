@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-008
-**Fecha:** ____________
-**Estado resultante:** PENDIENTE DE FIRMA
+**Fecha:** 2026-09-30
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-30):** `SCENAIA-008` no existía en ninguno de estos sitios:
 - la documentación, el código, las migraciones ni el material archivado bajo `_incidente-trazabilidad-2026-07-19/`, incluidos los ficheros ignorados por git;
@@ -176,20 +176,20 @@ No toca `DOMAIN_KEYWORDS`, el Request Interpreter ni ninguna otra acta de la fam
 
 ### 9. Veredicto
 
-**PENDIENTE DE DECISIÓN.** Si se autoriza, hasta que la implementación cumpla las condiciones del §7 y se despliegue, no cambia ningún comportamiento.
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza los puntos del §4 de esta Acta, en los términos de las condiciones del §7 y de las recogidas en el §10, con el vocabulario de épocas contando siempre, como propone el §4.3. El Acta SCENAIA-004 y sus adendas 004A a 004D, el Acta SCENAIA-007 y la Adenda 007A siguen vigentes sin cambios. Hasta que la implementación cumpla esas condiciones y se despliegue, no cambia ningún comportamiento: la búsqueda de Organizaciones sigue comportándose como hoy.
 
 ---
 
 ### 10. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
-**Decisión sobre el §4.3:** ☐ Épocas siempre (propuesta)   ☐ Épocas solo con el interruptor encendido
+**Decisión sobre el §4.3:** ☒ Épocas siempre (propuesta)   ☐ Épocas solo con el interruptor encendido
 
 **Condiciones o exclusiones:**
 
-______________________________________________________________
+Se autoriza la declaración de criterios de obra no aplicables en Organizaciones según los términos del §4, con el vocabulario de épocas contando siempre, independientemente de SCENAIA_EPOCA_ENABLED, tal como propone el §4.3. El riesgo residual señalado en el §6.4 (Personas, Oportunidades, edad/duración/reparto) queda para expedientes futuros.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ______________________________   **Fecha:** ____________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-30
