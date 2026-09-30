@@ -152,7 +152,7 @@ describe('consulta sin término de tipo (§7.3)', () => {
     expect(interpretOrganizationQuery(normalizeText('productoras barrocas'))).toEqual({})
     expect(r.items).toHaveLength(2)
     expect(r.requestWasNarrowed).toBe(false)
-    expect(r.unappliedCriteria).toEqual(['epoca'])
+    expect(r.unappliedCriteria).toEqual(['epoca', 'tipo'])
     expect(ctx.knowledgeLimitations).toContain(SIN_FILTRAR)
     expect(prompt).toContain(AVISO_SIN_FILTRAR)
   })
