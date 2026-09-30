@@ -85,6 +85,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     openGraph: {
       title: `${title} | ObrasDeTeatro®`,
       description,
+      // Un openGraph propio sustituye entero al de la raíz: sin esta línea el
+      // directorio perdería la imagen de marca (app/opengraph-image.png).
+      images: [{ url: '/opengraph-image.png', width: 1200, height: 630 }],
     },
   }
 }
