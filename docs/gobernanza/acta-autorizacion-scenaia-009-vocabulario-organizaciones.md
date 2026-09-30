@@ -3,8 +3,8 @@
 **Proyecto:** ScenaIA – ObrasDeTeatro®
 **Bloque:** IV – Evolución del motor conversacional
 **Expediente propuesto:** SCENAIA-009
-**Fecha:** ____________
-**Estado resultante:** PENDIENTE DE FIRMA
+**Fecha:** 2026-09-30
+**Estado resultante:** AUTORIZADA CON CONDICIONES — LISTA PARA IMPLEMENTACIÓN
 
 **Verificación documental previa a la asignación del expediente (2026-09-30):** `SCENAIA-009` no existía en ninguno de estos sitios:
 - la documentación, el código, las migraciones ni el material archivado bajo `_incidente-trazabilidad-2026-07-19/`, incluidos los ficheros ignorados por git;
@@ -166,22 +166,22 @@ No toca `institutions`, la base de datos ni ningún registro o formulario de usu
 
 ### 9. Veredicto
 
-**PENDIENTE DE DECISIÓN.** Si se autoriza, hasta que la implementación cumpla las condiciones del §7 y se despliegue, no cambia ningún comportamiento.
+**AUTORIZADA CON CONDICIONES.** Dirección autoriza los puntos del §4 de esta Acta, en los términos de las condiciones del §7 y de las recogidas en el §10, con el aviso del §4.3 en su variante (ii) y la revisión de la prueba del §4.5. El Acta SCENAIA-004 y sus adendas 004A a 004D, el Acta SCENAIA-007 y la Adenda 007A siguen vigentes sin cambios, y el Acta SCENAIA-008 también, salvo el efecto que señala el §6.4. Hasta que la implementación cumpla esas condiciones y se despliegue, no cambia ningún comportamiento: la búsqueda de Organizaciones sigue comportándose como hoy.
 
 ---
 
 ### 10. Autorización
 
-**Decisión:** ☐ Autorizada   ☐ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
+**Decisión:** ☐ Autorizada   ☒ Autorizada con condiciones   ☐ Denegada   ☐ Aplazada
 
-**Decisión sobre el §4.3:** ☐ (i) Aviso solo sin criterio de tipo   ☐ (ii) Aviso también con otro tipo (propuesta)
+**Decisión sobre el §4.3:** ☐ (i) Aviso solo sin criterio de tipo   ☒ (ii) Aviso también con otro tipo (propuesta)
 
-**Revisión de la prueba del §4.5:** ☐ Autorizada   ☐ No autorizada
+**Revisión de la prueba del §4.5:** ☒ Autorizada   ☐ No autorizada
 
 **Condiciones o exclusiones:**
 
-______________________________________________________________
+Se autoriza la traducción de tipos según el §4.1 y el aviso de "sin filtrar" según el §4.3 en su variante (ii), que también cubre el caso de un tipo mezclado con una palabra no traducida. Se autoriza expresamente la revisión de la prueba de organization-profiles.test.ts:78-84 según el §4.5. Queda como riesgo aceptado y documentado que este cambio invalida el comportamiento verificado en la aceptación de SCENAIA-008 ("teatro barroco" sin IA pasa a consumir una reserva), tal como señala el §6.4.
 
 Esta autorización no es irrevocable. Puede modificarse, ampliarse o sustituirse en el futuro mediante una nueva Acta o Adenda que la revise expresamente. Ningún alcance de este documento se considera fijo si la evolución de la plataforma lo justifica.
 
-**Firma:** ______________________________   **Fecha:** ____________
+**Firma:** Héctor Renee Díaz Bausson — Founder & CEO, obrasdeteatro.com   **Fecha:** 2026-09-30
