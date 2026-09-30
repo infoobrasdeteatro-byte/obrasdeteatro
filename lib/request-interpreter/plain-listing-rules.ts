@@ -90,6 +90,8 @@ const SIGNOS = /[¿?¡!.,;:]/g
  * SCENAIA-004D §4.1 -- terminos de EPOCA de la forma de solo criterio. Lista
  * cerrada y separada de SOLO_GENERO_TERMINOS: solo cuenta con el interruptor
  * de epoca encendido (§4.4). Un termino puede tener varias palabras (§4.2).
+ * "actual" y "moderna" son los otros dos sinonimos de CONTEMPORANEO del
+ * interprete de obras, anadidos por Direccion antes de fusionar (PR #42).
  * "clasico" no se repite aqui: sigue en SOLO_GENERO_TERMINOS (004C). Quedan
  * fuera, por decision de Direccion, realismo/naturalismo, renacimiento,
  * griego/a, aureo, vanguardista y postguerra. Ampliarla exige revisar la
@@ -103,7 +105,7 @@ export const SOLO_EPOCA_TERMINOS: readonly string[] = [
   'medieval', 'medievales',
   'grecolatino', 'grecolatina', 'grecolatinos', 'grecolatinas',
   'renacentista', 'renacentistas',
-  'contemporaneo', 'contemporanea', 'contemporaneos', 'contemporaneas',
+  'contemporaneo', 'contemporanea', 'contemporaneos', 'contemporaneas', 'actual', 'moderna',
   'romanticismo',
   'vanguardia', 'vanguardias',
   'posguerra',

@@ -83,12 +83,18 @@ const EXCLUIDOS = [
   'postguerra',
 ]
 
-/** Sinónimos de época del intérprete de obras real (EPOCA_TERMS), leídos de su fuente. */
+/**
+ * Sinónimos de época del intérprete de obras real, leídos de su fuente: los de
+ * EPOCA_TERMS (SCENAIA-007) y los de CONTEMPORANEO, que ya ocupaba la ranura
+ * de época ("contemporáneo", "actual", "moderna").
+ */
 function sinonimosDeEpocaDelInterprete(): string[] {
   const fuente = readFileSync(join(__dirname, '..', '..', 'knowledge-assets', 'interpret-work-query.ts'), 'utf-8')
   const bloque = fuente.match(/const EPOCA_TERMS[^=]*= \{([\s\S]*?)\n\}/)
+  const contemporaneo = fuente.match(/\n {2}CONTEMPORANEO: \[([^\]]*)\]/)
   if (!bloque) throw new Error('no se encuentra EPOCA_TERMS en el intérprete de obras')
-  return [...bloque[1].matchAll(/'([a-z ]+)'/g)].map((m) => m[1])
+  if (!contemporaneo) throw new Error('no se encuentran los sinónimos de CONTEMPORANEO en el intérprete de obras')
+  return [...`${bloque[1]} ${contemporaneo[1]}`.matchAll(/'([a-z ]+)'/g)].map((m) => m[1])
 }
 
 describe('sincronía con el intérprete de obras real, en modo encendido, en los dos sentidos (§7.1)', () => {
@@ -124,6 +130,17 @@ describe('sincronía con el intérprete de obras real, en modo encendido, en los
     for (const excluido of EXCLUIDOS) {
       expect(sinonimos, excluido).toContain(excluido)
       expect(interpretWorkQuery(excluido, [], {}, ON).epocas?.length, excluido).toBeGreaterThan(0)
+    }
+  })
+
+  it('B) todos los sinónimos de CONTEMPORANEO del intérprete están en la lista, sin excepción', () => {
+    const contemporaneo = sinonimosDeEpocaDelInterprete().filter((s) =>
+      interpretWorkQuery(s, [], {}, ON).epocas?.includes('contemporaneo')
+    )
+    expect(contemporaneo).toEqual(expect.arrayContaining(['contemporaneo', 'actual', 'moderna']))
+    for (const sinonimo of contemporaneo) {
+      expect(SOLO_EPOCA_TERMINOS, sinonimo).toContain(sinonimo)
+      expect(EXCLUIDOS, sinonimo).not.toContain(sinonimo)
     }
   })
 
