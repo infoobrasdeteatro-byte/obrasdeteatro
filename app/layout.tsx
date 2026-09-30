@@ -27,6 +27,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
+  // Dominio canónico para las URL absolutas de Open Graph y Twitter (la raíz
+  // sin www redirige con 308 a www).
+  metadataBase: new URL("https://www.obrasdeteatro.com"),
   title: "ObrasDeTeatro® — Plataforma profesional de teatro en español",
   description: "Conectamos actores, directores, dramaturgos, compañías y teatros de toda la comunidad hispanohablante.",
 }
