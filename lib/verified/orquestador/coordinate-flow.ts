@@ -192,12 +192,15 @@ export async function coordinateFlow(
    * la conversacion y no el turno.
    */
   const turnId = crypto.randomUUID()
-  let normalizedRequest = normalizeRequest(originalRequest, turnId, previousUserRequests, dominioPrevio)
-  const professionalContext = await buildProfessionalContext(userId, session)
   // SCENAIA-007 §4.2 (corregido por su adenda): el interruptor de epoca se lee
   // una vez por turno y viaja como dato al interprete y al resolutor. Apagado,
   // no se anade ningun argumento: las llamadas son exactamente las de siempre.
+  // SCENAIA-004D §4.5: viaja tambien a la primera interpretacion, para la
+  // forma de solo criterio de epoca. La segunda (tras el resolutor) no lo
+  // lleva: el texto aumentado nunca cumple la forma.
   const epoca = argumentosEpoca(epocaActivada())
+  let normalizedRequest = normalizeRequest(originalRequest, turnId, previousUserRequests, dominioPrevio, ...epoca)
+  const professionalContext = await buildProfessionalContext(userId, session)
   // Quien pide el catalogo completo no hereda los criterios guardados: el
   // turno empieza sin ellos, y por eso tampoco los deja al siguiente. El
   // interprete es quien lo decide; aqui solo se lee su campo.

@@ -68,7 +68,12 @@ const REASONING_EXPRESSIONS = [
  * cualquiera de las tres listas exige una adenda nueva.
  */
 export const SOLO_GENERO_VERBOS: readonly string[] = ['dame', 'quiero', 'busco', 'tienes', 'hay', 'muestrame', 'ensename']
-export const SOLO_GENERO_ARTICULOS: readonly string[] = ['las', 'los', 'unas', 'unos', 'algunas', 'algunos']
+/**
+ * Comun a las dos formas, la de genero y la de epoca. SCENAIA-004D §4.3
+ * anade "el" y "la": "la comedia" y "el barroco" cumplen la forma. "del" no
+ * es articulo, asi que "del siglo de oro" no la cumple.
+ */
+export const SOLO_GENERO_ARTICULOS: readonly string[] = ['el', 'la', 'las', 'los', 'unas', 'unos', 'algunas', 'algunos']
 export const SOLO_GENERO_TERMINOS: readonly string[] = [
   'comedia', 'comedias', 'musical', 'musicales', 'clasico', 'clasica', 'clasicos', 'clasicas',
 ]
@@ -82,20 +87,78 @@ export const SOLO_GENERO_TERMINOS: readonly string[] = [
 const SIGNOS = /[¿?¡!.,;:]/g
 
 /**
- * El texto ENTERO es: verbo de peticion opcional + articulo opcional +
- * exactamente un termino de genero, y nada mas. Cualquier otra palabra, o
- * un segundo termino, desactiva la forma. Las palabras de razonar la vetan
- * antes (condicion (b) del §4.1 de SCENAIA-004).
+ * SCENAIA-004D §4.1 -- terminos de EPOCA de la forma de solo criterio. Lista
+ * cerrada y separada de SOLO_GENERO_TERMINOS: solo cuenta con el interruptor
+ * de epoca encendido (§4.4). Un termino puede tener varias palabras (§4.2).
+ * "actual" y "moderna" son los otros dos sinonimos de CONTEMPORANEO del
+ * interprete de obras, anadidos por Direccion antes de fusionar (PR #42).
+ * "clasico" no se repite aqui: sigue en SOLO_GENERO_TERMINOS (004C). Quedan
+ * fuera, por decision de Direccion, realismo/naturalismo, renacimiento,
+ * griego/a, aureo, vanguardista y postguerra. Ampliarla exige revisar la
+ * Adenda.
  */
-export function detectSoloGeneroRequest(normalizedText: string): boolean {
-  if (REASONING_EXPRESSIONS.some((patron) => patron.test(normalizedText))) return false
+export const SOLO_EPOCA_TERMINOS: readonly string[] = [
+  'barroco', 'barroca', 'barrocos', 'barrocas',
+  'siglo de oro', 'siglos de oro',
+  'isabelino', 'isabelina', 'isabelinos', 'isabelinas',
+  'neoclasico', 'neoclasica', 'neoclasicos', 'neoclasicas',
+  'medieval', 'medievales',
+  'grecolatino', 'grecolatina', 'grecolatinos', 'grecolatinas',
+  'renacentista', 'renacentistas',
+  'contemporaneo', 'contemporanea', 'contemporaneos', 'contemporaneas', 'actual', 'moderna',
+  'romanticismo',
+  'vanguardia', 'vanguardias',
+  'posguerra',
+]
+
+/**
+ * Estado del interruptor SCENAIA_EPOCA_ENABLED, que llega como DATO desde el
+ * Orquestador (SCENAIA-004D §4.5; Adenda 007A §4.2). Tipo propio del Request
+ * Interpreter: no se importa nada de Knowledge Assets. Ausente, o con
+ * `epocaHabilitada: false`, ningun termino de epoca cumple la forma.
+ */
+export interface OpcionesSoloCriterio {
+  readonly epocaHabilitada: boolean
+}
+
+/**
+ * Lo que queda del texto tras un verbo de peticion opcional y un articulo
+ * opcional, o null si alguna palabra de razonar veta la forma (condicion (b)
+ * del §4.1 de SCENAIA-004).
+ */
+function terminoDeLaForma(normalizedText: string): string | null {
+  if (REASONING_EXPRESSIONS.some((patron) => patron.test(normalizedText))) return null
 
   const palabras = normalizedText.replace(SIGNOS, ' ').split(' ').filter((palabra) => palabra.length > 0)
   let i = 0
   if (SOLO_GENERO_VERBOS.includes(palabras[i])) i++
   if (SOLO_GENERO_ARTICULOS.includes(palabras[i])) i++
 
-  return palabras.length === i + 1 && SOLO_GENERO_TERMINOS.includes(palabras[i])
+  return palabras.slice(i).join(' ')
+}
+
+/**
+ * El texto ENTERO es: verbo de peticion opcional + articulo opcional +
+ * exactamente un termino de genero, y nada mas. Cualquier otra palabra, o
+ * un segundo termino, desactiva la forma. Las palabras de razonar la vetan
+ * antes (condicion (b) del §4.1 de SCENAIA-004).
+ */
+export function detectSoloGeneroRequest(normalizedText: string): boolean {
+  const termino = terminoDeLaForma(normalizedText)
+  return termino !== null && SOLO_GENERO_TERMINOS.includes(termino)
+}
+
+/**
+ * SCENAIA-004D §4.2 y §4.4: la misma forma con exactamente un termino de
+ * epoca, completo y sin nada mas ("siglo de" no la cumple). Con el
+ * interruptor apagado no se cumple nunca: sin criterio de epoca, "barroco"
+ * listaria el catalogo entero como si fuera barroco (§3.3).
+ */
+export function detectSoloEpocaRequest(normalizedText: string, opciones?: OpcionesSoloCriterio): boolean {
+  if (opciones?.epocaHabilitada !== true) return false
+
+  const termino = terminoDeLaForma(normalizedText)
+  return termino !== null && SOLO_EPOCA_TERMINOS.includes(termino)
 }
 
 /**
@@ -103,10 +166,15 @@ export function detectSoloGeneroRequest(normalizedText: string): boolean {
  *
  * Solo resuelve las condiciones (a) y (b) del §4.1: quien decida si el
  * turno se resuelve sin IA debe comprobar ademas las tres restantes.
- * SCENAIA-004C amplia la (a) con la peticion de solo criterio de genero.
+ * SCENAIA-004C amplia la (a) con la peticion de solo criterio de genero, y
+ * SCENAIA-004D con la de epoca, que solo cuenta con el interruptor encendido.
  */
-export function detectPlainListingRequest(normalizedText: string): boolean {
+export function detectPlainListingRequest(normalizedText: string, opciones?: OpcionesSoloCriterio): boolean {
   if (REASONING_EXPRESSIONS.some((patron) => patron.test(normalizedText))) return false
 
-  return LISTING_EXPRESSIONS.some((patron) => patron.test(normalizedText)) || detectSoloGeneroRequest(normalizedText)
+  return (
+    LISTING_EXPRESSIONS.some((patron) => patron.test(normalizedText)) ||
+    detectSoloGeneroRequest(normalizedText) ||
+    detectSoloEpocaRequest(normalizedText, opciones)
+  )
 }
