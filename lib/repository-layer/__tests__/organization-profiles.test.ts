@@ -75,11 +75,24 @@ describe('listPublicOrganizationProfiles', () => {
     expect(builder.ilike).toHaveBeenCalledWith('ciudad', 'tenerife')
   })
 
-  it('un tipo del vocabulario de institutions devuelve NINGUNO, nunca la lista sin filtrar', async () => {
+  // SCENAIA-009 §4.5 (revisión autorizada): `theater` se traduce a `teatro`
+  // antes de filtrar; un valor ajeno a los dos vocabularios sigue sin
+  // devolver nada y sin consultar la base.
+  it('el tipo `theater` de institutions busca tipo_perfil = teatro', async () => {
+    const { client, builder } = createFakeSupabaseClient({ data: [], error: null })
+    vi.mocked(createClient).mockResolvedValue(client as never)
+
+    await listPublicOrganizationProfiles({ type: 'theater' })
+
+    expect(builder.eq).toHaveBeenCalledWith('tipo_perfil', 'teatro')
+    expect(builder.eq).not.toHaveBeenCalledWith('tipo_perfil', 'theater')
+  })
+
+  it('un tipo ajeno a los dos vocabularios devuelve NINGUNO, nunca la lista sin filtrar', async () => {
     const { client } = createFakeSupabaseClient({ data: [ROW], error: null })
     vi.mocked(createClient).mockResolvedValue(client as never)
 
-    expect(await listPublicOrganizationProfiles({ type: 'theater' })).toEqual([])
+    expect(await listPublicOrganizationProfiles({ type: 'platform' })).toEqual([])
     expect(client.from).not.toHaveBeenCalled()
   })
 

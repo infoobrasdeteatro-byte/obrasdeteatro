@@ -6,7 +6,7 @@ import { listOrganizationKnowledge } from './organizations-knowledge'
 import { listPersonKnowledge } from './persons-knowledge'
 import { interpretPersonQuery, hasUnresolvedPersonLocation } from './interpret-person-query'
 import { interpretWorkQuery, hasUnresolvedAuthor } from './interpret-work-query'
-import { interpretOrganizationQuery, hasUnresolvedLocation, unappliedWorkCriteria } from './interpret-organization-query'
+import { interpretOrganizationQuery, hasUnresolvedLocation, unappliedWorkCriteria, unappliedTypeCriteria } from './interpret-organization-query'
 import type { KnowledgeDomain, StructuredKnowledgeItem, WorksPage, WorksPageRequest } from './types'
 
 /**
@@ -141,6 +141,9 @@ async function baseRetrieve(
       const unappliedCriteria = [
         ...(hasUnresolvedLocation(query, criteria) ? ['ubicacion'] : []),
         ...unappliedWorkCriteria(query),
+        // SCENAIA-009 §4.3 (ii): productora, escuela o institucion no se
+        // pueden filtrar; se declaran aunque haya otro tipo aplicado.
+        ...unappliedTypeCriteria(query),
       ]
 
       return { items, requestWasNarrowed: Object.keys(criteria).length > 0, unappliedCriteria, workOccupancy: {}, worksPage: null }

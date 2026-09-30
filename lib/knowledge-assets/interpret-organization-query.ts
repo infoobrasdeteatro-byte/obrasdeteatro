@@ -212,3 +212,27 @@ export function unappliedWorkCriteria(normalizedQuery: string): CriterioDeObraNo
 
   return declarados
 }
+
+/**
+ * SCENAIA-009 §4.3 y §4.4 -- tipos de organizacion que existen como
+ * `tipo_perfil` pero NO tienen equivalente en `institutions.type`, asi que
+ * este interprete no puede emitirlos (su `type` solo admite el CHECK real de
+ * institutions). Lista plana y CERRADA, en singular y plural; una prueba la
+ * mantiene sincronizada con los valores de ORGANIZATION_PROFILE_TYPES que
+ * Repository Layer no traduce. Ampliarla exige una nueva Acta.
+ */
+export const TIPOS_SIN_TRADUCCION: readonly string[] = Object.freeze([
+  'productora', 'productoras',
+  'escuela', 'escuelas',
+  'institucion', 'instituciones',
+])
+
+/**
+ * Declara `'tipo'` como criterio no aplicado cuando la consulta menciona, por
+ * palabra completa, un tipo de TIPOS_SIN_TRADUCCION. Variante (ii) del §4.3:
+ * se declara aunque la consulta traiga ademas otro tipo que si se aplica
+ * ("escuelas de teatro" filtra por teatro, pero la escuela queda sin aplicar).
+ */
+export function unappliedTypeCriteria(normalizedQuery: string): 'tipo'[] {
+  return TIPOS_SIN_TRADUCCION.some((term) => containsTerm(normalizedQuery, term)) ? ['tipo'] : []
+}

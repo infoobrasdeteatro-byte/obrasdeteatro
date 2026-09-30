@@ -15,15 +15,20 @@ const CACHE_TTL_MS = 60_000
  * un teatro con cuenta vive en `profiles`; la Biblioteca Oficial, en
  * `institutions`.
  *
- * IMPORTANTE sobre `type`: aqui viaja el valor literal de `tipo_perfil`
- * ("teatro", "compania", "productora"...), NO el vocabulario de
- * `institutions.type` ("theater", "company"...). No se traduce entre ambos
- * porque tres de los seis valores no tienen equivalente inequivoco
- * (`productora`, `escuela`, `institucion`): inventar la correspondencia
- * seria exactamente el tipo de suposicion que la arquitectura evita. La
- * consecuencia -- un criterio `type` no cruza entre ambos vocabularios --
- * queda documentada como limitacion, nunca resuelta con una equivalencia
- * fabricada.
+ * IMPORTANTE sobre `type`: en el resultado viaja el valor literal de
+ * `tipo_perfil` ("teatro", "compania", "productora"...), NO el vocabulario
+ * de `institutions.type` ("theater", "company"...). El criterio, en cambio,
+ * llega siempre en el vocabulario de `institutions`, que es el unico que el
+ * interprete de Organizaciones puede emitir.
+ *
+ * SCENAIA-009 §4.1 y §4.2: solo DOS valores se traducen al filtrar, porque
+ * su equivalencia es inequivoca -- `theater` es `teatro` (theatrical-function
+ * ya trata `theater` como sala) y `company` es `compania`. `festival` no
+ * necesita traduccion: es el mismo valor en los dos vocabularios. Los otros
+ * tres (`productora`, `escuela`, `institucion`) siguen SIN traducirse: no
+ * tienen equivalente en `institutions.type`, e inventar la correspondencia
+ * seria exactamente el tipo de suposicion que la arquitectura evita. Esos
+ * tres no se filtran; el interprete declara el tipo como no aplicado.
  */
 function toOrganization(row: {
   id: string
@@ -51,6 +56,17 @@ function toOrganization(row: {
 }
 
 /**
+ * Traduccion CERRADA del criterio `type` de `institutions` a `tipo_perfil`
+ * (SCENAIA-009 §4.1). Solo alcanza al FILTRO de esta consulta: el resultado
+ * conserva el `tipo_perfil` real y la consulta de `institutions` recibe el
+ * criterio sin traducir. Ampliarla exige una nueva Acta.
+ */
+export const TRADUCCION_TIPO_A_PERFIL: ReadonlyMap<string, string> = new Map([
+  ['theater', 'teatro'],
+  ['company', 'compania'],
+])
+
+/**
  * Reproduce las mismas condiciones de visibilidad que `listPublicPersons`
  * -- la politica RLS ya vigente sobre `profiles` -- y aplica los criterios
  * ya declarados en `OrganizationSearchCriteria` sobre las columnas que
@@ -61,11 +77,11 @@ export async function listPublicOrganizationProfiles(
   limit = 20
 ): Promise<Organization[]> {
   return withCache(`orgprofiles:public:${JSON.stringify(criteria)}:${limit}`, CACHE_TTL_MS, async () => {
-    // El criterio `type` se compara contra `tipo_perfil` tal cual llega. Si
-    // pide un tipo que esta poblacion no puede tener -- porque trae el
-    // vocabulario de `institutions` ("theater") o cualquier otro valor --,
-    // el resultado correcto es NINGUNO, nunca la lista sin filtrar.
-    const tipoPedido = criteria.type
+    // El criterio `type` se compara contra `tipo_perfil` tras la traduccion
+    // cerrada de SCENAIA-009 (`theater` -> `teatro`, `company` -> `compania`).
+    // Si aun asi pide un tipo que esta poblacion no puede tener, el resultado
+    // correcto es NINGUNO, nunca la lista sin filtrar.
+    const tipoPedido = criteria.type === undefined ? undefined : (TRADUCCION_TIPO_A_PERFIL.get(criteria.type) ?? criteria.type)
     if (tipoPedido !== undefined && !ORGANIZATION_PROFILE_TYPES.some((tipo) => tipo === tipoPedido)) return []
 
     const supabase = await createClient()
