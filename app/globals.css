@@ -822,8 +822,20 @@ body {
 .footer-logo {
   font-family: var(--serif);
   font-size: 14px; color: var(--black); text-decoration: none;
+  /* Isotipo + wordmark alineados. Sin gap: partiria "obras|de|teatro.com". */
+  display: inline-flex; align-items: center;
 }
 .footer-logo span { color: var(--red); }
+/* Isotipo del pie: mismo criterio que .nav-logo .brand-icon (1em, centrado
+   en la tinta del texto, rojo del "de"). A 14px el centro de la tinta cae mas
+   alto que a 15-28px por el redondeo de la linea base: medido, -0.14em
+   (no -0.12em) deja el desfase por debajo de 0.15px. */
+.footer-logo .brand-icon {
+  height: 1em; width: auto; flex-shrink: 0;
+  transform: translateY(-0.14em);
+  margin-right: 0.35em;
+  color: var(--red);
+}
 .footer-copy { font-size: 12px; color: var(--muted); }
 
 /* Footer global (components/SiteFooter.tsx) */
@@ -860,8 +872,20 @@ body {
   font-size: 16px; color: var(--black);
   text-decoration: none; margin-bottom: 28px;
   letter-spacing: -0.2px;
+  /* Isotipo + wordmark alineados. Sin gap: partiria "obras|de|teatro.com". */
+  display: inline-flex; align-items: center;
 }
 .auth-logo span { color: var(--red); }
+/* Isotipo de las paginas de autenticacion: mismo criterio que
+   .nav-logo .brand-icon. Medido a 16px: -0.14em centra el desfase medio; queda
+   un margen de +-0.7px segun la altura de la ventana (la pagina se centra en
+   vertical y la linea base del texto salta al pixel entero), irreducible. */
+.auth-logo .brand-icon {
+  height: 1em; width: auto; flex-shrink: 0;
+  transform: translateY(-0.14em);
+  margin-right: 0.35em;
+  color: var(--red);
+}
 .auth-card {
   width: 100%; max-width: 400px;
   background: var(--white);
