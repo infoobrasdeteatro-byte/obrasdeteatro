@@ -316,11 +316,15 @@ body {
   background: linear-gradient(175deg, rgba(6,6,6,0.78) 0%, rgba(6,6,6,0.55) 45%, rgba(6,6,6,0.82) 100%);
   z-index: 1;
 }
+/* Cierre del hero: linea fina en su borde inferior, sin franja de
+   transicion. El antiguo degradado de 220px a var(--off) caia dentro de la
+   pantalla tras ajustar la altura del hero y fundia las etiquetas de los
+   indicadores. */
 .hero::after {
   content: '';
   position: absolute; bottom: 0; left: 0; right: 0;
-  height: 220px;
-  background: linear-gradient(to bottom, transparent 0%, rgba(10,10,10,0.55) 60%, var(--off) 100%);
+  height: 1px;
+  background: rgba(255,255,255,0.22);
   z-index: 2;
 }
 .hero-grain {
