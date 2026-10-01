@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import BrandIcon from '@/components/brand/BrandIcon'
 import { translateAuthError } from '@/lib/auth-errors'
 import { safeNextPath, withNext } from '@/lib/auth/next-param'
 
@@ -50,6 +51,7 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <Link href="/" className="auth-logo">
+        <BrandIcon />
         obras<span>de</span>teatro.com
       </Link>
       <div className="auth-card">

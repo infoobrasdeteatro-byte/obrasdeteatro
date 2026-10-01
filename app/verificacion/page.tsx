@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import BrandIcon from '@/components/brand/BrandIcon'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { resolveScenaiaAccess } from '@/lib/auth/scenaia-access'
@@ -46,6 +47,7 @@ export default async function VerificacionPage() {
   return (
     <div className="auth-page">
       <Link href="/" className="auth-logo">
+        <BrandIcon />
         obras<span>de</span>teatro.com
       </Link>
 

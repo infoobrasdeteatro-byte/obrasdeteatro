@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import BrandIcon from '@/components/brand/BrandIcon'
 import { translateAuthError } from '@/lib/auth-errors'
 import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
 
@@ -124,6 +125,7 @@ export default function UpdatePasswordPage() {
   return (
     <div className="auth-page">
       <Link href="/" className="auth-logo">
+        <BrandIcon />
         obras<span>de</span>teatro.com
       </Link>
       <div className="auth-card">

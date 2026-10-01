@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Script from 'next/script'
 import Link from 'next/link'
+import BrandIcon from '@/components/brand/BrandIcon'
 import { translateAuthError } from '@/lib/auth-errors'
 import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
 import { safeNextPath } from '@/lib/auth/next-param'
@@ -129,6 +130,7 @@ export default function RegistroPage() {
         onLoad={() => setTurnstileScriptReady(true)}
       />
       <Link href="/" className="auth-logo">
+        <BrandIcon />
         obras<span>de</span>teatro.com
       </Link>
       <div className="auth-card">

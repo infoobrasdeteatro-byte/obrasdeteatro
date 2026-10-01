@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import BrandIcon from '@/components/brand/BrandIcon'
 import { LEGAL_LINKS } from '@/lib/legal'
 
 // Footer global, montado una sola vez en app/layout.tsx. Sustituye a los footers
@@ -10,6 +11,7 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="site-footer-top">
         <Link href="/" className="footer-logo">
+          <BrandIcon />
           obras<span>de</span>teatro.com
         </Link>
         <p className="footer-copy">
