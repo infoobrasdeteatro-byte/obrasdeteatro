@@ -3,7 +3,39 @@
 
 ---
 
-## ÚLTIMA ACTUALIZACIÓN — 2026-09-18
+## ÚLTIMA ACTUALIZACIÓN — 2026-10-02
+
+### Cierre de fase: pulido visual, layout y comprobaciones previas
+
+`main` en `5e4c361` (PR #54), igual que `origin/main`, sin cambios sin commit. Detalle de la sesión en `docs/gobernanza/auditoria-estado-2026-10-02.md`.
+
+| Punto | Estado | Evidencia | Verificado por |
+|-------|--------|-----------|----------------|
+| Scroll horizontal en `/precios` y `/obras` a ~769px (pendiente §8.3 de la auditoría) | ✅ **CERRADO EN PRODUCCIÓN** | PR #54, commit `5e4c361` (squash). Columnas con `minmax(0, 1fr)` en lugar de `1fr`, y 2 columnas en el rango intermedio: `/precios` de 769 a 959px y `/obras` de 769 a 899px. Barrido de 768 a 1300px sin scroll horizontal; capturas a 769, 800, 900 y 960px | Claude (barrido y capturas) y Dirección (revisión) |
+| Rutas legales publicadas | ✅ **CERRADO — sin acción necesaria** | Las 11 páginas de `/legal/*` (aviso-legal, privacidad, cookies, terminos, suscripciones, reembolsos, propiedad-intelectual, derechos-representacion, normas-comunidad, verificacion-perfiles, scenaia) responden 200 en www.obrasdeteatro.com y están enlazadas desde el pie (`lib/legal.ts`). `/legal/venta-entradas` responde 404 **a propósito**: el módulo de venta de entradas aún no existe | Dirección; comprobado de nuevo por Claude (HTTP y `lib/legal.ts`) |
+| Límites de plan en Castings | ✅ **CERRADO — no había discrepancia** | El trigger `castings_sync_estado` (gratuito 0, premium 3, destacado 10, empresas sin techo), `lib/plans.ts` y el mensaje de error coinciden | Dirección contra la base de datos de Supabase; Claude solo contra el repositorio (migración `20260912113102`, `lib/plans.ts`, `MisCastingsList.tsx`) |
+
+**PR del 02-10-2026, todos en producción:** #50 (desborde de la barra de navegación), #51 (rejilla de indicadores en móvil), #52 (contraste AA de las etiquetas en móvil), #53 (contraste AA de las etiquetas en escritorio y tablet) y #54 (scroll horizontal).
+
+**Nota sobre este documento:** las secciones §4.6 (*Plan enforcement*) y §11, Riesgo 2, describen los límites de plan como «no implementados». Esa afirmación está desactualizada al menos para Castings, donde la base de datos aplica el límite. No se han reescrito en esta actualización: se corrigen aparte (pendiente P-2, abajo).
+
+**Siguiente paso del roadmap:** el **portal de cliente de Stripe**, resto de la Fase 3 (*Suscripciones / Stripe*, Arquitectura Funcional v2.0, §11.3 y §8.3). El portal está desplegado desde el PR #24 pero **apagado** (`STRIPE_PORTAL_ENABLED` no está definida en Vercel; `STRIPE_PORTAL_CONFIGURATION_ID` tampoco).
+
+**Pendientes explícitos, registrados por Dirección para más adelante** (no abrir hasta que se indique):
+- **P-1. Limpieza de las 43 ramas locales históricas.** Ninguna tiene commits sin subir. `backup/scenaia-bloque-3-pre-reconciliacion` ya tiene respaldo en GitHub.
+- **P-2. Corregir §4.6 (*Plan enforcement*) y §11, Riesgo 2, de este documento**, para que no contradigan que los límites de Castings sí se aplican.
+
+**Otros pendientes abiertos**, sin acción por ahora (detalle en la auditoría del 02-10-2026, §3 y §8):
+- `stash@{0}` del 19-07-2026, pendiente de revisión por Dirección;
+- fuentes con `next/font/local`;
+- `flex: 1` del logotipo en escritorio;
+- isotipo de la cabecera a 28px;
+- `STRIPE_WEBHOOK_SECRET` duplicada en `.env.local`;
+- verificaciones con sesión real.
+
+---
+
+## ACTUALIZACIÓN — 2026-09-18
 
 ### Webhooks de Stripe — CERRADO EN PRODUCCIÓN
 
