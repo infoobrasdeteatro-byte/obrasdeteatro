@@ -1,5 +1,5 @@
--- Test de la base de datos del módulo Noticias (migraciones 20261002170100 a
--- 20261002170500).
+-- Test de la base de datos del módulo Noticias (migraciones 20261002171457 a
+-- 20261002171615).
 --
 -- Cómo se ejecuta: pegar el bloque entero en el SQL editor de Supabase (o
 -- ejecutarlo con execute_sql) DESPUÉS de aplicar las cinco migraciones. No
