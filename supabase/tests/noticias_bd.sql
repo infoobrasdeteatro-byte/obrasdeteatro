@@ -1,8 +1,9 @@
 -- Test de la base de datos del módulo Noticias (migraciones 20261002171457 a
--- 20261002171615).
+-- 20261002171615, más 20261002173758 noticias_vista_publica_y_sin_borrado y
+-- 20261002174103 noticias_lectura_publica_solo_por_vista).
 --
 -- Cómo se ejecuta: pegar el bloque entero en el SQL editor de Supabase (o
--- ejecutarlo con execute_sql) DESPUÉS de aplicar las cinco migraciones. No
+-- ejecutarlo con execute_sql) DESPUÉS de aplicar esas migraciones. No
 -- deja datos: termina SIEMPRE con una excepción, y eso deshace todo lo que ha
 -- hecho (también lo que haga caducar_noticias_candidatas() con candidatas
 -- reales).
@@ -220,16 +221,27 @@ begin
   execute 'reset role';
 
   ---------------------------------------------------------------------------
-  -- 4. Público (sin sesión).
+  -- 4. Público (sin sesión) y usuario normal: solo leen noticias por la
+  --    vista noticias_publicas; la tabla no les devuelve ninguna fila.
   ---------------------------------------------------------------------------
+  perform set_config('request.jwt.claims', json_build_object('sub', usr, 'role', 'authenticated')::text, true);
+  execute 'set local role authenticated';
+  select count(*) into n from public.noticias;
+  if n <> 0 then raise exception 'NOTICIAS_FALLO: 4a) un usuario normal lee % filas de la tabla noticias', n; end if;
+  select count(*) into n from public.noticias_publicas where id = id_serv;
+  if n <> 1 then raise exception 'NOTICIAS_FALLO: 4a) un usuario normal no ve la publicada en la vista'; end if;
+  execute 'reset role';
+
   perform set_config('request.jwt.claims', json_build_object('role', 'anon')::text, true);
   execute 'set local role anon';
 
-  select count(*) into n from public.noticias where estado <> 'publicada';
-  if n <> 0 then raise exception 'NOTICIAS_FALLO: 4a) el público ve % noticias no publicadas', n; end if;
-  select count(*) into n from public.noticias where id = id_serv;
-  if n <> 1 then raise exception 'NOTICIAS_FALLO: 4a) el público no ve una publicada'; end if;
-  ok := ok || '4a público solo publicadas; ';
+  select count(*) into n from public.noticias;
+  if n <> 0 then raise exception 'NOTICIAS_FALLO: 4a) el público lee % filas de la tabla noticias', n; end if;
+  select count(*) into n from public.noticias_publicas where id = id_serv;
+  if n <> 1 then raise exception 'NOTICIAS_FALLO: 4a) el público no ve la publicada en la vista'; end if;
+  select count(*) into n from public.noticias_publicas where id = id_inact;
+  if n <> 0 then raise exception 'NOTICIAS_FALLO: 4a) la vista muestra una candidata'; end if;
+  ok := ok || '4a público y usuario normal solo por la vista; ';
 
   select count(*) into n from public.noticias_fuentes;
   if n <> 0 then raise exception 'NOTICIAS_FALLO: 4b) el público lee la tabla de fuentes'; end if;
