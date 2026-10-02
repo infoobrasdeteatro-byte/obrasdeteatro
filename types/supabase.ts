@@ -173,6 +173,32 @@ export type Database = {
           },
         ]
       }
+      calls_publicaciones: {
+        Row: {
+          call_id: string
+          profile_id: string
+          publicada_at: string
+        }
+        Insert: {
+          call_id: string
+          profile_id: string
+          publicada_at?: string
+        }
+        Update: {
+          call_id?: string
+          profile_id?: string
+          publicada_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_publicaciones_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       casting_applications: {
         Row: {
           applicant_id: string
@@ -717,6 +743,215 @@ export type Database = {
           tipo?: string
         }
         Relationships: []
+      }
+      noticias: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          estado: string
+          fecha_original: string | null
+          fuente_id: string
+          id: string
+          lote_importacion: string | null
+          motivo_descarte: string | null
+          motivo_retirada: string | null
+          origen: string
+          pais_code: string
+          publicado_at: string | null
+          resumen: string
+          retirada_at: string | null
+          revisado_at: string | null
+          revisado_por: string | null
+          titular: string
+          updated_at: string
+          url_original: string
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          estado?: string
+          fecha_original?: string | null
+          fuente_id: string
+          id?: string
+          lote_importacion?: string | null
+          motivo_descarte?: string | null
+          motivo_retirada?: string | null
+          origen: string
+          pais_code: string
+          publicado_at?: string | null
+          resumen: string
+          retirada_at?: string | null
+          revisado_at?: string | null
+          revisado_por?: string | null
+          titular: string
+          updated_at?: string
+          url_original: string
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          estado?: string
+          fecha_original?: string | null
+          fuente_id?: string
+          id?: string
+          lote_importacion?: string | null
+          motivo_descarte?: string | null
+          motivo_retirada?: string | null
+          origen?: string
+          pais_code?: string
+          publicado_at?: string | null
+          resumen?: string
+          retirada_at?: string | null
+          revisado_at?: string | null
+          revisado_por?: string | null
+          titular?: string
+          updated_at?: string
+          url_original?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "noticias_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "noticias_categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "noticias_fuente_id_fkey"
+            columns: ["fuente_id"]
+            isOneToOne: false
+            referencedRelation: "noticias_fuentes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "noticias_fuente_id_fkey"
+            columns: ["fuente_id"]
+            isOneToOne: false
+            referencedRelation: "noticias_fuentes_publicas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "noticias_revisado_por_fkey"
+            columns: ["revisado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      noticias_categorias: {
+        Row: {
+          activo: boolean
+          etiqueta: string
+          id: string
+          orden: number
+        }
+        Insert: {
+          activo?: boolean
+          etiqueta: string
+          id: string
+          orden?: number
+        }
+        Update: {
+          activo?: boolean
+          etiqueta?: string
+          id?: string
+          orden?: number
+        }
+        Relationships: []
+      }
+      noticias_fuentes: {
+        Row: {
+          activa: boolean
+          created_at: string
+          dominio: string
+          estado_permiso: string
+          id: string
+          nombre: string
+          notas: string | null
+          pais_code: string
+          tipo_fuente: string
+          url_licencia: string | null
+          url_rss: string | null
+          url_web: string | null
+        }
+        Insert: {
+          activa?: boolean
+          created_at?: string
+          dominio: string
+          estado_permiso?: string
+          id?: string
+          nombre: string
+          notas?: string | null
+          pais_code: string
+          tipo_fuente: string
+          url_licencia?: string | null
+          url_rss?: string | null
+          url_web?: string | null
+        }
+        Update: {
+          activa?: boolean
+          created_at?: string
+          dominio?: string
+          estado_permiso?: string
+          id?: string
+          nombre?: string
+          notas?: string | null
+          pais_code?: string
+          tipo_fuente?: string
+          url_licencia?: string | null
+          url_rss?: string | null
+          url_web?: string | null
+        }
+        Relationships: []
+      }
+      noticias_registro: {
+        Row: {
+          actor_id: string | null
+          detalle: Json
+          evento: string
+          id: string
+          lote: string | null
+          noticia_id: string | null
+          ocurrido_at: string
+          url: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          detalle?: Json
+          evento: string
+          id?: string
+          lote?: string | null
+          noticia_id?: string | null
+          ocurrido_at?: string
+          url?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          detalle?: Json
+          evento?: string
+          id?: string
+          lote?: string | null
+          noticia_id?: string | null
+          ocurrido_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "noticias_registro_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "noticias_registro_noticia_id_fkey"
+            columns: ["noticia_id"]
+            isOneToOne: false
+            referencedRelation: "noticias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -2761,7 +2996,9 @@ export type Database = {
           created_at: string | null
           deleted_at: string | null
           duration_minutes: number | null
+          epocas: string[]
           genre: string | null
+          genre_normalizado: string | null
           id: string
           institution_id: string | null
           is_featured: boolean | null
@@ -2795,7 +3032,9 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           duration_minutes?: number | null
+          epocas?: string[]
           genre?: string | null
+          genre_normalizado?: string | null
           id?: string
           institution_id?: string | null
           is_featured?: boolean | null
@@ -2829,7 +3068,9 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           duration_minutes?: number | null
+          epocas?: string[]
           genre?: string | null
+          genre_normalizado?: string | null
           id?: string
           institution_id?: string | null
           is_featured?: boolean | null
@@ -2872,9 +3113,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      noticias_fuentes_publicas: {
+        Row: {
+          dominio: string | null
+          id: string | null
+          nombre: string | null
+          pais_code: string | null
+          url_web: string | null
+        }
+        Insert: {
+          dominio?: string | null
+          id?: string | null
+          nombre?: string | null
+          pais_code?: string | null
+          url_web?: string | null
+        }
+        Update: {
+          dominio?: string | null
+          id?: string | null
+          nombre?: string | null
+          pais_code?: string | null
+          url_web?: string | null
+        }
+        Relationships: []
+      }
+      noticias_publicas: {
+        Row: {
+          categoria_etiqueta: string | null
+          categoria_id: string | null
+          fecha_original: string | null
+          fuente_dominio: string | null
+          fuente_nombre: string | null
+          fuente_url_web: string | null
+          id: string | null
+          pais_code: string | null
+          publicado_at: string | null
+          resumen: string | null
+          titular: string | null
+          url_original: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      accounting_cuota_ia_del_plan: {
+        Args: { p_plan: string }
+        Returns: Record<string, unknown>
+      }
       accounting_expire_stale_reservations: { Args: never; Returns: number }
       accounting_release_reservation: {
         Args: { p_reservation_id: string }
@@ -2989,6 +3274,7 @@ export type Database = {
           titulo: string
         }[]
       }
+      caducar_noticias_candidatas: { Args: never; Returns: number }
       cerrar_castings_vencidos: { Args: never; Returns: undefined }
       cerrar_convocatorias_vencidas: { Args: never; Returns: undefined }
       cola_reportes: {
@@ -3016,6 +3302,10 @@ export type Database = {
           url_externa: string
         }[]
       }
+      convocatorias_publicadas_en_mes: {
+        Args: { p_profile: string }
+        Returns: number
+      }
       cupo_mensual_convocatorias_agotado: {
         Args: { p_profile: string }
         Returns: boolean
@@ -3026,6 +3316,7 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: undefined
       }
+      f_unaccent: { Args: { "": string }; Returns: string }
       mis_convocatorias_publicadas_en_mes: { Args: never; Returns: number }
       mis_postulaciones: {
         Args: {
@@ -3047,6 +3338,7 @@ export type Database = {
           status: string
         }[]
       }
+      noticias_normalizar_url: { Args: { p_url: string }; Returns: string }
       paises_con_castings: {
         Args: never
         Returns: {

@@ -38,7 +38,7 @@ export default function NavAutenticado() {
           <Link href="/directorio" className="nav-link">Instituciones</Link>
           <Link href="/directorio" className="nav-link">Servicios</Link>
           <Link href="/" className="nav-link">Recursos</Link>
-          <Link href="/" className="nav-link">Editorial</Link>
+          <Link href="/noticias" className="nav-link">Noticias</Link>
         </div>
         <div className="nav-right">
           <Link href="/perfil/centro" className="nav-link" style={{ fontWeight: 500 }}>
@@ -83,7 +83,7 @@ export default function NavAutenticado() {
           <Link href="/directorio" className="nav-mobile-link">Instituciones</Link>
           <Link href="/directorio" className="nav-mobile-link">Servicios</Link>
           <Link href="/" className="nav-mobile-link">Recursos</Link>
-          <Link href="/" className="nav-mobile-link">Editorial</Link>
+          <Link href="/noticias" className="nav-mobile-link">Noticias</Link>
           <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Mi cuenta</span>
           <Link href="/perfil/centro" className="nav-mobile-link">Centro Profesional</Link>

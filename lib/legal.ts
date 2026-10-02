@@ -22,4 +22,5 @@ export const LEGAL_LINKS: LegalLink[] = [
   { href: '/legal/normas-comunidad', label: 'Normas de la Comunidad' },
   { href: '/legal/verificacion-perfiles', label: 'Verificación de Perfiles' },
   { href: '/legal/scenaia', label: 'Uso de ScenaIA' },
+  { href: '/legal/politica-noticias', label: 'Política de Noticias' },
 ]
