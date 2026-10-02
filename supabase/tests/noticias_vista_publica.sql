@@ -1,4 +1,4 @@
--- Test de la migración noticias_vista_publica_y_sin_borrado (20261002172042).
+-- Test de la migración noticias_vista_publica_y_sin_borrado (20261002173758).
 --
 -- Cómo se ejecuta: pegar el bloque entero en el SQL editor de Supabase (o
 -- ejecutarlo con execute_sql) DESPUÉS de aplicar la migración. No deja datos:

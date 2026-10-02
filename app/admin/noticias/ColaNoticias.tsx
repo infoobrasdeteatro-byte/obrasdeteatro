@@ -5,13 +5,17 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fecha, fechaHora } from '@/components/shared/formato'
 import { enlaceSeguro } from '@/lib/noticias/presentacion'
+import EditarCandidata from './EditarCandidata'
+import type { CategoriaOpcion } from './edicion'
 
 export type NoticiaPanel = {
   id: string
   titular: string
   resumen: string
   categoria: string
+  categoriaId: string
   pais: string
+  paisCode: string
   fuente: string
   fuenteActiva: boolean
   urlOriginal: string
@@ -25,15 +29,27 @@ export type NoticiaPanel = {
 type Accion = 'publicar' | 'descartar' | 'retirar'
 
 /**
- * Cola de candidatas (Publicar / Descartar) y lista de publicadas (Retirar).
+ * Cola de candidatas (Editar / Publicar / Descartar) y lista de publicadas
+ * (Retirar). Las publicadas no se editan: se retiran.
  *
  * Escribe con la sesión del moderador (cliente de navegador): la política
  * «Moderación gestiona noticias» y el trigger noticias_guarda() deciden de
  * verdad. Si el trigger rechaza (límite diario, fuente inactiva, transición no
  * permitida) se muestra su mensaje tal cual: ya está redactado para leerse.
  */
-export default function ColaNoticias({ modo, noticias }: { modo: 'candidatas' | 'publicadas'; noticias: NoticiaPanel[] }) {
+export default function ColaNoticias({
+  modo,
+  noticias,
+  categorias = [],
+}: {
+  modo: 'candidatas' | 'publicadas'
+  noticias: NoticiaPanel[]
+  /** Para el modo «Editar» de las candidatas. */
+  categorias?: CategoriaOpcion[]
+}) {
   const router = useRouter()
+  const [editando, setEditando] = useState<string | null>(null)
+  const [avisos, setAvisos] = useState<Record<string, string>>({})
   const [conMotivo, setConMotivo] = useState<{ id: string; accion: 'descartar' | 'retirar' } | null>(null)
   const [motivo, setMotivo] = useState('')
   const [ocupada, setOcupada] = useState<string | null>(null)
@@ -142,8 +158,21 @@ export default function ColaNoticias({ modo, noticias }: { modo: 'candidatas' | 
 
             {errores[n.id] && <div className="ds-alert-error" style={{ marginTop: '12px' }}>{errores[n.id]}</div>}
             {resuelta && <div className="ds-alert-success" style={{ marginTop: '12px' }}>{resuelta}</div>}
+            {!resuelta && avisos[n.id] && <div className="ds-alert-success" style={{ marginTop: '12px' }}>{avisos[n.id]}</div>}
 
-            {pidiendoMotivo ? (
+            {modo === 'candidatas' && editando === n.id ? (
+              <EditarCandidata
+                id={n.id}
+                inicial={{ titular: n.titular, resumen: n.resumen, categoria_id: n.categoriaId, pais_code: n.paisCode }}
+                categorias={categorias}
+                onCancelar={() => setEditando(null)}
+                onGuardada={() => {
+                  setEditando(null)
+                  setAvisos(p => ({ ...p, [n.id]: 'Cambios guardados. Sigue como candidata.' }))
+                  router.refresh()
+                }}
+              />
+            ) : pidiendoMotivo ? (
               <div style={{ marginTop: '18px', paddingTop: '18px', borderTop: '1px solid var(--border)' }}>
                 <label className="ds-label" htmlFor={`motivo-${n.id}`}>
                   {conMotivo.accion === 'descartar' ? 'Motivo del descarte' : 'Motivo de la retirada'}
@@ -178,7 +207,12 @@ export default function ColaNoticias({ modo, noticias }: { modo: 'candidatas' | 
                     </button>
                     <button type="button" className="ds-btn-secondary" disabled={enCurso || Boolean(resuelta)}
                       style={{ padding: '9px 18px', fontSize: '13px' }}
-                      onClick={() => { setConMotivo({ id: n.id, accion: 'descartar' }); setMotivo('') }}>
+                      onClick={() => { setEditando(n.id); setConMotivo(null) }}>
+                      Editar
+                    </button>
+                    <button type="button" className="ds-btn-secondary" disabled={enCurso || Boolean(resuelta)}
+                      style={{ padding: '9px 18px', fontSize: '13px' }}
+                      onClick={() => { setConMotivo({ id: n.id, accion: 'descartar' }); setMotivo(''); setEditando(null) }}>
                       Descartar
                     </button>
                   </>

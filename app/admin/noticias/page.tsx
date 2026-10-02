@@ -108,7 +108,9 @@ export default async function AdminNoticiasPage() {
       titular: n.titular,
       resumen: n.resumen,
       categoria: etiquetaPorId.get(n.categoria_id) ?? n.categoria_id,
+      categoriaId: n.categoria_id,
       pais: nombrePais(n.pais_code),
+      paisCode: n.pais_code,
       fuente: fuente?.nombre ?? 'Fuente desconocida',
       fuenteActiva: fuente?.activa ?? false,
       urlOriginal: n.url_original,
@@ -181,8 +183,9 @@ export default async function AdminNoticiasPage() {
       )}
 
       <Bloque titulo={`Candidatas (${(candidatas.data ?? []).length})`}
-        ayuda="De la más antigua a la más reciente. Las que pasan 7 días sin revisar se descartan solas como «caducada».">
-        <ColaNoticias modo="candidatas" noticias={(candidatas.data ?? []).map(aPanel)} />
+        ayuda="De la más antigua a la más reciente. Se pueden editar antes de publicar. Las que pasan 7 días sin revisar se descartan solas como «caducada».">
+        <ColaNoticias modo="candidatas" noticias={(candidatas.data ?? []).map(aPanel)}
+          categorias={(categorias.data ?? []).map(c => ({ id: c.id, etiqueta: c.etiqueta, activo: c.activo }))} />
       </Bloque>
 
       <Bloque titulo="Publicadas recientes"
