@@ -1574,7 +1574,10 @@ body {
   .hero-indicator + .hero-indicator::before { display: none; }
   .hero-indicator-value { font-size: 22px; margin-bottom: 7px; white-space: nowrap; }
   .hero-indicator-value em { color: #ffffff; }
-  .hero-indicator-label { font-size: 10px; letter-spacing: 1.2px; color: rgba(255,255,255,0.55); }
+  /* 0.65: con 0.55 el contraste bajaba a ~4.1:1 donde la etiqueta cae sobre
+     un peldano claro de la foto. Medido en 7 moviles (360-430px): >=4.95:1
+     en el peor pixel, AA (4.5:1) con margen. */
+  .hero-indicator-label { font-size: 10px; letter-spacing: 1.2px; color: rgba(255,255,255,0.65); }
   .hero-scroll { display: none; }
 
   .narrative { padding: 48px 20px; }
