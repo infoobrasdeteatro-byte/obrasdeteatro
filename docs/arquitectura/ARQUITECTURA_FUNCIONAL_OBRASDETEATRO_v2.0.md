@@ -876,6 +876,8 @@ Ver [Sección 10 — Backoffice / Panel de Administración](#10-backoffice--pane
 
 ### 7.4 RLS — resumen por tabla
 
+> ⚠️ **NOTA DE OBSOLESCENCIA (02/10/2026):** la fila de `profile_roles` ya no refleja el esquema real. El propietario ya no puede escribir en `profile_roles`: solo lee sus propias filas (política «Rol propio - lectura», `SELECT` para `authenticated`), y las escrituras (`INSERT`, `UPDATE`, `DELETE`) quedan reservadas a la clave de servicio (migración `20261002165310_profile_roles_solo_lectura_propia`). La tabla hoy solo admite roles administrativos (`admin`, `moderator`, `editor`), y permitir que el propietario los escribiera era una escalada de privilegios. La lectura pública («Roles públicos visibles») se mantiene sin cambios.
+
 | Tabla | SELECT | INSERT | UPDATE | DELETE |
 |---|---|---|---|---|
 | `profiles` | Público (no eliminados) | Propietario | Propietario | Solo Admin |

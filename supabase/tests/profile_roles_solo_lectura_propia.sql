@@ -1,4 +1,4 @@
--- Test de la migración profile_roles_solo_lectura_propia (20261002164941).
+-- Test de la migración profile_roles_solo_lectura_propia (20261002165310).
 --
 -- Cómo se ejecuta: pegar el bloque entero en el SQL editor de Supabase (o
 -- ejecutarlo con execute_sql) DESPUÉS de aplicar la migración. No deja datos:
