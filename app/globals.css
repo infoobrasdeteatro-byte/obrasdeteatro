@@ -1160,6 +1160,12 @@ body {
   display: grid; grid-template-columns: repeat(4,1fr);
   gap: 12px; margin-bottom: 40px; overflow: visible;
 }
+/* 2x2 en el rango intermedio: las 4 tarjetas suman ~754px de ancho minimo
+   (precio a 40px y palabras largas sin partir) y, con 1fr, no encogian:
+   desbordaban el contenedor hasta ~850px y la pagina hasta ~777px. */
+@media (min-width: 769px) and (max-width: 959px) {
+  .precios-plan-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .precios-card {
   background: var(--white); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 28px 24px;
@@ -1981,9 +1987,12 @@ body {
    BIBLIOTECA MODULAR — navegación lateral
 ═══════════════════════════════════════════════════ */
 
+/* minmax(0, 1fr): con 1fr la columna de contenido no encogia por debajo de
+   su minimo (~569px: 3 tarjetas + padding) y desbordaba la pagina entre
+   769 y ~797px. */
 .bib-modular {
   display: grid;
-  grid-template-columns: 196px 1fr;
+  grid-template-columns: 196px minmax(0, 1fr);
   max-width: 1300px;
   margin: 0 auto;
   padding: 0 32px;
@@ -2067,6 +2076,11 @@ body {
 .bib-contenido {
   padding: 48px 48px 80px;
   min-height: 60vh;
+}
+/* Con el indice lateral, por debajo de ~900px 3 tarjetas quedan demasiado
+   estrechas (~138px): 2 columnas. */
+@media (min-width: 769px) and (max-width: 899px) {
+  .bib-cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 768px) {
