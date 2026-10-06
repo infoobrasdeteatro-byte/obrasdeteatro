@@ -51,7 +51,9 @@ vi.mock('@/lib/supabase/service', () => ({
                   }
                   const id = `nueva-${estado.siguienteId++}`
                   estado.guardadas.set(k, id)
-                  return Promise.resolve({ data: { id }, error: null })
+                  // Lo que haría el trigger: BDNS de España sin filtro → publicado.
+                  const publicada = String(fila.lote).startsWith('BDNS-') && fila.pais_code === 'ES'
+                  return Promise.resolve({ data: { id, estado: publicada ? 'publicado' : 'pendiente_revision' }, error: null })
                 },
               }),
             }
@@ -164,7 +166,7 @@ describe('POST /api/convocatorias/import — resultados por convocatoria', () =>
     const res = await POST(peticion({ lote: 'L-2026-10-06', convocatorias: [convocatoria()] }))
     expect(res.status).toBe(200)
     const cuerpo = await res.json()
-    expect(cuerpo.resultados).toEqual([{ url_bases: 'https://www.teatrojoven.org/bases-2027', resultado: 'creada', id: 'nueva-1' }])
+    expect(cuerpo.resultados).toEqual([{ url_bases: 'https://www.teatrojoven.org/bases-2027', resultado: 'creada', id: 'nueva-1', estado: 'pendiente_revision' }])
 
     const fila = estado.inserts[0]
     expect(fila).toMatchObject({
@@ -235,5 +237,25 @@ describe('POST /api/convocatorias/import — resultados por convocatoria', () =>
     const res = await POST(peticion({ lote: 'L1', convocatorias: [convocatoria({ categoria: 'ayuda' })] }))
     expect((await res.json()).resultados[0].resultado).toBe('creada')
     expect(estado.inserts[0].category).toBe('ayuda')
+  })
+})
+
+describe('POST /api/convocatorias/import — autopublicación BDNS (decide el trigger)', () => {
+  it('la ruta pide siempre pendiente_revision y devuelve el estado que deja la base', async () => {
+    const res = await POST(peticion({
+      lote: 'BDNS-2026-10-07',
+      convocatorias: [convocatoria({ pais_code: 'ES', ciudad: 'Valencia', url_bases: 'https://dogv.gva.es/bases-1' })],
+    }))
+    const cuerpo = await res.json()
+    expect(estado.inserts[0]).toMatchObject({ estado: 'pendiente_revision', lote: 'BDNS-2026-10-07', origen: 'redaccion' })
+    expect(cuerpo.resultados[0]).toMatchObject({ resultado: 'creada', estado: 'publicado' })
+  })
+
+  it('GALERTAS queda en revisión', async () => {
+    const res = await POST(peticion({
+      lote: 'GALERTAS-2026-10-07',
+      convocatorias: [convocatoria({ pais_code: 'AR', url_bases: 'https://ejemplo.com.ar/bases' })],
+    }))
+    expect((await res.json()).resultados[0]).toMatchObject({ resultado: 'creada', estado: 'pendiente_revision' })
   })
 })
