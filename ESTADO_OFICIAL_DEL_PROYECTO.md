@@ -3,7 +3,28 @@
 
 ---
 
-## ÚLTIMA ACTUALIZACIÓN — 2026-10-02
+## ÚLTIMA ACTUALIZACIÓN — 2026-10-06
+
+### Cierre: portada con datos reales, auditoría de `/precios` y corrección de slugs
+
+`main` en `d87c284` tras el PR #59 (squash `3da4f9c`) y el PR #60. Producción desplegada y comprobada sin sesión en www.obrasdeteatro.com.
+
+| Punto | Estado | Evidencia | Verificado por |
+|-------|--------|-----------|----------------|
+| Portada con datos reales | ✅ **CERRADO EN PRODUCCIÓN** | PR #59. `lib/portada/datos.ts` lee con cliente anónimo sin cookies (decisión aprobada por Dirección) y los mismos filtros que `/obras`, `/directorio`, `/convocatoria` y `/noticias`; revalidación cada 10 min; `UMBRALES = { obras: 100, perfiles: 50, companias: 25, convocatorias: 5 }`. Fuera todas las cifras, obras, convocatorias, profesionales y actividad inventadas de la maqueta; por debajo del umbral se muestran textos cualitativos verdaderos. Fuera el menú lateral decorativo. Cifras del 06-10-2026: 11 obras, 15 perfiles públicos, 0 compañías, 0 convocatorias abiertas, 1 noticia | Claude (build, HTML de producción) y Dirección (capturas de escritorio y móvil) |
+| Navegación | ✅ **CERRADO EN PRODUCCIÓN** | Fuera «Instituciones», «Servicios» y «Recursos» de `TopNav` y `NavAutenticado`; el botón «Nueva obra» del dashboard va a `/obras/nueva` (antes, un 404) | Claude |
+| `/obras`, «Autores destacados» | ✅ **CERRADO EN PRODUCCIÓN** | Recuento real sobre el listado público (sale del array de obras ya filtrado); eliminado `AUTORES_PLACEHOLDER`, con sus cifras inventadas | Claude |
+| Auditoría de promesas de `/precios` | ✅ **CERRADO EN PRODUCCIÓN** | Cada línea de las tarjetas y de la tabla comprobada contra el código. Lo que no existe, o existe a medias, va marcado «próx.». Lo que tiene todo el mundo ya no figura como ventaja de pago. Fuera «Acceso a todas las convocatorias». Scena IA operativa, con la cuota real por plan y mes natural en la tabla, calculada en el servidor con `getUsageLimit` (fuente única). «Recomendado» en lugar de «Más popular». Comparativa deslizable en móvil | Claude (código) y Dirección (revisión y capturas) |
+| Corrección de slugs (18) | ✅ **CERRADO EN PRODUCCIÓN** | Bug de los triggers de slug (`LOWER` después de `REGEXP_REPLACE`) corregido con `public.slugificar()` (migración `20261006105630_slugs_normalizar_en_orden`). Corregidos por id los 12 slugs visibles y 6 no visibles con nombre real (migración `20261006105717_slugs_corregir_rotos`). Las versiones de `schema_migrations` coinciden con los nombres de fichero (PR #60) | Claude (consultas de solo lectura tras aplicar) |
+| Redirecciones 308 (12) | ✅ **CERRADO EN PRODUCCIÓN** | `next.config.ts`: las 12 URLs antiguas visibles (`/perfil/…` y `/obras/…`, con las subrutas de la obra) responden 308 hacia la nueva, y la nueva responde 200 | Claude (curl sin sesión en producción) |
+
+**Pendientes explícitos**, registrados por Dirección (no abrir hasta que se indique). Siguen abiertos P-1 y P-2 (sección del 02-10-2026, abajo).
+- **P-3. Límites de plan anunciados pero no aplicados.** El plan Gratuito anuncia «Hasta 3 obras publicadas» (`lib/plans.ts`, tarjeta y tabla) y el editor de experiencia declara un máximo de 5 entradas (`MAX_GRATUITO` en `app/perfil/ExperienciaEditor.tsx`), pero ninguno de los dos se aplica en la base de datos ni en el servidor. Por decisión de Dirección, todavía no se aplican.
+- **P-4. Revisar las 14 cuentas con nombres aleatorios (posibles bots).** Perfiles con nombres como «MbSQDVrnORnSfaMTYqF», todos con slug roto por el bug antiguo, que a propósito no se corrigieron en la migración de slugs. Antes de tocarlos hay que decidir si son altas automáticas (relacionar con el honeypot de SEC-001).
+
+---
+
+## ACTUALIZACIÓN — 2026-10-02
 
 ### Cierre de fase: pulido visual, layout y comprobaciones previas
 
@@ -24,7 +45,6 @@
 **Pendientes explícitos, registrados por Dirección para más adelante** (no abrir hasta que se indique):
 - **P-1. Limpieza de las 43 ramas locales históricas.** Ninguna tiene commits sin subir. `backup/scenaia-bloque-3-pre-reconciliacion` ya tiene respaldo en GitHub.
 - **P-2. Corregir §4.6 (*Plan enforcement*) y §11, Riesgo 2, de este documento**, para que no contradigan que los límites de Castings sí se aplican.
-- **P-3. Límites de plan anunciados pero no aplicados** (detectado el 2026-10-06 en la auditoría de promesas de `/precios`, PR #59). El plan Gratuito anuncia «Hasta 3 obras publicadas» (`lib/plans.ts`, tarjeta y tabla) y el editor de experiencia declara un máximo de 5 entradas (`MAX_GRATUITO` en `app/perfil/ExperienciaEditor.tsx`), pero ninguno de los dos límites se aplica en la base de datos ni en el servidor. Por decisión de Dirección no se aplican todavía.
 
 **Otros pendientes abiertos**, sin acción por ahora (detalle en la auditoría del 02-10-2026, §3 y §8):
 - `stash@{0}` del 19-07-2026, pendiente de revisión por Dirección;
