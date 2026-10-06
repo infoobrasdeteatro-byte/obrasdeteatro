@@ -3,9 +3,10 @@ import { IconArrowRight } from './EcoIcons'
 import type { ObraPortada } from '@/lib/portada/datos'
 
 /**
- * Las tres últimas obras públicas, tal como están en `works`. Solo se pinta
- * lo que la tabla trae: sin portada no hay foto de archivo, y sin duración
- * no hay duración.
+ * Las tres últimas obras públicas, con la misma tarjeta que el catálogo de
+ * /obras (clases bib-card-*): género, título, autor, año y «Ver ficha →».
+ * Solo se pinta lo que la tabla trae: sin año, el hueco queda vacío, como
+ * en /obras, para que «Ver ficha →» siga a la derecha.
  */
 export default function EcosistemaObrasDestacadas({ obras }: { obras: ObraPortada[] | null }) {
   if (!obras || obras.length === 0) return null
@@ -18,22 +19,13 @@ export default function EcosistemaObrasDestacadas({ obras }: { obras: ObraPortad
       </div>
       <div className="eco-obras-grid">
         {obras.map(o => (
-          <Link key={o.slug} href={`/obras/${o.slug}`} className="eco-obra-card eco-reveal">
-            <div className="eco-obra-img">
-              {o.cover_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={o.cover_image_url} alt={o.title} loading="lazy" decoding="async" />
-              ) : (
-                <div className="eco-obra-img-vacia" aria-hidden="true">{o.title}</div>
-              )}
-            </div>
-            <div className="eco-obra-body">
-              {o.genre && <div className="eco-obra-genre">{o.genre}</div>}
-              <div className="eco-obra-title">{o.title}</div>
-              {o.author && <div className="eco-obra-company">{o.author}</div>}
-              {o.duration_minutes !== null && (
-                <div className="eco-obra-meta"><span>{o.duration_minutes} min</span></div>
-              )}
+          <Link key={o.slug} href={`/obras/${o.slug}`} className="bib-card eco-reveal">
+            {o.genre && <div className="bib-card-genero">{o.genre}</div>}
+            <h3 className="bib-card-titulo">{o.title}</h3>
+            {o.author && <p className="bib-card-autor">{o.author}</p>}
+            <div className="bib-card-footer">
+              <span className="bib-card-año">{o.year ?? ''}</span>
+              <span className="bib-card-action">Ver ficha →</span>
             </div>
           </Link>
         ))}

@@ -39,8 +39,7 @@ export interface ObraPortada {
   author: string | null
   slug: string
   genre: string | null
-  duration_minutes: number | null
-  cover_image_url: string | null
+  year: number | null
 }
 
 export interface ConvocatoriaPortada {
@@ -118,7 +117,7 @@ export async function obtenerDatosPortada(): Promise<DatosPortada> {
     convocatoriasPublicadas(),
     convocatoriasPublicadas().or(`deadline.is.null,deadline.gte.${ahora}`),
     supabase.from('works')
-      .select('title, author, slug, genre, duration_minutes, cover_image_url')
+      .select('title, author, slug, genre, year')
       .eq('is_published', true)
       .is('deleted_at', null)
       .not('slug', 'is', null)

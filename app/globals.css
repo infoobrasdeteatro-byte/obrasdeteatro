@@ -2382,36 +2382,6 @@ body {
   margin: 0 auto;
 }
 
-/* ── Sidebar ── */
-.eco-sidebar {
-  width: 210px; flex-shrink: 0;
-  background: var(--white);
-  border-right: 1px solid var(--border);
-  padding: 24px 12px;
-  position: sticky; top: var(--nav-h);
-  align-self: stretch;
-}
-.eco-sid-section { margin-bottom: 24px; }
-.eco-sid-label {
-  font-size: 10px; font-weight: 600;
-  letter-spacing: 1px; text-transform: uppercase;
-  color: var(--muted); padding: 0 8px;
-  margin-bottom: 6px; display: block;
-}
-.eco-sid-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 10px; border-radius: 8px;
-  font-size: 13px; color: var(--muted);
-  margin-bottom: 1px; font-family: var(--sans);
-}
-.eco-sid-item--active { background: var(--subtle); color: var(--black); font-weight: 500; }
-.eco-sid-count {
-  margin-left: auto; font-size: 10px;
-  background: var(--subtle); border-radius: 10px;
-  padding: 1px 7px; color: var(--muted); font-weight: 500;
-}
-.eco-sid-item--active .eco-sid-count { background: var(--red-light); color: var(--red); }
-
 /* ── Main ── */
 .eco-main { flex: 1; padding: 32px 24px; min-width: 0; }
 
@@ -2527,13 +2497,8 @@ body {
 
 /* ── Portada con datos reales: tarjetas enlazadas, texto en lugar de cifra,
       estado vacío de convocatorias y últimas noticias ── */
-a.eco-stat-card, a.eco-obra-card { display: block; }
+a.eco-stat-card { display: block; }
 .eco-stat-value--texto { font-size: 19px; letter-spacing: -0.3px; line-height: 1.2; }
-.eco-obra-img-vacia {
-  height: 100%; display: flex; align-items: flex-end; padding: 10px 14px;
-  font-family: var(--serif); font-style: italic; font-size: 13px; line-height: 1.25;
-  color: var(--muted); opacity: 0.55; overflow: hidden;
-}
 .eco-conv-vacio { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 20px 16px; }
 .eco-conv-vacio-titulo { font-size: 13px; font-weight: 500; color: var(--black); font-family: var(--sans); }
 .eco-conv-vacio-texto { font-size: 12px; color: var(--muted); line-height: 1.5; font-family: var(--sans); }
@@ -2627,7 +2592,6 @@ a.eco-stat-card, a.eco-obra-card { display: block; }
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .eco-layout { flex-direction: column; }
-  .eco-sidebar { display: none; }
   .eco-main { padding: 24px 16px; }
   .eco-stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
   .eco-stat-value { font-size: 24px; }

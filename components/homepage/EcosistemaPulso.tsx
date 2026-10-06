@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { IconPlus } from './EcoIcons'
-import EcosistemaSidebar from './EcosistemaSidebar'
 import EcosistemaStatsGrid from './EcosistemaStatsGrid'
 import EcosistemaObrasDestacadas from './EcosistemaObrasDestacadas'
 import EcosistemaConvocatorias from './EcosistemaConvocatorias'
@@ -21,17 +20,15 @@ export default function EcosistemaPulso({ datos }: { datos: DatosPortada }) {
     <section className="eco-section" id="pulso" aria-labelledby="eco-pulso-heading">
       <EcoScrollReveal />
       <div className="eco-layout">
-        <EcosistemaSidebar />
-
         <main className="eco-main">
           <div className="eco-welcome-bar">
             <div className="eco-welcome-text">
               <h2 id="eco-pulso-heading">El pulso del ecosistema <em>teatral hispano.</em></h2>
-              <p>Tu espacio dentro de la escena contemporánea.</p>
+              <p>Lo último de la biblioteca, las convocatorias y la actualidad del sector.</p>
             </div>
             <Link href="/obras/nueva" className="eco-btn-add">
               <IconPlus />
-              Añadir obra
+              Publicar una obra
             </Link>
           </div>
 

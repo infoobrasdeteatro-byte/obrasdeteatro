@@ -58,15 +58,22 @@ export default async function Home() {
               { value: obrasIndicador.value, em: true, label: obrasIndicador.label },
               { value: '20',              label: 'Países' },
               { value: 'Activa',  em: true,  label: 'Comunidad' },
-              { value: 'Abiertas', em: true, label: 'Convocatorias' },
-            ] as const).map((item, i) => (
-              <div key={i} className="hero-indicator" role="listitem">
-                <div className="hero-indicator-value">
-                  {'em' in item ? <em>{item.value}</em> : item.value}
-                </div>
-                <div className="hero-indicator-label">{item.label}</div>
-              </div>
-            ))}
+              { value: 'Gratis', em: true, label: 'Publicar convocatorias', href: '/convocatoria/nueva' },
+            ] as const).map((item, i) => {
+              const contenido = (
+                <>
+                  <div className="hero-indicator-value">
+                    {'em' in item ? <em>{item.value}</em> : item.value}
+                  </div>
+                  <div className="hero-indicator-label">{item.label}</div>
+                </>
+              )
+              return 'href' in item ? (
+                <Link key={i} href={item.href} className="hero-indicator" role="listitem">{contenido}</Link>
+              ) : (
+                <div key={i} className="hero-indicator" role="listitem">{contenido}</div>
+              )
+            })}
           </div>
         </div>
 
