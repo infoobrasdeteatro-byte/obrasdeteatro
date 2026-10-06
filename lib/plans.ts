@@ -67,8 +67,6 @@ export const PLANES: Plan[] = [
           'Galería de fotos y vídeos',
           'Portfolio de proyectos y espectáculos',
           'Redes sociales y datos de contacto',
-          'Premios, reconocimientos y formación',
-          'Disponibilidad profesional activa',
         ],
         itemsProximamente: [
           'Perfil completo con todos los campos',
@@ -81,14 +79,12 @@ export const PLANES: Plan[] = [
         items: [
           'Obras ilimitadas publicadas',
           'Mayor posicionamiento en búsquedas',
-          'Perfil optimizado para SEO',
         ],
         itemsProximamente: ['Mayor posicionamiento en búsquedas'],
       },
       {
         titulo: 'Biblioteca Digital',
         items: [
-          'Descarga ilimitada de guiones',
           'Listas de lectura y obras favoritas',
         ],
         itemsProximamente: ['Listas de lectura y obras favoritas'],
@@ -195,7 +191,6 @@ export const PLANES: Plan[] = [
       {
         titulo: 'Perfil Institucional',
         items: [
-          'Perfil para compañía, teatro, festival o institución',
           'Página de organización con identidad propia',
           'Gestión de equipo y colaboradores',
         ],
@@ -207,7 +202,6 @@ export const PLANES: Plan[] = [
           'Prioridad máxima en el directorio',
           'Presencia editorial en ObrasDeTeatro®',
           'Aparición en selecciones especiales',
-          'Difusión de convocatorias a toda la comunidad',
         ],
         itemsProximamente: [
           'Presencia editorial en ObrasDeTeatro®',
@@ -218,16 +212,19 @@ export const PLANES: Plan[] = [
         titulo: 'Convocatorias y Gestión',
         items: [
           'Convocatorias ilimitadas publicadas',
-          'Gestión de candidaturas recibidas',
-          'Búsqueda avanzada de profesionales',
           'Filtros por especialidad, disponibilidad y zona',
         ],
         itemsProximamente: ['Filtros por especialidad, disponibilidad y zona'],
       },
       {
+        titulo: 'Castings',
+        items: [
+          'Gestión de candidaturas recibidas',
+        ],
+      },
+      {
         titulo: 'Scena IA para Organizaciones',
         items: [
-          'Búsqueda inteligente de profesionales',
           'Análisis de repertorio y tendencias del sector',
           'Generación de programas y dossiers',
           'IA aplicada a la gestión de elencos',
@@ -292,10 +289,10 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     filas: [
       { label: 'Perfil básico en el directorio',      values: [true,       true,         true,         true] },
       { label: 'Galería, portfolio y redes sociales',  values: [false,      true,         true,         true], proximamente: true },
-      { label: 'Premios, formación y currículum',      values: [false,      true,         true,         true], proximamente: true },
-      { label: 'Disponibilidad profesional activa',    values: [false,      true,         true,         true] },
+      { label: 'Premios, formación y currículum',      values: [true,       true,         true,         true], proximamente: true },
+      { label: 'Disponibilidad profesional activa',    values: [true,       true,         true,         true] },
       { label: 'Perfil destacado en el directorio',    values: [false,      false,        true,         true] },
-      { label: 'Perfil institucional',                 values: [false,      false,        false,        true] },
+      { label: 'Perfil institucional',                 values: [true,       true,         true,         true] },
       { label: 'Gestión de equipo y colaboradores',    values: [false,      false,        false,        true], proximamente: true },
     ],
   },
@@ -303,7 +300,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     titulo: 'Visibilidad',
     filas: [
       { label: 'Visible en el directorio',             values: [true,       true,         true,         true] },
-      { label: 'Perfil optimizado para SEO',           values: [false,      true,         true,         true] },
+      { label: 'Perfil optimizado para SEO',           values: [true,       true,         true,         true] },
       { label: 'Prioridad en búsquedas',               values: [false,      false,        true,         true] },
       { label: 'Selecciones editoriales',              values: [false,      false,        true,         true], proximamente: true },
       { label: 'Difusión en redes de ObrasDeTeatro®',  values: [false,      false,        true,         true], proximamente: true },
@@ -349,7 +346,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     titulo: 'Analítica',
     filas: [
       { label: 'Estadísticas de visitas al perfil',    values: [false,      false,        true,         true], proximamente: true },
-      { label: 'Dashboard de rendimiento',             values: [false,      false,        true,         true] },
+      { label: 'Dashboard de rendimiento',             values: [true,       true,         true,         true] },
       { label: 'Informe mensual',                      values: [false,      false,        true,         true], proximamente: true },
     ],
   },
