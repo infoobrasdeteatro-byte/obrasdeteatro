@@ -8,6 +8,7 @@ import {
  * la home pública. No debe confundirse con components/design-system/Sidebar.tsx
  * (el sidebar real del dashboard autenticado, con enlaces distintos) -- este
  * es una vista previa estática, sin navegación real, según lo aprobado.
+ * Sin contadores: los «3» y «12» de la maqueta eran inventados.
  */
 export default function EcosistemaSidebar() {
   return (
@@ -16,9 +17,9 @@ export default function EcosistemaSidebar() {
         <span className="eco-sid-label">Mi cuenta</span>
         <div className="eco-sid-item eco-sid-item--active"><IconDashboard />Inicio</div>
         <div className="eco-sid-item"><IconUser />Mi perfil</div>
-        <div className="eco-sid-item"><IconTheater />Mis obras<span className="eco-sid-count">3</span></div>
+        <div className="eco-sid-item"><IconTheater />Mis obras</div>
         <div className="eco-sid-item"><IconUsers />Mi compañía</div>
-        <div className="eco-sid-item"><IconBookmark />Guardados<span className="eco-sid-count">12</span></div>
+        <div className="eco-sid-item"><IconBookmark />Guardados</div>
       </div>
       <div className="eco-sid-section">
         <span className="eco-sid-label">Explorar</span>

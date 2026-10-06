@@ -2525,6 +2525,26 @@ body {
 .eco-conv-cta { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: var(--red); margin-top: 6px; opacity: 0; transform: translateX(-4px); transition: opacity 0.25s ease, transform 0.25s ease; font-family: var(--sans); }
 .eco-conv-item:hover .eco-conv-cta { opacity: 1; transform: translateX(0); }
 
+/* ── Portada con datos reales: tarjetas enlazadas, texto en lugar de cifra,
+      estado vacío de convocatorias y últimas noticias ── */
+a.eco-stat-card, a.eco-obra-card { display: block; }
+.eco-stat-value--texto { font-size: 19px; letter-spacing: -0.3px; line-height: 1.2; }
+.eco-obra-img-vacia {
+  height: 100%; display: flex; align-items: flex-end; padding: 10px 14px;
+  font-family: var(--serif); font-style: italic; font-size: 13px; line-height: 1.25;
+  color: var(--muted); opacity: 0.55; overflow: hidden;
+}
+.eco-conv-vacio { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 20px 16px; }
+.eco-conv-vacio-titulo { font-size: 13px; font-weight: 500; color: var(--black); font-family: var(--sans); }
+.eco-conv-vacio-texto { font-size: 12px; color: var(--muted); line-height: 1.5; font-family: var(--sans); }
+.eco-conv-vacio-btn {
+  display: inline-flex; align-items: center; margin-top: 4px;
+  background: var(--black); color: var(--white);
+  padding: 8px 16px; border-radius: 8px;
+  font-size: 12px; font-weight: 500; font-family: var(--sans);
+}
+.eco-noticias { margin-top: 24px; }
+
 /* ── Right column ── */
 .eco-right-col { display: flex; flex-direction: column; gap: 16px; }
 
@@ -2614,6 +2634,7 @@ body {
   .eco-stat-link { opacity: 1; transform: translateY(0); }
   .eco-obras-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
   .eco-two-col { grid-template-columns: 1fr; gap: 12px; }
+  .eco-noticias { margin-top: 20px; }
   .eco-conv-cta { opacity: 1; transform: translateX(0); }
   .eco-conv-micrometa { display: none; }
 }

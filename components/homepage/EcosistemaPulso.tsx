@@ -5,15 +5,17 @@ import EcosistemaObrasDestacadas from './EcosistemaObrasDestacadas'
 import EcosistemaConvocatorias from './EcosistemaConvocatorias'
 import EcosistemaMapaHispano from './EcosistemaMapaHispano'
 import EcosistemaScenaIACard from './EcosistemaScenaIACard'
+import EcosistemaNoticias from './EcosistemaNoticias'
 import EcoScrollReveal from './EcoScrollReveal'
+import type { DatosPortada } from '@/lib/portada/datos'
 
 /**
- * Bloque "El pulso del ecosistema teatral hispano" -- vista previa visual
- * estática para la home pública, insertada entre la sección narrativa y el
- * footer. Todo el contenido es de muestra (no viene de Supabase todavía);
- * ver docs de la conversación para el roadmap de conexión a datos reales.
+ * Bloque "El pulso del ecosistema teatral hispano" de la home pública,
+ * entre la sección narrativa y el footer. Cifras, obras, convocatorias y
+ * noticias vienen de Supabase (lib/portada/datos); lo que no tiene dato
+ * real se dice con texto o no se pinta.
  */
-export default function EcosistemaPulso() {
+export default function EcosistemaPulso({ datos }: { datos: DatosPortada }) {
   return (
     <section className="eco-section" id="pulso" aria-labelledby="eco-pulso-heading">
       <EcoScrollReveal />
@@ -32,16 +34,18 @@ export default function EcosistemaPulso() {
             </div>
           </div>
 
-          <EcosistemaStatsGrid />
-          <EcosistemaObrasDestacadas />
+          <EcosistemaStatsGrid datos={datos} />
+          <EcosistemaObrasDestacadas obras={datos.ultimasObras} />
 
           <div className="eco-two-col">
-            <EcosistemaConvocatorias />
+            <EcosistemaConvocatorias convocatorias={datos.ultimasConvocatorias} />
             <div className="eco-right-col">
               <EcosistemaMapaHispano />
               <EcosistemaScenaIACard />
             </div>
           </div>
+
+          <EcosistemaNoticias noticias={datos.ultimasNoticias} />
         </main>
       </div>
     </section>

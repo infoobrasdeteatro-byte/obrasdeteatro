@@ -7,6 +7,8 @@ import { IconRoute as IconRun, IconPencil, IconCalendarEvent, IconBookmark as Ic
  * el ScenaIA real está protegido por sesión y consume créditos del Núcleo,
  * así que cualquier interacción aquí invita a registrarse/iniciar sesión en
  * lugar de fingir una conversación real. Aprobado explícitamente así.
+ * Tampoco muestra actividad: el «hace 2 min · 38 oportunidades» y las
+ * «5 nuevas convocatorias» de la maqueta eran inventados.
  */
 const CHIPS = [
   { icon: IconRun, label: 'Teatro físico' },
@@ -28,15 +30,14 @@ export default function EcosistemaScenaIACard() {
             <div className="eco-scenaia-dot" aria-hidden="true" />
             <div className="eco-scenaia-name">Asistente del ecosistema</div>
           </div>
-          <div className="eco-scenaia-meta">Actualizado hace 2 min · 38 oportunidades analizadas</div>
         </div>
 
         <div className="eco-scenaia-sep" aria-hidden="true" />
 
         <div className="eco-scenaia-body-section">
           <div className="eco-scenaia-bubble">
-            Detecté <strong>5 nuevas convocatorias</strong> relacionadas con teatro físico y residencias escénicas en Iberoamérica.
-            Esta semana aumentó la actividad en <strong>Madrid, Bogotá y Ciudad de México</strong>.
+            Pregúntale por <strong>obras, profesionales y organizaciones</strong> del catálogo de la plataforma.
+            Responde a partir de lo publicado en la plataforma.
           </div>
 
           <div className="eco-scenaia-chips">

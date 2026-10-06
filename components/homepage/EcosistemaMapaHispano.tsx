@@ -11,13 +11,6 @@ const NODOS = [
   { cx: 112, cy: 20, r: 4, ringR: 1.5, opacity: 0.4, ringOpacity: 0.5, dotOpacity: 0.75, delay: '2.6s', label: 'Nueva York', labelX: 116, labelY: 18, labelSize: 5.5, labelOpacity: 0.6 },
 ] as const
 
-const PROFESIONALES = [
-  { iniciales: 'MR', nombre: 'María R.', color: '#c8001a' },
-  { iniciales: 'JL', nombre: 'Javier L.', color: '#185fa5' },
-  { iniciales: 'AC', nombre: 'Ana C.', color: '#0f6e56' },
-  { iniciales: 'DP', nombre: 'Diego P.', color: '#7f77dd' },
-] as const
-
 export default function EcosistemaMapaHispano() {
   return (
     <div>
@@ -82,21 +75,7 @@ export default function EcosistemaMapaHispano() {
             ))}
 
             <text x="10" y="141" fontFamily="var(--sans)" fontSize="7" fill="rgba(255,255,255,0.22)" fontWeight="400" letterSpacing="0.8">Ecosistema teatral hispano · 20 países</text>
-
-            <g>
-              <circle cx="408" cy="10" r="1.8" fill="#c8001a" opacity="0.7" />
-              <text x="402" y="22" fontFamily="var(--sans)" fontSize="6" fill="rgba(255,255,255,0.3)" textAnchor="middle">8</text>
-            </g>
           </svg>
-        </div>
-
-        <div className="eco-prof-row">
-          {PROFESIONALES.map((p, i) => (
-            <div key={i} className="eco-prof-chip">
-              <div className="eco-prof-av" style={{ background: p.color }}>{p.iniciales}</div>
-              {p.nombre}
-            </div>
-          ))}
         </div>
       </div>
     </div>

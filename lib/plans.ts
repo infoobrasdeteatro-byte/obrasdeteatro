@@ -282,19 +282,17 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
   },
   {
     titulo: 'Scena IA',
-    proximamente: true,
     filas: [
       { label: 'Asistente IA para teatro',             values: [false,      true,         true,         true] },
-      { label: 'Análisis avanzado de guiones',         values: [false,      false,        true,         true] },
-      { label: 'Sugerencias de casting con IA',        values: [false,      false,        true,         true] },
-      { label: 'IA para organizaciones',               values: [false,      false,        false,        true] },
+      { label: 'Análisis avanzado de guiones',         values: [false,      false,        true,         true], proximamente: true },
+      { label: 'Sugerencias de casting con IA',        values: [false,      false,        true,         true], proximamente: true },
+      { label: 'IA para organizaciones',               values: [false,      false,        false,        true], proximamente: true },
     ],
   },
   {
     titulo: 'Convocatorias',
     filas: [
       { label: 'Convocatorias públicas abiertas',      values: [true,       true,         true,         true] },
-      { label: 'Acceso a todas las convocatorias',     values: [false,      true,         true,         true] },
       { label: 'Alertas personalizadas',               values: [false,      true,         true,         true], proximamente: true },
       { label: 'Convocatorias publicadas al mes',      values: ['Hasta 3',  'Ilimitadas', 'Ilimitadas', 'Ilimitadas'] },
     ],
