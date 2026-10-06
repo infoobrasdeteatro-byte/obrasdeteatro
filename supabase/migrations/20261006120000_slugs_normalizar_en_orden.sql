@@ -13,9 +13,11 @@
 -- LA CORRECCIÓN. Una sola función, public.slugificar, que aplica este orden:
 --   1. minúsculas
 --   2. fuera tildes y diacríticos (unaccent: «ñ» → «n», «é» → «e»)
---   3. fuera apóstrofos y signos (sin dejar guion: «teresa's» → «teresas»)
---   4. espacios y guiones seguidos → un solo guion
---   5. sin guiones al principio ni al final
+--   3. «&» pasa a « y » («Romeo & Julieta» → «romeo-y-julieta»,
+--      «rock&roll» → «rock-y-roll»), antes de quitar los signos
+--   4. fuera apóstrofos y signos (sin dejar guion: «teresa's» → «teresas»)
+--   5. espacios y guiones seguidos → un solo guion
+--   6. sin guiones al principio ni al final
 -- Las tres funciones de trigger pasan a usarla. Todo lo demás queda igual:
 -- mismos triggers (BEFORE INSERT, solo cuando el slug llega nulo), mismo
 -- sufijo numérico ante colisión y mismo criterio de colisión (ignorar filas
@@ -38,7 +40,10 @@ as $$
   select btrim(
     regexp_replace(
       regexp_replace(
-        extensions.unaccent('extensions.unaccent'::regdictionary, lower(coalesce(texto, ''))),
+        replace(
+          extensions.unaccent('extensions.unaccent'::regdictionary, lower(coalesce(texto, ''))),
+          '&', ' y '
+        ),
         '[^a-z0-9[:space:]-]', '', 'g'
       ),
       '[[:space:]-]+', '-', 'g'
@@ -48,7 +53,7 @@ as $$
 $$;
 
 comment on function public.slugificar(text) is
-  'Slug en orden: minúsculas → sin diacríticos → sin apóstrofos ni signos → espacios/guiones a un guion → sin guiones en los extremos. Puede devolver cadena vacía; quien llama decide el respaldo.';
+  'Slug en orden: minúsculas → sin diacríticos → «&» a « y » → sin apóstrofos ni signos → espacios/guiones a un guion → sin guiones en los extremos. Puede devolver cadena vacía; quien llama decide el respaldo.';
 
 create or replace function public.auto_slug_profile()
   returns trigger
