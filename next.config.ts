@@ -18,12 +18,15 @@ const nextConfig: NextConfig = {
 
       // Slugs rotos por el bug del orden LOWER/REGEXP_REPLACE en los triggers
       // de slug. Los corrige la migración
-      // supabase/migrations/20261006120100_slugs_corregir_rotos.sql, que
+      // supabase/migrations/20261006105717_slugs_corregir_rotos.sql, que
       // aborta si el slug calculado no es exactamente el destino de aquí.
       // Solo los 12 visibles al público: los demás nunca tuvieron una URL
       // pública que conservar. 308 = permanent: true.
-      // La obra arrastra sus subrutas (/editar incluida): :path* también casa con ninguna.
-      { source: '/obras/-eresa-s-cstasy/:path*',   destination: '/obras/teresas-ecstasy/:path*', permanent: true },
+      // La obra, en dos reglas: la URL exacta va directa (con :path* vacío el
+      // destino salía con barra final y costaba un segundo 308) y las subrutas
+      // (/editar incluida) arrastran su resto.
+      { source: '/obras/-eresa-s-cstasy',          destination: '/obras/teresas-ecstasy', permanent: true },
+      { source: '/obras/-eresa-s-cstasy/:path+',   destination: '/obras/teresas-ecstasy/:path+', permanent: true },
       { source: '/perfil/-gostina-amilo-e-uca',    destination: '/perfil/agostina-camilo-de-luca', permanent: true },
       { source: '/perfil/-lexander',               destination: '/perfil/alexander', permanent: true },
       { source: '/perfil/-lfredo-allina',          destination: '/perfil/alfredo-vallina', permanent: true },
