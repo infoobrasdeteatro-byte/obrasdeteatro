@@ -18,7 +18,7 @@ export const CATEGORIAS = [
   { value: 'festival',   label: 'Festival' },
   { value: 'premio',     label: 'Premio o certamen' },
   { value: 'residencia', label: 'Residencia artística' },
-  { value: 'beca',       label: 'Beca o ayuda' },
+  { value: 'beca',       label: 'Beca' },
   { value: 'ayuda',      label: 'Ayuda / subvención' },
 ] as const
 
