@@ -1,5 +1,3 @@
-import { IconArrowRight } from './EcoIcons'
-
 const NODOS = [
   { cx: 168, cy: 27, r: 7, ringR: 2.2, opacity: 0.6, ringOpacity: 0.7, dotOpacity: 0.95, delay: '0s', label: 'Madrid', labelX: 174, labelY: 25, labelSize: 6.5, labelOpacity: 0.75 },
   { cx: 151, cy: 42, r: 5, ringR: 1.8, opacity: 0.5, ringOpacity: 0.6, dotOpacity: 0.85, delay: '0.7s', label: 'Canarias', labelX: 156, labelY: 40, labelSize: 6, labelOpacity: 0.7 },
@@ -16,7 +14,6 @@ export default function EcosistemaMapaHispano() {
     <div>
       <div className="eco-sec-header">
         <div className="eco-sec-title">Comunidad hispana</div>
-        <div className="eco-sec-link">Ver mapa <IconArrowRight /></div>
       </div>
       <div className="eco-comunidad-card eco-reveal">
         <div className="eco-ecosystem-map" role="img" aria-label="Mapa del ecosistema teatral hispano — 20 países conectados">

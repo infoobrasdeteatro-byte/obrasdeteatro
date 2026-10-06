@@ -1,6 +1,6 @@
 import {
   IconDashboard, IconUser, IconTheater, IconUsers, IconBookmark,
-  IconSearch, IconMap, IconCalendarEvent, IconSparkles, IconTool, IconSettings,
+  IconSearch, IconMap, IconCalendarEvent, IconSparkles, IconSettings,
 } from './EcoIcons'
 
 /**
@@ -8,7 +8,8 @@ import {
  * la home pública. No debe confundirse con components/design-system/Sidebar.tsx
  * (el sidebar real del dashboard autenticado, con enlaces distintos) -- este
  * es una vista previa estática, sin navegación real, según lo aprobado.
- * Sin contadores: los «3» y «12» de la maqueta eran inventados.
+ * Sin contadores: los «3» y «12» de la maqueta eran inventados. Sin
+ * «Recursos» ni «Servicios», igual que en la navegación real.
  */
 export default function EcosistemaSidebar() {
   return (
@@ -29,8 +30,6 @@ export default function EcosistemaSidebar() {
         <div className="eco-sid-item"><IconSparkles />ScenaIA</div>
       </div>
       <div className="eco-sid-section">
-        <span className="eco-sid-label">Recursos</span>
-        <div className="eco-sid-item"><IconTool />Servicios</div>
         <div className="eco-sid-item"><IconSettings />Ajustes</div>
       </div>
     </aside>

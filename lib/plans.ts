@@ -94,7 +94,7 @@ export const PLANES: Plan[] = [
           'Análisis de guiones con IA',
           'Generación de dossiers profesionales',
         ],
-        proximamente: true,
+        itemsProximamente: ['Análisis de guiones con IA', 'Generación de dossiers profesionales'],
       },
       {
         titulo: 'Herramientas',
@@ -150,7 +150,11 @@ export const PLANES: Plan[] = [
           'Sugerencias de casting con IA',
           'Reportes de tendencias del sector',
         ],
-        proximamente: true,
+        itemsProximamente: [
+          'Análisis avanzado de guiones',
+          'Sugerencias de casting con IA',
+          'Reportes de tendencias del sector',
+        ],
       },
       {
         titulo: 'Herramientas',
@@ -205,7 +209,11 @@ export const PLANES: Plan[] = [
           'Generación de programas y dossiers',
           'IA aplicada a la gestión de elencos',
         ],
-        proximamente: true,
+        itemsProximamente: [
+          'Análisis de repertorio y tendencias del sector',
+          'Generación de programas y dossiers',
+          'IA aplicada a la gestión de elencos',
+        ],
       },
       {
         titulo: 'Biblioteca y Contenidos',
@@ -239,6 +247,10 @@ export interface CompareRow {
   label: string
   values: [CellValue, CellValue, CellValue, CellValue]
   proximamente?: boolean
+  // La fila muestra la cuota de IA de cada plan. La cifra no vive en este
+  // archivo: la calcula el servidor (app/precios/page.tsx) y llega a la tabla
+  // como `cuotasIA`; `values` solo se usa si no llegara.
+  cuotaIA?: boolean
 }
 
 export interface CompareSection {
@@ -283,7 +295,9 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
   {
     titulo: 'Scena IA',
     filas: [
-      { label: 'Asistente IA para teatro',             values: [false,      true,         true,         true] },
+      // Los valores de esta fila no se escriben aquí: /precios los sustituye
+      // por la cuota real de cada plan, que no vive en el catálogo comercial.
+      { label: 'Asistente IA para teatro',             values: [true,       true,         true,         true], cuotaIA: true },
       { label: 'Análisis avanzado de guiones',         values: [false,      false,        true,         true], proximamente: true },
       { label: 'Sugerencias de casting con IA',        values: [false,      false,        true,         true], proximamente: true },
       { label: 'IA para organizaciones',               values: [false,      false,        false,        true], proximamente: true },

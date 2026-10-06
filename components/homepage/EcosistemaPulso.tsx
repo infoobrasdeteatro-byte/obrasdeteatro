@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { IconPlus } from './EcoIcons'
 import EcosistemaSidebar from './EcosistemaSidebar'
 import EcosistemaStatsGrid from './EcosistemaStatsGrid'
@@ -28,10 +29,10 @@ export default function EcosistemaPulso({ datos }: { datos: DatosPortada }) {
               <h2 id="eco-pulso-heading">El pulso del ecosistema <em>teatral hispano.</em></h2>
               <p>Tu espacio dentro de la escena contemporánea.</p>
             </div>
-            <div className="eco-btn-add">
+            <Link href="/obras/nueva" className="eco-btn-add">
               <IconPlus />
               Añadir obra
-            </div>
+            </Link>
           </div>
 
           <EcosistemaStatsGrid datos={datos} />

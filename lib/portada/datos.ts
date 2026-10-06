@@ -12,6 +12,10 @@ import type { Database } from '@/types/supabase'
  * anónima y sin sesión, la RLS evalúa exactamente lo que ve un visitante sin
  * cuenta, que es lo que la portada debe contar.
  *
+ * Decisión aprobada por Dirección el 2026-10-06 (revisión del PR #59): no
+ * cambiar a lib/supabase/server. Si algún día hiciera falta leer algo que
+ * solo ve un usuario con sesión, eso no va en la portada cacheada.
+ *
  * Los filtros repiten los de las páginas públicas para que las cifras de la
  * portada y los listados digan lo mismo:
  *   - obras          → /obras            (is_published, sin borrar)

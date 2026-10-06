@@ -13,9 +13,11 @@ interface Props {
   userEmail: string | null
   currentPlan: string | null
   cancelled: boolean
+  /** Cuota real de IA por plan, en el orden de PLANES (fila `cuotaIA` de la tabla). */
+  cuotasIA: CellValue[]
 }
 
-export default function PreciosClient({ userId, userEmail, currentPlan, cancelled }: Props) {
+export default function PreciosClient({ userId, userEmail, currentPlan, cancelled, cuotasIA }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -214,7 +216,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                         {fila.label}
                         {fila.proximamente && <span className="precios-compare-soon"> · próx.</span>}
                       </td>
-                      {fila.values.map((val, i) => (
+                      {(fila.cuotaIA && cuotasIA.length === fila.values.length ? cuotasIA : fila.values).map((val, i) => (
                         <td
                           key={i}
                           className={`precios-compare-cell${PLANES[i]?.recomendado ? ' precios-compare-cell--highlighted' : ''}`}

@@ -44,13 +44,6 @@ const TAXONOMIA: { section: string; items: string[] }[] = [
   },
 ]
 
-const AUTORES_PLACEHOLDER = [
-  { nombre: 'Federico García Lorca',      pais: 'España', obras: 12,  iniciales: 'FL' },
-  { nombre: 'Pedro Calderón de la Barca', pais: 'España', obras: 47,  iniciales: 'PB' },
-  { nombre: 'Lope de Vega',               pais: 'España', obras: 184, iniciales: 'LV' },
-  { nombre: 'Ramón del Valle-Inclán',     pais: 'España', obras: 23,  iniciales: 'RV' },
-]
-
 /* ── Types ───────────────────────────────────────────────── */
 
 type ObraCard = {
@@ -71,6 +64,30 @@ const SECCIONES = [
 
 type SeccionId = (typeof SECCIONES)[number]['id']
 
+type AutorDestacado = { nombre: string; obras: number; iniciales: string }
+
+/**
+ * Autores con más obras públicas, contados sobre `obrasData` -- el mismo
+ * listado que pinta el catálogo, con sus mismos filtros de visibilidad --.
+ * Máximo cuatro, de más a menos obras (a igualdad, por nombre). Las obras
+ * sin autor no cuentan.
+ */
+function autoresDestacados(obras: ObraCard[]): AutorDestacado[] {
+  const recuento = new Map<string, number>()
+  for (const o of obras) {
+    const nombre = o.author?.trim()
+    if (nombre) recuento.set(nombre, (recuento.get(nombre) ?? 0) + 1)
+  }
+  return [...recuento]
+    .sort(([a, na], [b, nb]) => nb - na || a.localeCompare(b, 'es'))
+    .slice(0, 4)
+    .map(([nombre, obras]) => {
+      const palabras = nombre.split(/\s+/)
+      const iniciales = (palabras[0][0] + (palabras.length > 1 ? palabras[palabras.length - 1][0] : '')).toUpperCase()
+      return { nombre, obras, iniciales }
+    })
+}
+
 const GENRES_TOTAL = TAXONOMIA.reduce((acc, { items }) => acc + items.length, 0)
 
 interface Props {
@@ -82,12 +99,14 @@ interface Props {
 export default function BibliotecaClient({ obrasData }: Props) {
   const [activa, setActiva] = useState<SeccionId>('catalogo')
   const recientes = [...obrasData].reverse().slice(0, 4)
+  const autores = autoresDestacados(obrasData)
+  const secciones = SECCIONES.filter(s => s.id !== 'dramaturgos' || autores.length > 0)
 
   const counts: Record<SeccionId, number> = {
     catalogo:        obrasData.length,
     generos:         GENRES_TOTAL,
     incorporaciones: recientes.length,
-    dramaturgos:     AUTORES_PLACEHOLDER.length,
+    dramaturgos:     autores.length,
   }
 
   return (
@@ -96,7 +115,7 @@ export default function BibliotecaClient({ obrasData }: Props) {
       {/* Índice lateral */}
       <nav className="bib-nav-lateral" aria-label="Índice de la Biblioteca">
         <span className="bib-nav-lateral-title" aria-hidden="true">Índice</span>
-        {SECCIONES.map(s => (
+        {secciones.map(s => (
           <button
             key={s.id}
             className={`bib-nav-lateral-item${activa === s.id ? ' bib-nav-lateral-item--active' : ''}`}
@@ -179,21 +198,21 @@ export default function BibliotecaClient({ obrasData }: Props) {
           </section>
         )}
 
-        {activa === 'dramaturgos' && (
+        {activa === 'dramaturgos' && autores.length > 0 && (
           <section aria-labelledby="bib-autores-h">
             <header className="bib-section-head bib-section-head--sm">
               <div className="bib-section-eyebrow">Dramaturgos</div>
               <h2 className="bib-section-title" id="bib-autores-h">Autores destacados</h2>
             </header>
             <ul className="bib-autores-list">
-              {AUTORES_PLACEHOLDER.map(autor => (
+              {autores.map(autor => (
                 <li key={autor.nombre} className="bib-autor-item">
                   <div className="bib-autor-iniciales" aria-hidden="true">
                     {autor.iniciales}
                   </div>
                   <div>
                     <div className="bib-autor-nombre">{autor.nombre}</div>
-                    <div className="bib-autor-meta">{autor.pais} · {autor.obras} obras</div>
+                    <div className="bib-autor-meta">{autor.obras === 1 ? '1 obra' : `${autor.obras} obras`}</div>
                   </div>
                 </li>
               ))}
