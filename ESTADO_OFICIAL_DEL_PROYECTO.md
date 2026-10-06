@@ -3,7 +3,28 @@
 
 ---
 
-## ÚLTIMA ACTUALIZACIÓN — 2026-10-06
+## ÚLTIMA ACTUALIZACIÓN — 2026-10-06 (tarde)
+
+### Cierre: Convocatorias automáticas, Bloque 1 (Redacción)
+
+`main` en `c5ab4c6` tras el PR #62 (squash). Producción desplegada y comprobada sin sesión en www.obrasdeteatro.com.
+
+| Punto | Estado | Evidencia | Verificado por |
+|-------|--------|-----------|----------------|
+| Migración `20261006130000_convocatorias_redaccion` | ✅ **APLICADA Y REGISTRADA** | Aplicada por Dirección en el editor SQL y registrada en `supabase_migrations.schema_migrations` con la versión y el nombre del fichero. En `calls`: columnas `origen`, `pais_code`, `ciudad`, `entidad_convocante`, `url_bases` (solo https), `fuente_dominio`, `url_bases_normalizada` (índice único parcial para la Redacción) y `lote`; categoría `ayuda` («Ayuda / subvención»); `beca` pasa a etiquetarse «Beca». En `calls_sync_estado()`: solo el perfil de la Redacción puede tener origen `redaccion`; sus convocatorias entran siempre en revisión; exige bases, entidad, país y fecha futura; sin cupo mensual; `location` = «Ciudad, País» | Claude (lectura del esquema y del registro) |
+| Verificación real del trigger | ✅ **15/15 OK** | Script en `BEGIN … ROLLBACK` ejecutado por Dirección en el editor SQL. Comprueba la inserción de la Redacción (queda en revisión aunque pida publicado), el duplicado de bases, los rechazos sin bases, sin entidad, sin país o con fecha pasada, el rechazo 42501 desde otro perfil, que la Redacción no consume cupo, el cupo intacto del gratuito, la moderación de usuario y el perfil `redaccion` fuera del directorio. No deja datos | Dirección (ejecución); Claude (script) |
+| Cuenta de servicio de la Redacción | ✅ **CREADA Y SUSPENDIDA** | `redaccion@obrasdeteatro.com`, creada con la API de administración (email confirmado, contraseña aleatoria no guardada, sin roles) y suspendida con `ban_duration` (hasta 2126). Perfil «Redacción obrasdeteatro.com», slug `redaccion`, `perfil_publico = false`: fuera del directorio, de `/perfil/[slug]` y de ScenaIA. No recibe correos de la plataforma | Claude |
+| `POST /api/convocatorias/import` | ✅ **EN PRODUCCIÓN** | Cabecera `x-convocatorias-secret` comparada con `CONVOCATORIAS_IMPORT_SECRET` (definida por Dirección en Vercel, Production y Preview). Hasta 10 convocatorias y 64 KB por llamada. Resultado por convocatoria: creada, duplicada, vencida (Europe/Madrid) o invalida. Sin cabecera responde 401 | Claude (curl sin sesión) |
+| Revisión, ficha y listado | ✅ **EN PRODUCCIÓN** | `/admin/convocatorias`: distintivo «Redacción · automática», datos de la convocatoria y edición antes de aprobar. Ficha: entidad, país, ciudad, «Consultar bases oficiales →» (nofollow), fuente y aviso de la Redacción. `/convocatoria`: filtro por país (200) | Claude |
+| Correo de retirada | ✅ **EN PRODUCCIÓN** | `hola@obrasdeteatro.com` en `/legal/politica-noticias` (sección 6, noticias; sección 7 nueva, convocatorias) y en «Solicitar retirada» de `/noticias` | Claude (HTML de producción) |
+
+**Pendientes explícitos**, además de P-1 a P-4 (abajo):
+- **P-5. Primera escritura real como `service_role` a nombre de la cuenta suspendida.** Se comprobará con la primera importación real desde Make: la convocatoria debe quedar en `pendiente_revision`, a nombre del perfil `redaccion`, con `origen = 'redaccion'`.
+- **P-6. Decidir qué hacer con `legal@obrasdeteatro.com`, que no existe.** Aparece en 10 páginas legales (contacto «Asuntos legales» y el texto de retirada de Propiedad intelectual). Opciones: crear una redirección en Arsys o cambiar las páginas.
+
+---
+
+## ACTUALIZACIÓN — 2026-10-06
 
 ### Cierre: portada con datos reales, auditoría de `/precios` y corrección de slugs
 
