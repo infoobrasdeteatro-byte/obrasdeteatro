@@ -78,7 +78,7 @@ export default async function ModeracionConvocatoriasPage() {
 
   const { data: filas, error } = await supabase
     .from('calls')
-    .select('id, title, description, category, location, deadline, prize, created_at, moderacion_entrada_at, motivo_filtro, profile_id')
+    .select('id, title, description, category, location, deadline, prize, created_at, moderacion_entrada_at, motivo_filtro, profile_id, origen, entidad_convocante, pais_code, ciudad, url_bases, fuente_dominio')
     .eq('estado', 'pendiente_revision')
     .is('deleted_at', null)
     .order('moderacion_entrada_at', { ascending: true, nullsFirst: true })
@@ -116,6 +116,12 @@ export default async function ModeracionConvocatoriasPage() {
       motivoFiltro: c.motivo_filtro,
       organizadorNombre: nombre.length > 0 ? nombre : null,
       organizadorTipo: perfil ? (TIPO_PERFIL_LABEL[perfil.tipo_perfil] ?? perfil.tipo_perfil) : null,
+      origen: c.origen,
+      entidadConvocante: c.entidad_convocante,
+      paisCode: c.pais_code,
+      ciudad: c.ciudad,
+      urlBases: c.url_bases,
+      fuenteDominio: c.fuente_dominio,
     }
   })
 

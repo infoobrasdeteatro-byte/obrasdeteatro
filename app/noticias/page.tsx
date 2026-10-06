@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 }
 
 const POR_PAGINA = 20
-const CORREO_RETIRADA = 'legal@obrasdeteatro.com'
+const CORREO_RETIRADA = 'hola@obrasdeteatro.com'
 
 type Props = {
   searchParams: Promise<{ pais?: string; cat?: string; pagina?: string }>

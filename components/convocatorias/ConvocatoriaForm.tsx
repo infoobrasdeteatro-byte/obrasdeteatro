@@ -7,7 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/supabase'
 import { CATEGORIAS } from './vocabulario'
 
-type Convocatoria = Database['public']['Tables']['calls']['Row']
+// Sin las columnas de la Redacción (origen 'redaccion'): este formulario es el
+// de los usuarios y no las lee ni las escribe.
+type Convocatoria = Omit<
+  Database['public']['Tables']['calls']['Row'],
+  'origen' | 'pais_code' | 'ciudad' | 'entidad_convocante' | 'url_bases' | 'fuente_dominio' | 'url_bases_normalizada' | 'lote'
+>
 
 /**
  * Formulario de convocatoria, compartido por creación y edición.
