@@ -115,7 +115,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                 onMouseEnter={() => setExploringOther(!plan.recomendado)}
               >
                 {plan.recomendado && (
-                  <span className="precios-badge">Más popular</span>
+                  <span className="precios-badge">Recomendado</span>
                 )}
 
                 <div className="precios-card-label">{plan.nombre}</div>
@@ -187,6 +187,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
         {/* Tabla comparativa */}
         <section className="precios-compare">
           <h2 className="precios-compare-titulo">Comparativa completa</h2>
+          <p className="precios-compare-hint" aria-hidden="true">Desliza para ver todos los planes →</p>
           <div className="precios-compare-wrapper">
             <table className="precios-compare-table">
               <thead>
@@ -206,8 +207,10 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                 {TABLA_COMPARATIVA.flatMap((section) => [
                   <tr key={`s-${section.titulo}`}>
                     <td colSpan={5} className="precios-compare-section-label">
-                      {section.titulo}
-                      {section.proximamente && <span className="precios-compare-soon"> · próx.</span>}
+                      <span className="precios-compare-section-text">
+                        {section.titulo}
+                        {section.proximamente && <span className="precios-compare-soon"> · próx.</span>}
+                      </span>
                     </td>
                   </tr>,
                   ...section.filas.map((fila) => (

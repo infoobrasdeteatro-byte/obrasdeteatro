@@ -1322,6 +1322,32 @@ body {
 .precios-compare-value { color: var(--black); font-size: 11px; font-weight: 500; }
 .precios-compare-value--inv { color: var(--black); }
 
+/* Comparativa en pantallas estrechas: la tabla se desliza dentro de su
+   contenedor, con la columna «Funcionalidad» fija y un aviso encima. En
+   escritorio nada de esto aplica: el aviso no se muestra y la tabla cabe. */
+.precios-compare-hint { display: none; }
+@media (max-width: 768px) {
+  .precios-compare-wrapper { max-width: 100%; }
+  .precios-compare-hint {
+    display: block; text-align: center; margin: -16px 0 12px;
+    font-family: var(--sans); font-size: 12px; color: var(--muted);
+  }
+  .precios-compare-table { min-width: 0; width: max-content; }
+  .precios-compare-th--feature,
+  .precios-compare-label {
+    position: sticky; left: 0; z-index: 1;
+    background: var(--white);
+    width: 140px; min-width: 140px; max-width: 140px;
+    box-shadow: 1px 0 0 var(--border);
+  }
+  .precios-compare-th--feature { z-index: 2; }
+  .precios-compare-th:not(.precios-compare-th--feature),
+  .precios-compare-cell { min-width: 104px; }
+  .precios-compare-value,
+  .precios-compare-plan-price { white-space: nowrap; }
+  .precios-compare-section-text { position: sticky; left: 16px; }
+}
+
 .precios-legal-box {
   background: var(--white); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 24px;
