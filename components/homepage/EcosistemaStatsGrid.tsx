@@ -1,24 +1,49 @@
-import { IconTrendingUp, IconArrowRight } from './EcoIcons'
+import Link from 'next/link'
+import { IconArrowRight } from './EcoIcons'
+import { UMBRALES, superaUmbral, type DatosPortada } from '@/lib/portada/datos'
 
-const STATS = [
-  { value: '4.280', label: 'Obras registradas', delta: '+38 esta semana', link: 'Ver obras' },
-  { value: '1.140', label: 'Compañías activas', delta: '+12 esta semana', link: 'Explorar compañías' },
-  { value: '67', label: 'Convocatorias abiertas', delta: '+5 nuevas hoy', link: 'Ver convocatorias' },
-  { value: '20', label: 'Países conectados', delta: 'España · México · Argentina…', neutral: true, link: 'Ver mapa hispano' },
-] as const
+interface Tarjeta {
+  /** Cifra real, o texto cualitativo cuando la cifra no supera su umbral. */
+  value: string
+  esTexto: boolean
+  label: string
+  detalle?: string
+  link: string
+  href: string
+}
 
-export default function EcosistemaStatsGrid() {
+const miles = (n: number) => n.toLocaleString('es-ES')
+
+/**
+ * Cada cifra se enseña solo si el dato real supera su umbral (UMBRALES). Por
+ * debajo, la tarjeta dice algo cualitativo y verdadero en vez de un número.
+ * No hay «+X esta semana»: ese dato no existe.
+ */
+function tarjetas(datos: DatosPortada): Tarjeta[] {
+  return [
+    superaUmbral(datos.obras, UMBRALES.obras)
+      ? { value: miles(datos.obras), esTexto: false, label: 'Obras publicadas', link: 'Ver obras', href: '/obras' }
+      : { value: 'Biblioteca abierta', esTexto: true, label: 'Clásicos del teatro hispano y autores actuales', link: 'Ver obras', href: '/obras' },
+    superaUmbral(datos.companias, UMBRALES.companias)
+      ? { value: miles(datos.companias), esTexto: false, label: 'Compañías en el directorio', link: 'Explorar compañías', href: '/directorio?tipo=compania' }
+      : { value: 'Directorio profesional', esTexto: true, label: 'Compañías, salas y profesionales', link: 'Explorar el directorio', href: '/directorio' },
+    superaUmbral(datos.convocatoriasAbiertas, UMBRALES.convocatorias)
+      ? { value: miles(datos.convocatoriasAbiertas), esTexto: false, label: 'Convocatorias abiertas', link: 'Ver convocatorias', href: '/convocatoria' }
+      : { value: 'Convocatorias', esTexto: true, label: 'Festivales, premios, residencias y becas', link: 'Ver convocatorias', href: '/convocatoria' },
+    { value: '20', esTexto: false, label: 'Países conectados', detalle: 'España · México · Argentina…', link: 'Ver directorio', href: '/directorio' },
+  ]
+}
+
+export default function EcosistemaStatsGrid({ datos }: { datos: DatosPortada }) {
   return (
     <div className="eco-stats-grid">
-      {STATS.map((s, i) => (
-        <div key={i} className="eco-stat-card eco-reveal">
-          <div className="eco-stat-value">{s.value}</div>
+      {tarjetas(datos).map((s, i) => (
+        <Link key={i} href={s.href} className="eco-stat-card eco-reveal">
+          <div className={`eco-stat-value${s.esTexto ? ' eco-stat-value--texto' : ''}`}>{s.value}</div>
           <div className="eco-stat-label">{s.label}</div>
-          <div className={`eco-stat-delta${'neutral' in s && s.neutral ? ' eco-stat-delta--neutral' : ''}`}>
-            {!('neutral' in s && s.neutral) && <IconTrendingUp />} {s.delta}
-          </div>
+          {s.detalle && <div className="eco-stat-delta eco-stat-delta--neutral">{s.detalle}</div>}
           <div className="eco-stat-link">{s.link} <IconArrowRight /></div>
-        </div>
+        </Link>
       ))}
     </div>
   )

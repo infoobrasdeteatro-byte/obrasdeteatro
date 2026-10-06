@@ -1,80 +1,34 @@
-import { IconArrowRight, IconRoute, IconStar, IconCalendar } from './EcoIcons'
+import Link from 'next/link'
+import { IconArrowRight } from './EcoIcons'
+import type { ObraPortada } from '@/lib/portada/datos'
 
-const OBRAS = [
-  {
-    img: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&q=85&auto=format&fit=crop',
-    alt: 'Ceniza sobre el patio',
-    genre: 'Drama contemporáneo',
-    title: 'Ceniza sobre el patio',
-    company: 'Colectivo Umbral',
-    country: 'Argentina',
-    duration: '95 min',
-    context: 'Disponible para programación internacional',
-    contextIcon: IconRoute,
-    badge: 'Destacada esta semana',
-    badgeClass: 'eco-status-badge--verde',
-  },
-  {
-    img: 'https://images.unsplash.com/photo-1547153760-18fc86324498?w=600&q=85&auto=format&fit=crop',
-    alt: 'Los cuerpos vacíos',
-    genre: 'Teatro físico',
-    title: 'Los cuerpos vacíos',
-    company: 'Escena Nómada',
-    country: 'España · Canarias',
-    duration: '70 min',
-    context: 'Residencia escénica internacional 2026',
-    contextIcon: IconStar,
-    badge: 'Disponible para gira',
-    badgeClass: 'eco-status-badge--azul',
-  },
-  {
-    img: 'https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?w=600&q=85&auto=format&fit=crop',
-    alt: 'La última frontera',
-    genre: 'Teatro documental',
-    title: 'La última frontera',
-    company: 'Archivo Escénico',
-    country: 'México',
-    duration: '85 min',
-    context: 'Proyecto seleccionado en circuito iberoamericano',
-    contextIcon: IconCalendar,
-    badge: 'Estreno en septiembre',
-    badgeClass: 'eco-status-badge--ambar',
-  },
-] as const
+/**
+ * Las tres últimas obras públicas, con la misma tarjeta que el catálogo de
+ * /obras (clases bib-card-*): género, título, autor, año y «Ver ficha →».
+ * Solo se pinta lo que la tabla trae: sin año, el hueco queda vacío, como
+ * en /obras, para que «Ver ficha →» siga a la derecha.
+ */
+export default function EcosistemaObrasDestacadas({ obras }: { obras: ObraPortada[] | null }) {
+  if (!obras || obras.length === 0) return null
 
-export default function EcosistemaObrasDestacadas() {
   return (
     <>
       <div className="eco-sec-header">
-        <div className="eco-sec-title">Obras destacadas</div>
-        <div className="eco-sec-link">Ver todas <IconArrowRight /></div>
+        <div className="eco-sec-title">Últimas incorporaciones</div>
+        <Link href="/obras" className="eco-sec-link">Ver todas <IconArrowRight /></Link>
       </div>
       <div className="eco-obras-grid">
-        {OBRAS.map((o, i) => {
-          const ContextIcon = o.contextIcon
-          return (
-            <div key={i} className="eco-obra-card eco-reveal">
-              <div className="eco-obra-img">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={o.img} alt={o.alt} loading="lazy" decoding="async" />
-              </div>
-              <div className="eco-obra-body">
-                <div className="eco-obra-genre">{o.genre}</div>
-                <div className="eco-obra-title">{o.title}</div>
-                <div className="eco-obra-company">{o.company}</div>
-                <div className="eco-obra-meta">
-                  <span>{o.country}</span>
-                  <span className="eco-obra-meta-sep">·</span>
-                  <span>{o.duration}</span>
-                </div>
-                <div className="eco-obra-context"><ContextIcon />{o.context}</div>
-              </div>
-              <div className="eco-obra-footer">
-                <span className={`eco-status-badge ${o.badgeClass}`}>{o.badge}</span>
-              </div>
+        {obras.map(o => (
+          <Link key={o.slug} href={`/obras/${o.slug}`} className="bib-card eco-reveal">
+            {o.genre && <div className="bib-card-genero">{o.genre}</div>}
+            <h3 className="bib-card-titulo">{o.title}</h3>
+            {o.author && <p className="bib-card-autor">{o.author}</p>}
+            <div className="bib-card-footer">
+              <span className="bib-card-año">{o.year ?? ''}</span>
+              <span className="bib-card-action">Ver ficha →</span>
             </div>
-          )
-        })}
+          </Link>
+        ))}
       </div>
     </>
   )

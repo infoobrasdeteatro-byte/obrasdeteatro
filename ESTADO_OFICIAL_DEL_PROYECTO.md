@@ -24,6 +24,7 @@
 **Pendientes explícitos, registrados por Dirección para más adelante** (no abrir hasta que se indique):
 - **P-1. Limpieza de las 43 ramas locales históricas.** Ninguna tiene commits sin subir. `backup/scenaia-bloque-3-pre-reconciliacion` ya tiene respaldo en GitHub.
 - **P-2. Corregir §4.6 (*Plan enforcement*) y §11, Riesgo 2, de este documento**, para que no contradigan que los límites de Castings sí se aplican.
+- **P-3. Límites de plan anunciados pero no aplicados** (detectado el 2026-10-06 en la auditoría de promesas de `/precios`, PR #59). El plan Gratuito anuncia «Hasta 3 obras publicadas» (`lib/plans.ts`, tarjeta y tabla) y el editor de experiencia declara un máximo de 5 entradas (`MAX_GRATUITO` en `app/perfil/ExperienciaEditor.tsx`), pero ninguno de los dos límites se aplica en la base de datos ni en el servidor. Por decisión de Dirección no se aplican todavía.
 
 **Otros pendientes abiertos**, sin acción por ahora (detalle en la auditoría del 02-10-2026, §3 y §8):
 - `stash@{0}` del 19-07-2026, pendiente de revisión por Dirección;

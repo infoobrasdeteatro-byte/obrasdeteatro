@@ -67,8 +67,11 @@ export const PLANES: Plan[] = [
           'Galería de fotos y vídeos',
           'Portfolio de proyectos y espectáculos',
           'Redes sociales y datos de contacto',
-          'Premios, reconocimientos y formación',
-          'Disponibilidad profesional activa',
+        ],
+        itemsProximamente: [
+          'Perfil completo con todos los campos',
+          'Galería de fotos y vídeos',
+          'Portfolio de proyectos y espectáculos',
         ],
       },
       {
@@ -76,13 +79,12 @@ export const PLANES: Plan[] = [
         items: [
           'Obras ilimitadas publicadas',
           'Mayor posicionamiento en búsquedas',
-          'Perfil optimizado para SEO',
         ],
+        itemsProximamente: ['Mayor posicionamiento en búsquedas'],
       },
       {
         titulo: 'Biblioteca Digital',
         items: [
-          'Descarga ilimitada de guiones',
           'Listas de lectura y obras favoritas',
         ],
         itemsProximamente: ['Listas de lectura y obras favoritas'],
@@ -94,17 +96,19 @@ export const PLANES: Plan[] = [
           'Análisis de guiones con IA',
           'Generación de dossiers profesionales',
         ],
-        proximamente: true,
+        itemsProximamente: ['Análisis de guiones con IA', 'Generación de dossiers profesionales'],
       },
       {
         titulo: 'Herramientas',
         items: [
-          'Acceso a todas las convocatorias',
           'Alertas de convocatorias personalizadas',
           'Publica hasta 3 castings activos a la vez',
           'Recursos creativos exclusivos',
         ],
-        itemsProximamente: ['Alertas de convocatorias personalizadas'],
+        itemsProximamente: [
+          'Alertas de convocatorias personalizadas',
+          'Recursos creativos exclusivos',
+        ],
       },
     ],
     recomendado: false,
@@ -131,6 +135,11 @@ export const PLANES: Plan[] = [
           'Difusión en redes de ObrasDeTeatro®',
           'Recomendado a compañías y teatros activos',
         ],
+        itemsProximamente: [
+          'Incluido en selecciones editoriales',
+          'Difusión en redes de ObrasDeTeatro®',
+          'Recomendado a compañías y teatros activos',
+        ],
       },
       {
         titulo: 'Analítica Profesional',
@@ -140,7 +149,7 @@ export const PLANES: Plan[] = [
           'Quién visita tu perfil',
           'Informe mensual de rendimiento',
         ],
-        itemsProximamente: ['Informe mensual de rendimiento'],
+        proximamente: true,
       },
       {
         titulo: 'Scena IA',
@@ -150,13 +159,22 @@ export const PLANES: Plan[] = [
           'Sugerencias de casting con IA',
           'Reportes de tendencias del sector',
         ],
-        proximamente: true,
+        itemsProximamente: [
+          'Análisis avanzado de guiones',
+          'Sugerencias de casting con IA',
+          'Reportes de tendencias del sector',
+        ],
       },
       {
         titulo: 'Herramientas',
         items: [
           'Acceso prioritario a convocatorias',
           'Publica hasta 10 castings activos a la vez',
+          'Participación en proyectos editoriales',
+          'Recursos exclusivos para destacados',
+        ],
+        itemsProximamente: [
+          'Acceso prioritario a convocatorias',
           'Participación en proyectos editoriales',
           'Recursos exclusivos para destacados',
         ],
@@ -173,7 +191,6 @@ export const PLANES: Plan[] = [
       {
         titulo: 'Perfil Institucional',
         items: [
-          'Perfil para compañía, teatro, festival o institución',
           'Página de organización con identidad propia',
           'Gestión de equipo y colaboradores',
         ],
@@ -185,27 +202,38 @@ export const PLANES: Plan[] = [
           'Prioridad máxima en el directorio',
           'Presencia editorial en ObrasDeTeatro®',
           'Aparición en selecciones especiales',
-          'Difusión de convocatorias a toda la comunidad',
+        ],
+        itemsProximamente: [
+          'Presencia editorial en ObrasDeTeatro®',
+          'Aparición en selecciones especiales',
         ],
       },
       {
         titulo: 'Convocatorias y Gestión',
         items: [
           'Convocatorias ilimitadas publicadas',
-          'Gestión de candidaturas recibidas',
-          'Búsqueda avanzada de profesionales',
           'Filtros por especialidad, disponibilidad y zona',
+        ],
+        itemsProximamente: ['Filtros por especialidad, disponibilidad y zona'],
+      },
+      {
+        titulo: 'Castings',
+        items: [
+          'Gestión de candidaturas recibidas',
         ],
       },
       {
         titulo: 'Scena IA para Organizaciones',
         items: [
-          'Búsqueda inteligente de profesionales',
           'Análisis de repertorio y tendencias del sector',
           'Generación de programas y dossiers',
           'IA aplicada a la gestión de elencos',
         ],
-        proximamente: true,
+        itemsProximamente: [
+          'Análisis de repertorio y tendencias del sector',
+          'Generación de programas y dossiers',
+          'IA aplicada a la gestión de elencos',
+        ],
       },
       {
         titulo: 'Biblioteca y Contenidos',
@@ -214,7 +242,11 @@ export const PLANES: Plan[] = [
           'Acceso prioritario a nuevas incorporaciones',
           'Descarga masiva de guiones',
         ],
-        itemsProximamente: ['Descarga masiva de guiones'],
+        itemsProximamente: [
+          'Colecciones y listas editoriales propias',
+          'Acceso prioritario a nuevas incorporaciones',
+          'Descarga masiva de guiones',
+        ],
       },
       {
         titulo: 'Soporte Dedicado',
@@ -224,7 +256,7 @@ export const PLANES: Plan[] = [
           'Acceso anticipado a nuevas funcionalidades',
           'Panel de administración multi-usuario',
         ],
-        itemsProximamente: ['Panel de administración multi-usuario'],
+        proximamente: true,
       },
     ],
     recomendado: false,
@@ -239,6 +271,10 @@ export interface CompareRow {
   label: string
   values: [CellValue, CellValue, CellValue, CellValue]
   proximamente?: boolean
+  // La fila muestra la cuota de IA de cada plan. La cifra no vive en este
+  // archivo: la calcula el servidor (app/precios/page.tsx) y llega a la tabla
+  // como `cuotasIA`; `values` solo se usa si no llegara.
+  cuotaIA?: boolean
 }
 
 export interface CompareSection {
@@ -252,11 +288,11 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     titulo: 'Perfil',
     filas: [
       { label: 'Perfil básico en el directorio',      values: [true,       true,         true,         true] },
-      { label: 'Galería, portfolio y redes sociales',  values: [false,      true,         true,         true] },
-      { label: 'Premios, formación y currículum',      values: [false,      true,         true,         true] },
-      { label: 'Disponibilidad profesional activa',    values: [false,      true,         true,         true] },
+      { label: 'Galería, portfolio y redes sociales',  values: [false,      true,         true,         true], proximamente: true },
+      { label: 'Premios, formación y currículum',      values: [true,       true,         true,         true], proximamente: true },
+      { label: 'Disponibilidad profesional activa',    values: [true,       true,         true,         true] },
       { label: 'Perfil destacado en el directorio',    values: [false,      false,        true,         true] },
-      { label: 'Perfil institucional',                 values: [false,      false,        false,        true] },
+      { label: 'Perfil institucional',                 values: [true,       true,         true,         true] },
       { label: 'Gestión de equipo y colaboradores',    values: [false,      false,        false,        true], proximamente: true },
     ],
   },
@@ -264,10 +300,10 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     titulo: 'Visibilidad',
     filas: [
       { label: 'Visible en el directorio',             values: [true,       true,         true,         true] },
-      { label: 'Perfil optimizado para SEO',           values: [false,      true,         true,         true] },
+      { label: 'Perfil optimizado para SEO',           values: [true,       true,         true,         true] },
       { label: 'Prioridad en búsquedas',               values: [false,      false,        true,         true] },
-      { label: 'Selecciones editoriales',              values: [false,      false,        true,         true] },
-      { label: 'Difusión en redes de ObrasDeTeatro®',  values: [false,      false,        true,         true] },
+      { label: 'Selecciones editoriales',              values: [false,      false,        true,         true], proximamente: true },
+      { label: 'Difusión en redes de ObrasDeTeatro®',  values: [false,      false,        true,         true], proximamente: true },
     ],
   },
   {
@@ -277,24 +313,24 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
       { label: 'Obras publicadas',                     values: ['Hasta 3',  'Ilimitadas', 'Ilimitadas', 'Ilimitadas'] },
       { label: 'Descarga de guiones',                  values: [true,       true,         true,         true] },
       { label: 'Listas de lectura propias',            values: [false,      true,         true,         true], proximamente: true },
-      { label: 'Acceso prioritario a novedades',       values: [false,      false,        false,        true] },
+      { label: 'Acceso prioritario a novedades',       values: [false,      false,        false,        true], proximamente: true },
     ],
   },
   {
     titulo: 'Scena IA',
-    proximamente: true,
     filas: [
-      { label: 'Asistente IA para teatro',             values: [false,      true,         true,         true] },
-      { label: 'Análisis avanzado de guiones',         values: [false,      false,        true,         true] },
-      { label: 'Sugerencias de casting con IA',        values: [false,      false,        true,         true] },
-      { label: 'IA para organizaciones',               values: [false,      false,        false,        true] },
+      // Los valores de esta fila no se escriben aquí: /precios los sustituye
+      // por la cuota real de cada plan, que no vive en el catálogo comercial.
+      { label: 'Asistente IA para teatro',             values: [true,       true,         true,         true], cuotaIA: true },
+      { label: 'Análisis avanzado de guiones',         values: [false,      false,        true,         true], proximamente: true },
+      { label: 'Sugerencias de casting con IA',        values: [false,      false,        true,         true], proximamente: true },
+      { label: 'IA para organizaciones',               values: [false,      false,        false,        true], proximamente: true },
     ],
   },
   {
     titulo: 'Convocatorias',
     filas: [
       { label: 'Convocatorias públicas abiertas',      values: [true,       true,         true,         true] },
-      { label: 'Acceso a todas las convocatorias',     values: [false,      true,         true,         true] },
       { label: 'Alertas personalizadas',               values: [false,      true,         true,         true], proximamente: true },
       { label: 'Convocatorias publicadas al mes',      values: ['Hasta 3',  'Ilimitadas', 'Ilimitadas', 'Ilimitadas'] },
     ],
@@ -309,8 +345,8 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
   {
     titulo: 'Analítica',
     filas: [
-      { label: 'Estadísticas de visitas al perfil',    values: [false,      false,        true,         true] },
-      { label: 'Dashboard de rendimiento',             values: [false,      false,        true,         true] },
+      { label: 'Estadísticas de visitas al perfil',    values: [false,      false,        true,         true], proximamente: true },
+      { label: 'Dashboard de rendimiento',             values: [true,       true,         true,         true] },
       { label: 'Informe mensual',                      values: [false,      false,        true,         true], proximamente: true },
     ],
   },
@@ -318,9 +354,9 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     titulo: 'Soporte',
     filas: [
       { label: 'Soporte por email',                    values: [true,       true,         true,         true] },
-      { label: 'Soporte prioritario',                  values: [false,      false,        false,        true] },
-      { label: 'Gestor de cuenta asignado',            values: [false,      false,        false,        true] },
-      { label: 'Acceso anticipado a funcionalidades',  values: [false,      false,        false,        true] },
+      { label: 'Soporte prioritario',                  values: [false,      false,        false,        true], proximamente: true },
+      { label: 'Gestor de cuenta asignado',            values: [false,      false,        false,        true], proximamente: true },
+      { label: 'Acceso anticipado a funcionalidades',  values: [false,      false,        false,        true], proximamente: true },
     ],
   },
 ]

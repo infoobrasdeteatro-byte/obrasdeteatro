@@ -1322,6 +1322,32 @@ body {
 .precios-compare-value { color: var(--black); font-size: 11px; font-weight: 500; }
 .precios-compare-value--inv { color: var(--black); }
 
+/* Comparativa en pantallas estrechas: la tabla se desliza dentro de su
+   contenedor, con la columna «Funcionalidad» fija y un aviso encima. En
+   escritorio nada de esto aplica: el aviso no se muestra y la tabla cabe. */
+.precios-compare-hint { display: none; }
+@media (max-width: 768px) {
+  .precios-compare-wrapper { max-width: 100%; }
+  .precios-compare-hint {
+    display: block; text-align: center; margin: -16px 0 12px;
+    font-family: var(--sans); font-size: 12px; color: var(--muted);
+  }
+  .precios-compare-table { min-width: 0; width: max-content; }
+  .precios-compare-th--feature,
+  .precios-compare-label {
+    position: sticky; left: 0; z-index: 1;
+    background: var(--white);
+    width: 140px; min-width: 140px; max-width: 140px;
+    box-shadow: 1px 0 0 var(--border);
+  }
+  .precios-compare-th--feature { z-index: 2; }
+  .precios-compare-th:not(.precios-compare-th--feature),
+  .precios-compare-cell { min-width: 104px; }
+  .precios-compare-value,
+  .precios-compare-plan-price { white-space: nowrap; }
+  .precios-compare-section-text { position: sticky; left: 16px; }
+}
+
 .precios-legal-box {
   background: var(--white); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 24px;
@@ -2382,36 +2408,6 @@ body {
   margin: 0 auto;
 }
 
-/* ── Sidebar ── */
-.eco-sidebar {
-  width: 210px; flex-shrink: 0;
-  background: var(--white);
-  border-right: 1px solid var(--border);
-  padding: 24px 12px;
-  position: sticky; top: var(--nav-h);
-  align-self: stretch;
-}
-.eco-sid-section { margin-bottom: 24px; }
-.eco-sid-label {
-  font-size: 10px; font-weight: 600;
-  letter-spacing: 1px; text-transform: uppercase;
-  color: var(--muted); padding: 0 8px;
-  margin-bottom: 6px; display: block;
-}
-.eco-sid-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 10px; border-radius: 8px;
-  font-size: 13px; color: var(--muted);
-  margin-bottom: 1px; font-family: var(--sans);
-}
-.eco-sid-item--active { background: var(--subtle); color: var(--black); font-weight: 500; }
-.eco-sid-count {
-  margin-left: auto; font-size: 10px;
-  background: var(--subtle); border-radius: 10px;
-  padding: 1px 7px; color: var(--muted); font-weight: 500;
-}
-.eco-sid-item--active .eco-sid-count { background: var(--red-light); color: var(--red); }
-
 /* ── Main ── */
 .eco-main { flex: 1; padding: 32px 24px; min-width: 0; }
 
@@ -2525,6 +2521,21 @@ body {
 .eco-conv-cta { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: var(--red); margin-top: 6px; opacity: 0; transform: translateX(-4px); transition: opacity 0.25s ease, transform 0.25s ease; font-family: var(--sans); }
 .eco-conv-item:hover .eco-conv-cta { opacity: 1; transform: translateX(0); }
 
+/* ── Portada con datos reales: tarjetas enlazadas, texto en lugar de cifra,
+      estado vacío de convocatorias y últimas noticias ── */
+a.eco-stat-card { display: block; }
+.eco-stat-value--texto { font-size: 19px; letter-spacing: -0.3px; line-height: 1.2; }
+.eco-conv-vacio { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 20px 16px; }
+.eco-conv-vacio-titulo { font-size: 13px; font-weight: 500; color: var(--black); font-family: var(--sans); }
+.eco-conv-vacio-texto { font-size: 12px; color: var(--muted); line-height: 1.5; font-family: var(--sans); }
+.eco-conv-vacio-btn {
+  display: inline-flex; align-items: center; margin-top: 4px;
+  background: var(--black); color: var(--white);
+  padding: 8px 16px; border-radius: 8px;
+  font-size: 12px; font-weight: 500; font-family: var(--sans);
+}
+.eco-noticias { margin-top: 24px; }
+
 /* ── Right column ── */
 .eco-right-col { display: flex; flex-direction: column; gap: 16px; }
 
@@ -2607,13 +2618,13 @@ body {
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .eco-layout { flex-direction: column; }
-  .eco-sidebar { display: none; }
   .eco-main { padding: 24px 16px; }
   .eco-stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
   .eco-stat-value { font-size: 24px; }
   .eco-stat-link { opacity: 1; transform: translateY(0); }
   .eco-obras-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
   .eco-two-col { grid-template-columns: 1fr; gap: 12px; }
+  .eco-noticias { margin-top: 20px; }
   .eco-conv-cta { opacity: 1; transform: translateX(0); }
   .eco-conv-micrometa { display: none; }
 }

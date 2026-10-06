@@ -13,9 +13,11 @@ interface Props {
   userEmail: string | null
   currentPlan: string | null
   cancelled: boolean
+  /** Cuota real de IA por plan, en el orden de PLANES (fila `cuotaIA` de la tabla). */
+  cuotasIA: CellValue[]
 }
 
-export default function PreciosClient({ userId, userEmail, currentPlan, cancelled }: Props) {
+export default function PreciosClient({ userId, userEmail, currentPlan, cancelled, cuotasIA }: Props) {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -113,7 +115,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                 onMouseEnter={() => setExploringOther(!plan.recomendado)}
               >
                 {plan.recomendado && (
-                  <span className="precios-badge">Más popular</span>
+                  <span className="precios-badge">Recomendado</span>
                 )}
 
                 <div className="precios-card-label">{plan.nombre}</div>
@@ -185,6 +187,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
         {/* Tabla comparativa */}
         <section className="precios-compare">
           <h2 className="precios-compare-titulo">Comparativa completa</h2>
+          <p className="precios-compare-hint" aria-hidden="true">Desliza para ver todos los planes →</p>
           <div className="precios-compare-wrapper">
             <table className="precios-compare-table">
               <thead>
@@ -204,8 +207,10 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                 {TABLA_COMPARATIVA.flatMap((section) => [
                   <tr key={`s-${section.titulo}`}>
                     <td colSpan={5} className="precios-compare-section-label">
-                      {section.titulo}
-                      {section.proximamente && <span className="precios-compare-soon"> · próx.</span>}
+                      <span className="precios-compare-section-text">
+                        {section.titulo}
+                        {section.proximamente && <span className="precios-compare-soon"> · próx.</span>}
+                      </span>
                     </td>
                   </tr>,
                   ...section.filas.map((fila) => (
@@ -214,7 +219,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                         {fila.label}
                         {fila.proximamente && <span className="precios-compare-soon"> · próx.</span>}
                       </td>
-                      {fila.values.map((val, i) => (
+                      {(fila.cuotaIA && cuotasIA.length === fila.values.length ? cuotasIA : fila.values).map((val, i) => (
                         <td
                           key={i}
                           className={`precios-compare-cell${PLANES[i]?.recomendado ? ' precios-compare-cell--highlighted' : ''}`}

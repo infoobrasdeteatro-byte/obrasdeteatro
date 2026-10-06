@@ -1,8 +1,17 @@
 import TopNav from '@/components/design-system/TopNav'
 import Link from 'next/link'
 import EcosistemaPulso from '@/components/homepage/EcosistemaPulso'
+import { obtenerDatosPortada, superaUmbral, UMBRALES } from '@/lib/portada/datos'
 
-export default function Home() {
+// Las cifras y listas de la portada son reales: se vuelven a leer cada 10 minutos.
+export const revalidate = 600
+
+export default async function Home() {
+  const datos = await obtenerDatosPortada()
+  const obrasIndicador = superaUmbral(datos.obras, UMBRALES.obras)
+    ? { value: datos.obras.toLocaleString('es-ES'), label: 'Obras' }
+    : { value: 'Abierta', label: 'Biblioteca' }
+
   return (
     <>
       <TopNav heroMode />
@@ -46,18 +55,25 @@ export default function Home() {
 
           <div className="hero-indicators" role="list">
             {([
-              { value: '+4.000', em: true,  label: 'Obras' },
+              { value: obrasIndicador.value, em: true, label: obrasIndicador.label },
               { value: '20',              label: 'Países' },
               { value: 'Activa',  em: true,  label: 'Comunidad' },
-              { value: 'Tiempo real', em: true, label: 'Convocatorias' },
-            ] as const).map((item, i) => (
-              <div key={i} className="hero-indicator" role="listitem">
-                <div className="hero-indicator-value">
-                  {'em' in item ? <em>{item.value}</em> : item.value}
-                </div>
-                <div className="hero-indicator-label">{item.label}</div>
-              </div>
-            ))}
+              { value: 'Gratis', em: true, label: 'Publicar convocatorias', href: '/convocatoria/nueva' },
+            ] as const).map((item, i) => {
+              const contenido = (
+                <>
+                  <div className="hero-indicator-value">
+                    {'em' in item ? <em>{item.value}</em> : item.value}
+                  </div>
+                  <div className="hero-indicator-label">{item.label}</div>
+                </>
+              )
+              return 'href' in item ? (
+                <Link key={i} href={item.href} className="hero-indicator" role="listitem">{contenido}</Link>
+              ) : (
+                <div key={i} className="hero-indicator" role="listitem">{contenido}</div>
+              )
+            })}
           </div>
         </div>
 
@@ -93,8 +109,8 @@ export default function Home() {
                 icon: (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 ),
-                title: 'Convocatorias en tiempo real',
-                text: 'Casting, residencias, festivales y oportunidades actualizadas desde toda Iberoamérica.',
+                title: 'Convocatorias y castings',
+                text: 'Castings, residencias, festivales y oportunidades de toda Iberoamérica.',
               },
               {
                 icon: (
@@ -115,7 +131,7 @@ export default function Home() {
       </section>
 
       {/* ── EL PULSO DEL ECOSISTEMA (vista previa visual) ── */}
-      <EcosistemaPulso />
+      <EcosistemaPulso datos={datos} />
 
       {/* ── FOOTER ── */}
     </>
