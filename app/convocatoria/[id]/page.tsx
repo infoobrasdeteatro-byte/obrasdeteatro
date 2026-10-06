@@ -5,6 +5,7 @@ import TopNav from '@/components/design-system/TopNav'
 import { createClient } from '@/lib/supabase/server'
 import { etiquetaCategoria } from '@/components/convocatorias/vocabulario'
 import { fecha } from '@/components/shared/formato'
+import { nombrePais } from '@/lib/noticias/presentacion'
 
 export const metadata: Metadata = {
   title: 'Convocatoria | ObrasDeTeatro',
@@ -26,6 +27,11 @@ type Props = { params: Promise<{ id: string }> }
  * construcción. Aquí NO: el plan gratuito también publica, con un techo de 3
  * al mes que impone cupo_mensual_convocatorias_agotado(). Poner la misma
  * insignia sería afirmar algo falso.
+ *
+ * LAS DE LA REDACCIÓN (origen 'redaccion') las recopila obrasdeteatro.com de
+ * fuentes públicas: quien convoca es la entidad convocante, no el perfil de la
+ * Redacción (que no es público), y la forma de participar la fijan las bases
+ * oficiales, a las que se enlaza aparte y con nofollow.
  */
 export default async function ConvocatoriaPublicaPage({ params }: Props) {
   const { id } = await params
@@ -35,7 +41,7 @@ export default async function ConvocatoriaPublicaPage({ params }: Props) {
   // evita arrastrar columnas nuevas a una página pública sin decidirlo.
   const { data: convocatoria } = await supabase
     .from('calls')
-    .select('id, title, description, category, location, deadline, prize, is_featured, fecha_publicacion, profile_id')
+    .select('id, title, description, category, location, deadline, prize, is_featured, fecha_publicacion, profile_id, origen, entidad_convocante, pais_code, ciudad, url_bases, fuente_dominio')
     .eq('id', id)
     .eq('estado', 'publicado')
     .is('deleted_at', null)
@@ -56,6 +62,11 @@ export default async function ConvocatoriaPublicaPage({ params }: Props) {
     : ''
 
   const vencida = convocatoria.deadline !== null && new Date(convocatoria.deadline).getTime() < Date.now()
+  const deRedaccion = convocatoria.origen === 'redaccion'
+  // Solo https: es lo que admite la CHECK de url_bases; aquí se vuelve a mirar
+  // para que una página pública nunca pinte otro esquema como enlace.
+  const urlBases = convocatoria.url_bases && /^https:\/\//i.test(convocatoria.url_bases) ? convocatoria.url_bases : null
+  const pais = convocatoria.pais_code ? nombrePais(convocatoria.pais_code) : null
 
   return (
     <>
@@ -108,17 +119,49 @@ export default async function ConvocatoriaPublicaPage({ params }: Props) {
             <div style={{ borderTop: '1px solid var(--border)', margin: '20px 0' }} />
 
             <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '14px' }}>
-              <Dato etiqueta="Lugar" valor={convocatoria.location} />
+              <Dato etiqueta="Entidad convocante" valor={convocatoria.entidad_convocante} />
+              {pais || convocatoria.ciudad ? (
+                <>
+                  <Dato etiqueta="País" valor={pais} />
+                  <Dato etiqueta="Ciudad" valor={convocatoria.ciudad} />
+                </>
+              ) : (
+                <Dato etiqueta="Lugar" valor={convocatoria.location} />
+              )}
               <Dato etiqueta="Fecha límite" valor={convocatoria.deadline ? fecha(convocatoria.deadline) : 'Sin fecha límite'} />
               <Dato etiqueta="Dotación" valor={convocatoria.prize} />
               <Dato etiqueta="Publicada" valor={convocatoria.fecha_publicacion ? fecha(convocatoria.fecha_publicacion) : null} />
             </dl>
 
+            {urlBases && (
+              <div style={{ marginTop: '20px' }}>
+                <a href={urlBases} target="_blank" rel="noopener nofollow" className="ds-btn-primary"
+                  style={{ width: 'auto', display: 'inline-flex', padding: '10px 20px', fontSize: '13px' }}>
+                  Consultar bases oficiales →
+                </a>
+              </div>
+            )}
+
+            {convocatoria.fuente_dominio && (
+              <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '12px' }}>
+                Fuente: {convocatoria.fuente_dominio}
+              </p>
+            )}
+
+            {deRedaccion && (
+              <p className="ds-form-hint" style={{ marginTop: '14px' }}>
+                Información recopilada por la redacción de obrasdeteatro.com a partir de fuentes públicas.
+                Consulta siempre las bases oficiales.
+              </p>
+            )}
+
           </article>
 
           <section className="account-card">
             <h2 className="obras-stat-label" style={{ marginBottom: '10px' }}>Quién convoca</h2>
-            {nombreOrganizador.length > 0 ? (
+            {deRedaccion ? (
+              <p style={{ fontSize: '15px', color: 'var(--black)' }}>{convocatoria.entidad_convocante}</p>
+            ) : nombreOrganizador.length > 0 ? (
               perfil?.slug ? (
                 <Link href={`/perfil/${perfil.slug}`} style={{ fontSize: '15px', color: 'var(--red)', textDecoration: 'none' }}>
                   {nombreOrganizador}
@@ -130,7 +173,9 @@ export default async function ConvocatoriaPublicaPage({ params }: Props) {
               <p style={{ fontSize: '14px', color: 'var(--muted)' }}>Organizador sin identificar.</p>
             )}
             <p className="ds-form-hint" style={{ marginTop: '10px' }}>
-              La forma de participar la indica la propia convocatoria en su descripción.
+              {deRedaccion
+                ? 'La forma de participar la indican las bases oficiales de la convocatoria.'
+                : 'La forma de participar la indica la propia convocatoria en su descripción.'}
             </p>
           </section>
 

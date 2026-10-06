@@ -99,68 +99,92 @@ export type Database = {
       calls: {
         Row: {
           category: string | null
+          ciudad: string | null
           created_at: string | null
           deadline: string | null
           deleted_at: string | null
           description: string | null
+          entidad_convocante: string | null
           estado: string
           fecha_publicacion: string | null
+          fuente_dominio: string | null
           id: string
           is_featured: boolean | null
           is_published: boolean | null
           location: string | null
+          lote: string | null
           moderacion_entrada_at: string | null
           motivo_filtro: string | null
           motivo_rechazo: string | null
+          origen: string
+          pais_code: string | null
           prize: string | null
           profile_id: string
           slug: string | null
           title: string
           updated_at: string | null
+          url_bases: string | null
+          url_bases_normalizada: string | null
           view_count: number | null
         }
         Insert: {
           category?: string | null
+          ciudad?: string | null
           created_at?: string | null
           deadline?: string | null
           deleted_at?: string | null
           description?: string | null
+          entidad_convocante?: string | null
           estado?: string
           fecha_publicacion?: string | null
+          fuente_dominio?: string | null
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
           location?: string | null
+          lote?: string | null
           moderacion_entrada_at?: string | null
           motivo_filtro?: string | null
           motivo_rechazo?: string | null
+          origen?: string
+          pais_code?: string | null
           prize?: string | null
           profile_id: string
           slug?: string | null
           title: string
           updated_at?: string | null
+          url_bases?: string | null
+          url_bases_normalizada?: string | null
           view_count?: number | null
         }
         Update: {
           category?: string | null
+          ciudad?: string | null
           created_at?: string | null
           deadline?: string | null
           deleted_at?: string | null
           description?: string | null
+          entidad_convocante?: string | null
           estado?: string
           fecha_publicacion?: string | null
+          fuente_dominio?: string | null
           id?: string
           is_featured?: boolean | null
           is_published?: boolean | null
           location?: string | null
+          lote?: string | null
           moderacion_entrada_at?: string | null
           motivo_filtro?: string | null
           motivo_rechazo?: string | null
+          origen?: string
+          pais_code?: string | null
           prize?: string | null
           profile_id?: string
           slug?: string | null
           title?: string
           updated_at?: string | null
+          url_bases?: string | null
+          url_bases_normalizada?: string | null
           view_count?: number | null
         }
         Relationships: [

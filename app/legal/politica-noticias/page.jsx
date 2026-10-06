@@ -62,13 +62,30 @@ const SECTIONS = [
       ]},
     ],
   },
+  {
+    title: "7. Convocatorias recopiladas por la redacción",
+    content: [
+      { type: "text", text: "Además de las convocatorias que publican directamente los usuarios, la redacción de ObrasDeTeatro® recopila convocatorias públicas de artes escénicas (festivales, premios, residencias, becas, ayudas y subvenciones) de los veinte países de habla hispana." },
+      { type: "list", items: [
+        "Fuentes públicas: solo recogemos convocatorias difundidas públicamente por la entidad que convoca o por organismos y medios que las anuncian.",
+        "Resumen propio: cada convocatoria se presenta con un resumen breve redactado para ObrasDeTeatro®, que indica la entidad convocante, el país, la fecha límite y, si la hay, la dotación. No reproducimos las bases.",
+        "Enlace a las bases oficiales: cada ficha enlaza a las bases publicadas por la entidad convocante, que son las únicas que rigen la convocatoria, e indica la fuente de la que procede.",
+        "Revisión humana antes de publicar: nos apoyamos en herramientas de inteligencia artificial para localizar convocatorias y redactar un primer borrador, pero ninguna se publica de forma automática. Una persona del equipo revisa cada propuesta frente a sus bases antes de publicarla.",
+      ]},
+      { type: "highlight", text: "Las fichas de la redacción llevan el aviso «Información recopilada por la redacción de obrasdeteatro.com a partir de fuentes públicas. Consulta siempre las bases oficiales.». En caso de discrepancia, prevalecen siempre las bases oficiales." },
+      { type: "text", text: "Si representas a la entidad convocante y quieres que retiremos o corrijamos una convocatoria, escríbenos a info@obrasdeteatro.com indicando el título de la convocatoria y el motivo de tu solicitud." },
+      { type: "contact", items: [
+        { label: "Retirada o corrección de una convocatoria", value: "info@obrasdeteatro.com", href: "mailto:info@obrasdeteatro.com?subject=Retirada%20o%20correcci%C3%B3n%20de%20una%20convocatoria" },
+      ]},
+    ],
+  },
 ];
 
 export default function PoliticaNoticiasPage() {
   return (
     <LegalPage
       title="Política de Noticias"
-      lastUpdate="2 de octubre de 2026"
+      lastUpdate="6 de octubre de 2026"
       sections={SECTIONS}
     />
   );

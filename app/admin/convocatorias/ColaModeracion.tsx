@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fecha, fechaHora } from '@/components/shared/formato'
 import { etiquetaCategoria } from '@/components/convocatorias/vocabulario'
+import { nombrePais } from '@/lib/noticias/presentacion'
+import EditarConvocatoria from './EditarConvocatoria'
+import { fechaEnMadrid } from './edicion'
 
 export type ConvocatoriaPendiente = {
   id: string
@@ -20,6 +23,17 @@ export type ConvocatoriaPendiente = {
   motivoFiltro: string | null
   organizadorNombre: string | null
   organizadorTipo: string | null
+  origen: string
+  entidadConvocante: string | null
+  paisCode: string | null
+  ciudad: string | null
+  urlBases: string | null
+  fuenteDominio: string | null
+}
+
+/** Solo se abre como enlace una URL https (la CHECK de url_bases ya lo exige). */
+function hrefSeguro(url: string | null): string | null {
+  return url && /^https:\/\//i.test(url) ? url : null
 }
 
 /** Horas que una convocatoria lleva esperando en la cola. */
@@ -49,6 +63,7 @@ export default function ColaModeracion({ pendientes }: { pendientes: Convocatori
   const [ocupada, setOcupada] = useState<string | null>(null)
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [resueltas, setResueltas] = useState<Record<string, string>>({})
+  const [editando, setEditando] = useState<string | null>(null)
 
   /**
    * Aprueba o rechaza escribiendo con la sesión del moderador (cliente de
@@ -121,12 +136,19 @@ export default function ColaModeracion({ pendientes }: { pendientes: Convocatori
         const retrasada = horas !== null && horas >= 48
         const enCurso = ocupada === c.id
         const resuelta = resueltas[c.id]
+        const deRedaccion = c.origen === 'redaccion'
+        const bases = hrefSeguro(c.urlBases)
 
         return (
           <article key={c.id} className="account-card">
 
             <header style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start' }}>
               <div style={{ minWidth: 0 }}>
+                {deRedaccion && (
+                  <span className="status-pill status-pill--draft" style={{ marginBottom: '8px', display: 'inline-block' }}>
+                    Redacción · automática
+                  </span>
+                )}
                 <h2 style={{ fontFamily: 'var(--serif)', fontSize: '18px', color: 'var(--black)', letterSpacing: '-0.3px', lineHeight: 1.25 }}>
                   {c.title}
                 </h2>
@@ -176,6 +198,32 @@ export default function ColaModeracion({ pendientes }: { pendientes: Convocatori
                   {c.deadline ? fecha(c.deadline) : 'Sin fecha límite'}
                 </dd>
               </div>
+              {deRedaccion && (
+                <>
+                  <div>
+                    <dt className="obras-stat-label">Entidad convocante</dt>
+                    <dd style={{ fontSize: '13px', color: 'var(--text)' }}>{c.entidadConvocante ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="obras-stat-label">País / ciudad</dt>
+                    <dd style={{ fontSize: '13px', color: 'var(--text)' }}>
+                      {[c.paisCode ? nombrePais(c.paisCode) : null, c.ciudad].filter(Boolean).join(' · ') || '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="obras-stat-label">Bases</dt>
+                    <dd style={{ fontSize: '13px' }}>
+                      {bases
+                        ? <a href={bases} target="_blank" rel="noopener nofollow" className="table-link">Abrir las bases ↗</a>
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="obras-stat-label">Fuente</dt>
+                    <dd style={{ fontSize: '13px', color: 'var(--text)' }}>{c.fuenteDominio ?? '—'}</dd>
+                  </div>
+                </>
+              )}
               <div>
                 <dt className="obras-stat-label">En cola desde</dt>
                 <dd style={{ fontSize: '13px', color: 'var(--text)' }}>{fechaHora(c.entradaEnCola)}</dd>
@@ -205,7 +253,21 @@ export default function ColaModeracion({ pendientes }: { pendientes: Convocatori
             {errores[c.id] && <div className="ds-alert-error" style={{ marginTop: '12px' }}>{errores[c.id]}</div>}
             {resuelta && <div className="ds-alert-success" style={{ marginTop: '12px' }}>{resuelta}</div>}
 
-            {rechazando === c.id ? (
+            {editando === c.id ? (
+              <EditarConvocatoria
+                id={c.id}
+                inicial={{
+                  title: c.title,
+                  description: c.description ?? '',
+                  category: c.category ?? 'festival',
+                  pais_code: c.paisCode ?? 'ES',
+                  ciudad: c.ciudad ?? '',
+                  fecha_limite: fechaEnMadrid(c.deadline),
+                }}
+                onGuardada={() => { setEditando(null); router.refresh() }}
+                onCancelar={() => setEditando(null)}
+              />
+            ) : rechazando === c.id ? (
               <div style={{ marginTop: '18px', paddingTop: '18px', borderTop: '1px solid var(--border)' }}>
                 <label className="ds-label" htmlFor={`motivo-${c.id}`}>Motivo del rechazo</label>
                 <textarea id={`motivo-${c.id}`} className="ds-textarea" style={{ minHeight: '72px' }}
@@ -238,6 +300,14 @@ export default function ColaModeracion({ pendientes }: { pendientes: Convocatori
                   onClick={() => { setRechazando(c.id); setMotivo('') }}>
                   Rechazar
                 </button>
+
+                {deRedaccion && (
+                  <button type="button" className="ds-btn-secondary" disabled={enCurso || Boolean(resuelta)}
+                    style={{ padding: '9px 18px', fontSize: '13px' }}
+                    onClick={() => setEditando(c.id)}>
+                    Editar
+                  </button>
+                )}
 
                 <Link href={`/convocatoria/${c.id}`} className="table-link" style={{ marginLeft: 'auto', alignSelf: 'center' }}>
                   Ver ficha

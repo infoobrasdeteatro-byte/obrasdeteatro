@@ -4,13 +4,14 @@ import TopNav from '@/components/design-system/TopNav'
 import { createClient } from '@/lib/supabase/server'
 import { CATEGORIAS, etiquetaCategoria } from '@/components/convocatorias/vocabulario'
 import { fecha } from '@/components/shared/formato'
+import { COUNTRIES } from '@/lib/geo/countries'
 
 export const metadata: Metadata = {
   title: 'Convocatorias | ObrasDeTeatro',
 }
 
 type Props = {
-  searchParams: Promise<{ cat?: string; lugar?: string }>
+  searchParams: Promise<{ cat?: string; lugar?: string; pais?: string }>
 }
 
 /**
@@ -31,7 +32,9 @@ type Props = {
  * buscar_castings_publicos.
  */
 export default async function ConvocatoriasPublicoPage({ searchParams }: Props) {
-  const { cat, lugar } = await searchParams
+  const { cat, lugar, pais } = await searchParams
+  // Solo un código de los 20 países del ámbito llega a la consulta.
+  const paisValido = pais && COUNTRIES.some(c => c.code === pais) ? pais : undefined
   const supabase = await createClient()
 
   let consulta = supabase
@@ -42,6 +45,7 @@ export default async function ConvocatoriasPublicoPage({ searchParams }: Props) 
 
   if (cat) consulta = consulta.eq('category', cat)
   if (lugar?.trim()) consulta = consulta.ilike('location', `%${lugar.trim()}%`)
+  if (paisValido) consulta = consulta.eq('pais_code', paisValido)
 
   // Destacadas primero, y dentro de cada grupo lo que antes vence. Las que no
   // declaran fecha límite van al final: no compiten con las que sí corren.
@@ -51,7 +55,7 @@ export default async function ConvocatoriasPublicoPage({ searchParams }: Props) 
     .limit(50)
 
   const lista = convocatorias ?? []
-  const hayFiltros = Boolean(cat || lugar?.trim())
+  const hayFiltros = Boolean(cat || lugar?.trim() || paisValido)
 
   return (
     <>
@@ -86,6 +90,16 @@ export default async function ConvocatoriasPublicoPage({ searchParams }: Props) 
                 <label className="ds-label" htmlFor="lugar">Lugar</label>
                 <input id="lugar" name="lugar" className="ds-input" defaultValue={lugar ?? ''} placeholder="Madrid" />
                 <p className="ds-form-hint">Coincidencia parcial sobre el lugar declarado.</p>
+              </div>
+              <div className="ds-form-group">
+                <label className="ds-label" htmlFor="pais">País</label>
+                <select id="pais" name="pais" className="ds-select" defaultValue={paisValido ?? ''}>
+                  <option value="">Todos</option>
+                  {COUNTRIES.map(x => (
+                    <option key={x.code} value={x.code}>{x.name}</option>
+                  ))}
+                </select>
+                <p className="ds-form-hint">Solo las convocatorias que indican país.</p>
               </div>
             </div>
 
