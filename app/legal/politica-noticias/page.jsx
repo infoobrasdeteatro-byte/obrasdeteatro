@@ -54,10 +54,10 @@ const SECTIONS = [
   {
     title: "6. Solicitar una retirada o una corrección",
     content: [
-      { type: "text", text: "Si eres titular de una fuente citada, apareces en una noticia o detectas un error, puedes pedirnos que la corrijamos o la retiremos escribiendo a legal@obrasdeteatro.com e indicando el titular de la noticia y el motivo de tu solicitud." },
+      { type: "text", text: "Si eres titular de una fuente citada, apareces en una noticia o detectas un error, puedes pedirnos que la corrijamos o la retiremos escribiendo a hola@obrasdeteatro.com e indicando el titular de la noticia y el motivo de tu solicitud." },
       { type: "highlight", text: "Respondemos a las solicitudes de retirada en un plazo máximo de 48 horas. Mientras las estudiamos, podemos retirar la noticia de forma cautelar." },
       { type: "contact", items: [
-        { label: "Solicitudes de retirada", value: "legal@obrasdeteatro.com", href: "mailto:legal@obrasdeteatro.com?subject=Solicitud%20de%20retirada%20de%20una%20noticia" },
+        { label: "Solicitudes de retirada", value: "hola@obrasdeteatro.com", href: "mailto:hola@obrasdeteatro.com?subject=Solicitud%20de%20retirada%20de%20una%20noticia" },
         { label: "Contacto general", value: "info@obrasdeteatro.com", href: "mailto:info@obrasdeteatro.com" },
       ]},
     ],
@@ -73,9 +73,9 @@ const SECTIONS = [
         "Revisión humana antes de publicar: nos apoyamos en herramientas de inteligencia artificial para localizar convocatorias y redactar un primer borrador, pero ninguna se publica de forma automática. Una persona del equipo revisa cada propuesta frente a sus bases antes de publicarla.",
       ]},
       { type: "highlight", text: "Las fichas de la redacción llevan el aviso «Información recopilada por la redacción de obrasdeteatro.com a partir de fuentes públicas. Consulta siempre las bases oficiales.». En caso de discrepancia, prevalecen siempre las bases oficiales." },
-      { type: "text", text: "Si representas a la entidad convocante y quieres que retiremos o corrijamos una convocatoria, escríbenos a info@obrasdeteatro.com indicando el título de la convocatoria y el motivo de tu solicitud." },
+      { type: "text", text: "Si representas a la entidad convocante y quieres que retiremos o corrijamos una convocatoria, escríbenos a hola@obrasdeteatro.com indicando el título de la convocatoria y el motivo de tu solicitud." },
       { type: "contact", items: [
-        { label: "Retirada o corrección de una convocatoria", value: "info@obrasdeteatro.com", href: "mailto:info@obrasdeteatro.com?subject=Retirada%20o%20correcci%C3%B3n%20de%20una%20convocatoria" },
+        { label: "Retirada o corrección de una convocatoria", value: "hola@obrasdeteatro.com", href: "mailto:hola@obrasdeteatro.com?subject=Retirada%20o%20correcci%C3%B3n%20de%20una%20convocatoria" },
       ]},
     ],
   },
