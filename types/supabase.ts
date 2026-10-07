@@ -197,6 +197,69 @@ export type Database = {
           },
         ]
       }
+      colaboradores: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          desde: string | null
+          id: string
+          logo_url: string | null
+          noticias_fuente_id: string | null
+          nombre: string
+          orden: number
+          pais_code: string | null
+          tipo: string
+          updated_at: string
+          url_web: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          desde?: string | null
+          id?: string
+          logo_url?: string | null
+          noticias_fuente_id?: string | null
+          nombre: string
+          orden?: number
+          pais_code?: string | null
+          tipo: string
+          updated_at?: string
+          url_web?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          desde?: string | null
+          id?: string
+          logo_url?: string | null
+          noticias_fuente_id?: string | null
+          nombre?: string
+          orden?: number
+          pais_code?: string | null
+          tipo?: string
+          updated_at?: string
+          url_web?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_noticias_fuente_id_fkey"
+            columns: ["noticias_fuente_id"]
+            isOneToOne: false
+            referencedRelation: "noticias_fuentes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaboradores_noticias_fuente_id_fkey"
+            columns: ["noticias_fuente_id"]
+            isOneToOne: false
+            referencedRelation: "noticias_fuentes_publicas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls_publicaciones: {
         Row: {
           call_id: string

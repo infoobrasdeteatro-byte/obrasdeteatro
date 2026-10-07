@@ -1,5 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/supabase'
+import { clienteAnonimo } from '@/lib/supabase/anonimo'
 
 /**
  * Datos reales de la portada.
@@ -70,14 +69,6 @@ export interface DatosPortada {
 /** Una cifra solo se muestra si existe y supera su umbral. */
 export function superaUmbral(valor: number | null, umbral: number): valor is number {
   return valor !== null && valor > umbral
-}
-
-function clienteAnonimo() {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  )
 }
 
 function avisar(dato: string, error: { message: string } | null) {

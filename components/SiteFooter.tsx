@@ -18,13 +18,21 @@ export default function SiteFooter() {
           © 2026 obrasdeteatro.com — Ecosistema del teatro en español · 20 países
         </p>
       </div>
-      <nav className="site-footer-legal" aria-label="Información legal">
-        {LEGAL_LINKS.map((link) => (
-          <Link key={link.href} href={link.href}>
-            {link.label}
-          </Link>
-        ))}
-      </nav>
+      {/* Páginas institucionales y legales en la misma fila. Las institucionales
+          van fuera de LEGAL_LINKS: esa lista también alimenta la navegación
+          entre páginas legales. */}
+      <div className="site-footer-legal">
+        <nav className="site-footer-grupo" aria-label="Sobre ObrasDeTeatro">
+          <Link href="/colaboradores">Colaboradores</Link>
+        </nav>
+        <nav className="site-footer-grupo" aria-label="Información legal">
+          {LEGAL_LINKS.map((link) => (
+            <Link key={link.href} href={link.href}>
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
     </footer>
   )
 }

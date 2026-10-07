@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { COUNTRIES } from '@/lib/geo/countries'
 import { fecha } from '@/components/shared/formato'
 import { enlaceSeguro, nombrePais } from '@/lib/noticias/presentacion'
+import { dominiosDeMediosColaboradores } from '@/lib/colaboradores/datos'
 
 const TITULO = 'Noticias de artes escénicas | ObrasDeTeatro'
 const DESCRIPCION =
@@ -53,17 +54,19 @@ export default async function NoticiasPage({ searchParams }: Props) {
 
   let consulta = supabase
     .from('noticias_publicas')
-    .select('id, titular, resumen, categoria_etiqueta, pais_code, fuente_nombre, url_original, fecha_original, publicado_at', { count: 'exact' })
+    .select('id, titular, resumen, categoria_etiqueta, pais_code, fuente_nombre, fuente_dominio, url_original, fecha_original, publicado_at', { count: 'exact' })
 
   if (paisValido) consulta = consulta.eq('pais_code', paisValido)
   if (catValida) consulta = consulta.eq('categoria_id', catValida)
 
-  const [{ data: noticias, count, error }, { data: categorias }] = await Promise.all([
+  const [{ data: noticias, count, error }, { data: categorias }, mediosColaboradores] = await Promise.all([
     consulta
       .order('publicado_at', { ascending: false })
       .order('id', { ascending: false })
       .range(desde, desde + POR_PAGINA - 1),
     supabase.from('noticias_categorias').select('id, etiqueta').order('orden', { ascending: true }),
+    // Fuentes vinculadas a un colaborador activo: llevan el distintivo «Medio colaborador».
+    dominiosDeMediosColaboradores(),
   ])
 
   if (error) console.error('/noticias: no se pudo leer noticias_publicas:', error.message)
@@ -177,6 +180,15 @@ export default async function NoticiasPage({ searchParams }: Props) {
 
                     <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '12px' }}>
                       {n.fuente_nombre}
+                      {n.fuente_dominio && mediosColaboradores.has(n.fuente_dominio) && (
+                        <>
+                          {' '}
+                          <Link href="/colaboradores" className="status-pill status-pill--published"
+                            style={{ fontSize: '10px', padding: '2px 8px', marginLeft: '4px', textDecoration: 'none', verticalAlign: 'middle' }}>
+                            Medio colaborador
+                          </Link>
+                        </>
+                      )}
                       {' · '}
                       <time dateTime={n.fecha_original ?? n.publicado_at ?? undefined}>
                         {fecha(n.fecha_original ?? n.publicado_at)}

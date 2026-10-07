@@ -2,12 +2,16 @@ import TopNav from '@/components/design-system/TopNav'
 import Link from 'next/link'
 import EcosistemaPulso from '@/components/homepage/EcosistemaPulso'
 import { obtenerDatosPortada, superaUmbral, UMBRALES } from '@/lib/portada/datos'
+import { colaboradoresActivos } from '@/lib/colaboradores/datos'
+import FranjaColaboradores from '@/components/colaboradores/FranjaColaboradores'
 
 // Las cifras y listas de la portada son reales: se vuelven a leer cada 10 minutos.
 export const revalidate = 600
 
 export default async function Home() {
-  const datos = await obtenerDatosPortada()
+  const [datos, colaboradores] = await Promise.all([obtenerDatosPortada(), colaboradoresActivos()])
+  // La franja se titula «Medios colaboradores»: solo los de tipo medio.
+  const medios = colaboradores.filter(c => c.tipo === 'medio')
   const obrasIndicador = superaUmbral(datos.obras, UMBRALES.obras)
     ? { value: datos.obras.toLocaleString('es-ES'), label: 'Obras' }
     : { value: 'Abierta', label: 'Biblioteca' }
@@ -82,6 +86,9 @@ export default async function Home() {
           <div className="hero-scroll-line" />
         </div>
       </section>
+
+      {/* ── MEDIOS COLABORADORES (solo si hay alguno activo) ── */}
+      <FranjaColaboradores colaboradores={medios} />
 
       {/* ── NARRATIVE ── */}
       <section className="narrative" aria-labelledby="narrative-heading">
