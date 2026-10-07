@@ -25,10 +25,11 @@ import {
  * SHA-256. Sin la variable, o con un secreto distinto: 401 sin más detalle.
  * El secreto nunca viaja en la URL, nunca se devuelve y nunca se registra.
  *
- * QUÉ NO DECIDE ESTA RUTA. El estado: se pide 'pendiente_revision', pero
- * aunque se pidiera otro, el trigger calls_sync_estado() mete en revisión
- * toda inserción de la Redacción y vuelve a exigir bases, entidad, país y
- * fecha futura. La publicación es siempre de una persona.
+ * QUÉ NO DECIDE ESTA RUTA. El estado: se pide 'pendiente_revision' y lo
+ * decide el trigger calls_sync_estado(), que vuelve a exigir bases, entidad,
+ * país y fecha futura. Las de lote «BDNS-» (España) entran publicadas si
+ * ninguna regla de moderación las señala; el resto, en revisión. La
+ * respuesta devuelve el estado con el que quedó cada una.
  *
  * RESPUESTA. 200 con un resultado por convocatoria (creada | duplicada |
  * vencida | invalida) si el lote se pudo procesar; 400 si el cuerpo no es
@@ -40,6 +41,8 @@ type Resultado = {
   url_bases: string | null
   resultado: 'creada' | 'duplicada' | 'vencida' | 'invalida'
   id?: string
+  /** Solo en las creadas: el estado que dejó el trigger. */
+  estado?: string
   motivo?: string
 }
 
@@ -130,11 +133,11 @@ export async function POST(req: NextRequest) {
         fuente_dominio: c.fuente_dominio,
         lote,
       })
-      .select('id')
+      .select('id, estado')
       .single()
 
     if (creada) {
-      resultados.push({ url_bases: url, resultado: 'creada', id: creada.id })
+      resultados.push({ url_bases: url, resultado: 'creada', id: creada.id, estado: creada.estado })
       continue
     }
 
