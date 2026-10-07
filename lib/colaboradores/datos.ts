@@ -1,13 +1,24 @@
+import { unstable_cache } from 'next/cache'
 import { clienteAnonimo } from '@/lib/supabase/anonimo'
 import type { ColaboradorPublico } from './colaboradores'
 
 /**
- * Lecturas públicas de colaboradores, con el cliente anónimo: la RLS solo deja
- * ver los activos, y aquí se vuelve a filtrar para que la consulta diga lo
- * que quiere. Si la consulta falla (por ejemplo, antes de aplicar la
- * migración), se devuelve una lista vacía y la franja o la página no se pintan.
+ * Lectura pública de los colaboradores activos, con el cliente anónimo: la
+ * RLS solo deja ver los activos, y aquí se vuelve a filtrar para que la
+ * consulta diga lo que quiere.
+ *
+ * CACHEADA 10 MINUTOS (unstable_cache, etiqueta «colaboradores»). La usan la
+ * portada, /colaboradores y el pie de página, que está en TODAS las páginas:
+ * sin caché, cada página haría su propia consulta. Activar o desactivar un
+ * colaborador tarda como mucho esos 10 minutos en verse.
+ *
+ * Un error NO se cachea: la función cacheada lanza y quien llama recibe una
+ * lista vacía solo esa vez (la franja, el enlace del pie o la página no se
+ * pintan), y la siguiente petición vuelve a consultar.
  */
-export async function colaboradoresActivos(): Promise<ColaboradorPublico[]> {
+export const REVALIDAR_COLABORADORES = 600
+
+export async function leerColaboradoresActivos(): Promise<ColaboradorPublico[]> {
   const { data, error } = await clienteAnonimo()
     .from('colaboradores')
     .select('id, nombre, tipo, descripcion, pais_code, url_web, logo_url, orden')
@@ -15,11 +26,27 @@ export async function colaboradoresActivos(): Promise<ColaboradorPublico[]> {
     .order('orden', { ascending: true })
     .order('nombre', { ascending: true })
 
-  if (error) {
-    console.error('colaboradores: no se pudieron leer:', error.message)
+  if (error) throw new Error(`colaboradores: no se pudieron leer: ${error.message}`)
+  return data ?? []
+}
+
+const colaboradoresActivosCacheados = unstable_cache(leerColaboradoresActivos, ['colaboradores-activos'], {
+  revalidate: REVALIDAR_COLABORADORES,
+  tags: ['colaboradores'],
+})
+
+export async function colaboradoresActivos(): Promise<ColaboradorPublico[]> {
+  try {
+    return await colaboradoresActivosCacheados()
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : e)
     return []
   }
-  return data ?? []
+}
+
+/** Para el pie de página: ¿hay al menos un colaborador activo? Misma lectura cacheada. */
+export async function hayColaboradoresActivos(): Promise<boolean> {
+  return (await colaboradoresActivos()).length > 0
 }
 
 /**

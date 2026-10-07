@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import TopNav from '@/components/design-system/TopNav'
 import { colaboradoresActivos } from '@/lib/colaboradores/datos'
-import { agruparPorTipo, urlSegura } from '@/lib/colaboradores/colaboradores'
+import { MAILTO_COLABORAR, agruparPorTipo, urlSegura } from '@/lib/colaboradores/colaboradores'
 import { nombrePais } from '@/lib/noticias/presentacion'
 
 const TITULO = 'Colaboradores | ObrasDeTeatro®'
@@ -29,9 +30,14 @@ export const revalidate = 600
 /**
  * Colaboradores activos, agrupados por tipo (Medios colaboradores,
  * Instituciones, Patrocinadores). Los grupos vacíos no se muestran.
+ *
+ * Sin ningún colaborador activo, la página no existe: 404 (y el pie de página
+ * tampoco enlaza aquí). El proyecto no tiene sitemap, así que no hay nada que
+ * excluir; un 404 ya no se indexa.
  */
 export default async function ColaboradoresPage() {
   const grupos = agruparPorTipo(await colaboradoresActivos())
+  if (grupos.length === 0) notFound()
 
   return (
     <>
@@ -48,13 +54,7 @@ export default async function ColaboradoresPage() {
             </div>
           </div>
 
-          {grupos.length === 0 ? (
-            <div className="obras-empty">
-              <p className="obras-empty-text" style={{ marginBottom: 0 }}>
-                Pronto presentaremos aquí a nuestros colaboradores.
-              </p>
-            </div>
-          ) : grupos.map(g => (
+          {grupos.map(g => (
             <section key={g.tipo} className="colab-grupo" aria-labelledby={`grupo-${g.tipo}`}>
               <h2 id={`grupo-${g.tipo}`} className="colab-grupo-titulo">{g.titulo}</h2>
               <ul className="colab-tarjetas">
@@ -87,6 +87,14 @@ export default async function ColaboradoresPage() {
               </ul>
             </section>
           ))}
+
+          <aside className="colab-colaborar" aria-labelledby="colab-colaborar-titulo">
+            <h2 id="colab-colaborar-titulo" className="colab-colaborar-titulo">¿Quieres colaborar con obrasdeteatro.com?</h2>
+            <p className="colab-colaborar-texto">
+              Medios, instituciones y patrocinadores que quieran sumarse al ecosistema del teatro en español pueden escribirnos.
+            </p>
+            <a href={MAILTO_COLABORAR} className="table-link">hola@obrasdeteatro.com</a>
+          </aside>
 
         </div>
       </main>

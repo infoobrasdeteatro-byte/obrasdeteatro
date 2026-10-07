@@ -25,6 +25,10 @@ export const LOGO_TIPOS: ReadonlySet<string> = new Set(['image/svg+xml', 'image/
 export const LOGO_MAX_BYTES = 500 * 1024
 export const BUCKET_LOGOS = 'colaboradores'
 
+/** Mailto del bloque «¿Quieres colaborar…?» de /colaboradores: a hola@, con el asunto ya escrito. */
+export const MAILTO_COLABORAR =
+  `mailto:hola@obrasdeteatro.com?subject=${encodeURIComponent('Colaboración con obrasdeteatro.com')}`
+
 export type ColaboradorPublico = {
   id: string
   nombre: string

@@ -2704,6 +2704,13 @@ a.eco-stat-card { display: block; }
 .colab-tarjeta-pais { font-size: 12px; color: var(--muted); }
 .colab-tarjeta-desc { font-size: 13px; color: var(--text); line-height: 1.55; }
 .colab-tarjeta-web { margin-top: auto; font-size: 13px; }
+.colab-colaborar {
+  margin-top: 8px; padding: 22px 0 0;
+  border-top: 1px solid var(--border);
+  font-family: var(--sans);
+}
+.colab-colaborar-titulo { font-size: 14px; font-weight: 600; color: var(--black); margin-bottom: 6px; }
+.colab-colaborar-texto { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 8px; }
 
 @media (max-width: 640px) {
   .colab-franja { padding: 28px 16px 22px; }
