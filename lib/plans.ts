@@ -105,10 +105,7 @@ export const PLANES: Plan[] = [
           'Publica hasta 3 castings activos a la vez',
           'Recursos creativos exclusivos',
         ],
-        itemsProximamente: [
-          'Alertas de convocatorias personalizadas',
-          'Recursos creativos exclusivos',
-        ],
+        itemsProximamente: ['Recursos creativos exclusivos'],
       },
     ],
     recomendado: false,
@@ -331,7 +328,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     titulo: 'Convocatorias',
     filas: [
       { label: 'Convocatorias públicas abiertas',      values: [true,       true,         true,         true] },
-      { label: 'Alertas personalizadas',               values: [false,      true,         true,         true], proximamente: true },
+      { label: 'Alertas personalizadas',               values: [false,      true,         true,         true] },
       { label: 'Convocatorias publicadas al mes',      values: ['Hasta 3',  'Ilimitadas', 'Ilimitadas', 'Ilimitadas'] },
     ],
   },

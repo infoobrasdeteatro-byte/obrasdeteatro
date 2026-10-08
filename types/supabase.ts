@@ -96,6 +96,47 @@ export type Database = {
           },
         ]
       }
+      alertas_convocatorias: {
+        Row: {
+          activa: boolean
+          categorias: string[]
+          created_at: string
+          frecuencia: string
+          paises: string[]
+          profile_id: string
+          ultimo_envio_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          activa?: boolean
+          categorias?: string[]
+          created_at?: string
+          frecuencia?: string
+          paises?: string[]
+          profile_id: string
+          ultimo_envio_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activa?: boolean
+          categorias?: string[]
+          created_at?: string
+          frecuencia?: string
+          paises?: string[]
+          profile_id?: string
+          ultimo_envio_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_convocatorias_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls: {
         Row: {
           category: string | null

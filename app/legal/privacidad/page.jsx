@@ -34,6 +34,7 @@ const SECTIONS = [
         "Gestionar suscripciones y pagos.",
         "Gestionar consultas y solicitudes de información.",
         "Enviar comunicaciones relacionadas con la plataforma.",
+        "Enviar, a los usuarios de planes de pago que las activen, alertas por correo con las convocatorias nuevas que coinciden con los países y categorías que han elegido. Se pueden desactivar en cualquier momento desde el Centro Profesional o con el enlace de baja que incluye cada correo.",
         "Mejorar la experiencia del usuario.",
         "Garantizar la seguridad de la plataforma.",
         "Cumplir obligaciones legales.",
@@ -129,7 +130,7 @@ export default function PrivacidadPage() {
   return (
     <LegalPage
       title="Política de Privacidad"
-      lastUpdate="15 de junio de 2026"
+      lastUpdate="8 de octubre de 2026"
       sections={SECTIONS}
     />
   );
