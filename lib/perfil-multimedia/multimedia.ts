@@ -64,37 +64,46 @@ export function miniaturaVideo(v: Pick<VideoAnalizado, 'plataforma' | 'id'>): st
 }
 
 // ── Validaciones de formulario ────────────────────────────────────────────
+//
+// Cada validación dice también QUÉ campo falla, para que el editor lo marque
+// (aria-invalid) y ponga el mensaje junto a él. validarX() devuelve solo el
+// mensaje, para quien no necesite el campo.
+
+export type ErrorDeCampo<C extends string> = { campo: C; mensaje: string }
 
 const largo = (v: string | null | undefined) => (v ?? '').trim().length
 
-export function validarFoto(c: { pie: string; credito: string }): string | null {
-  if (largo(c.pie) > MAX_PIE) return `El pie de foto no puede pasar de ${MAX_PIE} caracteres.`
-  if (largo(c.credito) > MAX_CREDITO) return `El crédito no puede pasar de ${MAX_CREDITO} caracteres.`
+export function errorFoto(c: { pie: string; credito: string }): ErrorDeCampo<'pie' | 'credito'> | null {
+  if (largo(c.pie) > MAX_PIE) return { campo: 'pie', mensaje: `El pie de foto no puede pasar de ${MAX_PIE} caracteres.` }
+  if (largo(c.credito) > MAX_CREDITO) return { campo: 'credito', mensaje: `El crédito no puede pasar de ${MAX_CREDITO} caracteres.` }
   return null
 }
+export const validarFoto = (c: { pie: string; credito: string }) => errorFoto(c)?.mensaje ?? null
 
-export function validarVideo(c: { url: string; titulo: string }): string | null {
-  if (!analizarVideo(c.url)) return 'Pega un enlace de YouTube o de Vimeo (https).'
-  if (largo(c.titulo) > MAX_TITULO_VIDEO) return `El título no puede pasar de ${MAX_TITULO_VIDEO} caracteres.`
+export function errorVideo(c: { url: string; titulo: string }): ErrorDeCampo<'url' | 'titulo'> | null {
+  if (!analizarVideo(c.url)) return { campo: 'url', mensaje: 'Pega un enlace de YouTube o de Vimeo (https).' }
+  if (largo(c.titulo) > MAX_TITULO_VIDEO) return { campo: 'titulo', mensaje: `El título no puede pasar de ${MAX_TITULO_VIDEO} caracteres.` }
   return null
 }
+export const validarVideo = (c: { url: string; titulo: string }) => errorVideo(c)?.mensaje ?? null
 
 export type CamposProyecto = { titulo: string; anio: string; rol: string; compania: string; descripcion: string; enlace: string }
 
-export function validarProyecto(c: CamposProyecto): string | null {
+export function errorProyecto(c: CamposProyecto): ErrorDeCampo<keyof CamposProyecto> | null {
   const titulo = c.titulo.trim()
-  if (titulo === '') return 'El título es obligatorio.'
-  if (titulo.length > MAX_TITULO_PROYECTO) return `El título no puede pasar de ${MAX_TITULO_PROYECTO} caracteres.`
+  if (titulo === '') return { campo: 'titulo', mensaje: 'El título es obligatorio.' }
+  if (titulo.length > MAX_TITULO_PROYECTO) return { campo: 'titulo', mensaje: `El título no puede pasar de ${MAX_TITULO_PROYECTO} caracteres.` }
   if (c.anio.trim() !== '') {
     const anio = Number(c.anio)
-    if (!Number.isInteger(anio) || anio < 1900 || anio > 2100) return 'El año no es válido.'
+    if (!Number.isInteger(anio) || anio < 1900 || anio > 2100) return { campo: 'anio', mensaje: 'El año no es válido.' }
   }
-  if (largo(c.rol) > MAX_ROL) return `El rol no puede pasar de ${MAX_ROL} caracteres.`
-  if (largo(c.compania) > MAX_COMPANIA) return `La compañía no puede pasar de ${MAX_COMPANIA} caracteres.`
-  if (largo(c.descripcion) > MAX_DESCRIPCION_PROYECTO) return `La descripción no puede pasar de ${MAX_DESCRIPCION_PROYECTO} caracteres.`
-  if (c.enlace.trim() !== '' && !/^https:\/\/[^\s/?#]+[^\s]*$/i.test(c.enlace.trim())) return 'El enlace debe empezar por https://.'
+  if (largo(c.rol) > MAX_ROL) return { campo: 'rol', mensaje: `El rol no puede pasar de ${MAX_ROL} caracteres.` }
+  if (largo(c.compania) > MAX_COMPANIA) return { campo: 'compania', mensaje: `La compañía no puede pasar de ${MAX_COMPANIA} caracteres.` }
+  if (largo(c.descripcion) > MAX_DESCRIPCION_PROYECTO) return { campo: 'descripcion', mensaje: `La descripción no puede pasar de ${MAX_DESCRIPCION_PROYECTO} caracteres.` }
+  if (c.enlace.trim() !== '' && !/^https:\/\/[^\s/?#]+[^\s]*$/i.test(c.enlace.trim())) return { campo: 'enlace', mensaje: 'El enlace debe empezar por https://.' }
   return null
 }
+export const validarProyecto = (c: CamposProyecto) => errorProyecto(c)?.mensaje ?? null
 
 /** Fila de perfil_portfolio a partir del formulario (vacío → null). */
 export function filaProyecto(c: CamposProyecto) {
