@@ -68,6 +68,8 @@ export const PLANES: Plan[] = [
           'Portfolio de proyectos y espectáculos',
           'Redes sociales y datos de contacto',
         ],
+        // Falta el bloque 8 (CV y dossier descargables).
+        itemsProximamente: ['Perfil completo con todos los campos'],
       },
       {
         titulo: 'Visibilidad',
