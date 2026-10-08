@@ -2723,11 +2723,17 @@ a.eco-stat-card { display: block; }
 /* ═══════════════════════════════════════════════════
    PERFIL COMPLETO — portada, galería, vídeos y portfolio
 ═══════════════════════════════════════════════════ */
+/* Portada y tarjeta de cabecera forman una sola pieza: la portada lleva las
+   esquinas de arriba y la tarjeta las de abajo, sin hueco entre ellas. Antes
+   eran dos piezas separadas por 20 px y la tarjeta asomaba como una franja
+   blanca redondeada bajo la imagen. */
 .prof-portada {
   position: relative; width: 100%; aspect-ratio: 3 / 1; min-height: 140px;
-  border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px;
-  background: var(--subtle); border: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0; overflow: hidden;
+  background: var(--subtle); border: 1px solid var(--border); border-bottom: none;
 }
+.prof-cabecera { border-radius: var(--radius-lg); }
+.prof-cabecera--con-portada { border-top: none !important; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
 
 .prof-galeria {
   list-style: none; margin: 0; padding: 0;
@@ -2792,3 +2798,35 @@ a.eco-stat-card { display: block; }
   .prof-proyecto { flex-direction: column; }
   .prof-proyecto-imagen { width: 100%; }
 }
+
+/* ═══════════════════════════════════════════════════
+   SELECTOR DE IMAGEN Y AVISOS POR CAMPO
+═══════════════════════════════════════════════════ */
+.selector-imagen { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; position: relative; }
+/* El input sigue en la página (enfocable y leído por los lectores de
+   pantalla); el botón visible es su <label>. */
+.selector-imagen-input {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; opacity: 0;
+}
+.selector-imagen-boton { padding: 8px 16px; font-size: 13px; cursor: pointer; }
+.selector-imagen-boton:hover { background: var(--subtle); }
+.selector-imagen-input:focus-visible + .selector-imagen-boton { outline: 2px solid var(--red); outline-offset: 2px; }
+.selector-imagen-input:disabled + .selector-imagen-boton { opacity: 0.55; cursor: not-allowed; }
+.selector-imagen-boton--error { border-color: var(--red); color: var(--red); }
+.selector-imagen-nombre {
+  font-family: var(--sans); font-size: 12px; color: var(--muted);
+  max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.ds-input[aria-invalid="true"], .ds-textarea[aria-invalid="true"], .ds-select[aria-invalid="true"] {
+  border-color: var(--red); box-shadow: 0 0 0 3px rgba(200, 0, 26, 0.08);
+}
+.ds-field-error, .ds-field-ok {
+  font-family: var(--sans); font-size: 13px; line-height: 1.5; margin-top: 10px;
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.ds-field-error { color: var(--red); }
+.ds-field-error::before { content: '⚠'; flex-shrink: 0; }
+.ds-field-ok { color: #166534; }
+.ds-field-ok::before { content: '✓'; flex-shrink: 0; }

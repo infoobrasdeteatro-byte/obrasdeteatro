@@ -349,10 +349,10 @@ export default async function PerfilPublicoPage({ params }: Props) {
         )}
 
         {/* ── ZONA A — Cabecera ── */}
-        <header style={{
+        {/* Con portada, la tarjeta se une a ella (ver .prof-cabecera--con-portada). */}
+        <header className={`prof-cabecera${portada ? ' prof-cabecera--con-portada' : ''}`} style={{
           background: 'var(--white)', border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)', padding: '32px',
-          boxShadow: 'var(--shadow)', marginBottom: '40px',
+          padding: '32px', boxShadow: 'var(--shadow)', marginBottom: '40px',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { redimensionarImagen } from '@/lib/perfil-multimedia/redimensionar'
+import SelectorImagen from './SelectorImagen'
 import {
   BUCKET_GALERIA,
   BUCKET_PORTADAS,
@@ -17,16 +18,16 @@ import {
   MAX_VIDEOS,
   type CamposProyecto,
   analizarVideo,
+  errorFoto,
+  errorProyecto,
+  errorVideo,
   filaProyecto,
   intercambiarOrden,
   limiteAlcanzado,
   rutaDesdeUrl,
   rutaNueva,
   urlPublica,
-  validarFoto,
   validarImagen,
-  validarProyecto,
-  validarVideo,
 } from '@/lib/perfil-multimedia/multimedia'
 
 export type Foto = { id: string; ruta: string; pie: string | null; credito: string | null; orden: number }
@@ -47,6 +48,26 @@ type Props = {
 
 const PROYECTO_VACIO: CamposProyecto = { titulo: '', anio: '', rol: '', compania: '', descripcion: '', enlace: '' }
 
+type Seccion = 'portada' | 'fotos' | 'videos' | 'portfolio'
+/** Aviso de una sección; `campo` es el campo que hay que marcar como erróneo. */
+type Aviso = { tipo: 'ok' | 'error'; texto: string; campo?: string }
+
+/** Error de validación que sabe qué campo lo ha causado. */
+class ErrorCampo extends Error {
+  constructor(public campo: string, mensaje: string) { super(mensaje) }
+}
+
+/** Aviso junto al botón de su sección: role=alert para los errores, status para los éxitos. */
+function AvisoSeccion({ aviso, id }: { aviso: Aviso | undefined; id: string }) {
+  if (!aviso) return null
+  return (
+    <p id={id} role={aviso.tipo === 'error' ? 'alert' : 'status'}
+      className={aviso.tipo === 'error' ? 'ds-field-error' : 'ds-field-ok'}>
+      {aviso.texto}
+    </p>
+  )
+}
+
 /**
  * Bloque 5 del perfil: portada, galería de fotos, vídeos y portfolio.
  *
@@ -59,26 +80,37 @@ const PROYECTO_VACIO: CamposProyecto = { titulo: '', anio: '', rol: '', compania
 export default function MaterialAudiovisualEditor(p: Props) {
   const router = useRouter()
   const [ocupado, setOcupado] = useState(false)
-  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
+  const [avisos, setAvisos] = useState<Partial<Record<Seccion, Aviso>>>({})
 
-  const ok = (texto: string) => setMensaje({ tipo: 'ok', texto })
-  const fallo = (texto: string) => setMensaje({ tipo: 'error', texto })
+  const avisar = (seccion: Seccion, aviso: Aviso | undefined) => setAvisos(a => ({ ...a, [seccion]: aviso }))
+  /** ¿Este campo de esta sección tiene el error actual? */
+  const conError = (seccion: Seccion, campo: string) => avisos[seccion]?.tipo === 'error' && avisos[seccion]?.campo === campo
+  /** Props de accesibilidad de un campo: marcado y enlazado a su aviso si es el que falla. */
+  const marca = (seccion: Seccion, campo: string) =>
+    conError(seccion, campo) ? { 'aria-invalid': true as const, 'aria-describedby': `aviso-${seccion}` } : {}
   const traducir = (m: string) =>
     m.includes('máximo') ? m
       : m.includes('row-level security') ? 'Esta función es del plan Premium o superior.'
         : m
 
-  async function conOcupado(fn: () => Promise<void>) {
+  /** Ejecuta una acción de una sección y deja su aviso (éxito o error) junto a su botón. */
+  async function conOcupado(seccion: Seccion, fn: () => Promise<string>) {
     setOcupado(true)
-    setMensaje(null)
-    try { await fn() } catch (e) { fallo(e instanceof Error ? traducir(e.message) : 'Algo ha fallado.') }
+    avisar(seccion, undefined)
+    try {
+      avisar(seccion, { tipo: 'ok', texto: await fn() })
+    } catch (e) {
+      avisar(seccion, e instanceof ErrorCampo
+        ? { tipo: 'error', texto: e.message, campo: e.campo }
+        : { tipo: 'error', texto: e instanceof Error ? traducir(e.message) : 'Algo ha fallado.' })
+    }
     setOcupado(false)
     router.refresh()
   }
 
   async function subirImagen(archivo: File, bucket: string, carpeta: 'fotos' | 'portfolio' | 'portada'): Promise<string> {
     const problema = validarImagen(archivo)
-    if (problema) throw new Error(problema)
+    if (problema) throw new ErrorCampo('archivo', problema)
     const { blob, tipo, ext } = await redimensionarImagen(archivo)
     const ruta = rutaNueva(p.profileId, carpeta, ext)
     const { error } = await createClient().storage.from(bucket).upload(ruta, blob, { contentType: tipo })
@@ -86,13 +118,14 @@ export default function MaterialAudiovisualEditor(p: Props) {
     return ruta
   }
 
-  async function reordenar(tabla: 'perfil_galeria_fotos' | 'perfil_galeria_videos' | 'perfil_portfolio', a: { id: string; orden: number }, b: { id: string; orden: number }) {
-    await conOcupado(async () => {
+  async function reordenar(seccion: Seccion, tabla: 'perfil_galeria_fotos' | 'perfil_galeria_videos' | 'perfil_portfolio', a: { id: string; orden: number }, b: { id: string; orden: number }) {
+    await conOcupado(seccion, async () => {
       const supabase = createClient()
       for (const c of intercambiarOrden(a, b)) {
         const { error } = await supabase.from(tabla).update({ orden: c.orden }).eq('id', c.id)
         if (error) throw new Error(error.message)
       }
+      return 'Orden guardado.'
     })
   }
 
@@ -101,8 +134,8 @@ export default function MaterialAudiovisualEditor(p: Props) {
   // ── Portada ─────────────────────────────────────────────────────────────
   const [portada, setPortada] = useState<File | null>(null)
 
-  const guardarPortada = () => conOcupado(async () => {
-    if (!portada) throw new Error('Elige una imagen.')
+  const guardarPortada = () => conOcupado('portada', async () => {
+    if (!portada) throw new ErrorCampo('archivo', 'Elige una imagen.')
     const ruta = await subirImagen(portada, BUCKET_PORTADAS, 'portada')
     const supabase = createClient()
     const { error } = await supabase.from('profiles').update({ cover_url: urlPublica(p.supabaseUrl, BUCKET_PORTADAS, ruta) }).eq('id', p.profileId)
@@ -110,16 +143,16 @@ export default function MaterialAudiovisualEditor(p: Props) {
     const anterior = rutaDesdeUrl(p.coverUrl, BUCKET_PORTADAS)
     if (anterior) await supabase.storage.from(BUCKET_PORTADAS).remove([anterior])
     setPortada(null)
-    ok('Portada actualizada.')
+    return 'Portada actualizada.'
   })
 
-  const quitarPortada = () => conOcupado(async () => {
+  const quitarPortada = () => conOcupado('portada', async () => {
     const supabase = createClient()
     const { error } = await supabase.from('profiles').update({ cover_url: null }).eq('id', p.profileId)
     if (error) throw new Error(error.message)
     const anterior = rutaDesdeUrl(p.coverUrl, BUCKET_PORTADAS)
     if (anterior) await supabase.storage.from(BUCKET_PORTADAS).remove([anterior])
-    ok('Portada quitada.')
+    return 'Portada quitada.'
   })
 
   // ── Fotos ───────────────────────────────────────────────────────────────
@@ -128,25 +161,28 @@ export default function MaterialAudiovisualEditor(p: Props) {
   const [credito, setCredito] = useState('')
   const fotosOrdenadas = [...p.fotos].sort((a, b) => a.orden - b.orden)
 
-  const anadirFoto = () => conOcupado(async () => {
-    const problema = limiteAlcanzado(p.fotos.length, MAX_FOTOS) ?? validarFoto({ pie, credito }) ?? (foto ? null : 'Elige una foto.')
-    if (problema) throw new Error(problema)
-    const ruta = await subirImagen(foto!, BUCKET_GALERIA, 'fotos')
+  const anadirFoto = () => conOcupado('fotos', async () => {
+    const limite = limiteAlcanzado(p.fotos.length, MAX_FOTOS)
+    if (limite) throw new Error(limite)
+    if (!foto) throw new ErrorCampo('archivo', 'Elige una foto.')
+    const problema = errorFoto({ pie, credito })
+    if (problema) throw new ErrorCampo(problema.campo, problema.mensaje)
+    const ruta = await subirImagen(foto, BUCKET_GALERIA, 'fotos')
     const supabase = createClient()
     const { error } = await supabase.from('perfil_galeria_fotos').insert({
       profile_id: p.profileId, ruta, pie: pie.trim() || null, credito: credito.trim() || null, orden: siguienteOrden(p.fotos),
     })
     if (error) { await supabase.storage.from(BUCKET_GALERIA).remove([ruta]); throw new Error(error.message) }
     setFoto(null); setPie(''); setCredito('')
-    ok('Foto añadida y publicada.')
+    return 'Foto añadida y publicada.'
   })
 
-  const borrarFoto = (f: Foto) => conOcupado(async () => {
+  const borrarFoto = (f: Foto) => conOcupado('fotos', async () => {
     const supabase = createClient()
     const { error } = await supabase.from('perfil_galeria_fotos').delete().eq('id', f.id)
     if (error) throw new Error(error.message)
     await supabase.storage.from(BUCKET_GALERIA).remove([f.ruta])
-    ok('Foto borrada.')
+    return 'Foto borrada.'
   })
 
   // ── Vídeos ──────────────────────────────────────────────────────────────
@@ -154,22 +190,24 @@ export default function MaterialAudiovisualEditor(p: Props) {
   const [tituloVideo, setTituloVideo] = useState('')
   const videosOrdenados = [...p.videos].sort((a, b) => a.orden - b.orden)
 
-  const anadirVideo = () => conOcupado(async () => {
-    const problema = limiteAlcanzado(p.videos.length, MAX_VIDEOS) ?? validarVideo({ url: urlVideo, titulo: tituloVideo })
-    if (problema) throw new Error(problema)
+  const anadirVideo = () => conOcupado('videos', async () => {
+    const limite = limiteAlcanzado(p.videos.length, MAX_VIDEOS)
+    if (limite) throw new Error(limite)
+    const problema = errorVideo({ url: urlVideo, titulo: tituloVideo })
+    if (problema) throw new ErrorCampo(problema.campo, problema.mensaje)
     const v = analizarVideo(urlVideo)!
     const { error } = await createClient().from('perfil_galeria_videos').insert({
       profile_id: p.profileId, url: v.url, plataforma: v.plataforma, titulo: tituloVideo.trim() || null, orden: siguienteOrden(p.videos),
     })
     if (error) throw new Error(error.message)
     setUrlVideo(''); setTituloVideo('')
-    ok('Vídeo añadido.')
+    return 'Vídeo añadido.'
   })
 
-  const borrarVideo = (v: Video) => conOcupado(async () => {
+  const borrarVideo = (v: Video) => conOcupado('videos', async () => {
     const { error } = await createClient().from('perfil_galeria_videos').delete().eq('id', v.id)
     if (error) throw new Error(error.message)
-    ok('Vídeo borrado.')
+    return 'Vídeo borrado.'
   })
 
   // ── Portfolio ───────────────────────────────────────────────────────────
@@ -180,7 +218,7 @@ export default function MaterialAudiovisualEditor(p: Props) {
   const setP = <K extends keyof CamposProyecto>(k: K, v: string) => setProyecto(x => ({ ...x, [k]: v }))
 
   const abrirProyecto = (x: Proyecto | null) => {
-    setMensaje(null)
+    avisar('portfolio', undefined)
     setImagenProyecto(null)
     setProyecto(x ? {
       titulo: x.titulo, anio: x.anio?.toString() ?? '', rol: x.rol ?? '', compania: x.compania ?? '',
@@ -189,9 +227,11 @@ export default function MaterialAudiovisualEditor(p: Props) {
     setEditando(x ? x.id : 'nuevo')
   }
 
-  const guardarProyecto = () => conOcupado(async () => {
-    const problema = (editando === 'nuevo' ? limiteAlcanzado(p.proyectos.length, MAX_PORTFOLIO) : null) ?? validarProyecto(proyecto)
-    if (problema) throw new Error(problema)
+  const guardarProyecto = () => conOcupado('portfolio', async () => {
+    const limite = editando === 'nuevo' ? limiteAlcanzado(p.proyectos.length, MAX_PORTFOLIO) : null
+    if (limite) throw new Error(limite)
+    const problema = errorProyecto(proyecto)
+    if (problema) throw new ErrorCampo(problema.campo, problema.mensaje)
     const supabase = createClient()
     const nuevaRuta = imagenProyecto ? await subirImagen(imagenProyecto, BUCKET_GALERIA, 'portfolio') : null
     const anterior = editando !== 'nuevo' ? p.proyectos.find(x => x.id === editando)?.imagen_ruta ?? null : null
@@ -205,16 +245,18 @@ export default function MaterialAudiovisualEditor(p: Props) {
       throw new Error(error.message)
     }
     if (nuevaRuta && anterior) await supabase.storage.from(BUCKET_GALERIA).remove([anterior])
+    const eraNuevo = editando === 'nuevo'
+    setImagenProyecto(null)
     setEditando(null)
-    ok(editando === 'nuevo' ? 'Proyecto añadido.' : 'Proyecto guardado.')
+    return eraNuevo ? 'Proyecto añadido.' : 'Proyecto guardado.'
   })
 
-  const borrarProyecto = (x: Proyecto) => conOcupado(async () => {
+  const borrarProyecto = (x: Proyecto) => conOcupado('portfolio', async () => {
     const supabase = createClient()
     const { error } = await supabase.from('perfil_portfolio').delete().eq('id', x.id)
     if (error) throw new Error(error.message)
     if (x.imagen_ruta) await supabase.storage.from(BUCKET_GALERIA).remove([x.imagen_ruta])
-    ok('Proyecto borrado.')
+    return 'Proyecto borrado.'
   })
 
   // ── Render ──────────────────────────────────────────────────────────────
@@ -227,8 +269,6 @@ export default function MaterialAudiovisualEditor(p: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {mensaje && <div className={mensaje.tipo === 'ok' ? 'ds-alert-success' : 'ds-alert-error'} role="status">{mensaje.texto}</div>}
-
       {/* Portada */}
       <section className="account-card">
         {titulo('Imagen de portada')}
@@ -238,8 +278,8 @@ export default function MaterialAudiovisualEditor(p: Props) {
           <img src={p.coverUrl} alt="Portada actual" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: 'var(--radius)', marginBottom: '12px' }} />
         )}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Imagen de portada"
-            onChange={e => setPortada(e.target.files?.[0] ?? null)} />
+          <SelectorImagen id="portada-archivo" archivo={portada} onCambio={setPortada} deshabilitado={ocupado}
+            invalido={conError('portada', 'archivo')} descripcion={conError('portada', 'archivo') ? 'aviso-portada' : undefined} />
           <button type="button" className="ds-btn-primary" disabled={ocupado || !portada}
             style={{ width: 'auto', padding: '8px 16px', fontSize: '13px' }} onClick={guardarPortada}>
             {p.coverUrl ? 'Cambiar portada' : 'Subir portada'}
@@ -249,6 +289,7 @@ export default function MaterialAudiovisualEditor(p: Props) {
               style={{ padding: '8px 16px', fontSize: '13px' }} onClick={quitarPortada}>Quitar</button>
           )}
         </div>
+        <AvisoSeccion aviso={avisos.portada} id="aviso-portada" />
       </section>
 
       {/* Fotos */}
@@ -265,9 +306,9 @@ export default function MaterialAudiovisualEditor(p: Props) {
                   <p style={{ fontSize: '11px', color: 'var(--muted)', minHeight: '16px' }}>{f.pie ?? 'Sin pie'}</p>
                   <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
                     <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado || i === 0} aria-label="Subir foto"
-                      onClick={() => reordenar('perfil_galeria_fotos', f, fotosOrdenadas[i - 1])}>↑</button>
+                      onClick={() => reordenar('fotos', 'perfil_galeria_fotos', f, fotosOrdenadas[i - 1])}>↑</button>
                     <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado || i === fotosOrdenadas.length - 1} aria-label="Bajar foto"
-                      onClick={() => reordenar('perfil_galeria_fotos', f, fotosOrdenadas[i + 1])}>↓</button>
+                      onClick={() => reordenar('fotos', 'perfil_galeria_fotos', f, fotosOrdenadas[i + 1])}>↓</button>
                     <button type="button" className="ds-btn-secondary" style={{ ...botonFlecha, marginLeft: 'auto' }} disabled={ocupado}
                       onClick={() => borrarFoto(f)}>Borrar</button>
                   </div>
@@ -279,16 +320,17 @@ export default function MaterialAudiovisualEditor(p: Props) {
         {p.fotos.length < MAX_FOTOS ? (
           <div className="ds-form-grid">
             <div className="ds-form-group">
-              <label className="ds-label" htmlFor="foto-archivo">Foto</label>
-              <input id="foto-archivo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setFoto(e.target.files?.[0] ?? null)} />
+              <span className="ds-label">Foto</span>
+              <SelectorImagen id="foto-archivo" archivo={foto} onCambio={setFoto} deshabilitado={ocupado}
+                invalido={conError('fotos', 'archivo')} descripcion={conError('fotos', 'archivo') ? 'aviso-fotos' : undefined} />
             </div>
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="foto-pie">Pie de foto</label>
-              <input id="foto-pie" className="ds-input" maxLength={MAX_PIE} value={pie} onChange={e => setPie(e.target.value)} />
+              <input id="foto-pie" className="ds-input" maxLength={MAX_PIE} value={pie} onChange={e => setPie(e.target.value)} {...marca('fotos', 'pie')} />
             </div>
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="foto-credito">Crédito o autoría</label>
-              <input id="foto-credito" className="ds-input" maxLength={MAX_CREDITO} value={credito} onChange={e => setCredito(e.target.value)} placeholder="© Nombre" />
+              <input id="foto-credito" className="ds-input" maxLength={MAX_CREDITO} value={credito} onChange={e => setCredito(e.target.value)} placeholder="© Nombre" {...marca('fotos', 'credito')} />
             </div>
             <div className="ds-form-group" style={{ justifyContent: 'flex-end' }}>
               <button type="button" className="ds-btn-primary" disabled={ocupado || !foto}
@@ -298,6 +340,7 @@ export default function MaterialAudiovisualEditor(p: Props) {
             </div>
           </div>
         ) : <p className="ds-form-hint">Has llegado al máximo de {MAX_FOTOS} fotos.</p>}
+        <AvisoSeccion aviso={avisos.fotos} id="aviso-fotos" />
       </section>
 
       {/* Vídeos */}
@@ -311,9 +354,9 @@ export default function MaterialAudiovisualEditor(p: Props) {
                 <span className="status-pill" style={{ background: 'var(--subtle)', color: 'var(--text)' }}>{v.plataforma === 'youtube' ? 'YouTube' : 'Vimeo'}</span>
                 <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.titulo ?? v.url}</span>
                 <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado || i === 0} aria-label="Subir vídeo"
-                  onClick={() => reordenar('perfil_galeria_videos', v, videosOrdenados[i - 1])}>↑</button>
+                  onClick={() => reordenar('videos', 'perfil_galeria_videos', v, videosOrdenados[i - 1])}>↑</button>
                 <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado || i === videosOrdenados.length - 1} aria-label="Bajar vídeo"
-                  onClick={() => reordenar('perfil_galeria_videos', v, videosOrdenados[i + 1])}>↓</button>
+                  onClick={() => reordenar('videos', 'perfil_galeria_videos', v, videosOrdenados[i + 1])}>↓</button>
                 <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado} onClick={() => borrarVideo(v)}>Borrar</button>
               </li>
             ))}
@@ -323,11 +366,11 @@ export default function MaterialAudiovisualEditor(p: Props) {
           <div className="ds-form-grid">
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="video-url">Enlace</label>
-              <input id="video-url" className="ds-input" value={urlVideo} onChange={e => setUrlVideo(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" />
+              <input id="video-url" className="ds-input" value={urlVideo} onChange={e => setUrlVideo(e.target.value)} placeholder="https://www.youtube.com/watch?v=…" {...marca('videos', 'url')} />
             </div>
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="video-titulo">Título</label>
-              <input id="video-titulo" className="ds-input" maxLength={MAX_TITULO_VIDEO} value={tituloVideo} onChange={e => setTituloVideo(e.target.value)} />
+              <input id="video-titulo" className="ds-input" maxLength={MAX_TITULO_VIDEO} value={tituloVideo} onChange={e => setTituloVideo(e.target.value)} {...marca('videos', 'titulo')} />
             </div>
             <div className="ds-form-group" style={{ justifyContent: 'flex-end' }}>
               <button type="button" className="ds-btn-primary" disabled={ocupado || urlVideo.trim() === ''}
@@ -335,6 +378,7 @@ export default function MaterialAudiovisualEditor(p: Props) {
             </div>
           </div>
         ) : <p className="ds-form-hint">Has llegado al máximo de {MAX_VIDEOS} vídeos.</p>}
+        <AvisoSeccion aviso={avisos.videos} id="aviso-videos" />
       </section>
 
       {/* Portfolio */}
@@ -349,9 +393,9 @@ export default function MaterialAudiovisualEditor(p: Props) {
                   {x.anio && <span style={{ color: 'var(--muted)' }}> · {x.anio}</span>}
                 </span>
                 <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado || i === 0} aria-label="Subir proyecto"
-                  onClick={() => reordenar('perfil_portfolio', x, proyectosOrdenados[i - 1])}>↑</button>
+                  onClick={() => reordenar('portfolio', 'perfil_portfolio', x, proyectosOrdenados[i - 1])}>↑</button>
                 <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado || i === proyectosOrdenados.length - 1} aria-label="Bajar proyecto"
-                  onClick={() => reordenar('perfil_portfolio', x, proyectosOrdenados[i + 1])}>↓</button>
+                  onClick={() => reordenar('portfolio', 'perfil_portfolio', x, proyectosOrdenados[i + 1])}>↓</button>
                 <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado} onClick={() => abrirProyecto(x)}>Editar</button>
                 <button type="button" className="ds-btn-secondary" style={botonFlecha} disabled={ocupado} onClick={() => borrarProyecto(x)}>Borrar</button>
               </li>
@@ -368,42 +412,44 @@ export default function MaterialAudiovisualEditor(p: Props) {
             <div className="ds-form-grid">
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="pr-titulo">Título *</label>
-                <input id="pr-titulo" className="ds-input" maxLength={MAX_TITULO_PROYECTO} value={proyecto.titulo} onChange={e => setP('titulo', e.target.value)} />
+                <input id="pr-titulo" className="ds-input" maxLength={MAX_TITULO_PROYECTO} value={proyecto.titulo} onChange={e => setP('titulo', e.target.value)} {...marca('portfolio', 'titulo')} />
               </div>
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="pr-anio">Año</label>
-                <input id="pr-anio" className="ds-input" inputMode="numeric" value={proyecto.anio} onChange={e => setP('anio', e.target.value)} />
+                <input id="pr-anio" className="ds-input" inputMode="numeric" value={proyecto.anio} onChange={e => setP('anio', e.target.value)} {...marca('portfolio', 'anio')} />
               </div>
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="pr-rol">Rol en el proyecto</label>
-                <input id="pr-rol" className="ds-input" value={proyecto.rol} onChange={e => setP('rol', e.target.value)} />
+                <input id="pr-rol" className="ds-input" value={proyecto.rol} onChange={e => setP('rol', e.target.value)} {...marca('portfolio', 'rol')} />
               </div>
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="pr-compania">Compañía o producción</label>
-                <input id="pr-compania" className="ds-input" value={proyecto.compania} onChange={e => setP('compania', e.target.value)} />
+                <input id="pr-compania" className="ds-input" value={proyecto.compania} onChange={e => setP('compania', e.target.value)} {...marca('portfolio', 'compania')} />
               </div>
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="pr-enlace">Enlace (https)</label>
-                <input id="pr-enlace" className="ds-input" value={proyecto.enlace} onChange={e => setP('enlace', e.target.value)} placeholder="https://" />
+                <input id="pr-enlace" className="ds-input" value={proyecto.enlace} onChange={e => setP('enlace', e.target.value)} placeholder="https://" {...marca('portfolio', 'enlace')} />
               </div>
               <div className="ds-form-group">
-                <label className="ds-label" htmlFor="pr-imagen">Imagen</label>
-                <input id="pr-imagen" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setImagenProyecto(e.target.files?.[0] ?? null)} />
+                <span className="ds-label">Imagen</span>
+                <SelectorImagen id="pr-imagen" archivo={imagenProyecto} onCambio={setImagenProyecto} deshabilitado={ocupado}
+                  invalido={conError('portfolio', 'archivo')} descripcion={conError('portfolio', 'archivo') ? 'aviso-portfolio' : undefined} />
               </div>
             </div>
             <div className="ds-form-group" style={{ marginTop: '10px' }}>
               <label className="ds-label" htmlFor="pr-desc">Descripción</label>
-              <textarea id="pr-desc" className="ds-textarea" rows={3} maxLength={MAX_DESCRIPCION_PROYECTO} value={proyecto.descripcion} onChange={e => setP('descripcion', e.target.value)} />
+              <textarea id="pr-desc" className="ds-textarea" rows={3} maxLength={MAX_DESCRIPCION_PROYECTO} value={proyecto.descripcion} onChange={e => setP('descripcion', e.target.value)} {...marca('portfolio', 'descripcion')} />
               <p className="ds-form-hint">{proyecto.descripcion.length} / {MAX_DESCRIPCION_PROYECTO}</p>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button type="button" className="ds-btn-primary" disabled={ocupado} style={{ width: 'auto', padding: '9px 16px', fontSize: '13px' }} onClick={guardarProyecto}>
                 {ocupado ? 'Guardando…' : 'Guardar proyecto'}
               </button>
-              <button type="button" className="ds-btn-secondary" disabled={ocupado} style={{ padding: '9px 16px', fontSize: '13px' }} onClick={() => setEditando(null)}>Cancelar</button>
+              <button type="button" className="ds-btn-secondary" disabled={ocupado} style={{ padding: '9px 16px', fontSize: '13px' }} onClick={() => { setEditando(null); avisar('portfolio', undefined) }}>Cancelar</button>
             </div>
           </div>
         )}
+        <AvisoSeccion aviso={avisos.portfolio} id="aviso-portfolio" />
       </section>
     </div>
   )
