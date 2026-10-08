@@ -48,6 +48,7 @@ const SECTIONS = [
     title: "5. Creación de perfiles",
     content: [
       { type: "text", text: "Cada usuario podrá disponer de un perfil profesional o institucional. El usuario será responsable de toda la información publicada en su perfil. ObrasDeTeatro® podrá solicitar documentación adicional para verificar determinados perfiles." },
+      { type: "text", text: "Quien sube fotografías o enlaza vídeos a su perfil (imagen de portada, galería, vídeos o portfolio) declara que es titular de los derechos sobre ese contenido o que cuenta con la autorización de sus titulares, y que tiene el consentimiento de las personas que aparecen en él para su publicación. ObrasDeTeatro® podrá retirar cualquier contenido sin previo aviso cuando considere que no cumple estos términos, vulnera derechos de terceros o resulta inapropiado." },
     ],
   },
   {
@@ -119,7 +120,7 @@ export default function TerminosPage() {
   return (
     <LegalPage
       title="Términos y Condiciones de Uso"
-      lastUpdate="18 de septiembre de 2026"
+      lastUpdate="8 de octubre de 2026"
       sections={SECTIONS}
     />
   );

@@ -60,10 +60,13 @@ export default async function PerfilPage() {
     { count: specCount },
     { count: expCount },
     { data: availability },
+    { count: fotosCount },
+    { count: videosCount },
+    { count: portfolioCount },
   ] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nombre, nombre_artistico, tipo_perfil, slug, perfil_publico, avatar_url, bio, ciudad, pais, country_code, plan, verificado, updated_at, website_url, social_links')
+      .select('id, nombre, nombre_artistico, tipo_perfil, slug, perfil_publico, avatar_url, cover_url, bio, ciudad, pais, country_code, plan, verificado, updated_at, website_url, social_links')
       .eq('id', user.id)
       .single(),
     supabase.from('profile_training').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
@@ -71,6 +74,9 @@ export default async function PerfilPage() {
     supabase.from('profile_specialties').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('professional_experience').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('profile_availability').select('id').eq('profile_id', user.id).maybeSingle(),
+    supabase.from('perfil_galeria_fotos').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
+    supabase.from('perfil_galeria_videos').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
+    supabase.from('perfil_portfolio').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
   ])
 
   // ── Block statuses ─────────────────────────────────────────────────────────
@@ -106,6 +112,15 @@ export default async function PerfilPage() {
 
   const b7: BlockStatus = availability ? 'complete' : 'empty'
 
+  // B5: portada + galería, vídeos o portfolio. Solo planes de pago.
+  const b5: BlockStatus = (() => {
+    if (profile?.plan === 'gratuito') return 'locked'
+    const tieneMaterial = (fotosCount ?? 0) + (videosCount ?? 0) + (portfolioCount ?? 0) > 0
+    if (profile?.cover_url && tieneMaterial) return 'complete'
+    if (profile?.cover_url || tieneMaterial) return 'partial'
+    return 'empty'
+  })()
+
   const b8: BlockStatus = profile?.plan === 'gratuito' ? 'locked' : 'soon'
   const b9: BlockStatus = profile?.verificado ? 'verified' : 'soon'
 
@@ -126,7 +141,7 @@ export default async function PerfilPage() {
     { n: 2, title: 'Formación y Premios',     description: 'Estudios, cursos y reconocimientos profesionales',   status: b2 },
     { n: 3, title: 'Especialidades',          description: 'Géneros y áreas de especialización escénica',        status: b3 },
     { n: 4, title: 'Experiencia Profesional', description: 'Trayectoria y experiencia en el sector escénico',    status: b4 },
-    { n: 5, title: 'Material Audiovisual',    description: 'Foto de perfil, portada y galería de imágenes',      status: 'soon' },
+    { n: 5, title: 'Material Audiovisual',    description: 'Portada, galería de fotos, vídeos y portfolio',      status: b5 },
     { n: 6, title: 'Redes y Contacto',        description: 'Web profesional y redes sociales',                   status: b6 },
     { n: 7, title: 'Disponibilidad',          description: 'Disponibilidad para proyectos y colaboraciones',     status: b7 },
     { n: 8, title: 'Documentación',           description: 'CV descargable y dossier artístico',                 status: b8 },

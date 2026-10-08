@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
         hostname: 'pnsirwtiiurczjwrayza.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      // Miniaturas de los vídeos de YouTube del perfil (sin cookies).
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+        pathname: '/vi/**',
+      },
     ],
   },
   async redirects() {

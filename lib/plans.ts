@@ -68,11 +68,6 @@ export const PLANES: Plan[] = [
           'Portfolio de proyectos y espectáculos',
           'Redes sociales y datos de contacto',
         ],
-        itemsProximamente: [
-          'Perfil completo con todos los campos',
-          'Galería de fotos y vídeos',
-          'Portfolio de proyectos y espectáculos',
-        ],
       },
       {
         titulo: 'Visibilidad',
@@ -285,7 +280,7 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     titulo: 'Perfil',
     filas: [
       { label: 'Perfil básico en el directorio',      values: [true,       true,         true,         true] },
-      { label: 'Galería, portfolio y redes sociales',  values: [false,      true,         true,         true], proximamente: true },
+      { label: 'Galería, portfolio y redes sociales',  values: [false,      true,         true,         true] },
       { label: 'Premios, formación y currículum',      values: [true,       true,         true,         true], proximamente: true },
       { label: 'Disponibilidad profesional activa',    values: [true,       true,         true,         true] },
       { label: 'Perfil destacado en el directorio',    values: [false,      false,        true,         true] },
