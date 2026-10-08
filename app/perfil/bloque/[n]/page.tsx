@@ -10,6 +10,8 @@ import EspecialidadesEditor from '@/app/perfil/EspecialidadesEditor'
 import ExperienciaEditor from '@/app/perfil/ExperienciaEditor'
 import RedesEditor from '@/app/perfil/RedesEditor'
 import DisponibilidadEditor from '@/app/perfil/DisponibilidadEditor'
+import MaterialAudiovisualEditor, { type Foto, type Video, type Proyecto } from '@/app/perfil/MaterialAudiovisualEditor'
+import { esPlanDePago } from '@/lib/perfil-multimedia/multimedia'
 
 // ── Block metadata ────────────────────────────────────────────────────────────
 
@@ -18,7 +20,7 @@ const BLOCK_META: Record<string, { title: string; description: string }> = {
   '2': { title: 'Formación y Premios',     description: 'Estudios, cursos, talleres y reconocimientos profesionales'        },
   '3': { title: 'Especialidades',          description: 'Géneros y áreas de especialización escénica'                       },
   '4': { title: 'Experiencia Profesional', description: 'Trayectoria y experiencia en el sector escénico'                   },
-  '5': { title: 'Material Audiovisual',    description: 'Foto de perfil, portada y galería de imágenes'                     },
+  '5': { title: 'Material Audiovisual',    description: 'Portada, galería de fotos, vídeos y portfolio de proyectos'        },
   '6': { title: 'Redes y Contacto',        description: 'Web profesional y redes sociales'                                  },
   '7': { title: 'Disponibilidad',          description: 'Disponibilidad para proyectos, giras y colaboraciones'              },
   '8': { title: 'Documentación',           description: 'CV descargable y dossier artístico profesional'                    },
@@ -41,7 +43,7 @@ export default async function BloqueEditorPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, nombre, apellidos, nombre_artistico, bio, pais, ciudad, country_code, region, postal_code, tipo_perfil, perfil_publico, slug, avatar_url, plan, website_url, social_links')
+    .select('id, nombre, apellidos, nombre_artistico, bio, pais, ciudad, country_code, region, postal_code, tipo_perfil, perfil_publico, slug, avatar_url, cover_url, plan, website_url, social_links')
     .eq('id', user.id)
     .single()
 
@@ -191,6 +193,47 @@ export default async function BloqueEditorPage({ params }: Props) {
             Ver planes →
           </Link>
         </div>
+      </Layout>
+    )
+  }
+
+  // ── B5: Material Audiovisual (planes de pago) ─────────────────────────────
+  if (n === '5') {
+    if (!esPlanDePago(profile?.plan)) {
+      return (
+        <Layout>
+          <div className="account-card">
+            <h2 style={{ fontFamily: 'var(--serif)', fontSize: '20px', color: 'var(--black)', letterSpacing: '-0.3px', marginBottom: '12px' }}>
+              Portada, galería, vídeos y portfolio
+            </h2>
+            <p style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: '1.6', fontFamily: 'var(--sans)', marginBottom: '20px' }}>
+              La imagen de portada, la galería de fotos, los vídeos y el portfolio de proyectos y espectáculos
+              están disponibles a partir del plan Premium.
+            </p>
+            <Link href="/precios" className="ds-btn-primary" style={{ width: 'auto', display: 'inline-block', padding: '10px 20px' }}>
+              Ver planes →
+            </Link>
+          </div>
+        </Layout>
+      )
+    }
+
+    const [{ data: fotos }, { data: videos }, { data: proyectos }] = await Promise.all([
+      supabase.from('perfil_galeria_fotos').select('id, ruta, pie, credito, orden').eq('profile_id', user.id),
+      supabase.from('perfil_galeria_videos').select('id, url, plataforma, titulo, orden').eq('profile_id', user.id),
+      supabase.from('perfil_portfolio').select('id, titulo, anio, rol, compania, descripcion, imagen_ruta, enlace, orden').eq('profile_id', user.id),
+    ])
+
+    return (
+      <Layout>
+        <MaterialAudiovisualEditor
+          profileId={user.id}
+          supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL!}
+          coverUrl={profile?.cover_url ?? null}
+          fotos={(fotos ?? []) as Foto[]}
+          videos={(videos ?? []) as Video[]}
+          proyectos={(proyectos ?? []) as Proyecto[]}
+        />
       </Layout>
     )
   }

@@ -10,6 +10,10 @@ import TrayectoriaExpander from './TrayectoriaExpander'
 import FormacionExpander from './FormacionExpander'
 import PremiosExpander from './PremiosExpander'
 import FollowButton from './FollowButton'
+import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
+import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
+import PortfolioPerfil, { type ProyectoPublico } from '@/components/perfil/PortfolioPerfil'
+import { BUCKET_GALERIA, analizarVideo, esPlanDePago, portadaValida, urlPublica } from '@/lib/perfil-multimedia/multimedia'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -138,7 +142,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
   const [{ data: profile }, authResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, ciudad, pais, country_code, plan, verificado, website_url, social_links, slug')
+      .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, cover_url, ciudad, pais, country_code, plan, verificado, website_url, social_links, slug')
       .eq('slug', slug)
       .eq('perfil_publico', true)
       .eq('verificado', true)
@@ -163,6 +167,9 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: awards },
     { data: availability },
     followResult,
+    { data: fotosDb },
+    { data: videosDb },
+    { data: proyectosDb },
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -194,9 +201,34 @@ export default async function PerfilPublicoPage({ params }: Props) {
     (user && !isOwner)
       ? supabase.from('profile_follows').select('id').eq('follower_id', user.id).eq('following_id', profile.id).maybeSingle()
       : Promise.resolve({ data: null, error: null } as MaybeFollow),
+    // Perfil completo (planes de pago). La RLS solo los da si el perfil es
+    // público y su dueño paga (o si quien mira es el dueño o moderación).
+    supabase.from('perfil_galeria_fotos').select('id, ruta, pie, credito').eq('profile_id', profile.id).order('orden', { ascending: true }),
+    supabase.from('perfil_galeria_videos').select('id, url, plataforma, titulo').eq('profile_id', profile.id).order('orden', { ascending: true }),
+    supabase.from('perfil_portfolio').select('id, titulo, anio, rol, compania, descripcion, imagen_ruta, enlace').eq('profile_id', profile.id).order('orden', { ascending: true }),
   ])
 
   const siguiendoEstePerfil = followResult.data !== null
+
+  // ── Perfil completo: portada, galería, vídeos y portfolio ──────────────
+  // Solo con plan de pago: así el dueño ve en su página pública lo mismo que
+  // el resto (la RLS le deja leer lo suyo aunque haya dejado de pagar).
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const conPlan = esPlanDePago(profile.plan)
+  const nombreParaAlt = profile.nombre_artistico || profile.nombre
+  const portada = conPlan ? portadaValida(profile.cover_url, supabaseUrl, profile.id) : null
+  const fotos: FotoPublica[] = conPlan ? (fotosDb ?? []).map(f => ({
+    id: f.id, url: urlPublica(supabaseUrl, BUCKET_GALERIA, f.ruta),
+    alt: f.pie?.trim() || `Foto de ${nombreParaAlt}`, pie: f.pie, credito: f.credito,
+  })) : []
+  const videos: VideoPublico[] = conPlan ? (videosDb ?? []).flatMap(v => {
+    const a = analizarVideo(v.url)
+    return a ? [{ id: v.id, plataforma: a.plataforma, videoId: a.id, titulo: v.titulo }] : []
+  }) : []
+  const proyectos: ProyectoPublico[] = conPlan ? (proyectosDb ?? []).map(p => ({
+    id: p.id, titulo: p.titulo, anio: p.anio, rol: p.rol, compania: p.compania, descripcion: p.descripcion,
+    imagenUrl: p.imagen_ruta ? urlPublica(supabaseUrl, BUCKET_GALERIA, p.imagen_ruta) : null, enlace: p.enlace,
+  })) : []
 
   // ── Derived values ─────────────────────────────────────────────────────
 
@@ -308,6 +340,13 @@ export default async function PerfilPublicoPage({ params }: Props) {
             </li>
           </ol>
         </nav>
+
+        {/* ── PORTADA (planes de pago) ── */}
+        {portada && (
+          <div className="prof-portada">
+            <Image src={portada} alt={`Portada de ${nombreParaAlt}`} fill priority sizes="(max-width: 860px) 100vw, 860px" style={{ objectFit: 'cover' }} />
+          </div>
+        )}
 
         {/* ── ZONA A — Cabecera ── */}
         <header style={{
@@ -453,6 +492,30 @@ export default async function PerfilPublicoPage({ params }: Props) {
           <section style={{ marginBottom: '48px' }}>
             <h2 className="prof-eyebrow">Especialidades</h2>
             <EspecialidadesChips specialties={safeSpecialties} />
+          </section>
+        )}
+
+        {/* ── GALERÍA (planes de pago) ── */}
+        {fotos.length > 0 && (
+          <section style={{ marginBottom: '48px' }}>
+            <h2 className="prof-eyebrow">Galería</h2>
+            <GaleriaFotos fotos={fotos} />
+          </section>
+        )}
+
+        {/* ── VÍDEOS (planes de pago) ── */}
+        {videos.length > 0 && (
+          <section style={{ marginBottom: '48px' }}>
+            <h2 className="prof-eyebrow">Vídeos</h2>
+            <VideosPerfil videos={videos} />
+          </section>
+        )}
+
+        {/* ── PORTFOLIO (planes de pago) ── */}
+        {proyectos.length > 0 && (
+          <section style={{ marginBottom: '48px' }}>
+            <h2 className="prof-eyebrow">Portfolio</h2>
+            <PortfolioPerfil proyectos={proyectos} nombre={nombreParaAlt ?? ''} />
           </section>
         )}
 

@@ -2612,6 +2612,135 @@ export type Database = {
           },
         ]
       }
+      perfil_galeria_fotos: {
+        Row: {
+          created_at: string
+          credito: string | null
+          id: string
+          orden: number
+          pie: string | null
+          profile_id: string
+          ruta: string
+        }
+        Insert: {
+          created_at?: string
+          credito?: string | null
+          id?: string
+          orden?: number
+          pie?: string | null
+          profile_id: string
+          ruta: string
+        }
+        Update: {
+          created_at?: string
+          credito?: string | null
+          id?: string
+          orden?: number
+          pie?: string | null
+          profile_id?: string
+          ruta?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfil_galeria_fotos_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perfil_galeria_videos: {
+        Row: {
+          created_at: string
+          id: string
+          orden: number
+          plataforma: string
+          profile_id: string
+          titulo: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          orden?: number
+          plataforma: string
+          profile_id: string
+          titulo?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          orden?: number
+          plataforma?: string
+          profile_id?: string
+          titulo?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfil_galeria_videos_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perfil_portfolio: {
+        Row: {
+          anio: number | null
+          compania: string | null
+          created_at: string
+          descripcion: string | null
+          enlace: string | null
+          id: string
+          imagen_ruta: string | null
+          orden: number
+          profile_id: string
+          rol: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          anio?: number | null
+          compania?: string | null
+          created_at?: string
+          descripcion?: string | null
+          enlace?: string | null
+          id?: string
+          imagen_ruta?: string | null
+          orden?: number
+          profile_id: string
+          rol?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          anio?: number | null
+          compania?: string | null
+          created_at?: string
+          descripcion?: string | null
+          enlace?: string | null
+          id?: string
+          imagen_ruta?: string | null
+          orden?: number
+          profile_id?: string
+          rol?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perfil_portfolio_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           acepta_privacidad: boolean

@@ -136,6 +136,7 @@ export default async function ModeracionConvocatoriasPage() {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Link href="/admin/castings" className="table-link">Cola de castings →</Link>
+          <Link href="/admin/galeria" className="table-link">Galerías de perfiles →</Link>
           <span className="status-pill status-pill--draft"
             style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>
             ADMINISTRACIÓN
