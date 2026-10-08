@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
+import AlertasConvocatorias from './AlertasConvocatorias'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ export default async function CentroProfesionalPage() {
     { count: trainingCount },
     { count: awardsCount },
     { data: availability },
+    { data: alerta },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -73,6 +75,12 @@ export default async function CentroProfesionalPage() {
     supabase
       .from('profile_availability')
       .select('id')
+      .eq('profile_id', user.id)
+      .maybeSingle(),
+    // Si la tabla no existiera todavía, data llega null y el formulario sale vacío.
+    supabase
+      .from('alertas_convocatorias')
+      .select('activa, paises, categorias, frecuencia')
       .eq('profile_id', user.id)
       .maybeSingle(),
   ])
@@ -502,6 +510,23 @@ export default async function CentroProfesionalPage() {
               </p>
             </div>
           </ModuleCard>
+
+          {/* ═══════════════════════════════════════════════════════════════
+              ALERTAS DE CONVOCATORIAS (planes de pago)
+          ══════════════════════════════════════════════════════════════════ */}
+          <div id="alertas" style={{ scrollMarginTop: '80px' }}>
+            <ModuleCard>
+              <Eyebrow>Premium</Eyebrow>
+              <ModTitle>Alertas de convocatorias</ModTitle>
+              <ModDesc>Te avisamos por correo de las convocatorias nuevas que encajan con tus países y categorías, con su fecha límite y el enlace a cada ficha.</ModDesc>
+              <div style={{ marginTop: '16px' }}>
+                <AlertasConvocatorias
+                  puedeUsar={profile?.plan !== undefined && profile.plan !== 'gratuito'}
+                  inicial={alerta ?? null}
+                />
+              </div>
+            </ModuleCard>
+          </div>
 
           {/* ═══════════════════════════════════════════════════════════════
               MÓDULO VI — SCENAIA (primer ensayo funcional, Bloque III)
