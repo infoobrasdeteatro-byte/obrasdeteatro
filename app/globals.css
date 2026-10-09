@@ -2845,3 +2845,34 @@ a.eco-stat-card { display: block; }
 .esp-atribucion { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); line-height: 1.6; }
 .esp-atribucion a { color: inherit; text-decoration: underline; }
 .esp-municipios { display: flex; flex-wrap: wrap; gap: 8px 16px; list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.esp-mapa { width: 100%; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--subtle); }
+.esp-mapa--cargando { display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted); min-height: 200px; }
+.esp-mapa-popup { font-family: var(--sans); display: flex; flex-direction: column; gap: 4px; }
+.esp-mapa-popup-nombre { font-family: var(--serif); font-size: 15px; color: var(--black); line-height: 1.25; }
+.esp-seccion { margin-top: 32px; }
+.esp-seccion-titulo { font-family: var(--serif); font-size: 20px; color: var(--black); letter-spacing: -0.3px; margin-bottom: 14px; }
+.esp-explora { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+.esp-explora-tarjeta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; text-decoration: none; color: inherit; height: 100%; }
+.esp-explora-tarjeta:hover { border-color: var(--black); }
+.esp-explora-nombre { font-family: var(--serif); font-size: 17px; color: var(--black); line-height: 1.25; }
+.esp-explora-total { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.esp-tarjeta { padding: 0; overflow: hidden; }
+.esp-tarjeta-foto { aspect-ratio: 16 / 9; width: 100%; background: var(--subtle); position: relative; }
+.esp-tarjeta-foto img { object-fit: cover; }
+.esp-tarjeta-cuerpo { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 18px; }
+.esp-tarjeta-meta { font-size: 12px; color: var(--muted); }
+.esp-sello { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; font-size: 11px; font-weight: 600; color: #166534; background: #ecfdf3; border-radius: 999px; padding: 3px 9px; }
+.esp-sello::before { content: '✓'; }
+.esp-cabecera { position: relative; aspect-ratio: 21 / 8; min-height: 180px; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, var(--subtle), var(--border)); margin-bottom: 8px; }
+.esp-cabecera img { object-fit: cover; }
+.esp-credito { font-size: 11px; color: var(--muted); margin-bottom: 18px; }
+.esp-credito a { color: inherit; text-decoration: underline; }
+.esp-bloque { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--border); }
+.esp-bloque-titulo { font-size: 13px; font-weight: 600; color: var(--black); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+.esp-redes { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.esp-reclama { background: var(--subtle); border-radius: 10px; padding: 18px 20px; }
+.esp-reclama ul { margin: 8px 0 14px 18px; font-size: 13px; color: var(--text); line-height: 1.7; }
+.esp-pestanas { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.esp-pestana { background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 12px; font-size: 14px; color: var(--muted); cursor: pointer; font-family: var(--sans); }
+.esp-pestana[aria-selected="true"] { color: var(--black); border-bottom-color: var(--black); font-weight: 600; }
+.esp-trampa { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

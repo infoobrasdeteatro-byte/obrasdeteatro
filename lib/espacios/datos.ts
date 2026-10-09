@@ -20,9 +20,10 @@ import type { EspacioFicha, EspacioTarjeta } from './espacios'
  */
 export const REVALIDAR_ESPACIOS = 600
 
-const COLUMNAS_TARJETA = 'id, slug, nombre, tipo, pais_code, region, isla, municipio, municipio_slug, nombre_normalizado'
+const COLUMNAS_TARJETA =
+  'id, slug, nombre, tipo, pais_code, region, isla, municipio, municipio_slug, nombre_normalizado, lat, lon, aforo, accesibilidad, verificado, imagen_url'
 const COLUMNAS_FICHA =
-  'id, slug, nombre, tipo, pais_code, region, provincia, isla, municipio, municipio_slug, direccion, lat, lon, web, aforo, num_salas, descripcion'
+  'id, slug, nombre, tipo, pais_code, region, provincia, isla, municipio, municipio_slug, direccion, codigo_postal, lat, lon, web, telefono, email, redes, aforo, num_salas, accesibilidad, anio_inauguracion, arquitecto, titularidad, descripcion, imagen_url, imagen_autor, imagen_licencia, imagen_fuente_url, verificado'
 
 export async function leerTarjetasPublicadas(): Promise<EspacioTarjeta[]> {
   const { data, error } = await clienteAnonimo()

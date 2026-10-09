@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import Link from 'next/link'
-import { TIPOS, type Filtros, type Opcion } from '@/lib/espacios/espacios'
+import { TAMANOS, TIPOS, type Filtros, type Opcion } from '@/lib/espacios/espacios'
 
 type Props = {
   filtros: Filtros
@@ -13,7 +13,8 @@ type Props = {
 }
 
 /**
- * Buscador de /espacios: país → región → municipio, tipo y nombre.
+ * Buscador de /espacios: país → región → municipio, tipo, aforo, accesible y
+ * nombre.
  *
  * Es un formulario GET: sin JavaScript funciona con el botón «Buscar» y la
  * búsqueda queda en la URL. Con JavaScript, cambiar un desplegable vacía los
@@ -65,6 +66,19 @@ export default function FiltrosEspacios({ filtros, paises, regiones, municipios,
             <option value="">Todos</option>
             {TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
+        </div>
+        <div className="ds-form-group">
+          <label className="ds-label" htmlFor="esp-aforo">Aforo</label>
+          <select id="esp-aforo" name="aforo" className="ds-select" defaultValue={filtros.aforo ?? ''} onChange={() => cambiar([])}>
+            <option value="">Cualquiera</option>
+            {TAMANOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </div>
+        <div className="ds-form-group" style={{ justifyContent: 'flex-end' }}>
+          <label className="ds-label" htmlFor="esp-accesible" style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer', marginTop: '26px' }}>
+            <input id="esp-accesible" type="checkbox" name="accesible" value="1" defaultChecked={filtros.accesible} onChange={() => cambiar([])} />
+            Solo accesibles
+          </label>
         </div>
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="esp-q">Nombre</label>

@@ -5,7 +5,9 @@ import type { Metadata } from 'next'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import GestionEspacios, { type EspacioAdmin } from './GestionEspacios'
-import BandejaReclamaciones, { type ReclamacionAdmin } from './BandejaReclamaciones'
+import { type ReclamacionAdmin } from './BandejaReclamaciones'
+import { type SugerenciaAdmin } from './BandejaSugerencias'
+import Bandejas from './Bandejas'
 import { COLUMNAS_ADMIN } from '@/lib/espacios/espacios'
 
 export const metadata: Metadata = {
@@ -39,17 +41,22 @@ export default async function AdminEspaciosPage() {
     )
   }
 
-  const [{ data: espacios, error }, { data: reclamaciones, error: errorReclamaciones }] = await Promise.all([
+  const [{ data: espacios, error }, { data: reclamaciones, error: errorReclamaciones }, { data: sugerencias, error: errorSugerencias }] = await Promise.all([
     supabase.from('espacios_escenicos').select(COLUMNAS_ADMIN).order('nombre', { ascending: true }).limit(5000),
     supabase.from('espacios_reclamaciones')
       .select('id, espacio_id, profile_id, mensaje, estado, created_at, resuelta_at')
       .order('created_at', { ascending: false })
       .limit(100),
+    supabase.from('espacios_sugerencias')
+      .select('id, espacio_id, profile_id, texto, email, estado, motivo_filtro, created_at, resuelta_at')
+      .order('created_at', { ascending: false })
+      .limit(200),
   ])
 
   // Nombres de quien reclama y de quien gestiona, en una sola lectura.
   const ids = [...new Set([
     ...(reclamaciones ?? []).map(r => r.profile_id),
+    ...(sugerencias ?? []).map(s => s.profile_id).filter((v): v is string => v !== null),
     ...(espacios ?? []).map(e => e.gestionado_por).filter((v): v is string => v !== null),
   ])]
   const { data: perfiles } = ids.length
@@ -81,18 +88,23 @@ export default async function AdminEspaciosPage() {
         </div>
       </div>
 
-      {(error || errorReclamaciones) && (
+      {(error || errorReclamaciones || errorSugerencias) && (
         <div className="ds-alert-error" style={{ marginBottom: '20px' }}>
-          No se pudieron leer los datos: {(error ?? errorReclamaciones)?.message}
+          No se pudieron leer los datos: {(error ?? errorReclamaciones ?? errorSugerencias)?.message}
         </div>
       )}
 
-      <BandejaReclamaciones
-        inicial={(reclamaciones ?? []).map(r => ({
+      <Bandejas
+        reclamaciones={(reclamaciones ?? []).map(r => ({
           ...r,
           espacio: nombreEspacio[r.espacio_id] ?? null,
           persona: personas[r.profile_id] ?? null,
         })) as ReclamacionAdmin[]}
+        sugerencias={(sugerencias ?? []).map(s => ({
+          ...s,
+          espacio: nombreEspacio[s.espacio_id] ?? null,
+          persona: s.profile_id ? personas[s.profile_id] ?? null : null,
+        })) as SugerenciaAdmin[]}
       />
 
       <GestionEspacios inicial={(espacios ?? []) as EspacioAdmin[]} personas={personas} />

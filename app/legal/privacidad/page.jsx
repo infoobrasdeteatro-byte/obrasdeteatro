@@ -36,6 +36,7 @@ const SECTIONS = [
         "Enviar comunicaciones relacionadas con la plataforma.",
         "Enviar, a los usuarios de planes de pago que las activen, alertas por correo con las convocatorias nuevas que coinciden con los países y categorías que han elegido. Se pueden desactivar en cualquier momento desde el Centro Profesional o con el enlace de baja que incluye cada correo.",
         "Gestionar las reclamaciones de fichas del catálogo de espacios escénicos: comprobar, con el cargo y la forma de contacto que indica quien reclama, que gestiona el espacio, contactar con esa persona y, si se aprueba, vincular la ficha a su perfil. Los datos de la reclamación solo los ve el equipo de moderación.",
+        "Gestionar las sugerencias de corrección de las fichas de espacios escénicos, que puede enviar cualquier persona, con o sin cuenta. El correo electrónico es opcional y solo se usa para responder a la sugerencia; no se publica. Para evitar envíos abusivos se guarda un código irreversible (hash) calculado a partir de la dirección IP, nunca la IP,, que se borra a las 24 horas.",
         "Mejorar la experiencia del usuario.",
         "Garantizar la seguridad de la plataforma.",
         "Cumplir obligaciones legales.",

@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
         hostname: 'i.ytimg.com',
         pathname: '/vi/**',
       },
+      // Fotos de cabecera de los espacios escénicos (Wikimedia Commons).
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+        pathname: '/wikipedia/commons/**',
+      },
     ],
   },
   async redirects() {
