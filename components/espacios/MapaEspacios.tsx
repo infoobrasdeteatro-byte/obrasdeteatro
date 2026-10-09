@@ -36,6 +36,9 @@ export default function MapaEspacios({ puntos, alto }: { puntos: PuntoMapa[]; al
       zoom: unico ? 15 : 5,
       attributionControl: { compact: false },
       cooperativeGestures: true,
+      // Un solo mundo: al alejar no se repiten los continentes ni los puntos.
+      renderWorldCopies: false,
+      minZoom: 1,
       maxZoom: 18,
     })
     mapa.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
