@@ -1,0 +1,47 @@
+-- Espacios escénicos · Argentina, segunda tanda: La Plata, Rosario, Mendoza
+-- (con Godoy Cruz y Maipú) y Córdoba. 38 espacios con amenity=theatre en
+-- OpenStreetMap (© colaboradores de OpenStreetMap, ODbL), revisados a mano:
+-- fuera duplicados, obras en construcción, recintos de música y anfiteatros
+-- sin nombre. Solo teléfonos fijos y correos generales.
+
+insert into public.espacios_escenicos
+  (nombre, tipo, pais_code, region, provincia, municipio, web, lat, lon, fuente, fuente_ref, estado, direccion, codigo_postal, telefono, email, accesibilidad, wikidata_id, descripcion, descripcion_origen)
+values
+('Centro Cultural Viejo Almacén El Obrero', 'centro_cultural', 'AR', 'Buenos Aires', null, 'La Plata', null, -34.93553, -57.93524, 'osm', 'way/462183555', 'publicado', 'Avenida 13', null, null, null, null, null, null, null),
+('Teatro Tito Cossa', 'teatro', 'AR', 'Buenos Aires', null, 'La Plata', null, -34.92120, -57.92771, 'osm', 'node/5357887122', 'publicado', null, null, null, null, null, null, null, null),
+('Taller de Teatro de la UNLP', 'teatro', 'AR', 'Buenos Aires', null, 'La Plata', null, -34.91971, -57.94974, 'osm', 'way/252615722', 'publicado', 'Calle 10 1076', null, null, null, null, null, null, null),
+('Teatro Argentino de La Plata', 'teatro', 'AR', 'Buenos Aires', null, 'La Plata', null, -34.91816, -57.95099, 'osm', 'relation/2354222', 'publicado', null, null, null, null, null, 'Q56468622', 'Gran teatro lírico de la provincia de Buenos Aires, con orquesta, coro y ballet estables. El edificio actual se levantó tras el incendio que destruyó el teatro original en 1977.', 'ia_revisada'),
+('Teatro Coliseo Podestá', 'teatro', 'AR', 'Buenos Aires', null, 'La Plata', 'http://www.coliseopodesta.laplata.gov.ar/', -34.91568, -57.95562, 'osm', 'node/652951090', 'publicado', 'Calle 10 733', null, '+54 221 424-8457', null, null, 'Q6139811', 'Teatro de La Plata inaugurado en 1886, uno de los más antiguos de la ciudad.', 'ia_revisada'),
+('Anfiteatro Martín Fierro', 'aire_libre', 'AR', 'Buenos Aires', null, 'La Plata', null, -34.91092, -57.93729, 'osm', 'node/670146742', 'publicado', null, null, null, null, null, null, null, null),
+('Anfiteatro Municipal Humberto de Nito', 'aire_libre', 'AR', 'Santa Fe', null, 'Rosario', null, -32.95797, -60.62249, 'osm', 'way/503070474', 'publicado', null, null, null, null, null, null, null, null),
+('Teatro El Círculo', 'teatro', 'AR', 'Santa Fe', null, 'Rosario', 'https://www.teatroelcirculo.com/', -32.95254, -60.63506, 'osm', 'way/361434794', 'publicado', 'Francisco Narciso Laprida 1223', '2000', '+54 341 424-5349', null, null, 'Q3827019', 'Teatro de ópera de Rosario inaugurado en 1904 como Teatro La Ópera, uno de los grandes coliseos líricos del país.', 'ia_revisada'),
+('Plataforma Lavardén', 'centro_cultural', 'AR', 'Santa Fe', null, 'Rosario', null, -32.95172, -60.63923, 'osm', 'way/666776889', 'publicado', null, null, null, null, null, 'Q7403329', null, null),
+('Teatro La Comedia', 'teatro', 'AR', 'Santa Fe', null, 'Rosario', 'http://teatrolacomedia.com.ar/', -32.94806, -60.64021, 'osm', 'node/4549337118', 'publicado', 'Bartolomé Mitre 958', '2000', '+54 341 480-2991', null, 'si', 'Q127255821', null, null),
+('Teatro de La Manzana', 'teatro', 'AR', 'Santa Fe', null, 'Rosario', 'https://teatrodelamanzana.com/', -32.94794, -60.65088, 'osm', 'node/4854587148', 'publicado', 'San Juan 1950', '2000', null, null, null, null, null, null),
+('Fundación Héctor Astengo', 'sala', 'AR', 'Santa Fe', null, 'Rosario', 'http://www.fundacionastengo.org.ar/', -32.94557, -60.63967, 'osm', 'node/4549337119', 'publicado', 'Bartolomé Mitre 754', '2000', null, null, null, 'Q18416870', null, null),
+('Teatro Broadway', 'teatro', 'AR', 'Santa Fe', null, 'Rosario', null, -32.94399, -60.63957, 'osm', 'way/555340105', 'publicado', 'San Lorenzo 1223', null, null, null, null, 'Q6139618', null, null),
+('Microteatro', 'sala', 'AR', 'Santa Fe', null, 'Rosario', null, -32.94364, -60.64082, 'osm', 'node/12136903206', 'publicado', 'San Lorenzo', null, null, null, null, null, null, null),
+('Teatro Mateo Booz', 'teatro', 'AR', 'Santa Fe', null, 'Rosario', 'http://www.teatromateobooz.com', -32.94140, -60.65361, 'osm', 'node/4922400341', 'publicado', 'San Lorenzo 2243', '2000', '+54 341 426-5749', 'info@teatromateobooz.com', null, null, null, null),
+('Teatro Príncipe de Asturias', 'teatro', 'AR', 'Santa Fe', null, 'Rosario', null, -32.93784, -60.63731, 'osm', 'way/542307780', 'publicado', null, null, null, null, null, null, null, null),
+('Cine Teatro Imperial', 'teatro', 'AR', 'Mendoza', null, 'Maipú', 'http://www.cineimperialmaipu.gob.ar/', -32.98273, -68.78657, 'osm', 'way/544013027', 'publicado', null, '5515', '+54 261 481-5634', null, null, null, null, null),
+('Cine Teatro Plaza', 'teatro', 'AR', 'Mendoza', null, 'Godoy Cruz', null, -32.92492, -68.84534, 'osm', 'way/179462892', 'publicado', 'Colón 27', '5501', null, null, null, null, null, null),
+('Teatro Enkosala Gladys Ravalle', 'teatro', 'AR', 'Mendoza', null, 'Godoy Cruz', null, -32.90915, -68.84691, 'osm', 'node/2527902167', 'publicado', 'Almirante Brown 755', '5501', null, null, null, null, null, null),
+('Teatro Las Sillas', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.90202, -68.85838, 'osm', 'node/4164208401', 'publicado', 'Olegario Víctor Andrade 510', null, '+54 261 524 6300', null, null, null, null, null),
+('Teatro Selectro', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', 'https://teatroselectro.com.ar/', -32.90101, -68.84362, 'osm', 'node/5767118653', 'publicado', 'Capitán de Fragata Moyano 102', null, '+54 261 424 6972', 'hola@teatroselectro.com.ar', null, null, null, null),
+('Teatro Griego Frank Romero Day', 'aire_libre', 'AR', 'Mendoza', null, 'Mendoza', null, -32.89187, -68.89321, 'osm', 'way/97858988', 'publicado', null, null, null, null, null, null, 'Anfiteatro al aire libre en el parque General San Martín de Mendoza, escenario de la Fiesta Nacional de la Vendimia.', 'ia_revisada'),
+('Centro Cultural Adolfo Calle', 'centro_cultural', 'AR', 'Mendoza', null, 'Mendoza', null, -32.89140, -68.83854, 'osm', 'way/215637582', 'publicado', 'Primitivo de la Reta 1042', null, '+54 261 449 1200', null, null, null, null, null),
+('Teatro Municipal Julio Quintanilla', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.88937, -68.84471, 'osm', 'node/1376914679', 'publicado', null, null, '+54 261 423 2310', null, null, null, null, null),
+('Teatro Pulgarcito', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.88858, -68.87343, 'osm', 'way/162106001', 'publicado', null, null, null, null, null, null, null, null),
+('Teatro Independencia', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.88850, -68.84606, 'osm', 'way/160979123', 'publicado', 'Chile 1784', null, '+54 261 438 0644', null, null, 'Q7691921', 'Teatro provincial de Mendoza inaugurado en 1925 frente a la plaza Independencia.', 'ia_revisada'),
+('Teatro Mendoza', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.88696, -68.83675, 'osm', 'node/3195533122', 'publicado', 'San Juan 1427', null, null, null, null, null, null, null),
+('Teatro María Mazzarello', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.88497, -68.84656, 'osm', 'node/2703956710', 'publicado', 'Avenida Las Heras', null, null, null, null, null, null, null),
+('Teatro Gabriela Mistral', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', 'https://ciudaddemendoza.gob.ar/2019/04/30/teatro-gabriela-mistral/', -32.88343, -68.82895, 'osm', 'way/205631423', 'publicado', null, null, null, null, null, null, null, null),
+('Teatro Catamarca', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.88243, -68.83988, 'osm', 'node/3957129770', 'publicado', 'España 1767', null, null, null, null, null, null, null),
+('Centro Cultural Armando Tejada Gómez', 'centro_cultural', 'AR', 'Mendoza', null, 'Mendoza', null, -32.87896, -68.82569, 'osm', 'way/95748062', 'publicado', 'Pedro Molina 110', null, null, null, null, null, null, null),
+('Sala Argonautas', 'sala', 'AR', 'Mendoza', null, 'Mendoza', null, -32.87817, -68.82462, 'osm', 'node/2629980726', 'publicado', null, null, null, null, null, null, null, null),
+('Teatro El Taller', 'teatro', 'AR', 'Mendoza', null, 'Mendoza', null, -32.87688, -68.85455, 'osm', 'node/2527902166', 'publicado', 'Granaderos 1964', null, null, null, null, null, null, null),
+('Sala Ana Frank', 'sala', 'AR', 'Mendoza', null, 'Mendoza', null, -32.87639, -68.83288, 'osm', 'node/1937244451', 'publicado', 'Maipú 252', null, null, null, null, null, null, null),
+('Teatro Griego', 'aire_libre', 'AR', 'Córdoba', null, 'Córdoba', null, -31.43082, -64.17334, 'osm', 'relation/5373157', 'publicado', null, null, null, null, null, 'Q63164537', 'Anfiteatro al aire libre del parque Sarmiento, en Córdoba.', 'ia_revisada'),
+('Teatro del Libertador General San Martín', 'teatro', 'AR', 'Córdoba', null, 'Córdoba', null, -31.41921, -64.18791, 'osm', 'way/790441761', 'publicado', 'Avenida Vélez Sarsfield 365', 'X5000JJD', null, null, 'si', 'Q7691981', 'Principal teatro lírico de Córdoba, inaugurado en 1891 como Teatro Rivera Indarte.', 'ia_revisada'),
+('Teatro Real', 'teatro', 'AR', 'Córdoba', null, 'Córdoba', null, -31.41760, -64.18370, 'osm', 'way/317144716', 'publicado', 'San Jerónimo 66', null, '+54 351 433-1670', null, null, 'Q6139880', null, null),
+('Studio Theater', 'teatro', 'AR', 'Córdoba', null, 'Córdoba', null, -31.41722, -64.18057, 'osm', 'node/5921824785', 'publicado', 'Rosario de Santa Fe 272', '5000', null, null, null, null, null, null);
