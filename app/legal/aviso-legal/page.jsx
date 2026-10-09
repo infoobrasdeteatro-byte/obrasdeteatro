@@ -31,6 +31,7 @@ const SECTIONS = [
         "Publicación de perfiles profesionales.",
         "Difusión de obras teatrales.",
         "Publicación de castings y convocatorias.",
+        "Catálogo de espacios escénicos (teatros, auditorios, salas y centros culturales).",
         "Difusión de festivales y eventos.",
         "Networking profesional.",
         "Herramientas basadas en inteligencia artificial (ScenaIA).",
@@ -85,19 +86,31 @@ const SECTIONS = [
     ],
   },
   {
-    title: "8. ScenaIA",
+    title: "8. Catálogo de espacios escénicos",
+    content: [
+      { type: "text", text: "Las fichas del catálogo de espacios escénicos (/espacios) recogen datos públicos de teatros, auditorios, salas y centros culturales: nombre, tipo, ubicación, coordenadas, web y, cuando consta, aforo." },
+      { type: "text", text: "Parte de esos datos procede de OpenStreetMap (© colaboradores de OpenStreetMap), disponibles bajo la Open Database License (ODbL) 1.0, y de Wikidata, cuyos datos se publican bajo la licencia CC0. El resto los aporta la redacción de ObrasDeTeatro® o el propio responsable del espacio. Cada ficha y el buscador indican el origen de los datos y enlazan a la licencia." },
+      { type: "contact", items: [
+        { label: "Licencia ODbL de OpenStreetMap", value: "openstreetmap.org/copyright", href: "https://www.openstreetmap.org/copyright" },
+        { label: "Wikidata", value: "wikidata.org", href: "https://www.wikidata.org" },
+      ]},
+      { type: "text", text: "Cualquier responsable de un espacio puede pedir la corrección o la retirada de su ficha escribiendo a hola@obrasdeteatro.com, o reclamar la ficha desde el botón «¿Gestionas este espacio? Reclámalo». Las solicitudes se atienden tras comprobar la vinculación de quien las presenta con el espacio." },
+    ],
+  },
+  {
+    title: "9. ScenaIA",
     content: [
       { type: "text", text: "ScenaIA es un conjunto de herramientas basadas en inteligencia artificial destinadas a apoyar procesos creativos y profesionales. Los resultados generados tienen carácter exclusivamente orientativo. ObrasDeTeatro® no garantiza exactitud absoluta, resultados profesionales concretos, éxito artístico o comercial, ni asesoramiento jurídico, laboral o profesional." },
     ],
   },
   {
-    title: "9. Exclusión de responsabilidad",
+    title: "10. Exclusión de responsabilidad",
     content: [
       { type: "text", text: "ObrasDeTeatro® no será responsable de decisiones adoptadas por los usuarios, relaciones contractuales entre usuarios, daños derivados de contenidos de terceros, interrupciones temporales del servicio, errores tecnológicos inevitables ni pérdidas económicas derivadas del uso de la plataforma." },
     ],
   },
   {
-    title: "10. Legislación aplicable y jurisdicción",
+    title: "11. Legislación aplicable y jurisdicción",
     content: [
       { type: "text", text: "La relación entre ObrasDeTeatro® y los usuarios se regirá por la legislación española. Para cualquier controversia, las partes se someterán a los Juzgados y Tribunales competentes de Santa Cruz de Tenerife, salvo que la normativa de protección de consumidores disponga otra cosa." },
     ],
@@ -108,7 +121,7 @@ export default function AvisoLegalPage() {
   return (
     <LegalPage
       title="Aviso Legal"
-      lastUpdate="18 de septiembre de 2026"
+      lastUpdate="9 de octubre de 2026"
       sections={SECTIONS}
     />
   );

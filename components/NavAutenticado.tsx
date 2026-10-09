@@ -34,7 +34,7 @@ export default function NavAutenticado() {
           <Link href="/directorio" className="nav-link">Profesionales</Link>
           <Link href="/obras" className="nav-link">Obras</Link>
           <Link href="/directorio?tipo=compania" className="nav-link">Compañías</Link>
-          <Link href="/directorio?tipo=teatro" className="nav-link">Espacios Escénicos</Link>
+          <Link href="/espacios" className="nav-link">Espacios Escénicos</Link>
           <Link href="/noticias" className="nav-link">Noticias</Link>
         </div>
         <div className="nav-right">
@@ -76,7 +76,7 @@ export default function NavAutenticado() {
           <Link href="/directorio" className="nav-mobile-link">Profesionales</Link>
           <Link href="/obras" className="nav-mobile-link">Obras</Link>
           <Link href="/directorio?tipo=compania" className="nav-mobile-link">Compañías</Link>
-          <Link href="/directorio?tipo=teatro" className="nav-mobile-link">Espacios Escénicos</Link>
+          <Link href="/espacios" className="nav-mobile-link">Espacios Escénicos</Link>
           <Link href="/noticias" className="nav-mobile-link">Noticias</Link>
           <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Mi cuenta</span>

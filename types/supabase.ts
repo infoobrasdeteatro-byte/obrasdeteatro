@@ -301,6 +301,140 @@ export type Database = {
           },
         ]
       }
+      espacios_escenicos: {
+        Row: {
+          aforo: number | null
+          created_at: string
+          descripcion: string | null
+          direccion: string | null
+          estado: string
+          fuente: string
+          fuente_ref: string | null
+          gestionado_por: string | null
+          id: string
+          isla: string | null
+          lat: number
+          lon: number
+          municipio: string
+          municipio_slug: string
+          nombre: string
+          nombre_normalizado: string
+          num_salas: number | null
+          pais_code: string
+          provincia: string | null
+          region: string
+          slug: string
+          tipo: string
+          updated_at: string
+          web: string | null
+        }
+        Insert: {
+          aforo?: number | null
+          created_at?: string
+          descripcion?: string | null
+          direccion?: string | null
+          estado?: string
+          fuente?: string
+          fuente_ref?: string | null
+          gestionado_por?: string | null
+          id?: string
+          isla?: string | null
+          lat: number
+          lon: number
+          municipio: string
+          municipio_slug?: string
+          nombre: string
+          nombre_normalizado?: string
+          num_salas?: number | null
+          pais_code: string
+          provincia?: string | null
+          region: string
+          slug?: string
+          tipo: string
+          updated_at?: string
+          web?: string | null
+        }
+        Update: {
+          aforo?: number | null
+          created_at?: string
+          descripcion?: string | null
+          direccion?: string | null
+          estado?: string
+          fuente?: string
+          fuente_ref?: string | null
+          gestionado_por?: string | null
+          id?: string
+          isla?: string | null
+          lat?: number
+          lon?: number
+          municipio?: string
+          municipio_slug?: string
+          nombre?: string
+          nombre_normalizado?: string
+          num_salas?: number | null
+          pais_code?: string
+          provincia?: string | null
+          region?: string
+          slug?: string
+          tipo?: string
+          updated_at?: string
+          web?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espacios_escenicos_gestionado_por_fkey"
+            columns: ["gestionado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      espacios_reclamaciones: {
+        Row: {
+          created_at: string
+          espacio_id: string
+          estado: string
+          id: string
+          mensaje: string
+          profile_id: string
+          resuelta_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          espacio_id: string
+          estado?: string
+          id?: string
+          mensaje: string
+          profile_id: string
+          resuelta_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          espacio_id?: string
+          estado?: string
+          id?: string
+          mensaje?: string
+          profile_id?: string
+          resuelta_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espacios_reclamaciones_espacio_id_fkey"
+            columns: ["espacio_id"]
+            isOneToOne: false
+            referencedRelation: "espacios_escenicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "espacios_reclamaciones_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls_publicaciones: {
         Row: {
           call_id: string
