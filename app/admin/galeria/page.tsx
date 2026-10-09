@@ -92,6 +92,7 @@ export default async function AdminGaleriaPage() {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Link href="/admin/convocatorias" className="table-link">Convocatorias →</Link>
+          <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>
           <span className="status-pill status-pill--draft" style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>ADMINISTRACIÓN</span>
         </div>
       </div>
