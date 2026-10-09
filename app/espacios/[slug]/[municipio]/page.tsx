@@ -5,7 +5,7 @@ import TopNav from '@/components/design-system/TopNav'
 import TarjetaEspacio from '@/components/espacios/TarjetaEspacio'
 import AtribucionEspacios from '@/components/espacios/AtribucionEspacios'
 import { espaciosPublicadosOLanza } from '@/lib/espacios/datos'
-import { rutaMunicipio, type EspacioTarjeta } from '@/lib/espacios/espacios'
+import { compararEspacios, rutaMunicipio, type EspacioTarjeta } from '@/lib/espacios/espacios'
 import { getCountryByCode } from '@/lib/geo/countries'
 
 /**
@@ -30,7 +30,7 @@ async function espaciosDelMunicipio(paisParam: string, municipio: string): Promi
   if (paisParam !== paisParam.toLowerCase() || !getCountryByCode(pais)) return null
   const lista = (await espaciosPublicadosOLanza())
     .filter(e => e.pais_code === pais && e.municipio_slug === municipio)
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    .sort(compararEspacios)
   return lista.length > 0 ? { pais, lista } : null
 }
 

@@ -4,19 +4,25 @@ import TopNav from '@/components/design-system/TopNav'
 import FiltrosEspacios from '@/components/espacios/FiltrosEspacios'
 import TarjetaEspacio from '@/components/espacios/TarjetaEspacio'
 import AtribucionEspacios from '@/components/espacios/AtribucionEspacios'
+import MapaDiferido from '@/components/espacios/MapaDiferido'
 import { espaciosPublicados } from '@/lib/espacios/datos'
+import { puntosDe } from '@/lib/espacios/mapa'
 import {
   filtrarEspacios,
   hayFiltros,
   leerFiltros,
   municipiosConEspacios,
+  nivelExploracion,
   opcionesFiltro,
-  rutaMunicipio,
+  paisesConEspacios,
+  urlFiltro,
+  type ParametrosCrudos,
 } from '@/lib/espacios/espacios'
+import { getCountryByCode } from '@/lib/geo/countries'
 
 const TITULO = 'Espacios escénicos: teatros, auditorios y salas | ObrasDeTeatro®'
 const DESCRIPCION =
-  'Catálogo de teatros, auditorios, salas y centros culturales con programación escénica. Busca por país, región, municipio y tipo de espacio.'
+  'Teatros, auditorios, salas y centros culturales de los países de habla hispana. Busca por país, ciudad, tipo, aforo y accesibilidad, y consulta cada espacio en el mapa.'
 
 export const metadata: Metadata = {
   title: TITULO,
@@ -32,14 +38,20 @@ export const metadata: Metadata = {
   },
 }
 
-type Props = {
-  searchParams: Promise<{ pais?: string | string[]; region?: string | string[]; m?: string | string[]; tipo?: string | string[]; q?: string | string[] }>
-}
+type Props = { searchParams: Promise<ParametrosCrudos> }
+
+const total = (n: number) => (n === 1 ? '1 espacio' : `${n} espacios`)
 
 /**
  * Buscador de espacios escénicos. Catálogo propio, separado de /directorio
  * (perfiles): las fichas las carga la Redacción y el responsable puede
  * reclamarlas.
+ *
+ * Debajo del buscador, según los filtros (nivelExploracion):
+ *   - sin filtros: «Explora por país», tarjetas de país con su número;
+ *   - con país (y región): tarjetas de sus municipios con su número;
+ *   - con municipio u otro filtro: las fichas.
+ * El mapa enseña siempre todos los espacios filtrados y se carga diferido.
  *
  * Los datos salen de una lectura pública cacheada 10 minutos
  * (lib/espacios/datos.ts) y se filtran en memoria; la página es dinámica solo
@@ -51,8 +63,8 @@ export default async function EspaciosPage({ searchParams }: Props) {
   const lista = filtrarEspacios(todos, filtros)
   const { paises, regiones, municipios } = opcionesFiltro(todos, filtros)
   const conFiltros = hayFiltros(filtros)
-  // Enlaces a las páginas por municipio de lo que se está viendo (sin filtros, todos).
-  const paginasMunicipio = municipiosConEspacios(lista)
+  const nivel = nivelExploracion(filtros)
+  const nombrePais = filtros.pais ? getCountryByCode(filtros.pais)?.name ?? filtros.pais : null
 
   return (
     <>
@@ -64,47 +76,77 @@ export default async function EspaciosPage({ searchParams }: Props) {
             <div className="page-title-group">
               <h1 className="page-title">Espacios escénicos</h1>
               <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
-                Teatros, auditorios, salas y centros culturales. Empezamos por Canarias y seguiremos por el resto de países.
+                Teatros, auditorios, salas y centros culturales de los países de habla hispana.
               </span>
             </div>
           </div>
 
           <FiltrosEspacios filtros={filtros} paises={paises} regiones={regiones} municipios={municipios} conFiltros={conFiltros} />
 
-          {todos.length > 0 && (
-            <p className="esp-contador" aria-live="polite">
-              {lista.length === 1 ? '1 espacio' : `${lista.length} espacios`}
-              {conFiltros ? ' con estos filtros' : ''}
-            </p>
-          )}
-
-          {lista.length === 0 ? (
+          {todos.length === 0 ? (
             <div className="obras-empty">
-              <p className="obras-empty-text" style={{ marginBottom: 0 }}>
-                {conFiltros ? 'Ningún espacio coincide con estos filtros.' : 'Todavía no hay espacios publicados.'}
-              </p>
+              <p className="obras-empty-text" style={{ marginBottom: 0 }}>Todavía no hay espacios publicados.</p>
             </div>
           ) : (
-            <ul className="esp-tarjetas">
-              {lista.map(e => <TarjetaEspacio key={e.id} espacio={e} />)}
-            </ul>
-          )}
+            <>
+              {nivel === 'paises' && (
+                <section className="esp-seccion" aria-labelledby="esp-explora">
+                  <h2 id="esp-explora" className="esp-seccion-titulo">Explora por país</h2>
+                  <ul className="esp-explora">
+                    {paisesConEspacios(todos).map(p => (
+                      <li key={p.code}>
+                        <Link href={urlFiltro({ pais: p.code })} className="account-card esp-explora-tarjeta">
+                          <span className="esp-explora-nombre">{p.nombre}</span>
+                          <span className="esp-explora-total">{total(p.total)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
-          {paginasMunicipio.length > 0 && (
-            <nav aria-labelledby="esp-por-municipio" style={{ marginTop: '36px' }}>
-              <h2 id="esp-por-municipio" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--black)', marginBottom: '10px' }}>
-                Espacios por municipio
-              </h2>
-              <ul className="esp-municipios">
-                {paginasMunicipio.map(m => (
-                  <li key={`${m.pais_code}/${m.municipio_slug}`}>
-                    <Link href={rutaMunicipio(m.pais_code, m.municipio_slug)} className="table-link">
-                      {m.municipio} ({m.total})
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+              {nivel === 'municipios' && (
+                <section className="esp-seccion" aria-labelledby="esp-municipios">
+                  <h2 id="esp-municipios" className="esp-seccion-titulo">
+                    Ciudades y municipios {filtros.region ? `de ${filtros.region}` : `de ${nombrePais}`}
+                  </h2>
+                  <ul className="esp-explora">
+                    {municipiosConEspacios(lista).map(m => (
+                      <li key={`${m.pais_code}/${m.municipio_slug}`}>
+                        <Link href={urlFiltro({ pais: m.pais_code, region: m.region, m: m.municipio_slug })} className="account-card esp-explora-tarjeta">
+                          <span className="esp-explora-nombre">{m.municipio}</span>
+                          <span className="esp-explora-total">{total(m.total)}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {nivel === 'espacios' && (
+                <section className="esp-seccion" aria-labelledby="esp-lista">
+                  <h2 id="esp-lista" className="esp-seccion-titulo">
+                    {total(lista.length)}{conFiltros ? ' con estos filtros' : ''}
+                  </h2>
+                  {lista.length === 0 ? (
+                    <div className="obras-empty">
+                      <p className="obras-empty-text" style={{ marginBottom: 0 }}>Ningún espacio coincide con estos filtros.</p>
+                    </div>
+                  ) : (
+                    <ul className="esp-tarjetas">
+                      {lista.map(e => <TarjetaEspacio key={e.id} espacio={e} />)}
+                    </ul>
+                  )}
+                </section>
+              )}
+
+              {lista.length > 0 && (
+                <section className="esp-seccion" aria-labelledby="esp-mapa-titulo">
+                  <h2 id="esp-mapa-titulo" className="esp-seccion-titulo">En el mapa</h2>
+                  <MapaDiferido puntos={puntosDe(lista)} />
+                </section>
+              )}
+            </>
           )}
 
           <AtribucionEspacios />

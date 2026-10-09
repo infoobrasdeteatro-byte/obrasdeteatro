@@ -47,3 +47,6 @@ supabase/.branches
 # informes internos de desarrollo
 INFORME_POST_BUILD.md
 docs/finanzas/
+
+# worker de MapLibre GL, copiado en predev/prebuild (scripts/copiar-maplibre-worker.mjs)
+/public/vendor/maplibre-gl/

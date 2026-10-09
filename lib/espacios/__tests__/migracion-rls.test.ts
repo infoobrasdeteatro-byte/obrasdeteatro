@@ -1,78 +1,24 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import { PGlite } from '@electric-sql/pglite'
-import { unaccent } from '@electric-sql/pglite/contrib/unaccent'
+import type { PGlite } from '@electric-sql/pglite'
+import { baseConMigraciones, MOD, U1, U2, type Resultado } from './pglite'
 
 /**
  * La migración 20261009120000_espacios_escenicos ejecutada de verdad, en
- * PGlite (PostgreSQL compilado a WebAssembly, en memoria), con lo mínimo de
- * Supabase que necesita: roles anon y authenticated con los permisos por
- * defecto de Supabase, auth.uid() leído de request.jwt.claim.sub, profiles,
- * profile_roles, es_moderador(), update_updated_at() y slugificar() (copiada
- * tal cual de su migración).
+ * PGlite (PostgreSQL real en memoria; ver ./pglite.ts), sola: es el estado
+ * en que la deja el primer lote de Canarias.
  *
  * Comprueba la carga de los 40 espacios, los slugs, la RLS de las dos tablas
  * y el trigger que rellena gestionado_por al aprobar una reclamación.
  */
 
-const RAIZ = path.resolve(__dirname, '../../..')
-const MIGRACION = readFileSync(path.join(RAIZ, 'supabase/migrations/20261009120000_espacios_escenicos.sql'), 'utf8')
-const SLUGS = readFileSync(path.join(RAIZ, 'supabase/migrations/20261006105630_slugs_normalizar_en_orden.sql'), 'utf8')
-const SLUGIFICAR = SLUGS.slice(
-  SLUGS.indexOf('create or replace function public.slugificar'),
-  SLUGS.indexOf('comment on function public.slugificar'),
-)
-
-const MOD = '00000000-0000-0000-0000-00000000000a'
-const U1 = '00000000-0000-0000-0000-000000000001'
-const U2 = '00000000-0000-0000-0000-000000000002'
-
 let db: PGlite
-
-type Resultado = { filas: Record<string, unknown>[]; error: string | null }
-
-/** Ejecuta `sql` con el rol y el usuario dados, como lo haría PostgREST. */
-async function como(rol: 'anon' | 'authenticated', uid: string | null, sql: string): Promise<Resultado> {
-  await db.exec(`reset role; select set_config('request.jwt.claim.sub', '${uid ?? ''}', false); set role ${rol};`)
-  try {
-    const r = await db.query<Record<string, unknown>>(sql)
-    return { filas: r.rows, error: null }
-  } catch (e) {
-    return { filas: [], error: e instanceof Error ? e.message : String(e) }
-  } finally {
-    await db.exec('reset role')
-  }
-}
+let como: (rol: 'anon' | 'authenticated', uid: string | null, sql: string) => Promise<Resultado>
 
 const idDe = async (slug: string) =>
   (await db.query<{ id: string }>(`select id from espacios_escenicos where slug = '${slug}'`)).rows[0].id
 
 beforeAll(async () => {
-  db = new PGlite({ extensions: { unaccent } })
-  await db.exec(`
-    create schema extensions;
-    create extension unaccent with schema extensions;
-    create role anon nologin;
-    create role authenticated nologin;
-    create schema auth;
-    create function auth.uid() returns uuid language sql stable as
-      $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-    grant usage on schema auth, public, extensions to anon, authenticated;
-    alter default privileges in schema public grant all on tables to anon, authenticated;
-    create table public.profiles (id uuid primary key, nombre text);
-    create table public.profile_roles (profile_id uuid, role text);
-    create function public.es_moderador() returns boolean language sql stable security definer set search_path = 'public' as
-      $$ select exists (select 1 from public.profile_roles where profile_id = auth.uid() and role in ('admin', 'moderator')) $$;
-    create function public.update_updated_at() returns trigger language plpgsql as
-      $$ begin new.updated_at = now(); return new; end $$;
-    ${SLUGIFICAR}
-  `)
-  await db.exec(MIGRACION)
-  await db.exec(`
-    insert into profiles values ('${MOD}', 'mod'), ('${U1}', 'u1'), ('${U2}', 'u2');
-    insert into profile_roles values ('${MOD}', 'moderator');
-  `)
+  ({ db, como } = await baseConMigraciones(['20261009120000_espacios_escenicos.sql']))
 }, 60_000)
 
 describe('migración espacios_escenicos: carga inicial y slugs', () => {

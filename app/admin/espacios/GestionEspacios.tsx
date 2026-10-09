@@ -5,9 +5,15 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { COUNTRIES, getCountryByCode } from '@/lib/geo/countries'
 import {
+  ACCESIBILIDAD,
   COLUMNAS_ADMIN,
+  DESCRIPCION_ORIGEN,
   ESTADOS,
   FUENTES,
+  REDES,
+  REDES_VACIAS,
+  TITULARIDAD,
+  type ClaveRed,
   MAX_DESCRIPCION,
   MAX_DIRECCION,
   MAX_MUNICIPIO,
@@ -17,6 +23,7 @@ import {
   etiquetaTipo,
   filaDeFormulario,
   normalizar,
+  redesParaFormulario,
   urlFuente,
   validarEspacio,
 } from '@/lib/espacios/espacios'
@@ -32,16 +39,31 @@ export type EspacioAdmin = {
   isla: string | null
   municipio: string
   direccion: string | null
+  codigo_postal: string | null
   lat: number
   lon: number
   web: string | null
+  telefono: string | null
+  email: string | null
+  redes: unknown
   aforo: number | null
   num_salas: number | null
+  accesibilidad: string | null
+  anio_inauguracion: number | null
+  arquitecto: string | null
+  titularidad: string | null
+  wikidata_id: string | null
+  imagen_url: string | null
+  imagen_autor: string | null
+  imagen_licencia: string | null
+  imagen_fuente_url: string | null
   descripcion: string | null
+  descripcion_origen: string | null
   fuente: string
   fuente_ref: string | null
   estado: 'publicado' | 'borrador' | 'retirado'
   gestionado_por: string | null
+  verificado: boolean
   updated_at: string
 }
 
@@ -49,15 +71,24 @@ type Persona = { nombre: string; slug: string | null; email: string }
 
 const VACIO: CamposEspacio = {
   nombre: '', tipo: 'teatro', pais_code: 'ES', region: '', provincia: '', isla: '', municipio: '', direccion: '',
-  lat: '', lon: '', web: '', aforo: '', num_salas: '', descripcion: '', fuente: 'redaccion', fuente_ref: '',
+  codigo_postal: '', lat: '', lon: '', web: '', telefono: '', email: '', redes: REDES_VACIAS, aforo: '', num_salas: '',
+  accesibilidad: '', anio_inauguracion: '', arquitecto: '', titularidad: '', wikidata_id: '', imagen_url: '',
+  imagen_autor: '', imagen_licencia: '', imagen_fuente_url: '', descripcion: '', descripcion_origen: '',
+  fuente: 'redaccion', fuente_ref: '',
 }
+
+const texto = (v: string | number | null) => (v === null ? '' : String(v))
 
 function camposDe(e: EspacioAdmin): CamposEspacio {
   return {
-    nombre: e.nombre, tipo: e.tipo, pais_code: e.pais_code, region: e.region, provincia: e.provincia ?? '',
-    isla: e.isla ?? '', municipio: e.municipio, direccion: e.direccion ?? '', lat: String(e.lat), lon: String(e.lon),
-    web: e.web ?? '', aforo: e.aforo ? String(e.aforo) : '', num_salas: e.num_salas ? String(e.num_salas) : '',
-    descripcion: e.descripcion ?? '', fuente: e.fuente, fuente_ref: e.fuente_ref ?? '',
+    nombre: e.nombre, tipo: e.tipo, pais_code: e.pais_code, region: e.region, provincia: texto(e.provincia),
+    isla: texto(e.isla), municipio: e.municipio, direccion: texto(e.direccion), codigo_postal: texto(e.codigo_postal),
+    lat: String(e.lat), lon: String(e.lon), web: texto(e.web), telefono: texto(e.telefono), email: texto(e.email),
+    redes: redesParaFormulario(e.redes), aforo: texto(e.aforo), num_salas: texto(e.num_salas),
+    accesibilidad: texto(e.accesibilidad), anio_inauguracion: texto(e.anio_inauguracion), arquitecto: texto(e.arquitecto),
+    titularidad: texto(e.titularidad), wikidata_id: texto(e.wikidata_id), imagen_url: texto(e.imagen_url),
+    imagen_autor: texto(e.imagen_autor), imagen_licencia: texto(e.imagen_licencia), imagen_fuente_url: texto(e.imagen_fuente_url),
+    descripcion: texto(e.descripcion), descripcion_origen: texto(e.descripcion_origen), fuente: e.fuente, fuente_ref: texto(e.fuente_ref),
   }
 }
 
@@ -83,6 +114,7 @@ export default function GestionEspacios({ inicial, personas }: { inicial: Espaci
   const [fTexto, setFTexto] = useState('')
 
   const set = <K extends keyof CamposEspacio>(k: K, v: CamposEspacio[K]) => setCampos(p => ({ ...p, [k]: v }))
+  const setRed = (k: ClaveRed, v: string) => setCampos(p => ({ ...p, redes: { ...p.redes, [k]: v } }))
   const regionesForm = getCountryByCode(campos.pais_code)?.regions ?? []
   const regionesFiltro = fPais ? [...new Set(lista.filter(e => e.pais_code === fPais).map(e => e.region))].sort((a, b) => a.localeCompare(b, 'es')) : []
 
@@ -212,6 +244,10 @@ export default function GestionEspacios({ inicial, personas }: { inicial: Espaci
               <input id="esp-direccion" className="ds-input" maxLength={MAX_DIRECCION} value={campos.direccion} onChange={e => set('direccion', e.target.value)} />
             </div>
             <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-cp">Código postal</label>
+              <input id="esp-cp" className="ds-input" maxLength={10} value={campos.codigo_postal} onChange={e => set('codigo_postal', e.target.value)} />
+            </div>
+            <div className="ds-form-group">
               <label className="ds-label" htmlFor="esp-lat">Latitud *</label>
               <input id="esp-lat" className="ds-input" inputMode="decimal" placeholder="28.46595" value={campos.lat} onChange={e => set('lat', e.target.value)} />
             </div>
@@ -224,12 +260,46 @@ export default function GestionEspacios({ inicial, personas }: { inicial: Espaci
               <input id="esp-web" className="ds-input" placeholder="https://" value={campos.web} onChange={e => set('web', e.target.value)} />
             </div>
             <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-telefono">Teléfono general</label>
+              <input id="esp-telefono" className="ds-input" inputMode="tel" placeholder="+34 922 000 000" value={campos.telefono} onChange={e => set('telefono', e.target.value)} />
+            </div>
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-email">Email general</label>
+              <input id="esp-email" className="ds-input" type="email" placeholder="taquilla@teatro.es" value={campos.email} onChange={e => set('email', e.target.value)} />
+            </div>
+            <div className="ds-form-group">
               <label className="ds-label" htmlFor="esp-aforo">Aforo</label>
               <input id="esp-aforo" className="ds-input" inputMode="numeric" value={campos.aforo} onChange={e => set('aforo', e.target.value)} />
             </div>
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="esp-salas">Número de salas</label>
               <input id="esp-salas" className="ds-input" inputMode="numeric" value={campos.num_salas} onChange={e => set('num_salas', e.target.value)} />
+            </div>
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-accesibilidad">Accesibilidad</label>
+              <select id="esp-accesibilidad" className="ds-select" value={campos.accesibilidad} onChange={e => set('accesibilidad', e.target.value)}>
+                <option value="">Sin dato</option>
+                {ACCESIBILIDAD.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+              </select>
+            </div>
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-anio">Año de inauguración</label>
+              <input id="esp-anio" className="ds-input" inputMode="numeric" maxLength={4} value={campos.anio_inauguracion} onChange={e => set('anio_inauguracion', e.target.value)} />
+            </div>
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-arquitecto">Arquitecto</label>
+              <input id="esp-arquitecto" className="ds-input" maxLength={120} value={campos.arquitecto} onChange={e => set('arquitecto', e.target.value)} />
+            </div>
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-titularidad">Titularidad</label>
+              <select id="esp-titularidad" className="ds-select" value={campos.titularidad} onChange={e => set('titularidad', e.target.value)}>
+                <option value="">Sin dato</option>
+                {TITULARIDAD.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+              </select>
+            </div>
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="esp-wikidata">Wikidata</label>
+              <input id="esp-wikidata" className="ds-input" placeholder="Q123" value={campos.wikidata_id} onChange={e => set('wikidata_id', e.target.value)} />
             </div>
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="esp-fuente">Fuente *</label>
@@ -243,10 +313,53 @@ export default function GestionEspacios({ inicial, personas }: { inicial: Espaci
             </div>
           </div>
 
+          <fieldset style={{ border: 'none', padding: 0, margin: '16px 0 0' }}>
+            <legend className="ds-label" style={{ marginBottom: '8px' }}>Redes (URL https de cada red)</legend>
+            <div className="ds-form-grid">
+              {REDES.map(r => (
+                <div key={r.clave} className="ds-form-group">
+                  <label className="ds-label" htmlFor={`esp-red-${r.clave}`}>{r.label}</label>
+                  <input id={`esp-red-${r.clave}`} className="ds-input" placeholder={`https://${r.dominios[0]}/…`}
+                    value={campos.redes[r.clave]} onChange={e => setRed(r.clave, e.target.value)} />
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset style={{ border: 'none', padding: 0, margin: '16px 0 0' }}>
+            <legend className="ds-label" style={{ marginBottom: '8px' }}>Foto de cabecera (solo Wikimedia Commons)</legend>
+            <div className="ds-form-grid">
+              <div className="ds-form-group">
+                <label className="ds-label" htmlFor="esp-img">URL de la imagen</label>
+                <input id="esp-img" className="ds-input" placeholder="https://upload.wikimedia.org/…" value={campos.imagen_url} onChange={e => set('imagen_url', e.target.value)} />
+              </div>
+              <div className="ds-form-group">
+                <label className="ds-label" htmlFor="esp-img-fuente">Página en Commons</label>
+                <input id="esp-img-fuente" className="ds-input" placeholder="https://commons.wikimedia.org/wiki/File:…" value={campos.imagen_fuente_url} onChange={e => set('imagen_fuente_url', e.target.value)} />
+              </div>
+              <div className="ds-form-group">
+                <label className="ds-label" htmlFor="esp-img-autor">Autor</label>
+                <input id="esp-img-autor" className="ds-input" maxLength={160} value={campos.imagen_autor} onChange={e => set('imagen_autor', e.target.value)} />
+              </div>
+              <div className="ds-form-group">
+                <label className="ds-label" htmlFor="esp-img-licencia">Licencia</label>
+                <input id="esp-img-licencia" className="ds-input" maxLength={60} placeholder="CC BY-SA 4.0" value={campos.imagen_licencia} onChange={e => set('imagen_licencia', e.target.value)} />
+              </div>
+            </div>
+            <p className="ds-form-hint">Con foto, la licencia y la página de Commons son obligatorias: la ficha muestra el crédito.</p>
+          </fieldset>
+
           <div className="ds-form-group" style={{ marginTop: '12px' }}>
             <label className="ds-label" htmlFor="esp-desc">Descripción</label>
             <textarea id="esp-desc" className="ds-textarea" rows={4} maxLength={MAX_DESCRIPCION} value={campos.descripcion} onChange={e => set('descripcion', e.target.value)} />
             <p className="ds-form-hint">{campos.descripcion.length} / {MAX_DESCRIPCION} caracteres</p>
+          </div>
+          <div className="ds-form-group" style={{ marginTop: '12px', maxWidth: '320px' }}>
+            <label className="ds-label" htmlFor="esp-desc-origen">Quién redactó la descripción</label>
+            <select id="esp-desc-origen" className="ds-select" value={campos.descripcion_origen} onChange={e => set('descripcion_origen', e.target.value)}>
+              <option value="">Sin indicar</option>
+              {DESCRIPCION_ORIGEN.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+            </select>
           </div>
 
           {error && <div className="ds-alert-error" style={{ marginTop: '12px' }}>{error}</div>}
@@ -327,6 +440,7 @@ export default function GestionEspacios({ inicial, personas }: { inicial: Espaci
                   : FUENTES.find(f => f.value === e.fuente)?.label}
                 {e.web?.startsWith('http://') && ' · web sin https'}
               </p>
+              {e.verificado && <span className="esp-sello" style={{ marginTop: '4px' }}>Ficha verificada</span>}
               {e.gestionado_por && (
                 <p style={{ fontSize: '12px', color: 'var(--muted)' }}>
                   Gestionado por {gestor ? `${gestor.nombre} (${gestor.email})` : 'un perfil'}

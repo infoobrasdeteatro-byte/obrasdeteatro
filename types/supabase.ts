@@ -303,15 +303,25 @@ export type Database = {
       }
       espacios_escenicos: {
         Row: {
+          accesibilidad: string | null
           aforo: number | null
+          anio_inauguracion: number | null
+          arquitecto: string | null
+          codigo_postal: string | null
           created_at: string
           descripcion: string | null
+          descripcion_origen: string | null
           direccion: string | null
+          email: string | null
           estado: string
           fuente: string
           fuente_ref: string | null
           gestionado_por: string | null
           id: string
+          imagen_autor: string | null
+          imagen_fuente_url: string | null
+          imagen_licencia: string | null
+          imagen_url: string | null
           isla: string | null
           lat: number
           lon: number
@@ -322,22 +332,37 @@ export type Database = {
           num_salas: number | null
           pais_code: string
           provincia: string | null
+          redes: Json | null
           region: string
           slug: string
+          telefono: string | null
           tipo: string
+          titularidad: string | null
           updated_at: string
+          verificado: boolean
           web: string | null
+          wikidata_id: string | null
         }
         Insert: {
+          accesibilidad?: string | null
           aforo?: number | null
+          anio_inauguracion?: number | null
+          arquitecto?: string | null
+          codigo_postal?: string | null
           created_at?: string
           descripcion?: string | null
+          descripcion_origen?: string | null
           direccion?: string | null
+          email?: string | null
           estado?: string
           fuente?: string
           fuente_ref?: string | null
           gestionado_por?: string | null
           id?: string
+          imagen_autor?: string | null
+          imagen_fuente_url?: string | null
+          imagen_licencia?: string | null
+          imagen_url?: string | null
           isla?: string | null
           lat: number
           lon: number
@@ -348,22 +373,37 @@ export type Database = {
           num_salas?: number | null
           pais_code: string
           provincia?: string | null
+          redes?: Json | null
           region: string
           slug?: string
+          telefono?: string | null
           tipo: string
+          titularidad?: string | null
           updated_at?: string
+          verificado?: never
           web?: string | null
+          wikidata_id?: string | null
         }
         Update: {
+          accesibilidad?: string | null
           aforo?: number | null
+          anio_inauguracion?: number | null
+          arquitecto?: string | null
+          codigo_postal?: string | null
           created_at?: string
           descripcion?: string | null
+          descripcion_origen?: string | null
           direccion?: string | null
+          email?: string | null
           estado?: string
           fuente?: string
           fuente_ref?: string | null
           gestionado_por?: string | null
           id?: string
+          imagen_autor?: string | null
+          imagen_fuente_url?: string | null
+          imagen_licencia?: string | null
+          imagen_url?: string | null
           isla?: string | null
           lat?: number
           lon?: number
@@ -374,11 +414,16 @@ export type Database = {
           num_salas?: number | null
           pais_code?: string
           provincia?: string | null
+          redes?: Json | null
           region?: string
           slug?: string
+          telefono?: string | null
           tipo?: string
+          titularidad?: string | null
           updated_at?: string
+          verificado?: never
           web?: string | null
+          wikidata_id?: string | null
         }
         Relationships: [
           {
@@ -428,6 +473,60 @@ export type Database = {
           },
           {
             foreignKeyName: "espacios_reclamaciones_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      espacios_sugerencias: {
+        Row: {
+          created_at: string
+          email: string | null
+          espacio_id: string
+          estado: string
+          id: string
+          ip_hash: string | null
+          motivo_filtro: string | null
+          profile_id: string | null
+          resuelta_at: string | null
+          texto: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          espacio_id: string
+          estado?: string
+          id?: string
+          ip_hash?: string | null
+          motivo_filtro?: string | null
+          profile_id?: string | null
+          resuelta_at?: string | null
+          texto: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          espacio_id?: string
+          estado?: string
+          id?: string
+          ip_hash?: string | null
+          motivo_filtro?: string | null
+          profile_id?: string | null
+          resuelta_at?: string | null
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espacios_sugerencias_espacio_id_fkey"
+            columns: ["espacio_id"]
+            isOneToOne: false
+            referencedRelation: "espacios_escenicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "espacios_sugerencias_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"

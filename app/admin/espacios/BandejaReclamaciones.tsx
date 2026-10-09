@@ -65,7 +65,7 @@ export default function BandejaReclamaciones({ inicial }: { inicial: Reclamacion
   }
 
   return (
-    <section id="reclamaciones" aria-labelledby="reclamaciones-titulo" style={{ marginBottom: '32px' }}>
+    <section aria-labelledby="reclamaciones-titulo">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
         <h2 id="reclamaciones-titulo" style={{ fontFamily: 'var(--serif)', fontSize: '20px', color: 'var(--black)' }}>
           Reclamaciones {pendientes.length > 0 && <span className="status-pill status-pill--draft">{pendientes.length} pendiente{pendientes.length === 1 ? '' : 's'}</span>}

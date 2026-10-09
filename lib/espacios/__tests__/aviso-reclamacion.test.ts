@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { asuntoAviso, construirHtmlAviso, enviarAvisoReclamacion } from '../aviso-reclamacion'
+import { asuntoAviso, asuntoAvisoSugerencia, construirHtmlAviso, construirHtmlAvisoSugerencia, enviarAvisoReclamacion, enviarAvisoSugerencia } from '../aviso-reclamacion'
 
 const DATOS = {
   espacioNombre: 'Teatro Leal',
@@ -58,5 +58,28 @@ describe('aviso de reclamación a moderación', () => {
     expect(await enviarAvisoReclamacion(DATOS)).toEqual({ ok: false, error: 'Resend respondió 422' })
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNRESET')))
     expect(await enviarAvisoReclamacion(DATOS)).toEqual({ ok: false, error: 'ECONNRESET' })
+  })
+})
+
+describe('aviso de sugerencia de corrección', () => {
+  const SUG = { espacioNombre: 'Teatro Leal', espacioSlug: 'teatro-leal', municipio: 'La Laguna', remitente: 'Visitante sin sesión · responder a a@b.es', mensaje: 'El <i>teléfono</i> cambió' }
+
+  it('mismo correo, con su asunto y enlace a la pestaña de sugerencias', () => {
+    expect(asuntoAvisoSugerencia('Teatro Leal')).toBe('Espacios: sugerencia de corrección para «Teatro Leal»')
+    const html = construirHtmlAvisoSugerencia(SUG)
+    expect(html).toContain('Nueva sugerencia de corrección')
+    expect(html).toContain('/admin/espacios#sugerencias')
+    expect(html).toContain('El &lt;i&gt;teléfono&lt;/i&gt; cambió')
+  })
+
+  it('se envía por Resend al mismo buzón de moderación', async () => {
+    vi.stubEnv('RESEND_API_KEY', 're_test')
+    vi.stubEnv('CONVOCATORIAS_RESUMEN_EMAIL', '')
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 })
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await enviarAvisoSugerencia(SUG)).toEqual({ ok: true })
+    const cuerpo = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(cuerpo.to).toBe('hola@obrasdeteatro.com')
+    expect(cuerpo.subject).toBe('Espacios: sugerencia de corrección para «Teatro Leal»')
   })
 })
