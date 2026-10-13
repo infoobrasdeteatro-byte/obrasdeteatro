@@ -38,7 +38,7 @@ export default function EcosistemaPulso({ datos }: { datos: DatosPortada }) {
           <div className="eco-two-col">
             <EcosistemaConvocatorias convocatorias={datos.ultimasConvocatorias} />
             <div className="eco-right-col">
-              <EcosistemaMapaHispano />
+              <EcosistemaMapaHispano actividad={datos.actividadPaises} />
               <EcosistemaScenaIACard />
             </div>
           </div>
