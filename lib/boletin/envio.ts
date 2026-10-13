@@ -95,8 +95,12 @@ export async function enviarBoletin(
   if (contenidoVacio(contenido)) return { enviado: false, motivo: 'Sin novedades esta semana', destinatarios: 0, errores: 0 }
 
   const asunto = asuntoBoletin(config.nombre, contenido)
+  // En la prueba, si quien la pide está suscrito, se usa su id real: así el enlace de baja de la prueba funciona de verdad.
+  const suscripcionPrueba = opciones.prueba
+    ? (await supabase.from('boletin_suscriptores').select('id').eq('email', opciones.prueba.toLowerCase()).maybeSingle()).data
+    : null
   const destinatarios: Destinatario[] = opciones.prueba
-    ? [{ id: '00000000-0000-0000-0000-000000000000', email: opciones.prueba, pago: false }]
+    ? [{ id: suscripcionPrueba?.id ?? '00000000-0000-0000-0000-000000000000', email: opciones.prueba, pago: false }]
     : await cargarDestinatarios(supabase, config.acceso)
   if (!destinatarios.length) return { enviado: false, motivo: 'No hay suscriptores confirmados', destinatarios: 0, errores: 0 }
 
