@@ -137,6 +137,114 @@ export type Database = {
           },
         ]
       }
+      boletin_config: {
+        Row: {
+          id: boolean
+          nombre: string
+          activo: boolean
+          acceso: string
+          dia_envio: number
+          updated_at: string
+        }
+        Insert: {
+          id?: boolean
+          nombre?: string
+          activo?: boolean
+          acceso?: string
+          dia_envio?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: boolean
+          nombre?: string
+          activo?: boolean
+          acceso?: string
+          dia_envio?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      boletin_envios: {
+        Row: {
+          id: string
+          enviado_at: string
+          destinatarios: number
+          errores: number
+          noticias: number
+          convocatorias: number
+          formaciones: number
+          episodios: number
+          es_prueba: boolean
+        }
+        Insert: {
+          id?: string
+          enviado_at?: string
+          destinatarios?: number
+          errores?: number
+          noticias?: number
+          convocatorias?: number
+          formaciones?: number
+          episodios?: number
+          es_prueba?: boolean
+        }
+        Update: {
+          id?: string
+          enviado_at?: string
+          destinatarios?: number
+          errores?: number
+          noticias?: number
+          convocatorias?: number
+          formaciones?: number
+          episodios?: number
+          es_prueba?: boolean
+        }
+        Relationships: []
+      }
+      boletin_suscriptores: {
+        Row: {
+          id: string
+          email: string
+          estado: string
+          origen: string | null
+          token_confirmacion_hash: string | null
+          confirmacion_enviada_at: string | null
+          consentimiento_at: string
+          confirmado_at: string | null
+          baja_at: string | null
+          ultimo_envio_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          estado?: string
+          origen?: string | null
+          token_confirmacion_hash?: string | null
+          confirmacion_enviada_at?: string | null
+          consentimiento_at?: string
+          confirmado_at?: string | null
+          baja_at?: string | null
+          ultimo_envio_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          estado?: string
+          origen?: string | null
+          token_confirmacion_hash?: string | null
+          confirmacion_enviada_at?: string | null
+          consentimiento_at?: string
+          confirmado_at?: string | null
+          baja_at?: string | null
+          ultimo_envio_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calls: {
         Row: {
           category: string | null

@@ -2,6 +2,8 @@ import Link from 'next/link'
 import BrandIcon from '@/components/brand/BrandIcon'
 import { LEGAL_LINKS } from '@/lib/legal'
 import { hayColaboradoresActivos } from '@/lib/colaboradores/datos'
+import { configBoletin } from '@/lib/boletin/datos'
+import FormularioBoletin from '@/components/boletin/FormularioBoletin'
 
 // Footer global, montado una sola vez en app/layout.tsx. Sustituye a los footers
 // que cada página escribía por su cuenta: la LSSI exige que el aviso legal y el
@@ -10,10 +12,24 @@ import { hayColaboradoresActivos } from '@/lib/colaboradores/datos'
 export default async function SiteFooter() {
   // «Colaboradores» solo con algún colaborador activo: si no, /colaboradores
   // da 404. Lectura pública cacheada 10 minutos, no una consulta por página.
-  const conColaboradores = await hayColaboradoresActivos()
+  const [conColaboradores, boletin] = await Promise.all([hayColaboradoresActivos(), configBoletin()])
 
   return (
     <footer className="site-footer">
+      {/* Boletín: solo cuando está activado en /admin/boletin. Con acceso «pago», un aviso en vez del formulario. */}
+      {boletin.activo && (
+        <section className="site-footer-boletin" aria-labelledby="pie-boletin">
+          <div>
+            <p id="pie-boletin" className="site-footer-boletin-titulo">{boletin.nombre}</p>
+            <p className="site-footer-boletin-texto">Lo mejor de la semana en el teatro en español, cada semana en tu correo.</p>
+          </div>
+          {boletin.acceso === 'pago' ? (
+            <p className="site-footer-boletin-texto">Exclusivo para los planes de pago. <Link href="/precios">Ver planes →</Link></p>
+          ) : (
+            <FormularioBoletin nombre={boletin.nombre} origen="pie" compacto />
+          )}
+        </section>
+      )}
       <div className="site-footer-top">
         <Link href="/" className="footer-logo">
           <BrandIcon />

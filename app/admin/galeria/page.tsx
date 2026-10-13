@@ -95,6 +95,7 @@ export default async function AdminGaleriaPage() {
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>
           <Link href="/admin/formaciones" className="table-link">Formación →</Link>
           <Link href="/admin/mediateca" className="table-link">Mediateca →</Link>
+          <Link href="/admin/boletin" className="table-link">Boletín →</Link>
           <span className="status-pill status-pill--draft" style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>ADMINISTRACIÓN</span>
         </div>
       </div>
