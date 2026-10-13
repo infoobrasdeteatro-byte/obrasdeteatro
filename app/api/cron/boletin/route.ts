@@ -5,7 +5,7 @@ import { tocaEnvio } from '@/lib/boletin/boletin'
 import { enviarBoletin } from '@/lib/boletin/envio'
 
 /**
- * GET /api/cron/boletin: cron diario de Vercel (vercel.json). Solo envía el
+ * GET /api/cron/boletin: cron diario de Vercel (vercel.json, 07:00 UTC). Solo envía el
  * día de la semana elegido en /admin/boletin, si el boletín está activo y si
  * no hubo un envío real en los últimos 6 días.
  */
