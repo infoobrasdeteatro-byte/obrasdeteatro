@@ -52,6 +52,7 @@ export async function middleware(request: NextRequest) {
     // no arrastrar /castings entero detrás del muro.
     pathname.startsWith('/mis-castings') ||
     pathname.startsWith('/mis-postulaciones') ||
+    pathname.startsWith('/mis-formaciones') ||
     pathname.startsWith('/castings/nuevo') ||
     (pathname.startsWith('/castings/') && pathname.endsWith('/editar')) ||
     pathname.startsWith('/admin')

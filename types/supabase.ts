@@ -534,6 +534,110 @@ export type Database = {
           },
         ]
       }
+      formaciones: {
+        Row: {
+          ciudad: string | null
+          created_at: string
+          descripcion: string | null
+          disciplina: string
+          duracion: string | null
+          email_inscripcion: string | null
+          es_gratuita: boolean
+          estado: string
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          fecha_publicacion: string | null
+          horario: string | null
+          id: string
+          imparte: string | null
+          lugar: string | null
+          modalidad: string
+          moneda: string | null
+          motivo_retirada: string | null
+          nivel: string | null
+          pais_code: string | null
+          plazas: number | null
+          precio: number | null
+          profile_id: string
+          requisitos: string | null
+          slug: string
+          tipo: string
+          titulo: string
+          updated_at: string
+          url_inscripcion: string | null
+        }
+        Insert: {
+          ciudad?: string | null
+          created_at?: string
+          descripcion?: string | null
+          disciplina?: string
+          duracion?: string | null
+          email_inscripcion?: string | null
+          es_gratuita?: boolean
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_publicacion?: string | null
+          horario?: string | null
+          id?: string
+          imparte?: string | null
+          lugar?: string | null
+          modalidad?: string
+          moneda?: string | null
+          motivo_retirada?: string | null
+          nivel?: string | null
+          pais_code?: string | null
+          plazas?: number | null
+          precio?: number | null
+          profile_id: string
+          requisitos?: string | null
+          slug?: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+          url_inscripcion?: string | null
+        }
+        Update: {
+          ciudad?: string | null
+          created_at?: string
+          descripcion?: string | null
+          disciplina?: string
+          duracion?: string | null
+          email_inscripcion?: string | null
+          es_gratuita?: boolean
+          estado?: string
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          fecha_publicacion?: string | null
+          horario?: string | null
+          id?: string
+          imparte?: string | null
+          lugar?: string | null
+          modalidad?: string
+          moneda?: string | null
+          motivo_retirada?: string | null
+          nivel?: string | null
+          pais_code?: string | null
+          plazas?: number | null
+          precio?: number | null
+          profile_id?: string
+          requisitos?: string | null
+          slug?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          url_inscripcion?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formaciones_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls_publicaciones: {
         Row: {
           call_id: string
@@ -3836,6 +3940,10 @@ export type Database = {
         }[]
       }
       plan_de_pago: { Args: never; Returns: boolean }
+      puede_publicar_formaciones: {
+        Args: { p_profile?: string }
+        Returns: boolean
+      }
       plan_destacado_o_superior: {
         Args: { p_profile?: string }
         Returns: boolean
