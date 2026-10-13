@@ -75,7 +75,8 @@ export async function confirmar(token: string): Promise<'hecha' | 'invalido' | '
 export async function darDeBaja(token: string | null): Promise<'hecha' | 'invalido' | 'error'> {
   const id = verificarTokenBaja(token)
   if (!id) return 'invalido'
-  const { error } = await createServiceClient().from('boletin_suscriptores')
-    .update({ estado: 'baja', baja_at: new Date().toISOString(), token_confirmacion_hash: null }).eq('id', id)
-  return error ? 'error' : 'hecha'
+  const { data, error } = await createServiceClient().from('boletin_suscriptores')
+    .update({ estado: 'baja', baja_at: new Date().toISOString(), token_confirmacion_hash: null }).eq('id', id).select('id')
+  if (error) return 'error'
+  return data?.length ? 'hecha' : 'invalido'
 }
