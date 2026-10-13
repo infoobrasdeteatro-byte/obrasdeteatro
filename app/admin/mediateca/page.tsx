@@ -56,6 +56,7 @@ export default async function AdminMediatecaPage() {
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <Link href="/mediateca" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/colaboradores" className="table-link">Colaboradores →</Link>
+          <Link href="/admin/boletin" className="table-link">Boletín →</Link>
           <span className="status-pill status-pill--draft" style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>ADMINISTRACIÓN</span>
         </div>
       </div>
