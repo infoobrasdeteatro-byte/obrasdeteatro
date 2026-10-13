@@ -142,11 +142,19 @@ export function construirHtmlBoletin(nombre: string, c: ContenidoBoletin, tokenB
     fila(x.titulo, `${SITIO}/formacion/${encodeURIComponent(x.slug)}`, `${x.tipo} · ${x.lugar}`))
   const e = c.episodios.slice(0, MAX_POR_SECCION).map(x => fila(x.titulo, `${SITIO}${x.ruta}`, x.programa))
 
+  const ventaja = (t: string) => `<tr><td style="padding:3px 0;font-family:Arial,sans-serif;font-size:13px;color:#374151;line-height:1.5;"><span style="color:#b91c1c;">&#9656;</span>&nbsp; ${t}</td></tr>`
   const premium = invitarPremium ? `
       <tr><td style="padding:24px 28px 0;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#faf7f0;border:1px solid #eadfc4;"><tr><td style="padding:16px 18px;">
-          <p style="margin:0 0 6px;font-family:Georgia,serif;font-size:15px;color:#111827;">¿Solo quieres las convocatorias de tu país, en cuanto se publican?</p>
-          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#4b5563;line-height:1.6;">Con un plan Premium recibes alertas a tu medida por país y categoría, a diario o cada semana. <a href="${SITIO}/precios" style="color:#b91c1c;">Ver planes →</a></p>
+          <p style="margin:0 0 8px;font-family:Georgia,serif;font-size:16px;color:#111827;">Lleva tu carrera escénica más lejos con Premium</p>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            ${ventaja('Alertas de convocatorias de tu país y categoría, en cuanto se publican')}
+            ${ventaja('Publica tus castings y tus cursos, talleres y masterclass')}
+            ${ventaja('Perfil profesional completo, con galería de fotos, vídeos y portfolio')}
+            ${ventaja('Obras ilimitadas en la Biblioteca Digital')}
+            ${ventaja('ScenaIA, tu asistente de teatro con inteligencia artificial')}
+          </table>
+          <p style="margin:10px 0 0;font-family:Arial,sans-serif;font-size:13px;color:#4b5563;">Desde 2,99 € al mes. <a href="${SITIO}/precios" style="color:#b91c1c;">Ver planes →</a></p>
         </td></tr></table>
       </td></tr>` : ''
 
