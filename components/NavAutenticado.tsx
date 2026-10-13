@@ -36,6 +36,7 @@ export default function NavAutenticado() {
           <Link href="/directorio?tipo=compania" className="nav-link">Compañías</Link>
           <Link href="/espacios" className="nav-link">Espacios Escénicos</Link>
           <Link href="/formacion" className="nav-link">Formación</Link>
+          <Link href="/mediateca" className="nav-link">Mediateca</Link>
           <Link href="/noticias" className="nav-link">Noticias</Link>
         </div>
         <div className="nav-right">
@@ -79,6 +80,7 @@ export default function NavAutenticado() {
           <Link href="/directorio?tipo=compania" className="nav-mobile-link">Compañías</Link>
           <Link href="/espacios" className="nav-mobile-link">Espacios Escénicos</Link>
           <Link href="/formacion" className="nav-mobile-link">Formación</Link>
+          <Link href="/mediateca" className="nav-mobile-link">Mediateca</Link>
           <Link href="/noticias" className="nav-mobile-link">Noticias</Link>
           <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Mi cuenta</span>
