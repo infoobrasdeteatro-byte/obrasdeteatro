@@ -32,7 +32,7 @@ describe('baja por token, sin sesión', () => {
   it('POST de un clic con token válido: desactiva la alerta de ese usuario', async () => {
     const res = await post(crearTokenBaja(ID)!)
     expect(res.status).toBe(200)
-    expect(db.updates).toEqual([{ cambios: { activa: false }, id: ID }])
+    expect(db.updates).toEqual([{ cambios: { activa: false, castings_activa: false }, id: ID }])
   })
 
   it('token manipulado: 400 y nada cambia', async () => {
@@ -50,6 +50,6 @@ describe('baja por token, sin sesión', () => {
     const fd = new FormData()
     fd.set('t', crearTokenBaja(ID)!)
     await expect(confirmarBaja(fd)).rejects.toThrow('REDIRECT:/alertas/baja?resultado=hecha')
-    expect(db.updates).toEqual([{ cambios: { activa: false }, id: ID }])
+    expect(db.updates).toEqual([{ cambios: { activa: false, castings_activa: false }, id: ID }])
   })
 })

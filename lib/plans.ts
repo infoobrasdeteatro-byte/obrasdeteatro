@@ -98,7 +98,7 @@ export const PLANES: Plan[] = [
       {
         titulo: 'Herramientas',
         items: [
-          'Alertas de convocatorias personalizadas',
+          'Alertas de convocatorias y castings personalizadas',
           'Publica hasta 3 castings activos a la vez',
           'Recursos creativos exclusivos',
         ],

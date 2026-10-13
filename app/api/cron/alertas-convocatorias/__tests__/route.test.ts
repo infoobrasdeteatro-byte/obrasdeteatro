@@ -6,6 +6,7 @@ const db = {
   alertas: [] as Fila[],
   perfiles: [] as Fila[],
   calls: [] as Fila[],
+  castings: [] as Fila[],
   updates: [] as { cambios: Fila; id: unknown }[],
 }
 
@@ -14,7 +15,7 @@ vi.mock('@/lib/supabase/service', () => ({
     from: (tabla: string) => {
       if (tabla === 'alertas_convocatorias') {
         return {
-          select: () => ({ eq: () => Promise.resolve({ data: db.alertas, error: null }) }),
+          select: () => ({ or: () => Promise.resolve({ data: db.alertas, error: null }) }),
           update: (cambios: Fila) => ({ eq: (_c: string, id: unknown) => { db.updates.push({ cambios, id }); return Promise.resolve({ error: null }) } }),
         }
       }
@@ -25,6 +26,13 @@ vi.mock('@/lib/supabase/service', () => ({
       if (tabla === 'calls') {
         const cadena = { eq: () => cadena, is: () => cadena, gt: () => cadena, or: () => cadena, order: () => cadena, limit: () => Promise.resolve({ data: db.calls, error: null }) }
         return { select: () => cadena }
+      }
+      if (tabla === 'castings') {
+        const cadena = { eq: () => cadena, gt: () => cadena, gte: () => cadena, order: () => cadena, limit: () => Promise.resolve({ data: db.castings, error: null }) }
+        return { select: () => cadena }
+      }
+      if (tabla === 'casting_categorias') {
+        return { select: () => Promise.resolve({ data: [{ id: 'teatro', etiqueta: 'Teatro' }], error: null }) }
       }
       throw new Error(`Tabla inesperada: ${tabla}`)
     },
@@ -39,7 +47,8 @@ const peticion = (auth?: string) =>
 
 const USUARIO = '0b5c6d7e-1234-4abc-9def-0123456789ab'
 const alerta = (extra: Fila = {}): Fila => ({
-  profile_id: USUARIO, activa: true, paises: ['ES'], categorias: [], frecuencia: 'diaria', ultimo_envio_at: null, ...extra,
+  profile_id: USUARIO, activa: true, paises: ['ES'], categorias: [], frecuencia: 'diaria', ultimo_envio_at: null,
+  castings_activa: false, castings_paises: [], castings_disciplinas: [], castings_edad: null, castings_genero: null, castings_solo_remunerados: false, ...extra,
 })
 const convocatoria = (id: string, extra: Fila = {}): Fila => ({
   id, title: `Convocatoria ${id}`, entidad_convocante: 'Entidad', pais_code: 'ES', location: null, category: 'beca',
@@ -55,6 +64,10 @@ beforeEach(() => {
   db.alertas = [alerta()]
   db.perfiles = [{ id: USUARIO, email: 'artista@ejemplo.org', plan: 'premium' }]
   db.calls = [convocatoria('a'), convocatoria('b', { deadline: '2026-10-20T00:00:00Z' })]
+  db.castings = [{
+    id: 'k1', titulo: 'Casting k1', entidad_organizadora: 'Cía', pais: 'España', ciudad: 'Sevilla', fecha_cierre: '2026-11-01', modalidad: null,
+    tipo_remuneracion: 'remunerado', categorias: ['teatro'], edad_min: 20, edad_max: 40, genero_escenico: 'Indistinto', publicado_at: '2026-10-12T09:00:00Z',
+  }]
   db.updates = []
   fetchMock.mockReset()
   fetchMock.mockResolvedValue({ ok: true, status: 200 })
@@ -113,5 +126,29 @@ describe('GET /api/cron/alertas-convocatorias', () => {
     fetchMock.mockResolvedValue({ ok: false, status: 500 })
     expect(await ejecutar()).toMatchObject({ enviados: 0, errores: 1 })
     expect(db.updates).toHaveLength(0)
+  })
+
+  it('con castings activados: un único correo con las dos cosas', async () => {
+    db.alertas = [alerta({ castings_activa: true, castings_edad: 30 })]
+    expect(await ejecutar()).toMatchObject({ enviados: 1 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const cuerpo = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(cuerpo.subject).toBe('Tus alertas: 1 casting y 2 convocatorias')
+    expect(cuerpo.html).toContain('/castings/k1')
+    expect(cuerpo.html).toContain('>Teatro<')
+  })
+
+  it('solo castings (convocatorias desactivadas): no incluye convocatorias', async () => {
+    db.alertas = [alerta({ activa: false, castings_activa: true })]
+    expect(await ejecutar()).toMatchObject({ enviados: 1 })
+    const cuerpo = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(cuerpo.subject).toBe('1 casting nuevo para ti')
+    expect(cuerpo.html).not.toContain('/convocatoria/a')
+  })
+
+  it('castings que no encajan (edad fuera de rango) y sin convocatorias: nada', async () => {
+    db.alertas = [alerta({ activa: false, castings_activa: true, castings_edad: 60 })]
+    expect(await ejecutar()).toMatchObject({ sin_resultados: 1, enviados: 0 })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

@@ -48,7 +48,10 @@ describe('guardarAlertas (server action, sesión del usuario)', () => {
 
   it('primera vez: inserta su fila', async () => {
     expect(await guardarAlertas({}, formulario())).toEqual({ ok: 'Alertas guardadas.' })
-    expect(db.escrituras).toEqual([{ op: 'insert', fila: { profile_id: 'u1', activa: true, paises: ['CO'], categorias: ['residencia'], frecuencia: 'semanal' } }])
+    expect(db.escrituras).toEqual([{ op: 'insert', fila: {
+      profile_id: 'u1', activa: true, paises: ['CO'], categorias: ['residencia'], frecuencia: 'semanal',
+      castings_activa: false, castings_paises: [], castings_disciplinas: [], castings_edad: null, castings_genero: null, castings_solo_remunerados: false,
+    } }])
   })
 
   it('ya existía: actualiza sin tocar profile_id ni ultimo_envio_at', async () => {

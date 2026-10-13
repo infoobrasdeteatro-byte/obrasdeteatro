@@ -99,6 +99,12 @@ export type Database = {
       alertas_convocatorias: {
         Row: {
           activa: boolean
+          castings_activa: boolean
+          castings_disciplinas: string[]
+          castings_edad: number | null
+          castings_genero: string | null
+          castings_paises: string[]
+          castings_solo_remunerados: boolean
           categorias: string[]
           created_at: string
           frecuencia: string
@@ -109,6 +115,12 @@ export type Database = {
         }
         Insert: {
           activa?: boolean
+          castings_activa?: boolean
+          castings_disciplinas?: string[]
+          castings_edad?: number | null
+          castings_genero?: string | null
+          castings_paises?: string[]
+          castings_solo_remunerados?: boolean
           categorias?: string[]
           created_at?: string
           frecuencia?: string
@@ -119,6 +131,12 @@ export type Database = {
         }
         Update: {
           activa?: boolean
+          castings_activa?: boolean
+          castings_disciplinas?: string[]
+          castings_edad?: number | null
+          castings_genero?: string | null
+          castings_paises?: string[]
+          castings_solo_remunerados?: boolean
           categorias?: string[]
           created_at?: string
           frecuencia?: string
@@ -914,6 +932,7 @@ export type Database = {
       }
       castings: {
         Row: {
+          publicado_at: string | null
           categorias: string[]
           ciudad: string | null
           created_at: string
@@ -957,6 +976,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          publicado_at?: string | null
           categorias?: string[]
           ciudad?: string | null
           created_at?: string
@@ -1000,6 +1020,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          publicado_at?: string | null
           categorias?: string[]
           ciudad?: string | null
           created_at?: string

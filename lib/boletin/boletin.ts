@@ -148,7 +148,7 @@ export function construirHtmlBoletin(nombre: string, c: ContenidoBoletin, tokenB
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#faf7f0;border:1px solid #eadfc4;"><tr><td style="padding:16px 18px;">
           <p style="margin:0 0 8px;font-family:Georgia,serif;font-size:16px;color:#111827;">Lleva tu carrera escénica más lejos con Premium</p>
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            ${ventaja('Alertas de convocatorias de tu país y categoría, en cuanto se publican')}
+            ${ventaja('Alertas de convocatorias y castings a tu medida, en cuanto se publican')}
             ${ventaja('Publica tus castings y tus cursos, talleres y masterclass')}
             ${ventaja('Perfil profesional completo, con galería de fotos, vídeos y portfolio')}
             ${ventaja('Obras ilimitadas en la Biblioteca Digital')}
