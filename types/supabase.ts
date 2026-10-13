@@ -1140,6 +1140,139 @@ export type Database = {
         }
         Relationships: []
       }
+      mediateca_episodios: {
+        Row: {
+          id: string
+          programa_id: string
+          slug: string
+          titulo: string
+          descripcion: string | null
+          fecha_publicacion: string
+          duracion_segundos: number | null
+          imagen_url: string | null
+          youtube_video_id: string | null
+          audio_guid: string | null
+          audio_url: string | null
+          enlace_audio: string | null
+          estado: string
+          motivo_retirada: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          programa_id: string
+          slug?: string
+          titulo: string
+          descripcion?: string | null
+          fecha_publicacion: string
+          duracion_segundos?: number | null
+          imagen_url?: string | null
+          youtube_video_id?: string | null
+          audio_guid?: string | null
+          audio_url?: string | null
+          enlace_audio?: string | null
+          estado?: string
+          motivo_retirada?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          programa_id?: string
+          slug?: string
+          titulo?: string
+          descripcion?: string | null
+          fecha_publicacion?: string
+          duracion_segundos?: number | null
+          imagen_url?: string | null
+          youtube_video_id?: string | null
+          audio_guid?: string | null
+          audio_url?: string | null
+          enlace_audio?: string | null
+          estado?: string
+          motivo_retirada?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mediateca_episodios_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "mediateca_programas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mediateca_programas: {
+        Row: {
+          id: string
+          slug: string
+          nombre: string
+          descripcion: string | null
+          pais_code: string | null
+          imagen_url: string | null
+          url_web: string | null
+          colaborador_id: string | null
+          youtube_channel_id: string | null
+          rss_url: string | null
+          spotify_url: string | null
+          activo: boolean
+          orden: number
+          ultima_importacion_at: string | null
+          ultimo_error: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug?: string
+          nombre: string
+          descripcion?: string | null
+          pais_code?: string | null
+          imagen_url?: string | null
+          url_web?: string | null
+          colaborador_id?: string | null
+          youtube_channel_id?: string | null
+          rss_url?: string | null
+          spotify_url?: string | null
+          activo?: boolean
+          orden?: number
+          ultima_importacion_at?: string | null
+          ultimo_error?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          nombre?: string
+          descripcion?: string | null
+          pais_code?: string | null
+          imagen_url?: string | null
+          url_web?: string | null
+          colaborador_id?: string | null
+          youtube_channel_id?: string | null
+          rss_url?: string | null
+          spotify_url?: string | null
+          activo?: boolean
+          orden?: number
+          ultima_importacion_at?: string | null
+          ultimo_error?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mediateca_programas_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string

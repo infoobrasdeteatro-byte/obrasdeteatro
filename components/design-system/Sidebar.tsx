@@ -28,6 +28,7 @@ const NAV_SECTIONS = [
       { href: '/castings',   label: 'Castings',   icon: '◆' },
       { href: '/convocatoria', label: 'Convocatorias', icon: '◆' },
       { href: '/formacion', label: 'Formación', icon: '◆' },
+      { href: '/mediateca', label: 'Mediateca', icon: '◆' },
       { href: '/precios',    label: 'Planes',     icon: '◇' },
     ],
   },
