@@ -19,6 +19,7 @@ export type ProgramaAdmin = {
   imagen_url: string | null
   colaborador_id: string | null
   youtube_channel_id: string | null
+  filtro_titulo: string | null
   rss_url: string | null
   spotify_url: string | null
   activo: boolean
@@ -41,7 +42,7 @@ export type EpisodioAdmin = {
 
 const camposDe = (p: ProgramaAdmin): CamposPrograma => ({
   nombre: p.nombre, descripcion: p.descripcion ?? '', pais_code: p.pais_code ?? '', url_web: p.url_web ?? '',
-  imagen_url: p.imagen_url ?? '', colaborador_id: p.colaborador_id ?? '', youtube: p.youtube_channel_id ?? '',
+  imagen_url: p.imagen_url ?? '', colaborador_id: p.colaborador_id ?? '', youtube: p.youtube_channel_id ?? '', filtro_titulo: p.filtro_titulo ?? '',
   rss_url: p.rss_url ?? '', spotify_url: p.spotify_url ?? '',
 })
 
@@ -158,6 +159,10 @@ export default function GestionMediateca({ programas, episodios, colaboradores }
                 <input id="m-youtube" className="ds-input" value={campos.youtube} onChange={set('youtube')} placeholder="UC9BFlzXJ2JIj4RB1D1vtVCQ" />
               </div>
               <div className="ds-form-group">
+                <label className="ds-label" htmlFor="m-filtro">Solo vídeos cuyo título contenga (si el canal es compartido)</label>
+                <input id="m-filtro" className="ds-input" value={campos.filtro_titulo} onChange={set('filtro_titulo')} placeholder="Cartografía Teatral" />
+              </div>
+              <div className="ds-form-group">
                 <label className="ds-label" htmlFor="m-rss">RSS del podcast (iVoox, Spotify for Creators…)</label>
                 <input id="m-rss" className="ds-input" value={campos.rss_url} onChange={set('rss_url')} placeholder="https://www.ivoox.com/feed_fg_…_filtro_1.xml" />
               </div>
@@ -206,7 +211,7 @@ export default function GestionMediateca({ programas, episodios, colaboradores }
                 <div style={{ flex: '1 1 240px', minWidth: 0 }}>
                   <div style={{ fontWeight: 600, color: 'var(--black)' }}>{p.nombre}</div>
                   <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                    {[p.youtube_channel_id && 'YouTube', p.rss_url && 'Podcast', p.spotify_url && 'Spotify'].filter(Boolean).join(' · ')}
+                    {[p.youtube_channel_id && (p.filtro_titulo ? `YouTube (solo «${p.filtro_titulo}»)` : 'YouTube'), p.rss_url && 'Podcast', p.spotify_url && 'Spotify'].filter(Boolean).join(' · ')}
                     {' · '}{p.ultima_importacion_at ? `Última importación: ${new Date(p.ultima_importacion_at).toLocaleString('es-ES', { timeZone: 'Atlantic/Canary' })}` : 'Sin importar todavía'}
                   </div>
                   {p.ultimo_error && <div style={{ fontSize: '12px', color: 'var(--red-h)', marginTop: '4px' }}>{p.ultimo_error}</div>}

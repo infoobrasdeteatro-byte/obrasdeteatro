@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const supabase = createServiceClient()
   const { data: programas, error } = await supabase
     .from('mediateca_programas')
-    .select('id, nombre, youtube_channel_id, rss_url, imagen_url')
+    .select('id, nombre, youtube_channel_id, rss_url, imagen_url, filtro_titulo')
     .eq('activo', true)
     .order('orden', { ascending: true })
 

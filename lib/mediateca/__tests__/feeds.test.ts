@@ -119,3 +119,29 @@ describe('planificar', () => {
     expect(cambios.get('e1')).toMatchObject({ youtube_video_id: 'AbCdEfGhIj1' })
   })
 })
+
+describe('canal compartido con filtro de título', () => {
+  const CANAL = `<?xml version="1.0"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <entry><yt:videoId>5Bz-lG1sIko</yt:videoId><title>Cartografía Teatral</title><published>2026-08-27T01:00:00+00:00</published>
+  <media:group><media:description>CARTOGRAFÍA TEATRAL Invitada: Patricio Yované Conduce: Guillermo Pallacán #teatro #chile</media:description></media:group></entry>
+ <entry><yt:videoId>AAAAAAAAAA1</yt:videoId><title>Clase en vivo 1. Ética y responsabilidad social en medios</title><published>2026-08-28T01:00:00+00:00</published></entry>
+ <entry><yt:videoId>AAAAAAAAAA2</yt:videoId><title>CARTOGRAFIA TEATRAL</title><published>2026-09-03T01:00:00+00:00</published>
+  <media:group><media:description>Invitado: Juan Pérez
+Conduce: Guillermo Pallacán</media:description></media:group></entry>
+</feed>`
+
+  it('solo entran los vídeos del programa, con el invitado en el título', () => {
+    const v = leerFeedYoutube(CANAL, { filtroTitulo: 'Cartografía Teatral' })
+    expect(v.map(x => x.youtube_video_id)).toEqual(['5Bz-lG1sIko', 'AAAAAAAAAA2'])
+    expect(v[0].titulo).toBe('Cartografía Teatral: Patricio Yované')
+    expect(v[1].titulo).toBe('CARTOGRAFIA TEATRAL: Juan Pérez')
+    expect(v[0].clave).not.toBe(v[1].clave)
+  })
+
+  it('sin filtro entra todo el canal y el título no cambia', () => {
+    const v = leerFeedYoutube(CANAL)
+    expect(v).toHaveLength(3)
+    expect(v[0].titulo).toBe('Cartografía Teatral')
+  })
+})

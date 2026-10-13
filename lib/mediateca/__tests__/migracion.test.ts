@@ -83,3 +83,14 @@ describe('mediateca: episodios', () => {
     expect(r.filas[0].motivo_retirada).toBeNull()
   })
 })
+
+describe('mediateca: filtro de título', () => {
+  it('la migración 20261013160000 añade filtro_titulo con su límite', async () => {
+    await db.exec(readFileSync(path.resolve(__dirname, '../../../supabase/migrations/20261013160000_mediateca_filtro_titulo.sql'), 'utf8'))
+    const ok = await como('authenticated', MOD, `insert into mediateca_programas (nombre, youtube_channel_id, filtro_titulo) values ('Cartografía Teatral', 'UCxsJKNct8hWaEUbomHFBEew', 'Cartografía Teatral') returning slug`)
+    expect(ok.error).toBeNull()
+    expect(ok.filas[0].slug).toBe('cartografia-teatral')
+    const malo = await como('authenticated', MOD, `insert into mediateca_programas (nombre, youtube_channel_id, filtro_titulo) values ('X', 'UCxsJKNct8hWaEUbomHFBEew', ' ')`)
+    expect(malo.error).toMatch(/filtro_longitud/)
+  })
+})

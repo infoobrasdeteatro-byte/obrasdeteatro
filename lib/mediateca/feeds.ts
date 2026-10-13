@@ -92,8 +92,32 @@ function fechaIso(v: string | null): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString()
 }
 
-/** RSS (Atom) de un canal de YouTube: https://www.youtube.com/feeds/videos.xml?channel_id=… */
-export function leerFeedYoutube(xml: string): EpisodioFuente[] {
+/** Minúsculas, sin tildes y con los signos convertidos en espacios: para comparar títulos. */
+export const normalizar = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+
+/** «Invitada: Patricio Yované Conduce: …» → «Patricio Yované». */
+export function invitadoDe(descripcion: string | null): string | null {
+  const m = descripcion?.match(/invitad[oa]s?\s*:\s*([^\n#]+?)(?=\s+conduce\b|\s*\n|\s*#|$)/i)
+  const nombre = m?.[1].trim().replace(/[.,;:\s]+$/, '')
+  return nombre && nombre.length >= 2 && nombre.length <= 120 ? nombre : null
+}
+
+export type OpcionesYoutube = {
+  /** Solo los vídeos cuyo título contiene este texto (canal compartido con otros contenidos). */
+  filtroTitulo?: string | null
+}
+
+/**
+ * RSS (Atom) de un canal de YouTube: https://www.youtube.com/feeds/videos.xml?channel_id=…
+ *
+ * Con filtroTitulo, si el título del vídeo es solo el nombre del programa
+ * («Cartografía Teatral»), se le añade el invitado que figure en la
+ * descripción («Cartografía Teatral: Patricio Yované»): si no, todas las
+ * fichas se llamarían igual.
+ */
+export function leerFeedYoutube(xml: string, opciones: OpcionesYoutube = {}): EpisodioFuente[] {
+  const filtro = opciones.filtroTitulo ? normalizar(opciones.filtroTitulo) : null
   const doc = parser.parse(xml) as { feed?: { entry?: unknown } }
   const salida: EpisodioFuente[] = []
   for (const e of lista(doc.feed?.entry as Record<string, unknown>[] | undefined)) {
@@ -101,12 +125,19 @@ export function leerFeedYoutube(xml: string): EpisodioFuente[] {
     const titulo = texto(e.title)
     const fecha = fechaIso(texto(e.published))
     if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id) || !titulo || !fecha) continue
+    if (filtro && !normalizar(titulo).includes(filtro)) continue
     const grupo = (e['media:group'] ?? {}) as Record<string, unknown>
+    const descripcion = textoPlano(texto(grupo['media:description']))
+    let tituloFinal = titulo
+    if (filtro && normalizar(titulo) === filtro) {
+      const invitado = invitadoDe(descripcion)
+      if (invitado) tituloFinal = `${titulo}: ${invitado}`
+    }
     salida.push({
       fuente: 'youtube',
-      clave: claveEpisodio(titulo),
-      titulo: titulo.slice(0, MAX_TITULO),
-      descripcion: textoPlano(texto(grupo['media:description'])),
+      clave: claveEpisodio(tituloFinal),
+      titulo: tituloFinal.slice(0, MAX_TITULO),
+      descripcion,
       fecha_publicacion: fecha,
       duracion_segundos: null,
       imagen_url: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,

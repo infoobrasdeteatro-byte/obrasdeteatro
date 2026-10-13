@@ -19,7 +19,7 @@ export async function importarAhora(programaId: string): Promise<ResultadoImport
 
   const servicio = createServiceClient()
   const { data: p, error } = await servicio.from('mediateca_programas')
-    .select('id, nombre, youtube_channel_id, rss_url, imagen_url').eq('id', programaId).maybeSingle()
+    .select('id, nombre, youtube_channel_id, rss_url, imagen_url, filtro_titulo').eq('id', programaId).maybeSingle()
   if (error || !p) return { error: 'Programa no encontrado.' }
 
   const r = await importarPrograma(servicio, p)
