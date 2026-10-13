@@ -74,7 +74,7 @@ const SECTIONS = [
         { label: "Asuntos legales", value: "legal@obrasdeteatro.com", href: "mailto:legal@obrasdeteatro.com" },
         { label: "Protección de datos", value: "protecciondatos@obrasdeteatro.com", href: "mailto:protecciondatos@obrasdeteatro.com" },
         { label: "Contacto general", value: "info@obrasdeteatro.com", href: "mailto:info@obrasdeteatro.com" },
-        { label: "Razón Social", value: "CONECTA PLUS GLOBAL, S.L.U." },
+        { label: "Razón Social", value: "CONECTA PLUS GLOBAL, S.L." },
         { label: "Domicilio", value: "Carretera General del Sur, S/N, Local 3, 38107 – Santa Cruz de Tenerife, España" },
       ]},
     ],

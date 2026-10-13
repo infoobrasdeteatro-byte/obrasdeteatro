@@ -9,7 +9,7 @@ const SECTIONS = [
   {
     title: "1. Objeto",
     content: [
-      { type: "text", text: "Los presentes Términos y Condiciones regulan el acceso, navegación, registro y utilización de la plataforma digital ObrasDeTeatro®, gestionada por CONECTA PLUS GLOBAL, S.L.U." },
+      { type: "text", text: "Los presentes Términos y Condiciones regulan el acceso, navegación, registro y utilización de la plataforma digital ObrasDeTeatro®, gestionada por CONECTA PLUS GLOBAL, S.L." },
       { type: "text", text: "La plataforma constituye un ecosistema digital profesional destinado a conectar actores, directores, dramaturgos, compañías, productoras, teatros, festivales, escuelas, instituciones públicas y demás agentes relacionados con las artes escénicas." },
     ],
   },

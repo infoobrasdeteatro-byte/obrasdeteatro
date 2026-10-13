@@ -16,7 +16,7 @@ const SECTIONS = [
     title: "2. Titular del sitio web",
     content: [
       { type: "contact", items: [
-        { label: "Responsable", value: "CONECTA PLUS GLOBAL, S.L.U." },
+        { label: "Responsable", value: "CONECTA PLUS GLOBAL, S.L." },
         { label: "Domicilio", value: "Carretera General del Sur, S/N, Local 3, 38107 – Santa Cruz de Tenerife, España" },
         { label: "Correo electrónico", value: "info@obrasdeteatro.com", href: "mailto:info@obrasdeteatro.com" },
         { label: "Protección de Datos", value: "protecciondatos@obrasdeteatro.com", href: "mailto:protecciondatos@obrasdeteatro.com" },

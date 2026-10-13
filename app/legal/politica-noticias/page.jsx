@@ -38,7 +38,7 @@ const SECTIONS = [
     content: [
       { type: "text", text: "Para preparar la selección diaria nos apoyamos en herramientas de inteligencia artificial que ayudan a identificar noticias relevantes y a redactar un primer borrador del resumen." },
       { type: "text", text: "Ninguna noticia se publica de forma automática. Una persona del equipo revisa cada propuesta, comprueba el resumen frente a la fuente original y decide si se publica, se corrige o se descarta." },
-      { type: "text", text: "CONECTA PLUS GLOBAL, S.L.U., titular de ObrasDeTeatro®, asume la responsabilidad editorial de los resúmenes publicados en esta sección." },
+      { type: "text", text: "CONECTA PLUS GLOBAL, S.L., titular de ObrasDeTeatro®, asume la responsabilidad editorial de los resúmenes publicados en esta sección." },
     ],
   },
   {
