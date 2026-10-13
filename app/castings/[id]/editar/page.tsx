@@ -47,7 +47,7 @@ export default async function EditarCastingPage({ params, searchParams }: Props)
       edad_min, edad_max, genero_escenico, idiomas_requeridos,
       experiencia_requerida, formacion_requerida, habilidades_especiales,
       importe, fechas_previstas, lugar_trabajo, pais, ciudad,
-      fecha_apertura, fecha_cierre, modalidad, descripcion_proceso,
+      fecha_apertura, fecha_cierre, publicado_at, modalidad, descripcion_proceso,
       forma_candidatura, estado, publicado, destacado, scenaia_activo,
       created_at, updated_at, motivo_rechazo, motivo_filtro,
       tipo_remuneracion, categorias

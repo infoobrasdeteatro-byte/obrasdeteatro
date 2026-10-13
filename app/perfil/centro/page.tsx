@@ -42,6 +42,7 @@ export default async function CentroProfesionalPage() {
     { count: awardsCount },
     { data: availability },
     { data: alerta },
+    { data: disciplinasCasting },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -80,9 +81,14 @@ export default async function CentroProfesionalPage() {
     // Si la tabla no existiera todavía, data llega null y el formulario sale vacío.
     supabase
       .from('alertas_convocatorias')
-      .select('activa, paises, categorias, frecuencia')
+      .select('activa, paises, categorias, frecuencia, castings_activa, castings_paises, castings_disciplinas, castings_edad, castings_genero, castings_solo_remunerados')
       .eq('profile_id', user.id)
       .maybeSingle(),
+    supabase
+      .from('casting_categorias')
+      .select('id, etiqueta')
+      .eq('activo', true)
+      .order('orden', { ascending: true }),
   ])
 
   // ── Phase 2: mutual follows (requires follower list from Phase 1) ──────────
@@ -517,12 +523,13 @@ export default async function CentroProfesionalPage() {
           <div id="alertas" style={{ scrollMarginTop: '80px' }}>
             <ModuleCard>
               <Eyebrow>Premium</Eyebrow>
-              <ModTitle>Alertas de convocatorias</ModTitle>
-              <ModDesc>Te avisamos por correo de las convocatorias nuevas que encajan con tus países y categorías, con su fecha límite y el enlace a cada ficha.</ModDesc>
+              <ModTitle>Alertas de convocatorias y castings</ModTitle>
+              <ModDesc>Te avisamos en un solo correo de las convocatorias y los castings nuevos que encajan con tus filtros, con su fecha de cierre y el enlace a cada ficha.</ModDesc>
               <div style={{ marginTop: '16px' }}>
                 <AlertasConvocatorias
                   puedeUsar={profile?.plan !== undefined && profile.plan !== 'gratuito'}
                   inicial={alerta ?? null}
+                  disciplinas={disciplinasCasting ?? []}
                 />
               </div>
             </ModuleCard>

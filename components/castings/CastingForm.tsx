@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/supabase'
+import { COUNTRIES } from '@/lib/geo/countries'
 import { TIPOS_ENTIDAD, TIPOS_REMUNERACION, GENEROS_ESCENICOS, MODALIDADES, IDIOMAS } from './vocabulario'
 
 type Casting = Database['public']['Tables']['castings']['Row']
@@ -495,8 +496,11 @@ export default function CastingForm({
       <div className="ds-form-grid">
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="pais">País</label>
-          <input id="pais" className="ds-input" maxLength={100}
-            value={c.pais} onChange={e => set('pais', e.target.value)} />
+          <select id="pais" className="ds-input"
+            value={c.pais} onChange={e => set('pais', e.target.value)}>
+            <option value="">Elige un país</option>
+            {COUNTRIES.map(p => <option key={p.code} value={p.name}>{p.name}</option>)}
+          </select>
         </div>
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="ciudad">Ciudad</label>
