@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/service'
+// Reintento de despliegue tras #87.
 import { verificarTokenBaja } from './alertas'
 
 export type ResultadoBaja = 'hecha' | 'token_invalido' | 'error'
