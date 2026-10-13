@@ -18,7 +18,7 @@ beforeAll(async () => {
 describe('boletín', () => {
   it('nace con una sola fila de configuración, desactivado y para todos', async () => {
     const r = await como('anon', null, `select nombre, activo, acceso, dia_envio from boletin_config`)
-    expect(r.filas).toEqual([{ nombre: 'La Semana Escénica', activo: false, acceso: 'todos', dia_envio: 4 }])
+    expect(r.filas).toEqual([{ nombre: 'Proscenio', activo: false, acceso: 'todos', dia_envio: 4 }])
     await expect(db.exec(`insert into boletin_config (id) values (false)`)).rejects.toThrow(/una_fila/)
   })
 

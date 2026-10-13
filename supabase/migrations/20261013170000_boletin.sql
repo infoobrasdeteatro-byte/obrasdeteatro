@@ -12,7 +12,7 @@
 -- 1. Configuración (una sola fila).
 create table public.boletin_config (
   id boolean primary key default true,
-  nombre text not null default 'La Semana Escénica',
+  nombre text not null default 'Proscenio',
   activo boolean not null default false,
   acceso text not null default 'todos',
   dia_envio smallint not null default 4,

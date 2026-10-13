@@ -30,7 +30,7 @@ export async function suscribirse(_: EstadoSuscripcion, form: FormData): Promise
   if (config?.acceso === 'pago') {
     return { ok: false, mensaje: 'Ahora mismo el boletín es exclusivo para los planes de pago. Puedes activarlo desde tu Centro Profesional.' }
   }
-  const nombre = config?.nombre ?? 'La Semana Escénica'
+  const nombre = config?.nombre ?? 'Proscenio'
 
   const { data: existente, error } = await supabase.from('boletin_suscriptores')
     .select('id, estado, confirmacion_enviada_at').eq('email', email).maybeSingle()

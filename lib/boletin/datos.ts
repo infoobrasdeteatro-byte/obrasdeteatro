@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { clienteAnonimo } from '@/lib/supabase/anonimo'
 import type { ConfigBoletin } from './boletin'
 
-const POR_DEFECTO: ConfigBoletin = { nombre: 'La Semana Escénica', activo: false, acceso: 'todos', dia_envio: 4 }
+const POR_DEFECTO: ConfigBoletin = { nombre: 'Proscenio', activo: false, acceso: 'todos', dia_envio: 4 }
 
 /**
  * Configuración pública del boletín (nombre, si es para todos o solo de
