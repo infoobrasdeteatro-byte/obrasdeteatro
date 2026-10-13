@@ -172,7 +172,7 @@ export function construirHtmlBoletin(nombre: string, c: ContenidoBoletin, tokenB
           Recibes ${esc(nombre)} porque te suscribiste en obrasdeteatro.com.<br>
           <a href="${esc(enlaceBaja(tokenBaja))}" style="color:#374151;">Darme de baja</a> ·
           <a href="${SITIO}/legal/privacidad" style="color:#374151;">Privacidad</a><br>
-          CONECTA PLUS GLOBAL, S.L.U. · Santa Cruz de Tenerife, España
+          CONECTA PLUS GLOBAL, S.L. · Santa Cruz de Tenerife, España
         </p>
       </td></tr>
     </table>

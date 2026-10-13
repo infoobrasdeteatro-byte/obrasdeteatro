@@ -11,7 +11,7 @@ const SECTIONS = [
     content: [
       { type: "text", text: "En cumplimiento de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y Comercio Electrónico (LSSI-CE), se informa de que el presente sitio web, ObrasDeTeatro®, es propiedad y está gestionado por:" },
       { type: "contact", items: [
-        { label: "Razón Social", value: "CONECTA PLUS GLOBAL, S.L.U." },
+        { label: "Razón Social", value: "CONECTA PLUS GLOBAL, S.L." },
         { label: "Domicilio", value: "Carretera General del Sur, S/N, Local 3, 38107 – Santa Cruz de Tenerife, España" },
         { label: "Contacto general", value: "info@obrasdeteatro.com", href: "mailto:info@obrasdeteatro.com" },
         { label: "Protección de datos", value: "protecciondatos@obrasdeteatro.com", href: "mailto:protecciondatos@obrasdeteatro.com" },
