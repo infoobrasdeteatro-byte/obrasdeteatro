@@ -36,7 +36,7 @@ export default async function AdminMediatecaPage() {
 
   const [{ data: programas, error }, { data: episodios }, { data: colaboradores }] = await Promise.all([
     supabase.from('mediateca_programas')
-      .select('id, slug, nombre, descripcion, pais_code, url_web, imagen_url, colaborador_id, youtube_channel_id, rss_url, spotify_url, activo, orden, ultima_importacion_at, ultimo_error')
+      .select('id, slug, nombre, descripcion, pais_code, url_web, imagen_url, colaborador_id, youtube_channel_id, filtro_titulo, rss_url, spotify_url, activo, orden, ultima_importacion_at, ultimo_error')
       .order('orden', { ascending: true }),
     supabase.from('mediateca_episodios')
       .select('id, slug, titulo, fecha_publicacion, estado, motivo_retirada, programa_id, youtube_video_id, audio_url')

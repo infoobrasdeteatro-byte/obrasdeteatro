@@ -10,13 +10,14 @@ export type CamposPrograma = {
   imagen_url: string
   colaborador_id: string
   youtube: string
+  filtro_titulo: string
   rss_url: string
   spotify_url: string
 }
 
 export const PROGRAMA_VACIO: CamposPrograma = {
   nombre: '', descripcion: '', pais_code: '', url_web: '', imagen_url: '',
-  colaborador_id: '', youtube: '', rss_url: '', spotify_url: '',
+  colaborador_id: '', youtube: '', filtro_titulo: '', rss_url: '', spotify_url: '',
 }
 
 const HTTPS = /^https:\/\/[^\s/?#]+[^\s]*$/i
@@ -46,6 +47,9 @@ export function validarPrograma(c: CamposPrograma): string | null {
   if (c.youtube.trim() && !idCanalYoutube(c.youtube)) {
     return 'Para YouTube pega el ID del canal (empieza por UC, 24 caracteres) o el enlace youtube.com/channel/UC…; un @usuario no sirve.'
   }
+  const filtro = c.filtro_titulo.trim()
+  if (filtro && (filtro.length < 2 || filtro.length > 120)) return 'El filtro de título debe tener entre 2 y 120 caracteres.'
+  if (filtro && !c.youtube.trim()) return 'El filtro de título solo se aplica a un canal de YouTube: indica el canal.'
   if (c.spotify_url.trim() && !spotifyLimpio(c.spotify_url)) {
     return 'El enlace de Spotify debe ser el del programa: https://open.spotify.com/show/…'
   }
@@ -63,6 +67,7 @@ export function filaPrograma(c: CamposPrograma) {
     imagen_url: v(c.imagen_url),
     colaborador_id: v(c.colaborador_id),
     youtube_channel_id: c.youtube.trim() ? idCanalYoutube(c.youtube) : null,
+    filtro_titulo: v(c.filtro_titulo),
     rss_url: v(c.rss_url),
     spotify_url: c.spotify_url.trim() ? spotifyLimpio(c.spotify_url) : null,
   }

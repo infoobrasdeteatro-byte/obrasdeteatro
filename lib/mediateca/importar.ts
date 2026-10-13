@@ -21,6 +21,7 @@ export type ProgramaImportable = {
   youtube_channel_id: string | null
   rss_url: string | null
   imagen_url?: string | null
+  filtro_titulo?: string | null
 }
 
 export type ResultadoImportacion = { programa: string; nuevos: number; actualizados: number; error: string | null }
@@ -119,7 +120,7 @@ export async function importarPrograma(
   let portada: string | null = null
 
   if (p.youtube_channel_id) {
-    try { fuentes.push(...leerFeedYoutube(await descargar(urlFeedYoutube(p.youtube_channel_id), fetcher))) }
+    try { fuentes.push(...leerFeedYoutube(await descargar(urlFeedYoutube(p.youtube_channel_id), fetcher), { filtroTitulo: p.filtro_titulo })) }
     catch (e) { errores.push(`YouTube: ${e instanceof Error ? e.message : e}`) }
   }
   if (p.rss_url) {

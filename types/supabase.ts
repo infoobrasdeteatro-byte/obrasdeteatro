@@ -1216,6 +1216,7 @@ export type Database = {
           url_web: string | null
           colaborador_id: string | null
           youtube_channel_id: string | null
+          filtro_titulo: string | null
           rss_url: string | null
           spotify_url: string | null
           activo: boolean
@@ -1235,6 +1236,7 @@ export type Database = {
           url_web?: string | null
           colaborador_id?: string | null
           youtube_channel_id?: string | null
+          filtro_titulo?: string | null
           rss_url?: string | null
           spotify_url?: string | null
           activo?: boolean
@@ -1254,6 +1256,7 @@ export type Database = {
           url_web?: string | null
           colaborador_id?: string | null
           youtube_channel_id?: string | null
+          filtro_titulo?: string | null
           rss_url?: string | null
           spotify_url?: string | null
           activo?: boolean
