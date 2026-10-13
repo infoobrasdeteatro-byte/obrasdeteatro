@@ -145,3 +145,13 @@ Conduce: Guillermo Pallacán</media:description></media:group></entry>
     expect(v[0].titulo).toBe('Cartografía Teatral')
   })
 })
+
+describe('limpieza de descripciones', () => {
+  it('quita líneas de puntos y hashtags, conserva el texto', () => {
+    const d = 'CARTOGRAFÍA TEATRAL\nInvitada: Carmen Aros\nConduce: Guillermo Pallacán\n.\n.\n.\n.\n#teatro #santiago #artes\n#tvrñuble #ñuble #nuble\n#Diguillín #ChillánViejo'
+    expect(textoPlano(d)).toBe('CARTOGRAFÍA TEATRAL\nInvitada: Carmen Aros\nConduce: Guillermo Pallacán')
+  })
+  it('respeta párrafos y el texto con # dentro de palabras', () => {
+    expect(textoPlano('<p>Hola</p><p>Episodio 3 de C#</p>')).toBe('Hola\n\nEpisodio 3 de C#')
+  })
+})

@@ -59,6 +59,11 @@ export function textoPlano(html: string | null): string | null {
     .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/[ \t]+/g, ' ')
+    .split('\n')
+    // Relleno habitual de YouTube: líneas con solo puntos o guiones y tiras de hashtags.
+    .map(l => l.replace(/(?:^|\s)#[\p{L}\p{N}_]+/gu, '').trim())
+    .filter((l, i, a) => !/^[\p{P}\p{S}\s]+$/u.test(l) && !(l === '' && a[i - 1] === ''))
+    .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   return t ? t.slice(0, MAX_DESCRIPCION) : null
