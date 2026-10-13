@@ -13,7 +13,9 @@ import type { ConfigBoletin } from './constantes'
 export { DIAS, type ConfigBoletin } from './constantes'
 
 export const SITIO = 'https://www.obrasdeteatro.com'
-export const REMITENTE_DIRECCION = 'no-reply@obrasdeteatro.com'
+export const REMITENTE_DIRECCION = 'boletin@obrasdeteatro.com'
+/** Las respuestas de los lectores llegan a este buzón (existe en Arsys). */
+export const RESPONDER_A = 'hola@obrasdeteatro.com'
 export const PLANES_DE_PAGO: ReadonlySet<string> = new Set(['premium', 'destacado', 'empresas'])
 export const MAX_POR_SECCION = 6
 /** Reenvío del correo de confirmación como mucho una vez por hora. */
@@ -205,6 +207,7 @@ export type CorreoBoletin = { para: string; asunto: string; html: string; tokenB
 const remitente = (nombre: string) => `${nombre.replace(/[<>"]/g, '')} · ObrasDeTeatro® <${REMITENTE_DIRECCION}>`
 const cuerpo = (c: CorreoBoletin, nombre: string) => ({
   from: remitente(nombre),
+  reply_to: RESPONDER_A,
   to: c.para,
   subject: c.asunto,
   html: c.html,

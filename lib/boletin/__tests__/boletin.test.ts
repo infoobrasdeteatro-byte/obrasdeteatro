@@ -78,7 +78,8 @@ describe('envío por lotes', () => {
     const ok = await enviarLote([{ para: 'a@b.es', asunto: 'x', html: '<p>x</p>', tokenBaja: 'tok' }], 'Proscenio', falso)
     expect(ok).toBe(true)
     const [c] = cuerpo as { from: string; headers: Record<string, string> }[]
-    expect(c.from).toBe('Proscenio · ObrasDeTeatro® <no-reply@obrasdeteatro.com>')
+    expect(c.from).toBe('Proscenio · ObrasDeTeatro® <boletin@obrasdeteatro.com>')
+    expect((c as unknown as { reply_to: string }).reply_to).toBe('hola@obrasdeteatro.com')
     expect(c.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click')
   })
   it('un error de Resend no lanza', async () => {
