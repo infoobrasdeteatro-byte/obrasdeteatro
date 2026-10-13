@@ -14,6 +14,7 @@ const NAV_SECTIONS = [
       { href: '/mis-castings',  label: 'Mis castings',       icon: '◉' },
       { href: '/mis-postulaciones', label: 'Mis postulaciones', icon: '◈' },
       { href: '/mis-convocatorias', label: 'Mis convocatorias', icon: '◉' },
+      { href: '/mis-formaciones', label: 'Mis formaciones', icon: '◇' },
       { href: '/cuenta',        label: 'Gestión de cuenta',  icon: '⚙' },
     ],
   },
@@ -26,6 +27,7 @@ const NAV_SECTIONS = [
       // cerrar sesion para descubrir castings de otros.
       { href: '/castings',   label: 'Castings',   icon: '◆' },
       { href: '/convocatoria', label: 'Convocatorias', icon: '◆' },
+      { href: '/formacion', label: 'Formación', icon: '◆' },
       { href: '/precios',    label: 'Planes',     icon: '◇' },
     ],
   },
