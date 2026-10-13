@@ -4015,6 +4015,14 @@ export type Database = {
       }
     }
     Functions: {
+      actividad_por_pais: {
+        Args: never
+        Returns: {
+          tipo: string
+          pais: string
+          total: number
+        }[]
+      }
       accounting_cuota_ia_del_plan: {
         Args: { p_plan: string }
         Returns: Record<string, unknown>

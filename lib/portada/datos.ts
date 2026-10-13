@@ -1,4 +1,5 @@
 import { clienteAnonimo } from '@/lib/supabase/anonimo'
+import { agregarActividad, type ActividadPais } from './actividad'
 
 /**
  * Datos reales de la portada.
@@ -25,6 +26,8 @@ import { clienteAnonimo } from '@/lib/supabase/anonimo'
  *                                          o con ella aún por llegar, el mismo
  *                                          criterio que «vencida» en su ficha
  *   - noticias       → /noticias         (solo la vista noticias_publicas)
+ *   - actividad por país (mapa) → rpc actividad_por_pais, con los mismos
+ *     criterios de cada listado (migración 20261013190000)
  *
  * Si una consulta falla, su dato llega como `null`: nunca se sustituye por
  * una cifra o un contenido de relleno.
@@ -64,6 +67,8 @@ export interface DatosPortada {
   ultimasObras: ObraPortada[] | null
   ultimasConvocatorias: ConvocatoriaPortada[] | null
   ultimasNoticias: NoticiaPortada[] | null
+  /** Los 20 países con sus cifras; null si no se pudo leer. */
+  actividadPaises: ActividadPais[] | null
 }
 
 /** Una cifra solo se muestra si existe y supera su umbral. */
@@ -100,7 +105,7 @@ export async function obtenerDatosPortada(): Promise<DatosPortada> {
 
   const [
     rObras, rPerfiles, rCompanias, rPublicadas, rAbiertas,
-    rUltimasObras, rUltimasConvocatorias, rUltimasNoticias,
+    rUltimasObras, rUltimasConvocatorias, rUltimasNoticias, rActividad,
   ] = await Promise.all([
     obrasPublicas(),
     perfilesPublicos(),
@@ -128,6 +133,7 @@ export async function obtenerDatosPortada(): Promise<DatosPortada> {
       .order('publicado_at', { ascending: false })
       .order('id', { ascending: false })
       .limit(3),
+    supabase.rpc('actividad_por_pais'),
   ])
 
   avisar('el número de obras', rObras.error)
@@ -138,6 +144,7 @@ export async function obtenerDatosPortada(): Promise<DatosPortada> {
   avisar('las últimas obras', rUltimasObras.error)
   avisar('las últimas convocatorias', rUltimasConvocatorias.error)
   avisar('las últimas noticias', rUltimasNoticias.error)
+  avisar('la actividad por país', rActividad.error)
 
   const cifra = (r: { count: number | null; error: unknown }) => (r.error ? null : r.count)
 
@@ -156,5 +163,6 @@ export async function obtenerDatosPortada(): Promise<DatosPortada> {
       : (rUltimasNoticias.data ?? []).flatMap(n =>
           n.id && n.titular ? [{ id: n.id, titular: n.titular, fuente_nombre: n.fuente_nombre }] : []
         ),
+    actividadPaises: rActividad.error ? null : agregarActividad(rActividad.data ?? []),
   }
 }
