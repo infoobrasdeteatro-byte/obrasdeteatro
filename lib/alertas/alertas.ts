@@ -298,7 +298,8 @@ export function construirHtml(
   <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f6"><tr><td align="center" style="padding:24px 16px;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border:1px solid #e5e7eb;">
       <tr><td style="padding:20px 28px;background:#0a0a0a;">
-        <p style="margin:0;font-family:Georgia,serif;font-size:11px;color:#c9a84c;letter-spacing:3px;text-transform:uppercase;">OBRASDETEATRO.COM · TUS ALERTAS</p>
+        <!-- Enlace explícito con su color: si no, Gmail convierte el dominio en un enlace azul subrayado. -->
+        <p style="margin:0;font-family:Georgia,serif;font-size:11px;color:#e8202f;letter-spacing:3px;text-transform:uppercase;"><a href="${SITIO}" style="color:#e8202f;text-decoration:none;">OBRASDETEATRO.COM</a> · TUS ALERTAS</p>
       </td></tr>
       <tr><td style="padding:24px 28px 4px;">
         <p style="margin:0 0 6px;font-family:Georgia,serif;font-size:20px;color:#111827;">${escaparHtml(asunto(lista.length, castings.length))}</p>
