@@ -85,6 +85,9 @@ export default async function EditarEspectaculoPage({ params, searchParams }: Pr
               <EntradasEditor espectaculoId={e.id} opciones={opciones ?? []} funciones={funciones ?? []} monedaSugerida={monedaSugerida} />
               <FichaArtisticaEditor espectaculoId={e.id} personas={personas ?? []} />
               <EspectaculoForm userId={user.id} inicial={camposDesdeFila(e)} espectaculo={{ id: e.id, estado: e.estado }} />
+              {/* El mismo panel al final: al terminar de rellenar la ficha no hace falta volver arriba. */}
+              <EstadoPanel espectaculo={{ id: e.id, estado: e.estado, motivo_rechazo: e.motivo_rechazo }}
+                funcionesFuturas={funcionesFuturas} limite={{ maximo, publicados: publicados ?? 0 }} />
             </div>
           )}
         </main>

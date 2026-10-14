@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { COUNTRIES } from '@/lib/geo/countries'
 import {
-  ZONAS_PAIS, zonaPorDefecto, localAUtc, fechaFuncion, validarFuncion, mensajeErrorCartelera, type CamposFuncion,
+  ZONAS_PAIS, zonaPorDefecto, localAUtc, fechaFuncion, validarFuncion, fechasRepetidas, mensajeErrorCartelera,
+  MAX_FUNCIONES_DE_UNA_VEZ, type CamposFuncion,
 } from '@/lib/cartelera/cartelera'
 import { Seccion } from './EspectaculoForm'
 
@@ -23,6 +24,8 @@ export type FuncionPropia = {
 type Sala = { id: string; nombre: string; municipio: string; region: string; pais_code: string }
 
 const PAISES_CARTELERA = COUNTRIES.filter(c => ZONAS_PAIS[c.code])
+const fechaCorta = (d: string) =>
+  new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`))
 const nombrePais = (code: string | null) => COUNTRIES.find(c => c.code === code)?.name ?? code ?? ''
 
 /** Busca salas publicadas de Espacios escénicos por nombre o municipio. */
@@ -86,6 +89,9 @@ function BuscadorSala({ elegida, onElegir }: { elegida: Sala | null; onElegir: (
   )
 }
 
+const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
+const MINUTOS = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
+
 const ESTADOS_FUNCION = [
   { value: 'programada', label: 'A la venta' },
   { value: 'agotada', label: 'Entradas agotadas' },
@@ -99,6 +105,11 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
   const [c, setC] = useState<CamposFuncion>({
     inicio: '', zona_horaria: 'Europe/Madrid', espacio_id: null, lugar_nombre: '', ciudad: '', pais_code: 'ES', nota: '',
   })
+  const [fecha, setFecha] = useState('')
+  const [hora, setHora] = useState('20')
+  const [minuto, setMinuto] = useState('00')
+  const [cantidad, setCantidad] = useState('1')
+  const [cadaDias, setCadaDias] = useState(1)
   const [ocupado, setOcupado] = useState(false)
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
   const set = <K extends keyof CamposFuncion>(k: K, v: CamposFuncion[K]) => setC(p => ({ ...p, [k]: v }))
@@ -114,26 +125,39 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
 
   const anadir = async () => {
     setAviso(null)
-    const campos: CamposFuncion = otroLugar ? { ...c, espacio_id: null } : { ...c, espacio_id: sala?.id ?? null }
+    const base: CamposFuncion = otroLugar ? { ...c, espacio_id: null } : { ...c, espacio_id: sala?.id ?? null }
     if (!otroLugar && !sala) { setAviso({ tipo: 'error', texto: 'Busca y elige la sala, o marca «Otro lugar».' }); return }
-    const problema = validarFuncion(campos)
-    if (problema) { setAviso({ tipo: 'error', texto: problema }); return }
+    if (!fecha) { setAviso({ tipo: 'error', texto: 'Elige el día de la (primera) función.' }); return }
+    const n = Number(cantidad)
+    if (!Number.isInteger(n) || n < 1 || n > MAX_FUNCIONES_DE_UNA_VEZ) {
+      setAviso({ tipo: 'error', texto: `El número de funciones va de 1 a ${MAX_FUNCIONES_DE_UNA_VEZ}.` }); return
+    }
+    const dias = fechasRepetidas(fecha, n, cadaDias)
+    if (dias.length === 0) { setAviso({ tipo: 'error', texto: 'La fecha no es válida.' }); return }
+    const filas = []
+    for (const d of dias) {
+      const campos = { ...base, inicio: `${d}T${hora}:${minuto}` }
+      const problema = validarFuncion(campos)
+      if (problema) { setAviso({ tipo: 'error', texto: dias.length > 1 ? `${d}: ${problema}` : problema }); return }
+      filas.push({
+        espectaculo_id: espectaculoId,
+        inicio: localAUtc(campos.inicio, campos.zona_horaria)!,
+        zona_horaria: campos.zona_horaria,
+        espacio_id: campos.espacio_id,
+        lugar_nombre: campos.espacio_id ? null : campos.lugar_nombre.trim(),
+        ciudad: campos.espacio_id ? null : campos.ciudad.trim(),
+        pais_code: campos.espacio_id ? null : campos.pais_code,
+        nota: campos.nota.trim() || null,
+      })
+    }
     setOcupado(true)
-    const { error } = await createClient().from('funciones').insert({
-      espectaculo_id: espectaculoId,
-      inicio: localAUtc(campos.inicio, campos.zona_horaria)!,
-      zona_horaria: campos.zona_horaria,
-      espacio_id: campos.espacio_id,
-      lugar_nombre: campos.espacio_id ? null : campos.lugar_nombre.trim(),
-      ciudad: campos.espacio_id ? null : campos.ciudad.trim(),
-      pais_code: campos.espacio_id ? null : campos.pais_code,
-      nota: campos.nota.trim() || null,
-    })
+    const { error } = await createClient().from('funciones').insert(filas)
     setOcupado(false)
     if (error) { setAviso({ tipo: 'error', texto: mensajeErrorCartelera(error.message) }); return }
-    // Se quedan la sala y la hora: para añadir otra fecha basta con cambiar el día.
+    // Se quedan la sala y la hora: para añadir otra tanda basta con cambiar el día.
     setC(p => ({ ...p, nota: '' }))
-    setAviso({ tipo: 'ok', texto: 'Función añadida. Cambia el día para añadir otra en la misma sala.' })
+    setCantidad('1')
+    setAviso({ tipo: 'ok', texto: filas.length === 1 ? 'Función añadida.' : `${filas.length} funciones añadidas.` })
     router.refresh()
   }
 
@@ -220,9 +244,21 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
 
         <div className="ds-form-grid">
           <div className="ds-form-group">
-            <label className="ds-label" htmlFor="inicio">Día y hora *</label>
-            <input id="inicio" type="datetime-local" className="ds-input" value={c.inicio}
-              onChange={e => set('inicio', e.target.value)} />
+            <label className="ds-label" htmlFor="fecha">Día {Number(cantidad) > 1 ? 'de la primera función' : ''} *</label>
+            <input id="fecha" type="date" className="ds-input" value={fecha} onChange={e => setFecha(e.target.value)} />
+          </div>
+          <div className="ds-form-group">
+            <label className="ds-label" htmlFor="hora">Hora * <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(formato 24 h)</span></label>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <select id="hora" className="ds-select" aria-label="Hora" value={hora} onChange={e => setHora(e.target.value)}>
+                {HORAS.map(h => <option key={h} value={h}>{h}</option>)}
+              </select>
+              <span aria-hidden="true">:</span>
+              <select className="ds-select" aria-label="Minutos" value={minuto} onChange={e => setMinuto(e.target.value)}>
+                {MINUTOS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <span style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>h</span>
+            </div>
           </div>
           {zonas.length > 1 && (
             <div className="ds-form-group">
@@ -233,18 +269,41 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
             </div>
           )}
           <div className="ds-form-group">
+            <label className="ds-label" htmlFor="cantidad">Número de funciones</label>
+            <input id="cantidad" className="ds-input" type="number" min={1} max={MAX_FUNCIONES_DE_UNA_VEZ}
+              value={cantidad} onChange={e => setCantidad(e.target.value)} />
+          </div>
+          {Number(cantidad) > 1 && (
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="cada">Repetir</label>
+              <select id="cada" className="ds-select" value={cadaDias} onChange={e => setCadaDias(Number(e.target.value))}>
+                <option value={1}>Todos los días</option>
+                <option value={7}>Una vez por semana (mismo día)</option>
+              </select>
+            </div>
+          )}
+          <div className="ds-form-group">
             <label className="ds-label" htmlFor="nota">Nota</label>
             <input id="nota" className="ds-input" maxLength={200} value={c.nota}
               onChange={e => set('nota', e.target.value)} placeholder="Función accesible, con coloquio…" />
           </div>
         </div>
-        <p className="ds-form-hint" style={{ marginTop: '-4px' }}>La hora es la del lugar de la función.</p>
+        <p className="ds-form-hint" style={{ marginTop: '-4px' }}>
+          La hora es la del lugar de la función. Con «Número de funciones» añades varias de una vez a la misma hora
+          (por ejemplo, 4 funciones todos los días desde el jueves). Para otro pase el mismo día, añádelo aparte con otra hora.
+        </p>
+        {fecha && Number(cantidad) > 1 && fechasRepetidas(fecha, Number(cantidad), cadaDias).length > 0 && (
+          <p className="ds-form-hint" style={{ marginTop: '-4px' }}>
+            Se añadirán {cantidad} funciones a las {hora}:{minuto} h: del {fechaCorta(fechasRepetidas(fecha, Number(cantidad), cadaDias)[0])} al{' '}
+            {fechaCorta(fechasRepetidas(fecha, Number(cantidad), cadaDias).at(-1)!)}.
+          </p>
+        )}
 
         {aviso && <div className={aviso.tipo === 'ok' ? 'ds-alert-success' : 'ds-alert-error'}>{aviso.texto}</div>}
         <div>
           <button type="button" className="ds-btn-primary" disabled={ocupado}
             style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }} onClick={anadir}>
-            {ocupado ? 'Añadiendo…' : '+ Añadir función'}
+            {ocupado ? 'Añadiendo…' : Number(cantidad) > 1 ? `+ Añadir ${cantidad} funciones` : '+ Añadir función'}
           </button>
         </div>
       </div>

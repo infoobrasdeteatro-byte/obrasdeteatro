@@ -6,7 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import SelectorImagen from '@/app/perfil/SelectorImagen'
 import { validarImagen, urlPublica, rutaDesdeUrl } from '@/lib/perfil-multimedia/multimedia'
 import { redimensionarImagen } from '@/lib/perfil-multimedia/redimensionar'
-import { BUCKET_CARTELES, rutaCartel, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
+import {
+  BUCKET_CARTELES, CARTEL_MIN_ANCHO, CARTEL_MIN_ALTO, rutaCartel, problemaTamanoCartel, mensajeErrorCartelera,
+} from '@/lib/cartelera/cartelera'
 import { Seccion } from './EspectaculoForm'
 
 /** Cartel del espectáculo: vertical, se reduce a 1600 px y se guarda en «carteles/{user_id}/». */
@@ -25,6 +27,10 @@ export default function CartelEditor({
     if (problema) { setAviso({ tipo: 'error', texto: problema }); return }
     setOcupado(true)
     try {
+      const bitmap = await createImageBitmap(archivo)
+      const tamano = problemaTamanoCartel(bitmap.width, bitmap.height)
+      bitmap.close()
+      if (tamano) throw new Error(tamano)
       const { blob, tipo, ext } = await redimensionarImagen(archivo, 1600)
       const supabase = createClient()
       const ruta = rutaCartel(userId, ext)
@@ -72,10 +78,13 @@ export default function CartelEditor({
             : <span style={{ fontSize: '12px', color: 'var(--muted)', textAlign: 'center', padding: '8px' }}>Sin cartel</span>}
         </div>
         <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <p className="ds-form-hint">
-            Formato vertical (2:3, por ejemplo 1000 × 1500 px). JPEG, PNG o WebP de hasta 5 MB. Usa solo imágenes
-            que tengas derecho a publicar.
-          </p>
+          <ul className="ds-form-hint" style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <li><strong>Formato:</strong> vertical, proporción 2:3 (como un cartel de teatro).</li>
+            <li><strong>Tamaño recomendado:</strong> 1000 × 1500 px o más.</li>
+            <li><strong>Tamaño mínimo:</strong> {CARTEL_MIN_ANCHO} × {CARTEL_MIN_ALTO} px.</li>
+            <li><strong>Archivo:</strong> JPEG, PNG o WebP, hasta 5 MB.</li>
+            <li>Usa solo imágenes que tengas derecho a publicar.</li>
+          </ul>
           <SelectorImagen id="cartel" archivo={archivo} onCambio={setArchivo} deshabilitado={ocupado}
             etiqueta={cartelUrl ? 'Elegir otro cartel' : 'Elegir cartel'} />
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>

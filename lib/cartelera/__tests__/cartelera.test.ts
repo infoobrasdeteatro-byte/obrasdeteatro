@@ -91,3 +91,20 @@ describe('cartel y errores', () => {
     expect(mensajeErrorCartelera('new row violates row-level security policy')).toMatch(/permiso/)
   })
 })
+
+describe('tandas de funciones y tamaño del cartel', () => {
+  it('fechas diarias y semanales, cruzando de mes', async () => {
+    const { fechasRepetidas } = await import('../cartelera')
+    expect(fechasRepetidas('2026-10-30', 3, 1)).toEqual(['2026-10-30', '2026-10-31', '2026-11-01'])
+    expect(fechasRepetidas('2026-10-30', 2, 7)).toEqual(['2026-10-30', '2026-11-06'])
+    expect(fechasRepetidas('2026-10-30', 0, 1)).toEqual([])
+    expect(fechasRepetidas('2026-10-30', 61, 1)).toEqual([])
+    expect(fechasRepetidas('', 1, 1)).toEqual([])
+  })
+  it('cartel: mínimo 600 × 900 y vertical', async () => {
+    const { problemaTamanoCartel } = await import('../cartelera')
+    expect(problemaTamanoCartel(1000, 1500)).toBeNull()
+    expect(problemaTamanoCartel(500, 800)).toMatch(/demasiado pequeño/)
+    expect(problemaTamanoCartel(1500, 1000)).toMatch(/vertical/)
+  })
+})
