@@ -228,12 +228,38 @@ export function utcALocal(iso: string, zona: string): string {
   return new Date(t + desfase(zona, t)).toISOString().slice(0, 16)
 }
 
-/** «mar 20 oct 2026 · 20:00» en la zona de la función. */
+/** «mar 20 oct 2026 · 20:00 h» en la zona de la función. */
 export function fechaFuncion(iso: string, zona: string): string {
   const d = new Date(iso)
   const dia = new Intl.DateTimeFormat('es-ES', { timeZone: zona, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(d)
   const hora = new Intl.DateTimeFormat('es-ES', { timeZone: zona, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
-  return `${dia.replace(/,/g, '')} · ${hora}`
+  return `${dia.replace(/,/g, '')} · ${hora} h`
+}
+
+export const MAX_FUNCIONES_DE_UNA_VEZ = 60
+
+/**
+ * Fechas de una tanda de funciones: `n` funciones desde `fecha`, cada `cadaDias`
+ * días (1 = diaria, 7 = semanal). Fechas «AAAA-MM-DD»; [] si algo no es válido.
+ */
+export function fechasRepetidas(fecha: string, n: number, cadaDias: number): string[] {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha)
+  if (!m || !Number.isInteger(n) || n < 1 || n > MAX_FUNCIONES_DE_UNA_VEZ || ![1, 7].includes(cadaDias)) return []
+  const base = Date.UTC(+m[1], +m[2] - 1, +m[3])
+  if (new Date(base).getUTCDate() !== +m[3]) return []
+  return Array.from({ length: n }, (_, i) => new Date(base + i * cadaDias * 86400_000).toISOString().slice(0, 10))
+}
+
+/** Cartel: tamaño mínimo y formato vertical. */
+export const CARTEL_MIN_ANCHO = 600
+export const CARTEL_MIN_ALTO = 900
+
+export function problemaTamanoCartel(ancho: number, alto: number): string | null {
+  if (ancho < CARTEL_MIN_ANCHO || alto < CARTEL_MIN_ALTO) {
+    return `El cartel es demasiado pequeño (${ancho} × ${alto} px). Mínimo ${CARTEL_MIN_ANCHO} × ${CARTEL_MIN_ALTO} px.`
+  }
+  if (alto <= ancho) return `El cartel tiene que ser vertical (más alto que ancho). Este mide ${ancho} × ${alto} px.`
+  return null
 }
 
 export type CamposFuncion = {
