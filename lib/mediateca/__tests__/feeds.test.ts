@@ -135,8 +135,13 @@ Conduce: Guillermo Pallacán</media:description></media:group></entry>
     const v = leerFeedYoutube(CANAL, { filtroTitulo: 'Cartografía Teatral' })
     expect(v.map(x => x.youtube_video_id)).toEqual(['5Bz-lG1sIko', 'AAAAAAAAAA2'])
     expect(v[0].titulo).toBe('Cartografía Teatral: Patricio Yované')
-    expect(v[1].titulo).toBe('CARTOGRAFIA TEATRAL: Juan Pérez')
+    expect(v[1].titulo).toBe('Cartografía Teatral: Juan Pérez')
     expect(v[0].clave).not.toBe(v[1].clave)
+  })
+
+  it('el nombre del programa en mayúsculas se escribe como en el filtro', () => {
+    const xml = CANAL.replace('<title>Cartografía Teatral</title>', '<title>CARTOGRAFÍA TEATRAL: Carmen Aros</title>')
+    expect(leerFeedYoutube(xml, { filtroTitulo: 'Cartografía Teatral' })[0].titulo).toBe('Cartografía Teatral: Carmen Aros')
   })
 
   it('sin filtro entra todo el canal y el título no cambia', () => {

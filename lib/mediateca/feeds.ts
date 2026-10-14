@@ -136,7 +136,14 @@ export function leerFeedYoutube(xml: string, opciones: OpcionesYoutube = {}): Ep
     let tituloFinal = titulo
     if (filtro && normalizar(titulo) === filtro) {
       const invitado = invitadoDe(descripcion)
-      if (invitado) tituloFinal = `${titulo}: ${invitado}`
+      tituloFinal = invitado ? `${opciones.filtroTitulo!.trim()}: ${invitado}` : opciones.filtroTitulo!.trim()
+    } else if (filtro) {
+      // «CARTOGRAFÍA TEATRAL: Carmen Aros» → «Cartografía Teatral: Carmen Aros»:
+      // el nombre del programa siempre como está escrito en el filtro.
+      const dosPuntos = titulo.indexOf(':')
+      if (dosPuntos > 0 && normalizar(titulo.slice(0, dosPuntos)) === filtro) {
+        tituloFinal = `${opciones.filtroTitulo!.trim()}:${titulo.slice(dosPuntos + 1)}`
+      }
     }
     salida.push({
       fuente: 'youtube',

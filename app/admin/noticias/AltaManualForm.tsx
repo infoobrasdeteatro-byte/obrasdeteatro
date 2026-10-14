@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { refrescarPortada } from '@/app/admin/portada-acciones'
 import { COUNTRIES } from '@/lib/geo/countries'
 import { MAX_RESUMEN, MAX_TITULAR, esUrlHttp } from '@/lib/noticias/importacion'
 
@@ -111,6 +112,7 @@ export default function AltaManualForm({
     setExito(data.estado === 'publicada'
       ? 'Publicada. Ya aparece en /noticias.'
       : 'Guardada como candidata. Aparece en la cola de arriba.')
+    if (data.estado === 'publicada') await refrescarPortada('noticias')
     router.refresh()
   }
 

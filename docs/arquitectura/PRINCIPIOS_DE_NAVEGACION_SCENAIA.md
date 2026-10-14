@@ -1,7 +1,7 @@
 # PRINCIPIOS DE NAVEGACIÓN — SCENAIA / OBRASDETEATRO®
 
 **Proyecto:** ScenaIA / obrasdeteatro.com
-**Empresa:** CONECTA PLUS GLOBAL, S.L.U. · Team Show Producciones
+**Empresa:** CONECTA PLUS GLOBAL, S.L. · Team Show Producciones
 **Versión:** 1.0
 **Origen:** Expediente RC-002A — Dirección Conceptual del Sidebar
 **Estado:** Fundacional — referencia oficial de arquitectura de navegación
