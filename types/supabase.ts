@@ -764,6 +764,421 @@ export type Database = {
           },
         ]
       }
+      cartelera_generos: {
+        Row: {
+          activo: boolean
+          etiqueta: string
+          id: string
+          orden: number
+        }
+        Insert: {
+          activo?: boolean
+          etiqueta: string
+          id: string
+          orden?: number
+        }
+        Update: {
+          activo?: boolean
+          etiqueta?: string
+          id?: string
+          orden?: number
+        }
+        Relationships: []
+      }
+      cartelera_limites_plan: {
+        Row: {
+          max_activos: number | null
+          plan: string
+          semanas_destacado_mes: number
+        }
+        Insert: {
+          max_activos?: number | null
+          plan: string
+          semanas_destacado_mes?: number
+        }
+        Update: {
+          max_activos?: number | null
+          plan?: string
+          semanas_destacado_mes?: number
+        }
+        Relationships: []
+      }
+      espectaculos: {
+        Row: {
+          cartel_url: string | null
+          compania_nombre: string
+          created_at: string
+          duracion_min: number | null
+          edad_minima: number | null
+          estado: string
+          genero_id: string
+          id: string
+          idioma: string
+          motivo_filtro: string | null
+          motivo_rechazo: string | null
+          obra_id: string | null
+          origen: string
+          publicado_at: string | null
+          sinopsis: string | null
+          slug: string
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cartel_url?: string | null
+          compania_nombre: string
+          created_at?: string
+          duracion_min?: number | null
+          edad_minima?: number | null
+          estado?: string
+          genero_id?: string
+          id?: string
+          idioma?: string
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
+          obra_id?: string | null
+          origen?: string
+          publicado_at?: string | null
+          sinopsis?: string | null
+          slug?: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cartel_url?: string | null
+          compania_nombre?: string
+          created_at?: string
+          duracion_min?: number | null
+          edad_minima?: number | null
+          estado?: string
+          genero_id?: string
+          id?: string
+          idioma?: string
+          motivo_filtro?: string | null
+          motivo_rechazo?: string | null
+          obra_id?: string | null
+          origen?: string
+          publicado_at?: string | null
+          sinopsis?: string | null
+          slug?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espectaculos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "espectaculos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "works"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "espectaculos_genero_id_fkey"
+            columns: ["genero_id"]
+            isOneToOne: false
+            referencedRelation: "cartelera_generos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      espectaculo_personas: {
+        Row: {
+          espectaculo_id: string
+          id: string
+          nombre: string
+          orden: number
+          personaje: string | null
+          profile_id: string | null
+          rol: string
+        }
+        Insert: {
+          espectaculo_id: string
+          id?: string
+          nombre: string
+          orden?: number
+          personaje?: string | null
+          profile_id?: string | null
+          rol: string
+        }
+        Update: {
+          espectaculo_id?: string
+          id?: string
+          nombre?: string
+          orden?: number
+          personaje?: string | null
+          profile_id?: string | null
+          rol?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "espectaculo_personas_espectaculo_id_fkey"
+            columns: ["espectaculo_id"]
+            isOneToOne: false
+            referencedRelation: "espectaculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "espectaculo_personas_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funciones: {
+        Row: {
+          ciudad: string | null
+          created_at: string
+          espacio_id: string | null
+          espectaculo_id: string
+          estado: string
+          id: string
+          inicio: string
+          lugar_nombre: string | null
+          nota: string | null
+          pais_code: string | null
+          zona_horaria: string
+        }
+        Insert: {
+          ciudad?: string | null
+          created_at?: string
+          espacio_id?: string | null
+          espectaculo_id: string
+          estado?: string
+          id?: string
+          inicio: string
+          lugar_nombre?: string | null
+          nota?: string | null
+          pais_code?: string | null
+          zona_horaria?: string
+        }
+        Update: {
+          ciudad?: string | null
+          created_at?: string
+          espacio_id?: string | null
+          espectaculo_id?: string
+          estado?: string
+          id?: string
+          inicio?: string
+          lugar_nombre?: string | null
+          nota?: string | null
+          pais_code?: string | null
+          zona_horaria?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funciones_espectaculo_id_fkey"
+            columns: ["espectaculo_id"]
+            isOneToOne: false
+            referencedRelation: "espectaculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funciones_espacio_id_fkey"
+            columns: ["espacio_id"]
+            isOneToOne: false
+            referencedRelation: "espacios_escenicos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opciones_compra: {
+        Row: {
+          espectaculo_id: string
+          etiqueta: string | null
+          funcion_id: string | null
+          id: string
+          moneda: string | null
+          orden: number
+          precio_desde: number | null
+          proveedor: string
+          tipo: string
+          url: string | null
+        }
+        Insert: {
+          espectaculo_id: string
+          etiqueta?: string | null
+          funcion_id?: string | null
+          id?: string
+          moneda?: string | null
+          orden?: number
+          precio_desde?: number | null
+          proveedor?: string
+          tipo?: string
+          url?: string | null
+        }
+        Update: {
+          espectaculo_id?: string
+          etiqueta?: string | null
+          funcion_id?: string | null
+          id?: string
+          moneda?: string | null
+          orden?: number
+          precio_desde?: number | null
+          proveedor?: string
+          tipo?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opciones_compra_espectaculo_id_fkey"
+            columns: ["espectaculo_id"]
+            isOneToOne: false
+            referencedRelation: "espectaculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opciones_compra_funcion_id_fkey"
+            columns: ["funcion_id"]
+            isOneToOne: false
+            referencedRelation: "funciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cartelera_destacados: {
+        Row: {
+          ambito: string
+          created_at: string
+          desde: string
+          espectaculo_id: string
+          hasta: string
+          id: string
+          origen: string
+        }
+        Insert: {
+          ambito?: string
+          created_at?: string
+          desde: string
+          espectaculo_id: string
+          hasta: string
+          id?: string
+          origen?: string
+        }
+        Update: {
+          ambito?: string
+          created_at?: string
+          desde?: string
+          espectaculo_id?: string
+          hasta?: string
+          id?: string
+          origen?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cartelera_destacados_espectaculo_id_fkey"
+            columns: ["espectaculo_id"]
+            isOneToOne: false
+            referencedRelation: "espectaculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cartelera_referencias_externas: {
+        Row: {
+          espectaculo_id: string | null
+          funcion_id: string | null
+          id: string
+          id_externo: string
+          proveedor: string
+          sincronizado_at: string
+        }
+        Insert: {
+          espectaculo_id?: string | null
+          funcion_id?: string | null
+          id?: string
+          id_externo: string
+          proveedor: string
+          sincronizado_at?: string
+        }
+        Update: {
+          espectaculo_id?: string | null
+          funcion_id?: string | null
+          id?: string
+          id_externo?: string
+          proveedor?: string
+          sincronizado_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cartelera_referencias_externas_espectaculo_id_fkey"
+            columns: ["espectaculo_id"]
+            isOneToOne: false
+            referencedRelation: "espectaculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cartelera_referencias_externas_funcion_id_fkey"
+            columns: ["funcion_id"]
+            isOneToOne: false
+            referencedRelation: "funciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cartelera_eventos: {
+        Row: {
+          creado_at: string
+          espectaculo_id: string
+          funcion_id: string | null
+          id: number
+          opcion_id: string | null
+          proveedor: string | null
+          tipo: string
+        }
+        Insert: {
+          creado_at?: string
+          espectaculo_id: string
+          funcion_id?: string | null
+          id?: number
+          opcion_id?: string | null
+          proveedor?: string | null
+          tipo: string
+        }
+        Update: {
+          creado_at?: string
+          espectaculo_id?: string
+          funcion_id?: string | null
+          id?: number
+          opcion_id?: string | null
+          proveedor?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cartelera_eventos_espectaculo_id_fkey"
+            columns: ["espectaculo_id"]
+            isOneToOne: false
+            referencedRelation: "espectaculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cartelera_eventos_funcion_id_fkey"
+            columns: ["funcion_id"]
+            isOneToOne: false
+            referencedRelation: "funciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cartelera_eventos_opcion_id_fkey"
+            columns: ["opcion_id"]
+            isOneToOne: false
+            referencedRelation: "opciones_compra"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls_publicaciones: {
         Row: {
           call_id: string
@@ -4015,6 +4430,9 @@ export type Database = {
       }
     }
     Functions: {
+      registrar_clic_compra: { Args: { p_opcion: string }; Returns: string | null }
+      espectaculo_visible: { Args: { p_espectaculo: string }; Returns: boolean }
+      espectaculo_editable: { Args: { p_espectaculo: string }; Returns: boolean }
       actividad_por_pais: {
         Args: never
         Returns: {

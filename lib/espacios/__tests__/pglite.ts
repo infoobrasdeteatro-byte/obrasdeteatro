@@ -27,7 +27,8 @@ export const U2 = '00000000-0000-0000-0000-000000000002'
 
 export type Resultado = { filas: Record<string, unknown>[]; error: string | null }
 
-export async function baseConMigraciones(migraciones: string[]) {
+/** `previo`: SQL que se ejecuta antes de las migraciones (columnas o tablas que necesitan y no están aquí). */
+export async function baseConMigraciones(migraciones: string[], previo = '') {
   const db = new PGlite({ extensions: { unaccent } })
   await db.exec(`
     create schema extensions;
@@ -58,6 +59,7 @@ export async function baseConMigraciones(migraciones: string[]) {
     create function cron.unschedule(id int) returns boolean language sql as
       $$ delete from cron.job where jobid = id returning true $$;
   `)
+  if (previo) await db.exec(previo)
   for (const m of migraciones) await db.exec(leer(m))
   await db.exec(`
     insert into profiles values ('${MOD}', 'mod'), ('${U1}', 'u1'), ('${U2}', 'u2');
