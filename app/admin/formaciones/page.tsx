@@ -65,6 +65,7 @@ export default async function AdminFormacionesPage() {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <Link href="/formacion" className="table-link">Ver la página pública →</Link>
+          <Link href="/admin/cartelera" className="table-link">Cartelera →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>
           <span className="status-pill status-pill--draft" style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>
             ADMINISTRACIÓN
