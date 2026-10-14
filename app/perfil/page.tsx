@@ -121,7 +121,11 @@ export default async function PerfilPage() {
     return 'empty'
   })()
 
-  const b8: BlockStatus = profile?.plan === 'gratuito' ? 'locked' : 'soon'
+  // B8: con plan de pago, los documentos ya se pueden descargar; salen
+  // completos en cuanto hay biografía y experiencia o formación.
+  const b8: BlockStatus = profile?.plan === 'gratuito'
+    ? 'locked'
+    : profile?.bio?.trim() && ((expCount ?? 0) > 0 || (trainingCount ?? 0) > 0) ? 'complete' : 'partial'
   const b9: BlockStatus = profile?.verificado ? 'verified' : 'soon'
 
   // Field completion for B1

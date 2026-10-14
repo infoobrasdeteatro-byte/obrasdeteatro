@@ -11,6 +11,7 @@ import ExperienciaEditor from '@/app/perfil/ExperienciaEditor'
 import RedesEditor from '@/app/perfil/RedesEditor'
 import DisponibilidadEditor from '@/app/perfil/DisponibilidadEditor'
 import MaterialAudiovisualEditor, { type Foto, type Video, type Proyecto } from '@/app/perfil/MaterialAudiovisualEditor'
+import DocumentacionPanel from '@/app/perfil/DocumentacionPanel'
 import { esPlanDePago } from '@/lib/perfil-multimedia/multimedia'
 
 // ── Block metadata ────────────────────────────────────────────────────────────
@@ -193,6 +194,28 @@ export default async function BloqueEditorPage({ params }: Props) {
             Ver planes →
           </Link>
         </div>
+      </Layout>
+    )
+  }
+
+  // ── B8: Documentación (planes de pago): CV y dossier en PDF ───────────────
+  if (n === '8') {
+    const cuenta = (tabla: 'professional_experience' | 'profile_training' | 'profile_awards' | 'profile_specialties' | 'perfil_galeria_fotos' | 'perfil_portfolio' | 'perfil_galeria_videos') =>
+      supabase.from(tabla).select('id', { count: 'exact', head: true }).eq('profile_id', user.id)
+    const [exp, form, prem, esp, fotos, proy, vids, { data: contacto }] = await Promise.all([
+      cuenta('professional_experience'), cuenta('profile_training'), cuenta('profile_awards'), cuenta('profile_specialties'),
+      cuenta('perfil_galeria_fotos'), cuenta('perfil_portfolio'), cuenta('perfil_galeria_videos'),
+      supabase.from('profiles').select('phone').eq('id', user.id).single(),
+    ])
+    return (
+      <Layout>
+        <DocumentacionPanel c={{
+          bio: Boolean(profile?.bio?.trim()),
+          experiencia: exp.count ?? 0, formacion: form.count ?? 0, premios: prem.count ?? 0, especialidades: esp.count ?? 0,
+          fotos: fotos.count ?? 0, proyectos: proy.count ?? 0, videos: vids.count ?? 0,
+          avatar: Boolean(profile?.avatar_url), portada: Boolean(profile?.cover_url),
+          tieneTelefono: Boolean(contacto?.phone?.trim()),
+        }} />
       </Layout>
     )
   }

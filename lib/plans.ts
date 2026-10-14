@@ -67,9 +67,9 @@ export const PLANES: Plan[] = [
           'Galería de fotos y vídeos',
           'Portfolio de proyectos y espectáculos',
           'Redes sociales y datos de contacto',
+          'CV y dossier artístico descargables en PDF',
         ],
-        // Falta el bloque 8 (CV y dossier descargables).
-        itemsProximamente: ['Perfil completo con todos los campos'],
+        itemsProximamente: [],
       },
       {
         titulo: 'Visibilidad',
