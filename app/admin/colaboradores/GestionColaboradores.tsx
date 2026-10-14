@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { refrescarPortada } from '@/app/admin/portada-acciones'
 import { COUNTRIES } from '@/lib/geo/countries'
 import {
   BUCKET_LOGOS,
@@ -91,6 +92,8 @@ export default function GestionColaboradores({ inicial, fuentes }: { inicial: Co
       .from('colaboradores')
       .select('id, nombre, tipo, descripcion, pais_code, url_web, logo_url, orden, activo, desde, noticias_fuente_id')
     if (data) setLista(data as ColaboradorAdmin[])
+    // La portada y /colaboradores, al momento (sin esperar a su caché de 10 minutos).
+    await refrescarPortada('colaboradores')
     router.refresh()
   }
 

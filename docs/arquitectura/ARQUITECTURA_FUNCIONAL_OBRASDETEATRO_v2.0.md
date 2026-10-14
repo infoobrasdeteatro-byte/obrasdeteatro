@@ -1,7 +1,7 @@
 # ARQUITECTURA FUNCIONAL OBRASDETEATRO® v2.0
 
 **Proyecto:** obrasdeteatro.com  
-**Empresa:** CONECTA PLUS GLOBAL, S.L.U. · Team Show Producciones  
+**Empresa:** CONECTA PLUS GLOBAL, S.L. · Team Show Producciones  
 **Versión:** 2.0  
 **Fecha de emisión:** 2026-06-19  
 **Fecha de congelación:** 2026-06-19  
@@ -1125,6 +1125,6 @@ Los siguientes elementos están **identificados** pero **no completamente especi
 ---
 
 **ARQUITECTURA FUNCIONAL OBRASDETEATRO® v2.0 — ✅ CONGELADO**  
-Emitido: 2026-06-19 · Congelado: 2026-06-19 · CONECTA PLUS GLOBAL, S.L.U. · Team Show Producciones  
+Emitido: 2026-06-19 · Congelado: 2026-06-19 · CONECTA PLUS GLOBAL, S.L. · Team Show Producciones  
 Supersede a: `Informe_Auditoria_Funcional_ObrasDeTeatro.docx` y `ARQUITECTURA_FUNCIONAL_OBRASDETEATRO v1.0` (no localizada).  
 Próxima revisión: v2.1 — ante cambios de producto, resolución de huecos pendientes en §12, o inicio de Fase 5+.

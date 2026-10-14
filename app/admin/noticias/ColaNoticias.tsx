@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { refrescarPortada } from '@/app/admin/portada-acciones'
 import { fecha, fechaHora } from '@/components/shared/formato'
 import { enlaceSeguro } from '@/lib/noticias/presentacion'
 import EditarCandidata from './EditarCandidata'
@@ -92,6 +93,8 @@ export default function ColaNoticias({
         : data.estado === 'retirada' ? 'Retirada de la sección pública.'
         : `Quedó en ${data.estado}.`,
     }))
+    // Publicar o retirar cambia las últimas noticias de la portada: al momento.
+    if (accion !== 'descartar') await refrescarPortada('noticias')
     router.refresh()
   }
 
