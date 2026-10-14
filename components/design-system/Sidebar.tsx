@@ -11,6 +11,7 @@ const NAV_SECTIONS = [
       { href: '/perfil',        label: 'Mi perfil',          icon: '◎' },
       { href: '/perfil/centro', label: 'Centro Profesional', icon: '⊙' },
       { href: '/mis-obras',     label: 'Mis obras',          icon: '▣' },
+      { href: '/mis-espectaculos', label: 'Mis espectáculos', icon: '▤' },
       { href: '/mis-castings',  label: 'Mis castings',       icon: '◉' },
       { href: '/mis-postulaciones', label: 'Mis postulaciones', icon: '◈' },
       { href: '/mis-convocatorias', label: 'Mis convocatorias', icon: '◉' },
