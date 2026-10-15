@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { ROLES } from '../cartelera'
 import type { PGlite } from '@electric-sql/pglite'
 import { baseConMigraciones, MOD, U2, type Resultado } from '@/lib/espacios/__tests__/pglite'
 
@@ -56,5 +59,16 @@ describe('límite del plan con revisión', () => {
     const r = await como('authenticated', MOD, `update espectaculos set estado = 'publicado' where id = '${id}' returning estado`)
     expect(r.error).toBeNull()
     expect(r.filas[0].estado).toBe('publicado')
+  })
+})
+
+describe('20261015120000: más papeles en la ficha artística', () => {
+  it('acepta los nuevos papeles y sigue rechazando los inventados', async () => {
+    await db.exec(readFileSync(path.resolve(__dirname, '../../../supabase/migrations/20261015120000_cartelera_mas_papeles.sql'), 'utf8'))
+    const id = (await db.query<{ id: string }>(`select id from espectaculos limit 1`)).rows[0].id
+    for (const r of ROLES) {
+      await db.exec(`insert into espectaculo_personas (espectaculo_id, nombre, rol) values ('${id}', 'Nombre', '${r.value}')`)
+    }
+    await expect(db.exec(`insert into espectaculo_personas (espectaculo_id, nombre, rol) values ('${id}', 'Nombre', 'inventado')`)).rejects.toThrow()
   })
 })

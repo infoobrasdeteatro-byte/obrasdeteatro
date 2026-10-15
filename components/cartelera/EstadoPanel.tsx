@@ -25,7 +25,7 @@ export default function EstadoPanel({
   const cambiar = async (estado: string) => {
     setAviso(null)
     if (estado === 'publicado' && funcionesFuturas === 0) {
-      setAviso({ tipo: 'error', texto: 'Añade al menos una función con fecha futura antes de publicar.' })
+      setAviso({ tipo: 'error', texto: 'Todavía no hay ninguna función guardada. En «Funciones», rellena país, sala o lugar, día y hora, y pulsa «+ Añadir función»: cuando aparezca en la lista ya podrás publicar.' })
       return
     }
     setOcupado(true)

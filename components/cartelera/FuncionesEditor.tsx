@@ -29,7 +29,9 @@ const fechaCorta = (d: string) =>
 const nombrePais = (code: string | null) => COUNTRIES.find(c => c.code === code)?.name ?? code ?? ''
 
 /** Busca salas publicadas de Espacios escénicos por nombre o municipio. */
-function BuscadorSala({ elegida, onElegir }: { elegida: Sala | null; onElegir: (s: Sala | null) => void }) {
+function BuscadorSala({ elegida, onElegir, pais, onManual }: {
+  elegida: Sala | null; onElegir: (s: Sala | null) => void; pais: string; onManual: (texto: string) => void
+}) {
   const [q, setQ] = useState('')
   const [resultados, setResultados] = useState<Sala[]>([])
   const [buscando, setBuscando] = useState(false)
@@ -45,13 +47,14 @@ function BuscadorSala({ elegida, onElegir }: { elegida: Sala | null; onElegir: (
         .from('espacios_escenicos')
         .select('id, nombre, municipio, region, pais_code')
         .eq('estado', 'publicado')
+        .eq('pais_code', pais)
         .or(`nombre_normalizado.ilike.${patron},municipio_slug.ilike.${patron.replace(/ /g, '-')}`)
         .order('nombre')
         .limit(8)
       if (vigente) { setResultados(data ?? []); setBuscando(false) }
     }, 250)
     return () => { vigente = false; clearTimeout(t) }
-  }, [q])
+  }, [q, pais])
 
   if (elegida) {
     return (
@@ -67,7 +70,7 @@ function BuscadorSala({ elegida, onElegir }: { elegida: Sala | null; onElegir: (
   return (
     <div style={{ position: 'relative' }}>
       <input id="buscar-sala" className="ds-input" value={q} onChange={e => setQ(e.target.value)}
-        placeholder="Escribe el nombre de la sala o la ciudad (mín. 3 letras)" autoComplete="off" />
+        placeholder={`Nombre de la sala o ciudad en ${nombrePais(pais)} (mín. 3 letras)`} autoComplete="off" />
       {(resultados.length > 0 || (q.trim().length >= 3 && !buscando)) && (
         <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0, border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--white, #fff)' }}>
           {resultados.map(s => (
@@ -79,8 +82,12 @@ function BuscadorSala({ elegida, onElegir }: { elegida: Sala | null; onElegir: (
             </li>
           ))}
           {resultados.length === 0 && (
-            <li style={{ padding: '9px 12px', fontSize: '13px', color: 'var(--muted)' }}>
-              No encontramos esa sala en Espacios escénicos. Marca «Otro lugar» y escríbelo a mano.
+            <li style={{ padding: '9px 12px', fontSize: '13px', color: 'var(--muted)', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span>Esa sala todavía no está en Espacios escénicos de {nombrePais(pais)}.</span>
+              <button type="button" className="ds-btn-secondary" style={{ padding: '6px 12px', fontSize: '13px' }}
+                onClick={() => onManual(q.trim())}>
+                Escribir el lugar a mano
+              </button>
             </li>
           )}
         </ul>
@@ -90,6 +97,12 @@ function BuscadorSala({ elegida, onElegir }: { elegida: Sala | null; onElegir: (
 }
 
 const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
+/** «19 (7 p. m.)»: en España se usa el formato 24 h y en América el de 12 h. */
+const etiquetaHora = (h: string) => {
+  const n = Number(h)
+  const doce = n % 12 === 0 ? 12 : n % 12
+  return `${h} (${doce} ${n < 12 ? 'a. m.' : 'p. m.'})`
+}
 const MINUTOS = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
 
 const ESTADOS_FUNCION = [
@@ -116,17 +129,22 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
 
   const elegirSala = (s: Sala | null) => {
     setSala(s)
-    if (s) setC(p => ({ ...p, espacio_id: s.id, zona_horaria: zonaPorDefecto(s.pais_code, s.region) }))
+    if (s) setC(p => ({ ...p, espacio_id: s.id, pais_code: s.pais_code, zona_horaria: zonaPorDefecto(s.pais_code, s.region) }))
     else setC(p => ({ ...p, espacio_id: null }))
   }
-  const elegirPais = (code: string) => setC(p => ({ ...p, pais_code: code, zona_horaria: zonaPorDefecto(code) }))
-  const paisZonas = sala && !otroLugar ? sala.pais_code : c.pais_code
+  const escribirAMano = (texto: string) => {
+    setOtroLugar(true)
+    setSala(null)
+    setC(p => ({ ...p, espacio_id: null, lugar_nombre: texto.slice(0, 160) }))
+  }
+  const elegirPais = (code: string) => { setSala(null); setC(p => ({ ...p, pais_code: code, espacio_id: null, zona_horaria: zonaPorDefecto(code) })) }
+  const paisZonas = c.pais_code
   const zonas = ZONAS_PAIS[paisZonas] ?? []
 
   const anadir = async () => {
     setAviso(null)
     const base: CamposFuncion = otroLugar ? { ...c, espacio_id: null } : { ...c, espacio_id: sala?.id ?? null }
-    if (!otroLugar && !sala) { setAviso({ tipo: 'error', texto: 'Busca y elige la sala, o marca «Otro lugar».' }); return }
+    if (!otroLugar && !sala) { setAviso({ tipo: 'error', texto: 'Busca y elige la sala de la lista, o pulsa «Escribir el lugar a mano» / marca «Otro lugar».' }); return }
     if (!fecha) { setAviso({ tipo: 'error', texto: 'Elige el día de la (primera) función.' }); return }
     const n = Number(cantidad)
     if (!Number.isInteger(n) || n < 1 || n > MAX_FUNCIONES_DE_UNA_VEZ) {
@@ -210,34 +228,45 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <strong style={{ fontSize: '14px' }}>Añadir función</strong>
 
+        <div className="ds-form-grid">
+          <div className="ds-form-group">
+            <label className="ds-label" htmlFor="pais_code">País de la función *</label>
+            <select id="pais_code" className="ds-select" value={c.pais_code} onChange={e => elegirPais(e.target.value)}>
+              {PAISES_CARTELERA.map(x => <option key={x.code} value={x.code}>{x.name}</option>)}
+            </select>
+          </div>
+          {zonas.length > 1 && (
+            <div className="ds-form-group">
+              <label className="ds-label" htmlFor="zona_horaria">Zona horaria</label>
+              <select id="zona_horaria" className="ds-select" value={c.zona_horaria} onChange={e => set('zona_horaria', e.target.value)}>
+                {zonas.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+
         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', cursor: 'pointer' }}>
-          <input type="checkbox" checked={otroLugar} onChange={e => setOtroLugar(e.target.checked)}
+          <input type="checkbox" checked={otroLugar} onChange={e => { setOtroLugar(e.target.checked); if (e.target.checked) setSala(null) }}
             style={{ width: '16px', height: '16px', accentColor: 'var(--black)' }} />
-          Otro lugar (no está en Espacios escénicos)
+          Otro lugar (la sala no está en Espacios escénicos)
         </label>
 
         {!otroLugar ? (
           <div className="ds-form-group">
             <label className="ds-label" htmlFor="buscar-sala">Sala *</label>
-            <BuscadorSala elegida={sala} onElegir={elegirSala} />
+            <BuscadorSala elegida={sala} onElegir={elegirSala} pais={c.pais_code} onManual={escribirAMano} />
           </div>
         ) : (
           <div className="ds-form-grid">
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="lugar_nombre">Lugar *</label>
               <input id="lugar_nombre" className="ds-input" maxLength={160} value={c.lugar_nombre}
-                onChange={e => set('lugar_nombre', e.target.value)} placeholder="Centro Cultural, plaza, bar…" />
+                onChange={e => set('lugar_nombre', e.target.value)} placeholder="Centro Cultural Chacao, Sala Teatro" />
             </div>
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="ciudad">Ciudad *</label>
               <input id="ciudad" className="ds-input" maxLength={120} value={c.ciudad}
-                onChange={e => set('ciudad', e.target.value)} placeholder="Buenos Aires" />
-            </div>
-            <div className="ds-form-group">
-              <label className="ds-label" htmlFor="pais_code">País *</label>
-              <select id="pais_code" className="ds-select" value={c.pais_code} onChange={e => elegirPais(e.target.value)}>
-                {PAISES_CARTELERA.map(x => <option key={x.code} value={x.code}>{x.name}</option>)}
-              </select>
+                onChange={e => set('ciudad', e.target.value)} placeholder="Caracas" />
             </div>
           </div>
         )}
@@ -248,10 +277,10 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
             <input id="fecha" type="date" className="ds-input" value={fecha} onChange={e => setFecha(e.target.value)} />
           </div>
           <div className="ds-form-group">
-            <label className="ds-label" htmlFor="hora">Hora * <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(formato 24 h)</span></label>
+            <label className="ds-label" htmlFor="hora">Hora * <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(24 h y a. m./p. m.)</span></label>
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <select id="hora" className="ds-select" aria-label="Hora" value={hora} onChange={e => setHora(e.target.value)}>
-                {HORAS.map(h => <option key={h} value={h}>{h}</option>)}
+                {HORAS.map(h => <option key={h} value={h}>{etiquetaHora(h)}</option>)}
               </select>
               <span aria-hidden="true">:</span>
               <select className="ds-select" aria-label="Minutos" value={minuto} onChange={e => setMinuto(e.target.value)}>
@@ -260,14 +289,6 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
               <span style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>h</span>
             </div>
           </div>
-          {zonas.length > 1 && (
-            <div className="ds-form-group">
-              <label className="ds-label" htmlFor="zona_horaria">Hora de</label>
-              <select id="zona_horaria" className="ds-select" value={c.zona_horaria} onChange={e => set('zona_horaria', e.target.value)}>
-                {zonas.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
-              </select>
-            </div>
-          )}
           <div className="ds-form-group">
             <label className="ds-label" htmlFor="cantidad">Número de funciones</label>
             <input id="cantidad" className="ds-input" type="number" min={1} max={MAX_FUNCIONES_DE_UNA_VEZ}
@@ -289,7 +310,7 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
           </div>
         </div>
         <p className="ds-form-hint" style={{ marginTop: '-4px' }}>
-          La hora es la del lugar de la función. Con «Número de funciones» añades varias de una vez a la misma hora
+          La hora es la hora local del país y la zona elegidos. Con «Número de funciones» añades varias de una vez a la misma hora
           (por ejemplo, 4 funciones todos los días desde el jueves). Para otro pase el mismo día, añádelo aparte con otra hora.
         </p>
         {fecha && Number(cantidad) > 1 && fechasRepetidas(fecha, Number(cantidad), cadaDias).length > 0 && (
