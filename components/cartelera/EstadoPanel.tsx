@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { etiquetaEstado, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
 import { useGuardarPendientes } from './Pendientes'
+import Compartir from './Compartir'
 
 /**
  * Estado del espectáculo y lo que se puede hacer con él. «Enviar a publicar»
@@ -14,7 +15,7 @@ import { useGuardarPendientes } from './Pendientes'
 export default function EstadoPanel({
   espectaculo, funcionesFuturas, limite,
 }: {
-  espectaculo: { id: string; estado: string; motivo_rechazo: string | null }
+  espectaculo: { id: string; estado: string; motivo_rechazo: string | null; slug?: string; titulo?: string; cuando?: string | null; donde?: string | null }
   funcionesFuturas: number
   limite: { maximo: number | null; publicados: number }
 }) {
@@ -104,6 +105,12 @@ export default function EstadoPanel({
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           {['borrador', 'rechazado', 'cancelado', 'finalizado'].includes(e) && boton(e === 'borrador' ? 'Enviar a publicar' : 'Volver a enviar a publicar', 'publicado', true)}
           {e === 'pendiente_revision' && boton('Retirar de revisión', 'borrador')}
+          {(e === 'publicado' || e === 'finalizado') && espectaculo.slug && (
+            <>
+              <Compartir slug={espectaculo.slug} titulo={espectaculo.titulo ?? ''} cuando={espectaculo.cuando} donde={espectaculo.donde} variante="primario" />
+              <a href={`/cartelera/${espectaculo.slug}`} target="_blank" rel="noopener" className="ds-btn-secondary" style={{ padding: '9px 16px', fontSize: '13px' }}>Ver ficha pública</a>
+            </>
+          )}
           {e === 'publicado' && boton('Cancelar espectáculo', 'cancelado')}
           {e === 'publicado' && boton('Marcar como finalizado', 'finalizado')}
         </div>
