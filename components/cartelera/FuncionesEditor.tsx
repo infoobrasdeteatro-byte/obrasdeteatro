@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   ZONAS_PAIS, zonaPorDefecto, localAUtc, fechaFuncion, validarFuncion, fechasRepetidas, mensajeErrorCartelera,
-  MAX_FUNCIONES_DE_UNA_VEZ, HORAS, MINUTOS, etiquetaHora, type CamposFuncion,
+  MAX_FUNCIONES_DE_UNA_VEZ, limpiarCiudad, HORAS, MINUTOS, etiquetaHora, type CamposFuncion,
 } from '@/lib/cartelera/cartelera'
 import { Seccion } from './EspectaculoForm'
 import { useRegistrarPendiente } from './Pendientes'
@@ -82,7 +82,7 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
         zona_horaria: campos.zona_horaria,
         espacio_id: campos.espacio_id,
         lugar_nombre: campos.espacio_id ? null : campos.lugar_nombre.trim(),
-        ciudad: campos.espacio_id ? null : campos.ciudad.trim(),
+        ciudad: campos.espacio_id ? null : limpiarCiudad(campos.ciudad, nombrePais(campos.pais_code)),
         pais_code: campos.espacio_id ? null : campos.pais_code,
         nota: campos.nota.trim() || null,
       })

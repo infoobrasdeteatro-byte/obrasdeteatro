@@ -3,9 +3,10 @@
  * (sin guardar nada hasta el final) y cómo se convierte en las filas de
  * funciones, opciones de compra y ficha artística. Puro: lo prueban los tests.
  */
+import { COUNTRIES } from '@/lib/geo/countries'
 import {
   ROLES, aFilaOpcion, fechasRepetidas, localAUtc, separarNombres, validarEspectaculo, validarFuncion, validarOpcion,
-  zonaPorDefecto, MAX_FUNCIONES_DE_UNA_VEZ, CAMPOS_VACIOS, type CamposEspectaculo, type CamposOpcion,
+  zonaPorDefecto, limpiarCiudad, MAX_FUNCIONES_DE_UNA_VEZ, CAMPOS_VACIOS, type CamposEspectaculo, type CamposOpcion,
 } from './cartelera'
 
 export type FechaAsistente = { clave: string; fecha: string; hora: string; minuto: string; cantidad: string; cadaDias: number }
@@ -114,7 +115,7 @@ export function funcionesDelAsistente(lugares: LugarAsistente[], ahora: number =
           zona_horaria: campos.zona_horaria,
           espacio_id: campos.espacio_id,
           lugar_nombre: campos.espacio_id ? null : campos.lugar_nombre.trim(),
-          ciudad: campos.espacio_id ? null : campos.ciudad.trim(),
+          ciudad: campos.espacio_id ? null : limpiarCiudad(campos.ciudad, COUNTRIES.find(c => c.code === campos.pais_code)?.name),
           pais_code: campos.espacio_id ? null : campos.pais_code,
           nota: campos.nota.trim() || null,
         })

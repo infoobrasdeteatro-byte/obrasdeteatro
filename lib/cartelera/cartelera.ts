@@ -295,6 +295,32 @@ export const etiquetaHora = (h: string) => {
 export const MINUTOS = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
 
 
+const sinTildes = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+/**
+ * Ciudad tal como se enseña: sin el país detrás (ya va aparte) y con
+ * mayúscula inicial. «caracas Venezuela» → «Caracas»; «buenos aires,
+ * argentina» → «Buenos Aires». Respeta lo que ya viene con mayúsculas.
+ */
+export function limpiarCiudad(ciudad: string, nombrePais?: string | null): string {
+  let c = ciudad.replace(/\s+/g, ' ').trim()
+  if (nombrePais) {
+    const pais = sinTildes(nombrePais)
+    const i = sinTildes(c).lastIndexOf(pais)
+    if (i > 0 && i + pais.length === c.length) {
+      const resto = c.slice(0, i)
+      const ultima = sinTildes(resto.trim().split(/[\s,(]+/).pop() ?? '')
+      // «Ciudad de México», «Ciudad de Panamá»: el país es parte del nombre y no se quita.
+      if (/[,(-]\s*$/.test(resto) || !['de', 'del', 'la', 'el'].includes(ultima)) c = resto.replace(/[\s,(-]+$/, '').trim()
+    }
+  }
+  if (c && c === c.toLowerCase()) {
+    const menores = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'y'])
+    c = c.split(' ').map((w, i) => (i > 0 && menores.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ')
+  }
+  return c
+}
+
 export type CamposFuncion = {
   inicio: string
   zona_horaria: string
