@@ -11,7 +11,7 @@ import EntradasEditor from '@/components/cartelera/EntradasEditor'
 import FichaArtisticaEditor from '@/components/cartelera/FichaArtisticaEditor'
 import EstadoPanel from '@/components/cartelera/EstadoPanel'
 import { PendientesProvider } from '@/components/cartelera/Pendientes'
-import { camposDesdeFila, cartelValido, MONEDA_PAIS } from '@/lib/cartelera/cartelera'
+import { camposDesdeFila, cartelValido, fechaFuncion, MONEDA_PAIS } from '@/lib/cartelera/cartelera'
 
 export const metadata: Metadata = {
   title: 'Editar espectáculo | ObrasDeTeatro',
@@ -29,7 +29,7 @@ export default async function EditarEspectaculoPage({ params, searchParams }: Pr
 
   const { data: e } = await supabase
     .from('espectaculos')
-    .select('id, titulo, compania_nombre, genero_id, sinopsis, duracion_min, edad_minima, idioma, cartel_url, estado, motivo_rechazo')
+    .select('id, slug, titulo, compania_nombre, genero_id, sinopsis, duracion_min, edad_minima, idioma, cartel_url, estado, motivo_rechazo')
     .eq('id', id)
     .eq('user_id', user.id)
     .maybeSingle()
@@ -50,6 +50,12 @@ export default async function EditarEspectaculoPage({ params, searchParams }: Pr
   const monedaSugerida = MONEDA_PAIS[paisFuncion ?? ''] ?? 'EUR'
   const maximo = (limites ?? []).find(l => l.plan === (perfil?.plan ?? 'gratuito'))?.max_activos ?? null
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const proxima = (funciones ?? []).find(f => f.estado !== 'cancelada' && new Date(f.inicio).getTime() > ahora)
+  const panel = {
+    id: e.id, estado: e.estado, motivo_rechazo: e.motivo_rechazo, slug: e.slug, titulo: e.titulo,
+    cuando: proxima ? fechaFuncion(proxima.inicio, proxima.zona_horaria) : null,
+    donde: proxima ? [proxima.lugar_nombre, proxima.ciudad].filter(Boolean).join(', ') : null,
+  }
 
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
@@ -80,7 +86,7 @@ export default async function EditarEspectaculoPage({ params, searchParams }: Pr
                   Borrador creado. Ahora añade el cartel, las funciones y las entradas, y envíalo a publicar.
                 </div>
               )}
-              <EstadoPanel espectaculo={{ id: e.id, estado: e.estado, motivo_rechazo: e.motivo_rechazo }}
+              <EstadoPanel espectaculo={panel}
                 funcionesFuturas={funcionesFuturas} limite={{ maximo, publicados: publicados ?? 0 }} />
               <CartelEditor userId={user.id} espectaculoId={e.id} supabaseUrl={supabaseUrl}
                 cartelUrl={cartelValido(e.cartel_url, supabaseUrl, user.id)} />
@@ -89,7 +95,7 @@ export default async function EditarEspectaculoPage({ params, searchParams }: Pr
               <FichaArtisticaEditor espectaculoId={e.id} personas={personas ?? []} />
               <EspectaculoForm userId={user.id} inicial={camposDesdeFila(e)} espectaculo={{ id: e.id, estado: e.estado }} />
               {/* El mismo panel al final: al terminar de rellenar la ficha no hace falta volver arriba. */}
-              <EstadoPanel espectaculo={{ id: e.id, estado: e.estado, motivo_rechazo: e.motivo_rechazo }}
+              <EstadoPanel espectaculo={panel}
                 funcionesFuturas={funcionesFuturas} limite={{ maximo, publicados: publicados ?? 0 }} />
             </div>
             </PendientesProvider>

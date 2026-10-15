@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { etiquetaEstado, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
+import Compartir from '@/components/cartelera/Compartir'
 
 export type EspectaculoPropio = {
   id: string
@@ -95,6 +96,9 @@ export default function MisEspectaculosList({ espectaculos }: { espectaculos: Es
                 <Link href={`/mis-espectaculos/${e.id}/editar`} className="ds-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>
                   Editar, funciones y entradas
                 </Link>
+                {(e.estado === 'publicado' || e.estado === 'finalizado') && (
+                  <Compartir slug={e.slug} titulo={e.titulo} cuando={e.proxima ? fechaCorta(e.proxima) : null} donde={e.ciudades[0] ?? null} />
+                )}
                 <button type="button" className="table-link table-link--danger" style={{ marginLeft: 'auto' }} onClick={() => borrar(e.id)}>
                   Borrar
                 </button>

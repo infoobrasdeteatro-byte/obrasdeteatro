@@ -12,6 +12,7 @@ import { MARGEN_EMPEZADA_MS } from '@/lib/cartelera/listado'
 import { rutaFicha } from '@/lib/espacios/espacios'
 import { SITIO } from '@/lib/convocatorias/resumen-semanal'
 import { Poster, rutaEntradas, rutaEspectaculo } from '@/components/cartelera/publico'
+import Compartir from '@/components/cartelera/Compartir'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -122,11 +123,12 @@ export default async function EspectaculoPage({ params }: Props) {
                 </div>
               )}
 
-              {!terminado && generales.length > 0 && (
-                <div id="entradas" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                  {generales.map(o => <BotonEntradas key={o.id} o={o} />)}
-                </div>
-              )}
+              <div id="entradas" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                {!terminado && generales.map(o => <BotonEntradas key={o.id} o={o} />)}
+                <Compartir slug={e.slug} titulo={e.titulo}
+                  cuando={futuras[0] ? fechaFuncion(futuras[0].inicio, futuras[0].zona_horaria) : null}
+                  donde={futuras[0] ? [futuras[0].lugar_nombre, futuras[0].ciudad].filter(Boolean).join(', ') : null} />
+              </div>
 
               {e.sinopsis && (
                 <section>
