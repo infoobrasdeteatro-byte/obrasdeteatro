@@ -65,7 +65,7 @@ export default function CartelEditor({
   }
 
   return (
-    <section className="account-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <section className="account-card cart-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <Seccion titulo="Cartel" />
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <div style={{

@@ -71,7 +71,7 @@ export default function EntradasEditor({
   }
 
   return (
-    <section className="account-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <section className="account-card cart-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <Seccion titulo="Entradas" />
 
       {opciones.length === 0 ? (
@@ -115,7 +115,7 @@ export default function EntradasEditor({
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="op_url">Enlace {online ? '*' : ''}</label>
           <input id="op_url" className="ds-input" type="url" maxLength={800} value={c.url}
-            onChange={e => set('url', e.target.value)} placeholder="https://www.ticketera.com/tu-espectaculo" />
+            onChange={e => set('url', e.target.value)} placeholder="Ej.: https://www.ticketera.com/tu-espectaculo" />
         </div>
         <div className="ds-form-grid">
           {c.tipo !== 'gratis' && (
@@ -123,7 +123,7 @@ export default function EntradasEditor({
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="op_precio">Precio desde</label>
                 <input id="op_precio" className="ds-input" inputMode="decimal" value={c.precio_desde}
-                  onChange={e => set('precio_desde', e.target.value)} placeholder="15" />
+                  onChange={e => set('precio_desde', e.target.value)} placeholder="Ej.: 15" />
               </div>
               <div className="ds-form-group">
                 <label className="ds-label" htmlFor="op_moneda">Moneda</label>
@@ -136,7 +136,7 @@ export default function EntradasEditor({
           <div className="ds-form-group">
             <label className="ds-label" htmlFor="op_etiqueta">Texto del botón</label>
             <input id="op_etiqueta" className="ds-input" maxLength={80} value={c.etiqueta}
-              onChange={e => set('etiqueta', e.target.value)} placeholder="Comprar entradas" />
+              onChange={e => set('etiqueta', e.target.value)} placeholder="Ej.: Comprar entradas" />
           </div>
         </div>
         {online && (

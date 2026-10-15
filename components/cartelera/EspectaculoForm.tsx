@@ -65,21 +65,21 @@ export default function EspectaculoForm({
   }
 
   return (
-    <form className="account-card" onSubmit={e => { e.preventDefault(); guardar() }}
+    <form className="account-card cart-form" onSubmit={e => { e.preventDefault(); guardar() }}
       style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Seccion titulo="El espectáculo" />
 
       <div className="ds-form-group">
         <label className="ds-label" htmlFor="titulo">Título *</label>
         <input id="titulo" className="ds-input" required maxLength={160}
-          value={c.titulo} onChange={e => set('titulo', e.target.value)} placeholder="La casa de Bernarda Alba" />
+          value={c.titulo} onChange={e => set('titulo', e.target.value)} placeholder="Ej.: La casa de Bernarda Alba" />
       </div>
 
       <div className="ds-form-grid">
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="compania_nombre">Compañía o quien lo presenta *</label>
           <input id="compania_nombre" className="ds-input" required maxLength={160}
-            value={c.compania_nombre} onChange={e => set('compania_nombre', e.target.value)} placeholder="Compañía Teatro del Sur" />
+            value={c.compania_nombre} onChange={e => set('compania_nombre', e.target.value)} placeholder="Ej.: Compañía Teatro del Sur" />
         </div>
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="genero_id">Género *</label>
@@ -90,12 +90,12 @@ export default function EspectaculoForm({
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="duracion_min">Duración (minutos)</label>
           <input id="duracion_min" className="ds-input" inputMode="numeric"
-            value={c.duracion_min} onChange={e => set('duracion_min', e.target.value)} placeholder="90" />
+            value={c.duracion_min} onChange={e => set('duracion_min', e.target.value)} placeholder="Ej.: 90" />
         </div>
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="edad_minima">Edad recomendada (desde)</label>
           <input id="edad_minima" className="ds-input" inputMode="numeric"
-            value={c.edad_minima} onChange={e => set('edad_minima', e.target.value)} placeholder="Sin indicar = todos los públicos" />
+            value={c.edad_minima} onChange={e => set('edad_minima', e.target.value)} placeholder="Vacío = todos los públicos" />
         </div>
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="idioma">Idioma</label>
