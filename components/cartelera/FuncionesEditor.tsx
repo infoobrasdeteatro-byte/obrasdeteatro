@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { COUNTRIES } from '@/lib/geo/countries'
 import {
   ZONAS_PAIS, zonaPorDefecto, localAUtc, fechaFuncion, validarFuncion, fechasRepetidas, mensajeErrorCartelera,
-  MAX_FUNCIONES_DE_UNA_VEZ, type CamposFuncion,
+  MAX_FUNCIONES_DE_UNA_VEZ, HORAS, MINUTOS, etiquetaHora, type CamposFuncion,
 } from '@/lib/cartelera/cartelera'
 import { Seccion } from './EspectaculoForm'
+import { useRegistrarPendiente } from './Pendientes'
+import BuscadorSala, { PAISES_CARTELERA, nombrePais, type Sala } from './BuscadorSala'
 
 export type FuncionPropia = {
   id: string
@@ -21,90 +22,8 @@ export type FuncionPropia = {
   nota: string | null
 }
 
-type Sala = { id: string; nombre: string; municipio: string; region: string; pais_code: string }
-
-const PAISES_CARTELERA = COUNTRIES.filter(c => ZONAS_PAIS[c.code])
 const fechaCorta = (d: string) =>
   new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`))
-const nombrePais = (code: string | null) => COUNTRIES.find(c => c.code === code)?.name ?? code ?? ''
-
-/** Busca salas publicadas de Espacios escénicos por nombre o municipio. */
-function BuscadorSala({ elegida, onElegir, pais, onManual }: {
-  elegida: Sala | null; onElegir: (s: Sala | null) => void; pais: string; onManual: (texto: string) => void
-}) {
-  const [q, setQ] = useState('')
-  const [resultados, setResultados] = useState<Sala[]>([])
-  const [buscando, setBuscando] = useState(false)
-
-  useEffect(() => {
-    const texto = q.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9ñ ]/g, ' ').trim()
-    if (texto.length < 3) { setResultados([]); return }
-    let vigente = true
-    const t = setTimeout(async () => {
-      setBuscando(true)
-      const patron = `%${texto.replace(/\s+/g, '%')}%`
-      const { data } = await createClient()
-        .from('espacios_escenicos')
-        .select('id, nombre, municipio, region, pais_code')
-        .eq('estado', 'publicado')
-        .eq('pais_code', pais)
-        .or(`nombre_normalizado.ilike.${patron},municipio_slug.ilike.${patron.replace(/ /g, '-')}`)
-        .order('nombre')
-        .limit(8)
-      if (vigente) { setResultados(data ?? []); setBuscando(false) }
-    }, 250)
-    return () => { vigente = false; clearTimeout(t) }
-  }, [q, pais])
-
-  if (elegida) {
-    return (
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', padding: '10px 12px', background: 'var(--subtle)', borderRadius: 'var(--radius)' }}>
-        <span style={{ fontSize: '14px' }}>
-          <strong>{elegida.nombre}</strong> · {elegida.municipio}, {nombrePais(elegida.pais_code)}
-        </span>
-        <button type="button" className="table-link" style={{ marginLeft: 'auto' }} onClick={() => onElegir(null)}>Cambiar</button>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <input id="buscar-sala" className="ds-input" value={q} onChange={e => setQ(e.target.value)}
-        placeholder={`Nombre de la sala o ciudad en ${nombrePais(pais)} (mín. 3 letras)`} autoComplete="off" />
-      {(resultados.length > 0 || (q.trim().length >= 3 && !buscando)) && (
-        <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0, border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--white, #fff)' }}>
-          {resultados.map(s => (
-            <li key={s.id}>
-              <button type="button" onClick={() => { onElegir(s); setQ('') }}
-                style={{ width: '100%', textAlign: 'left', padding: '9px 12px', background: 'none', border: 0, borderBottom: '1px solid var(--border)', cursor: 'pointer', fontSize: '14px' }}>
-                <strong>{s.nombre}</strong> <span style={{ color: 'var(--muted)' }}>· {s.municipio}, {nombrePais(s.pais_code)}</span>
-              </button>
-            </li>
-          ))}
-          {resultados.length === 0 && (
-            <li style={{ padding: '9px 12px', fontSize: '13px', color: 'var(--muted)', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span>Esa sala todavía no está en Espacios escénicos de {nombrePais(pais)}.</span>
-              <button type="button" className="ds-btn-secondary" style={{ padding: '6px 12px', fontSize: '13px' }}
-                onClick={() => onManual(q.trim())}>
-                Escribir el lugar a mano
-              </button>
-            </li>
-          )}
-        </ul>
-      )}
-    </div>
-  )
-}
-
-const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
-/** «19 (7 p. m.)»: en España se usa el formato 24 h y en América el de 12 h. */
-const etiquetaHora = (h: string) => {
-  const n = Number(h)
-  const doce = n % 12 === 0 ? 12 : n % 12
-  return `${h} (${doce} ${n < 12 ? 'a. m.' : 'p. m.'})`
-}
-const MINUTOS = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
-
 const ESTADOS_FUNCION = [
   { value: 'programada', label: 'A la venta' },
   { value: 'agotada', label: 'Entradas agotadas' },
@@ -141,22 +60,22 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
   const paisZonas = c.pais_code
   const zonas = ZONAS_PAIS[paisZonas] ?? []
 
-  const anadir = async () => {
+  const anadir = async (): Promise<boolean> => {
     setAviso(null)
     const base: CamposFuncion = otroLugar ? { ...c, espacio_id: null } : { ...c, espacio_id: sala?.id ?? null }
-    if (!otroLugar && !sala) { setAviso({ tipo: 'error', texto: 'Busca y elige la sala de la lista, o pulsa «Escribir el lugar a mano» / marca «Otro lugar».' }); return }
-    if (!fecha) { setAviso({ tipo: 'error', texto: 'Elige el día de la (primera) función.' }); return }
+    if (!otroLugar && !sala) { setAviso({ tipo: 'error', texto: 'Busca y elige la sala de la lista, o pulsa «Escribir el lugar a mano» / marca «Otro lugar».' }); return false }
+    if (!fecha) { setAviso({ tipo: 'error', texto: 'Elige el día de la (primera) función.' }); return false }
     const n = Number(cantidad)
     if (!Number.isInteger(n) || n < 1 || n > MAX_FUNCIONES_DE_UNA_VEZ) {
-      setAviso({ tipo: 'error', texto: `El número de funciones va de 1 a ${MAX_FUNCIONES_DE_UNA_VEZ}.` }); return
+      setAviso({ tipo: 'error', texto: `El número de funciones va de 1 a ${MAX_FUNCIONES_DE_UNA_VEZ}.` }); return false
     }
     const dias = fechasRepetidas(fecha, n, cadaDias)
-    if (dias.length === 0) { setAviso({ tipo: 'error', texto: 'La fecha no es válida.' }); return }
+    if (dias.length === 0) { setAviso({ tipo: 'error', texto: 'La fecha no es válida.' }); return false }
     const filas = []
     for (const d of dias) {
       const campos = { ...base, inicio: `${d}T${hora}:${minuto}` }
       const problema = validarFuncion(campos)
-      if (problema) { setAviso({ tipo: 'error', texto: dias.length > 1 ? `${d}: ${problema}` : problema }); return }
+      if (problema) { setAviso({ tipo: 'error', texto: dias.length > 1 ? `${d}: ${problema}` : problema }); return false }
       filas.push({
         espectaculo_id: espectaculoId,
         inicio: localAUtc(campos.inicio, campos.zona_horaria)!,
@@ -171,13 +90,19 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
     setOcupado(true)
     const { error } = await createClient().from('funciones').insert(filas)
     setOcupado(false)
-    if (error) { setAviso({ tipo: 'error', texto: mensajeErrorCartelera(error.message) }); return }
-    // Se quedan la sala y la hora: para añadir otra tanda basta con cambiar el día.
+    if (error) { setAviso({ tipo: 'error', texto: mensajeErrorCartelera(error.message) }); return false }
+    // Se quedan la sala y la hora: para añadir otra tanda basta con elegir otro día.
     setC(p => ({ ...p, nota: '' }))
     setCantidad('1')
+    setFecha('')
     setAviso({ tipo: 'ok', texto: filas.length === 1 ? 'Función añadida.' : `${filas.length} funciones añadidas.` })
     router.refresh()
+    return true
   }
+
+  // Si hay una fecha escrita sin añadir, se guarda al enviar a publicar.
+  useRegistrarPendiente('funciones', async () => (fecha ? ((await anadir()) ? 'ok' : 'error') : 'nada'))
+
 
   const cambiarEstado = async (id: string, estado: string) => {
     const { error } = await createClient().from('funciones').update({ estado }).eq('id', id)
@@ -208,7 +133,7 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
                 border: '1px solid var(--border)', borderRadius: 'var(--radius)', opacity: pasada ? 0.6 : 1,
               }}>
                 <div style={{ minWidth: 0, flex: '1 1 260px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, textTransform: 'capitalize' }}>{fechaFuncion(f.inicio, f.zona_horaria)}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600 }}>{fechaFuncion(f.inicio, f.zona_horaria)}</div>
                   <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
                     {f.lugar_nombre} · {f.ciudad}, {nombrePais(f.pais_code)}{f.nota ? ` · ${f.nota}` : ''}{pasada ? ' · ya pasó' : ''}
                   </div>

@@ -255,7 +255,8 @@ export function fechaFuncion(iso: string, zona: string): string {
   const d = new Date(iso)
   const dia = new Intl.DateTimeFormat('es-ES', { timeZone: zona, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(d)
   const hora = new Intl.DateTimeFormat('es-ES', { timeZone: zona, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d)
-  return `${dia.replace(/,/g, '')} · ${hora} h`
+  const texto = `${dia.replace(/,/g, '')} · ${hora} h`
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
 export const MAX_FUNCIONES_DE_UNA_VEZ = 60
@@ -283,6 +284,16 @@ export function problemaTamanoCartel(ancho: number, alto: number): string | null
   if (alto <= ancho) return `El cartel tiene que ser vertical (más alto que ancho). Este mide ${ancho} × ${alto} px.`
   return null
 }
+
+export const HORAS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
+/** «19 (7 p. m.)»: en España se usa el formato 24 h y en América el de 12 h. */
+export const etiquetaHora = (h: string) => {
+  const n = Number(h)
+  const doce = n % 12 === 0 ? 12 : n % 12
+  return `${h} (${doce} ${n < 12 ? 'a. m.' : 'p. m.'})`
+}
+export const MINUTOS = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']
+
 
 export type CamposFuncion = {
   inicio: string

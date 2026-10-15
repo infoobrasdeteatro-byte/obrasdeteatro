@@ -3041,3 +3041,45 @@ a.eco-stat-card { display: block; }
 .cart-tu-espectaculo .cart-btn { white-space: normal; text-align: center; }
 /* Formularios de la cartelera: los ejemplos no deben parecer datos ya escritos. */
 .cart-form .ds-input::placeholder, .cart-form .ds-textarea::placeholder { color: #b0b0b0; font-style: italic; opacity: 1; }
+
+/* ═══ Asistente «Nuevo espectáculo» ═══ */
+.asis-pasos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; list-style: none; margin: 0; padding: 0; }
+.asis-paso button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--white); text-align: left; font: inherit; color: var(--muted); cursor: default; }
+.asis-paso--hecho button { cursor: pointer; color: var(--text); }
+.asis-paso--hecho button:hover { border-color: var(--black); }
+.asis-paso--actual button { border-color: var(--black); color: var(--black); box-shadow: inset 0 -3px 0 var(--red); }
+.asis-paso-n { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: var(--subtle); color: var(--muted); }
+.asis-paso--actual .asis-paso-n { background: var(--red); color: var(--white); }
+.asis-paso--hecho .asis-paso-n { background: var(--black); color: var(--white); }
+.asis-paso-t { font-size: 13px; font-weight: 600; line-height: 1.2; }
+.asis-titulo { font-family: var(--serif); font-size: 22px; color: var(--black); letter-spacing: -0.3px; }
+.asis-bloque { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--off); scroll-margin-top: 100px; }
+.asis-bloque-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.asis-check { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+.asis-check input { width: 16px; height: 16px; accent-color: var(--black); }
+.asis-fila-fecha { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; background: var(--white); border: 1px solid var(--border); border-radius: 10px; scroll-margin-top: 100px; }
+.asis-fila-fecha > input[type="date"] { width: auto; flex: 0 1 170px; }
+.asis-hora { display: inline-flex; align-items: center; gap: 4px; }
+.asis-hora .ds-select { width: auto; }
+.asis-cantidad { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.asis-cantidad .ds-input { width: 70px; }
+.asis-fila-fecha > .ds-select { width: auto; }
+.asis-fecha-pista { flex-basis: 100%; font-size: 12px; color: var(--muted); padding-left: 2px; }
+.asis-fila-papel { display: grid; grid-template-columns: minmax(150px, 220px) 1fr auto; gap: 8px; align-items: center; scroll-margin-top: 100px; }
+.asis-cartel { width: 120px; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: var(--subtle); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; color: var(--muted); }
+.asis-cartel img { width: 100%; height: 100%; object-fit: cover; }
+.asis-resumen-fn { padding: 12px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; font-size: 13px; }
+.asis-resumen-fn ul { margin: 6px 0 0; padding-left: 18px; }
+.asis-resumen { display: flex; gap: 16px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--off); flex-wrap: wrap; }
+.asis-resumen dl { flex: 1 1 280px; display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0; font-size: 13.5px; }
+.asis-resumen dt { color: var(--muted); }
+.asis-resumen dd { margin: 0; }
+.asis-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+@media (max-width: 720px) {
+  .asis-pasos { grid-template-columns: repeat(4, 1fr); }
+  .asis-paso-t { display: none; }
+  .asis-paso--actual .asis-paso-t { display: inline; }
+  .asis-paso button { justify-content: center; }
+  .asis-fila-papel { grid-template-columns: 1fr auto; }
+  .asis-fila-papel .ds-select { grid-column: 1 / -1; }
+}

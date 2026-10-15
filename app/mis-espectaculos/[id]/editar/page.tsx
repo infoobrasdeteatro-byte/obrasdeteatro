@@ -10,6 +10,7 @@ import FuncionesEditor from '@/components/cartelera/FuncionesEditor'
 import EntradasEditor from '@/components/cartelera/EntradasEditor'
 import FichaArtisticaEditor from '@/components/cartelera/FichaArtisticaEditor'
 import EstadoPanel from '@/components/cartelera/EstadoPanel'
+import { PendientesProvider } from '@/components/cartelera/Pendientes'
 import { camposDesdeFila, cartelValido, MONEDA_PAIS } from '@/lib/cartelera/cartelera'
 
 export const metadata: Metadata = {
@@ -17,11 +18,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ nuevo?: string }> }
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ nuevo?: string; creado?: string; avisos?: string }> }
 
 export default async function EditarEspectaculoPage({ params, searchParams }: Props) {
   const { id } = await params
-  const { nuevo } = await searchParams
+  const { nuevo, creado, avisos } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect(`/auth/login?next=/mis-espectaculos/${id}/editar`)
@@ -71,7 +72,9 @@ export default async function EditarEspectaculoPage({ params, searchParams }: Pr
               </p>
             </div>
           ) : (
+            <PendientesProvider>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {creado && <AvisoCreado creado={creado} avisos={avisos} />}
               {nuevo === '1' && (
                 <div className="ds-alert-success">
                   Borrador creado. Ahora añade el cartel, las funciones y las entradas, y envíalo a publicar.
@@ -89,9 +92,34 @@ export default async function EditarEspectaculoPage({ params, searchParams }: Pr
               <EstadoPanel espectaculo={{ id: e.id, estado: e.estado, motivo_rechazo: e.motivo_rechazo }}
                 funcionesFuturas={funcionesFuturas} limite={{ maximo, publicados: publicados ?? 0 }} />
             </div>
+            </PendientesProvider>
           )}
         </main>
       </div>
+    </div>
+  )
+}
+
+/** Resultado del asistente «Nuevo espectáculo». */
+function AvisoCreado({ creado, avisos }: { creado: string; avisos?: string }) {
+  const lista = (avisos ?? '').split(',').filter(Boolean)
+  const textos: Record<string, string> = {
+    cartel: 'el cartel no se pudo subir: vuelve a elegirlo en «Cartel»',
+    funciones: 'las funciones no se guardaron: añádelas en «Funciones»',
+    entradas: 'las entradas no se guardaron: añádelas en «Entradas»',
+    ficha: 'la ficha artística no se guardó: añádela en «Ficha artística»',
+    limite: 'no se ha podido publicar porque tu plan ya tiene el máximo de espectáculos publicados a la vez',
+    publicar: 'no se ha podido enviar a publicar: inténtalo con el botón «Enviar a publicar»',
+  }
+  const principal = creado === 'publicado'
+    ? '¡Publicado! Tu espectáculo ya aparece en la cartelera.'
+    : creado === 'pendiente_revision'
+      ? 'Enviado a revisión. Cuando el equipo de ObrasDeTeatro lo apruebe aparecerá en la cartelera.'
+      : 'Guardado como borrador. Cuando quieras, revísalo aquí y pulsa «Enviar a publicar».'
+  return (
+    <div className={lista.length ? 'ds-alert-error' : 'ds-alert-success'} style={lista.length ? { background: '#fffbeb', color: '#92400e', borderColor: '#fde68a' } : undefined}>
+      <div>{principal}</div>
+      {lista.length > 0 && <div style={{ marginTop: '6px' }}>Ojo: {lista.map(a => textos[a] ?? a).join('; ')}.</div>}
     </div>
   )
 }

@@ -163,7 +163,7 @@ export default async function EspectaculoPage({ params }: Props) {
                   return (
                     <div key={f.id} className="cart-agenda-fila" style={{ gridTemplateColumns: '1fr auto' }}>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--black)', textTransform: 'capitalize' }}>
+                        <div style={{ fontWeight: 600, fontSize: '15px', color: 'var(--black)' }}>
                           {fechaFuncion(f.inicio, f.zona_horaria)}
                         </div>
                         <div className="cart-agenda-m">
