@@ -193,7 +193,7 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
 
   const ahora = Date.now()
   return (
-    <section className="account-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <section className="account-card cart-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <Seccion titulo={`Funciones (${funciones.length})`} />
 
       {funciones.length === 0 ? (
@@ -261,12 +261,12 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="lugar_nombre">Lugar *</label>
               <input id="lugar_nombre" className="ds-input" maxLength={160} value={c.lugar_nombre}
-                onChange={e => set('lugar_nombre', e.target.value)} placeholder="Centro Cultural Chacao, Sala Teatro" />
+                onChange={e => set('lugar_nombre', e.target.value)} placeholder="Ej.: Centro Cultural, Sala Principal" />
             </div>
             <div className="ds-form-group">
               <label className="ds-label" htmlFor="ciudad">Ciudad *</label>
               <input id="ciudad" className="ds-input" maxLength={120} value={c.ciudad}
-                onChange={e => set('ciudad', e.target.value)} placeholder="Caracas" />
+                onChange={e => set('ciudad', e.target.value)} placeholder="Escribe la ciudad" />
             </div>
           </div>
         )}
@@ -306,7 +306,7 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
           <div className="ds-form-group">
             <label className="ds-label" htmlFor="nota">Nota</label>
             <input id="nota" className="ds-input" maxLength={200} value={c.nota}
-              onChange={e => set('nota', e.target.value)} placeholder="Función accesible, con coloquio…" />
+              onChange={e => set('nota', e.target.value)} placeholder="Opcional. Ej.: función con coloquio" />
           </div>
         </div>
         <p className="ds-form-hint" style={{ marginTop: '-4px' }}>

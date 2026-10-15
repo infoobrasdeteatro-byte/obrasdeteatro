@@ -3039,3 +3039,5 @@ a.eco-stat-card { display: block; }
   .cart-ficha > div:first-child { max-width: 260px; }
 }
 .cart-tu-espectaculo .cart-btn { white-space: normal; text-align: center; }
+/* Formularios de la cartelera: los ejemplos no deben parecer datos ya escritos. */
+.cart-form .ds-input::placeholder, .cart-form .ds-textarea::placeholder { color: #b0b0b0; font-style: italic; opacity: 1; }

@@ -40,7 +40,7 @@ export default function FichaArtisticaEditor({ espectaculoId, personas }: { espe
   }
 
   return (
-    <section className="account-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <section className="account-card cart-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <Seccion titulo="Ficha artística" />
       {personas.length > 0 && (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -63,7 +63,7 @@ export default function FichaArtisticaEditor({ espectaculoId, personas }: { espe
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="per_nombre">Nombre</label>
           <input id="per_nombre" className="ds-input" maxLength={2000} value={c.nombre}
-            onChange={e => setC(p => ({ ...p, nombre: e.target.value }))} placeholder="Nombre y apellidos (varios, separados por comas)" />
+            onChange={e => setC(p => ({ ...p, nombre: e.target.value }))} placeholder="Ej.: Ana López, Luis Pérez" />
         </div>
         {c.rol === 'reparto' && separarNombres(c.nombre).length <= 1 && (
           <div className="ds-form-group">

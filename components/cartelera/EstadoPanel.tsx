@@ -67,7 +67,7 @@ export default function EstadoPanel({
   )
 
   return (
-    <section className="account-card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <section className="account-card cart-form" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <div>
           <span className="obras-stat-label">Estado · {etiquetaEstado(e)}</span>
