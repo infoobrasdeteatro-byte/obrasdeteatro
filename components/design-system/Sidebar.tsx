@@ -26,6 +26,7 @@ const NAV_SECTIONS = [
       // El listado PUBLICO de convocatorias, no la gestion propia: con sesion
       // iniciada la barra publica no se ve, y sin esta entrada habria que
       // cerrar sesion para descubrir castings de otros.
+      { href: '/cartelera',  label: 'Cartelera',  icon: '◆' },
       { href: '/castings',   label: 'Castings',   icon: '◆' },
       { href: '/convocatoria', label: 'Convocatorias', icon: '◆' },
       { href: '/formacion', label: 'Formación', icon: '◆' },
