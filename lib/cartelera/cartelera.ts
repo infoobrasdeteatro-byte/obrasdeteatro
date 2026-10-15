@@ -31,16 +31,31 @@ export const GENEROS: Opcion[] = [
 export const ROLES: Opcion[] = [
   { value: 'reparto', label: 'Reparto' },
   { value: 'direccion', label: 'Dirección' },
-  { value: 'dramaturgia', label: 'Dramaturgia' },
+  { value: 'ayudante_direccion', label: 'Ayudantía de dirección' },
   { value: 'autoria', label: 'Autoría' },
-  { value: 'adaptacion', label: 'Adaptación' },
+  { value: 'dramaturgia', label: 'Dramaturgia' },
+  { value: 'adaptacion', label: 'Adaptación / versión' },
+  { value: 'traduccion', label: 'Traducción' },
   { value: 'produccion', label: 'Producción' },
+  { value: 'produccion_ejecutiva', label: 'Producción ejecutiva' },
   { value: 'escenografia', label: 'Escenografía' },
   { value: 'iluminacion', label: 'Iluminación' },
   { value: 'vestuario', label: 'Vestuario' },
-  { value: 'musica', label: 'Música' },
+  { value: 'maquillaje', label: 'Maquillaje y caracterización' },
+  { value: 'peluqueria', label: 'Peluquería' },
+  { value: 'atrezzo', label: 'Atrezo' },
+  { value: 'musica', label: 'Música original' },
+  { value: 'direccion_musical', label: 'Dirección musical' },
   { value: 'coreografia', label: 'Coreografía' },
-  { value: 'sonido', label: 'Sonido' },
+  { value: 'sonido', label: 'Diseño de sonido' },
+  { value: 'video', label: 'Audiovisuales y vídeo' },
+  { value: 'direccion_tecnica', label: 'Dirección técnica' },
+  { value: 'tecnica', label: 'Equipo técnico' },
+  { value: 'regiduria', label: 'Regiduría' },
+  { value: 'diseno_grafico', label: 'Diseño gráfico' },
+  { value: 'fotografia', label: 'Fotografía' },
+  { value: 'comunicacion', label: 'Prensa y comunicación' },
+  { value: 'distribucion', label: 'Distribución' },
   { value: 'otro', label: 'Otro' },
 ]
 
@@ -188,9 +203,16 @@ export function camposDesdeFila(f: {
 
 // ── Persona de la ficha artística ─────────────────────────────────────────
 
+/** «Ana López, Luis Pérez; Marta Gil» → tres nombres (se pueden añadir varios de una vez). */
+export function separarNombres(texto: string): string[] {
+  return texto.split(/[,;\n]+/).map(n => n.replace(/\s+/g, ' ').trim()).filter(Boolean)
+}
+
 export function validarPersona(c: { nombre: string; rol: string; personaje: string }): string | null {
-  const n = c.nombre.trim()
-  if (n.length < 2 || n.length > 120) return 'Escribe el nombre (de 2 a 120 caracteres).'
+  const nombres = separarNombres(c.nombre)
+  if (nombres.length === 0) return 'Escribe al menos un nombre.'
+  if (nombres.length > 30) return 'Como máximo 30 nombres de una vez.'
+  if (nombres.some(n => n.length < 2 || n.length > 120)) return 'Cada nombre debe tener de 2 a 120 caracteres.'
   if (!ROLES.some(r => r.value === c.rol)) return 'Elige el papel en el equipo.'
   if (c.personaje.trim().length > 120) return 'El personaje no puede pasar de 120 caracteres.'
   return null

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ROLES, etiquetaRol, validarPersona, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
+import { ROLES, etiquetaRol, validarPersona, separarNombres, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
 import { Seccion } from './EspectaculoForm'
 
 export type PersonaPropia = { id: string; nombre: string; rol: string; personaje: string | null; orden: number }
@@ -20,11 +20,13 @@ export default function FichaArtisticaEditor({ espectaculoId, personas }: { espe
     const problema = validarPersona(c)
     if (problema) { setError(problema); return }
     setOcupado(true)
-    const orden = personas.length ? Math.max(...personas.map(p => p.orden)) + 10 : 10
-    const { error: e } = await createClient().from('espectaculo_personas').insert({
-      espectaculo_id: espectaculoId, nombre: c.nombre.trim(), rol: c.rol,
-      personaje: c.rol === 'reparto' ? c.personaje.trim() || null : null, orden,
-    })
+    const base = personas.length ? Math.max(...personas.map(p => p.orden)) + 10 : 10
+    const nombres = separarNombres(c.nombre)
+    // El personaje solo tiene sentido con un nombre; con varios, cada uno sin personaje.
+    const personaje = c.rol === 'reparto' && nombres.length === 1 ? c.personaje.trim() || null : null
+    const { error: e } = await createClient().from('espectaculo_personas').insert(
+      nombres.map((nombre, i) => ({ espectaculo_id: espectaculoId, nombre, rol: c.rol, personaje, orden: base + i * 10 })),
+    )
     setOcupado(false)
     if (e) { setError(mensajeErrorCartelera(e.message)); return }
     setC(p => ({ ...p, nombre: '', personaje: '' }))
@@ -60,10 +62,10 @@ export default function FichaArtisticaEditor({ espectaculoId, personas }: { espe
         </div>
         <div className="ds-form-group">
           <label className="ds-label" htmlFor="per_nombre">Nombre</label>
-          <input id="per_nombre" className="ds-input" maxLength={120} value={c.nombre}
-            onChange={e => setC(p => ({ ...p, nombre: e.target.value }))} placeholder="Nombre y apellidos" />
+          <input id="per_nombre" className="ds-input" maxLength={2000} value={c.nombre}
+            onChange={e => setC(p => ({ ...p, nombre: e.target.value }))} placeholder="Nombre y apellidos (varios, separados por comas)" />
         </div>
-        {c.rol === 'reparto' && (
+        {c.rol === 'reparto' && separarNombres(c.nombre).length <= 1 && (
           <div className="ds-form-group">
             <label className="ds-label" htmlFor="per_personaje">Personaje</label>
             <input id="per_personaje" className="ds-input" maxLength={120} value={c.personaje}
@@ -71,6 +73,10 @@ export default function FichaArtisticaEditor({ espectaculoId, personas }: { espe
           </div>
         )}
       </div>
+      <p className="ds-form-hint" style={{ marginTop: '-6px' }}>
+        Puedes añadir varias personas con el mismo papel de una vez, separando los nombres con comas
+        (por ejemplo, todo el reparto). El personaje se indica de uno en uno.
+      </p>
       {error && <div className="ds-alert-error">{error}</div>}
       <div>
         <button type="button" className="ds-btn-secondary" disabled={ocupado}

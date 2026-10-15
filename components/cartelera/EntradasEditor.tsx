@@ -32,6 +32,7 @@ export default function EntradasEditor({
   const router = useRouter()
   const vacio: CamposOpcion = { tipo: 'venta', url: '', precio_desde: '', moneda: monedaSugerida, etiqueta: '', funcion_id: '' }
   const [c, setC] = useState<CamposOpcion>(vacio)
+  const [taquilla, setTaquilla] = useState(false)
   const [ocupado, setOcupado] = useState(false)
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
   const set = <K extends keyof CamposOpcion>(k: K, v: CamposOpcion[K]) => setC(p => ({ ...p, [k]: v }))
@@ -48,10 +49,16 @@ export default function EntradasEditor({
     if (problema) { setAviso({ tipo: 'error', texto: problema }); return }
     setOcupado(true)
     const orden = opciones.length ? opciones.length * 10 + 10 : 10
-    const { error } = await createClient().from('opciones_compra').insert({ ...aFilaOpcion(c), espectaculo_id: espectaculoId, orden })
+    const filas = [{ ...aFilaOpcion(c), espectaculo_id: espectaculoId, orden }]
+    // Venta online y, además, taquilla del teatro: dos opciones de una vez.
+    if (online && taquilla && !opciones.some(o => o.tipo === 'taquilla' && o.funcion_id === (c.funcion_id || null))) {
+      filas.push({ ...aFilaOpcion({ ...c, tipo: 'taquilla', url: '', etiqueta: '' }), espectaculo_id: espectaculoId, orden: orden + 10 })
+    }
+    const { error } = await createClient().from('opciones_compra').insert(filas)
     setOcupado(false)
     if (error) { setAviso({ tipo: 'error', texto: mensajeErrorCartelera(error.message) }); return }
     setC({ ...vacio, moneda: c.moneda })
+    setTaquilla(false)
     setAviso({ tipo: 'ok', texto: 'Guardado.' })
     router.refresh()
   }
@@ -132,11 +139,18 @@ export default function EntradasEditor({
               onChange={e => set('etiqueta', e.target.value)} placeholder="Comprar entradas" />
           </div>
         </div>
+        {online && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', cursor: 'pointer' }}>
+            <input type="checkbox" checked={taquilla} onChange={e => setTaquilla(e.target.checked)}
+              style={{ width: '16px', height: '16px', accentColor: 'var(--black)' }} />
+            Además, entradas a la venta en la taquilla del teatro o sala
+          </label>
+        )}
         {aviso && <div className={aviso.tipo === 'ok' ? 'ds-alert-success' : 'ds-alert-error'}>{aviso.texto}</div>}
         <div>
           <button type="button" className="ds-btn-primary" disabled={ocupado}
             style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }} onClick={anadir}>
-            {ocupado ? 'Guardando…' : '+ Añadir'}
+            {ocupado ? 'Guardando…' : online && taquilla ? '+ Añadir venta online y taquilla' : '+ Añadir'}
           </button>
         </div>
         <p className="ds-form-hint">
