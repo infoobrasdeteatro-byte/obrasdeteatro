@@ -108,3 +108,24 @@ describe('tandas de funciones y tamaño del cartel', () => {
     expect(problemaTamanoCartel(1500, 1000)).toMatch(/vertical/)
   })
 })
+
+describe('limpiarCiudad', () => {
+  it('quita el país y pone mayúsculas', async () => {
+    const { limpiarCiudad } = await import('../cartelera')
+    expect(limpiarCiudad('caracas Venezuela', 'Venezuela')).toBe('Caracas')
+    expect(limpiarCiudad('buenos aires, argentina', 'Argentina')).toBe('Buenos Aires')
+    expect(limpiarCiudad('santa cruz de tenerife', 'España')).toBe('Santa Cruz de Tenerife')
+    expect(limpiarCiudad('Ciudad de México', 'México')).toBe('Ciudad de México')
+    expect(limpiarCiudad('  Lima  ', 'Perú')).toBe('Lima')
+    expect(limpiarCiudad('Panamá', 'Panamá')).toBe('Panamá')
+  })
+})
+
+describe('limpiarCiudad (nombres con el país dentro)', () => {
+  it('no recorta Ciudad de Panamá ni Ciudad de Guatemala', async () => {
+    const { limpiarCiudad } = await import('../cartelera')
+    expect(limpiarCiudad('Ciudad de Panamá', 'Panamá')).toBe('Ciudad de Panamá')
+    expect(limpiarCiudad('ciudad de guatemala', 'Guatemala')).toBe('Ciudad de Guatemala')
+    expect(limpiarCiudad('San Salvador, El Salvador', 'El Salvador')).toBe('San Salvador')
+  })
+})

@@ -21,7 +21,7 @@ export default async function MisEspectaculosPage() {
   const [{ data }, { data: perfil }, { data: limites }, { data: clics }] = await Promise.all([
     supabase
       .from('espectaculos')
-      .select('id, slug, titulo, compania_nombre, cartel_url, estado, motivo_rechazo, created_at, funciones(inicio, estado, ciudad)')
+      .select('id, slug, titulo, compania_nombre, cartel_url, estado, motivo_rechazo, created_at, funciones(inicio, zona_horaria, estado, ciudad, lugar_nombre)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('profiles').select('plan, verificado').eq('id', user.id).single(),
@@ -39,7 +39,7 @@ export default async function MisEspectaculosPage() {
     return {
       id: e.id, slug: e.slug, titulo: e.titulo, compania_nombre: e.compania_nombre, cartel_url: e.cartel_url,
       estado: e.estado, motivo_rechazo: e.motivo_rechazo,
-      funciones: (e.funciones ?? []).length, proxima: futuras[0]?.inicio ?? null,
+      funciones: (e.funciones ?? []).length, proxima: futuras[0] ? { inicio: futuras[0].inicio, zona: futuras[0].zona_horaria, lugar: futuras[0].lugar_nombre } : null,
       ciudades: [...new Set(futuras.map(f => f.ciudad).filter(Boolean))] as string[],
       clics: porEspectaculo.get(e.id) ?? 0,
     }

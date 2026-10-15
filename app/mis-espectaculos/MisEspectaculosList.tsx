@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { etiquetaEstado, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
+import { etiquetaEstado, fechaFuncion, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
 import Compartir from '@/components/cartelera/Compartir'
 
 export type EspectaculoPropio = {
@@ -16,7 +16,8 @@ export type EspectaculoPropio = {
   estado: string
   motivo_rechazo: string | null
   funciones: number
-  proxima: string | null
+  /** Próxima función, con la zona horaria del lugar (la fecha se calcula en esa zona). */
+  proxima: { inicio: string; zona: string; lugar: string | null } | null
   ciudades: string[]
   clics: number
 }
@@ -38,8 +39,10 @@ function Pildora({ estado }: { estado: string }) {
   )
 }
 
-const fechaCorta = (iso: string) =>
-  new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', timeZone: 'Europe/Madrid' }).format(new Date(iso))
+/** «24 oct, 19:30 h» en la hora local del lugar de la función. */
+const fechaCorta = (p: { inicio: string; zona: string }) =>
+  new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: p.zona })
+    .format(new Date(p.inicio)).replace(/\./g, '') + ' h'
 
 export default function MisEspectaculosList({ espectaculos }: { espectaculos: EspectaculoPropio[] }) {
   const router = useRouter()
@@ -97,7 +100,8 @@ export default function MisEspectaculosList({ espectaculos }: { espectaculos: Es
                   Editar, funciones y entradas
                 </Link>
                 {(e.estado === 'publicado' || e.estado === 'finalizado') && (
-                  <Compartir slug={e.slug} titulo={e.titulo} cuando={e.proxima ? fechaCorta(e.proxima) : null} donde={e.ciudades[0] ?? null} />
+                  <Compartir slug={e.slug} titulo={e.titulo} cuando={e.proxima ? fechaFuncion(e.proxima.inicio, e.proxima.zona) : null}
+                    donde={e.proxima ? [e.proxima.lugar, e.ciudades[0]].filter(Boolean).join(', ') : null} />
                 )}
                 <button type="button" className="table-link table-link--danger" style={{ marginLeft: 'auto' }} onClick={() => borrar(e.id)}>
                   Borrar

@@ -6,7 +6,7 @@ const SITIO = 'https://www.obrasdeteatro.com'
 
 /** Texto que acompaña al enlace al compartir. */
 export function textoCompartir(titulo: string, cuando?: string | null, donde?: string | null): string {
-  return [`🎭 ${titulo}`, [cuando, donde].filter(Boolean).join(' · ')].filter(Boolean).join('\n')
+  return [titulo, [cuando, donde].filter(Boolean).join(' · ')].filter(Boolean).join('\n')
 }
 
 /** Enlaces de cada red (se abren en una pestaña nueva). */
@@ -19,7 +19,7 @@ export function enlacesCompartir(url: string, texto: string) {
     { red: 'X', href: `https://x.com/intent/post?text=${t}&url=${u}` },
     { red: 'Telegram', href: `https://t.me/share/url?url=${u}&text=${t}` },
     { red: 'LinkedIn', href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
-    { red: 'Correo', href: `mailto:?subject=${encodeURIComponent(texto.split('\n')[0].replace('🎭 ', ''))}&body=${encodeURIComponent(`${texto}\n\n${url}`)}` },
+    { red: 'Correo', href: `mailto:?subject=${encodeURIComponent(texto.split('\n')[0])}&body=${encodeURIComponent(`${texto}\n\n${url}`)}` },
   ]
 }
 
