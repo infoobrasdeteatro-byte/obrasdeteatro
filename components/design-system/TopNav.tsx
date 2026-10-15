@@ -137,6 +137,7 @@ export default function TopNav({ heroMode = false }: Props) {
         <div className="nav-links">
           <Link href="/directorio" className="nav-link">Profesionales</Link>
           <Link href="/obras" className="nav-link">Obras</Link>
+          <Link href="/cartelera" className="nav-link">Cartelera</Link>
           <Link href="/castings" className="nav-link">Castings</Link>
           <Link href="/directorio?tipo=compania" className="nav-link">Compañías</Link>
           <Link href="/espacios" className="nav-link">Espacios Escénicos</Link>
@@ -175,6 +176,9 @@ export default function TopNav({ heroMode = false }: Props) {
           </Link>
           <Link href="/obras" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Obras
+          </Link>
+          <Link href="/cartelera" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Cartelera
           </Link>
           <Link href="/castings" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Castings
