@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { etiquetaEstado, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
+import { useGuardarPendientes } from './Pendientes'
 
 /**
  * Estado del espectáculo y lo que se puede hacer con él. «Enviar a publicar»
@@ -21,10 +22,24 @@ export default function EstadoPanel({
   const [ocupado, setOcupado] = useState(false)
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null)
   const e = espectaculo.estado
+  const guardarPendientes = useGuardarPendientes()
+  const SECCION: Record<string, string> = { funciones: 'Funciones', entradas: 'Entradas', ficha: 'Ficha artística' }
 
   const cambiar = async (estado: string) => {
     setAviso(null)
-    if (estado === 'publicado' && funcionesFuturas === 0) {
+    let guardados: string[] = []
+    if (estado === 'publicado') {
+      // Lo escrito y no añadido en Funciones, Entradas o Ficha se guarda ahora, no se pierde.
+      setOcupado(true)
+      const r = await guardarPendientes()
+      setOcupado(false)
+      guardados = r.guardados
+      if (r.fallidos.length) {
+        setAviso({ tipo: 'error', texto: `Hay datos sin completar en ${r.fallidos.map(f => `«${SECCION[f] ?? f}»`).join(' y ')}: revisa el aviso en rojo de esa sección y vuelve a pulsar «Enviar a publicar».` })
+        return
+      }
+    }
+    if (estado === 'publicado' && funcionesFuturas === 0 && !guardados.includes('funciones')) {
       setAviso({ tipo: 'error', texto: 'Todavía no hay ninguna función guardada. En «Funciones», rellena país, sala o lugar, día y hora, y pulsa «+ Añadir función»: cuando aparezca en la lista ya podrás publicar.' })
       return
     }

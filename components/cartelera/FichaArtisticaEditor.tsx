@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ROLES, etiquetaRol, validarPersona, separarNombres, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
 import { Seccion } from './EspectaculoForm'
+import { useRegistrarPendiente } from './Pendientes'
 
 export type PersonaPropia = { id: string; nombre: string; rol: string; personaje: string | null; orden: number }
 
@@ -15,10 +16,10 @@ export default function FichaArtisticaEditor({ espectaculoId, personas }: { espe
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState('')
 
-  const anadir = async () => {
+  const anadir = async (): Promise<boolean> => {
     setError('')
     const problema = validarPersona(c)
-    if (problema) { setError(problema); return }
+    if (problema) { setError(problema); return false }
     setOcupado(true)
     const base = personas.length ? Math.max(...personas.map(p => p.orden)) + 10 : 10
     const nombres = separarNombres(c.nombre)
@@ -28,10 +29,14 @@ export default function FichaArtisticaEditor({ espectaculoId, personas }: { espe
       nombres.map((nombre, i) => ({ espectaculo_id: espectaculoId, nombre, rol: c.rol, personaje, orden: base + i * 10 })),
     )
     setOcupado(false)
-    if (e) { setError(mensajeErrorCartelera(e.message)); return }
+    if (e) { setError(mensajeErrorCartelera(e.message)); return false }
     setC(p => ({ ...p, nombre: '', personaje: '' }))
     router.refresh()
+    return true
   }
+
+  // Nombres escritos sin añadir se guardan al enviar a publicar.
+  useRegistrarPendiente('ficha', async () => (c.nombre.trim() ? ((await anadir()) ? 'ok' : 'error') : 'nada'))
 
   const borrar = async (id: string) => {
     const { error: e } = await createClient().from('espectaculo_personas').delete().eq('id', id)

@@ -23,7 +23,7 @@ describe('fechas de las funciones', () => {
   })
 
   it('fecha legible en la zona de la función', () => {
-    expect(fechaFuncion('2026-12-10T20:00:00.000Z', 'Atlantic/Canary')).toMatch(/10 dic.*· 20:00/)
+    expect(fechaFuncion('2026-12-10T20:00:00.000Z', 'Atlantic/Canary')).toMatch(/^Jue 10 dic.*· 20:00 h$/)
   })
 
   it('zona por defecto: Canarias tiene la suya', () => {

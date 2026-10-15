@@ -9,6 +9,7 @@ import {
 } from '@/lib/cartelera/cartelera'
 import type { FuncionPropia } from './FuncionesEditor'
 import { Seccion } from './EspectaculoForm'
+import { useRegistrarPendiente } from './Pendientes'
 
 export type OpcionPropia = {
   id: string
@@ -43,10 +44,10 @@ export default function EntradasEditor({
     return f ? fechaFuncion(f.inicio, f.zona_horaria) : 'Una función'
   }
 
-  const anadir = async () => {
+  const anadir = async (): Promise<boolean> => {
     setAviso(null)
     const problema = validarOpcion(c)
-    if (problema) { setAviso({ tipo: 'error', texto: problema }); return }
+    if (problema) { setAviso({ tipo: 'error', texto: problema }); return false }
     setOcupado(true)
     const orden = opciones.length ? opciones.length * 10 + 10 : 10
     const filas = [{ ...aFilaOpcion(c), espectaculo_id: espectaculoId, orden }]
@@ -56,12 +57,16 @@ export default function EntradasEditor({
     }
     const { error } = await createClient().from('opciones_compra').insert(filas)
     setOcupado(false)
-    if (error) { setAviso({ tipo: 'error', texto: mensajeErrorCartelera(error.message) }); return }
+    if (error) { setAviso({ tipo: 'error', texto: mensajeErrorCartelera(error.message) }); return false }
     setC({ ...vacio, moneda: c.moneda })
     setTaquilla(false)
     setAviso({ tipo: 'ok', texto: 'Guardado.' })
     router.refresh()
+    return true
   }
+
+  // Un enlace o precio escrito sin añadir se guarda al enviar a publicar.
+  useRegistrarPendiente('entradas', async () => (c.url.trim() || c.precio_desde.trim() ? ((await anadir()) ? 'ok' : 'error') : 'nada'))
 
   const borrar = async (id: string) => {
     if (!confirm('¿Quitar esta opción de entradas?')) return
