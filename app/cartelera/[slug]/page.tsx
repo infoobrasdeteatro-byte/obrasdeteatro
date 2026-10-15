@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: descripcion,
     alternates: { canonical: rutaEspectaculo(e.slug) },
     openGraph: {
-      title: e.titulo, description: descripcion, url: rutaEspectaculo(e.slug), siteName: 'ObrasDeTeatro', locale: 'es_ES', type: 'website',
+      title: `${e.titulo} | ObrasDeTeatro.com`, description: descripcion, url: rutaEspectaculo(e.slug), siteName: 'ObrasDeTeatro', locale: 'es_ES', type: 'website',
       ...(e.cartel_url ? { images: [{ url: e.cartel_url }] } : {}),
     },
   }
