@@ -30,6 +30,8 @@ import {
 } from '@/lib/espacios/espacios'
 import { getCountryByCode } from '@/lib/geo/countries'
 import { SITIO } from '@/lib/convocatorias/resumen-semanal'
+import ProgramacionSala from '@/components/cartelera/ProgramacionSala'
+import { programacionDeSala } from '@/lib/cartelera/sala'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -88,6 +90,7 @@ export default async function EspacioPage({ params }: Props) {
   const jsonLd = jsonLdEspacio(e, `${SITIO}${rutaFicha(e.slug)}`)
   const direccion = [e.direccion, [e.codigo_postal, e.municipio].filter(Boolean).join(' ')].filter(Boolean).join(', ')
   const hayHistoria = Boolean(e.anio_inauguracion || e.arquitecto || e.titularidad)
+  const programacion = await programacionDeSala(e.id, Date.now())
 
   return (
     <>
@@ -124,6 +127,8 @@ export default async function EspacioPage({ params }: Props) {
               {[e.municipio, e.isla, e.region !== e.municipio ? e.region : null, pais].filter(Boolean).join(' · ')}
             </p>
             {e.verificado && <p style={{ marginTop: '10px' }}><span className="esp-sello">Ficha verificada</span></p>}
+
+            <ProgramacionSala fichas={programacion.fichas} entradas={programacion.entradas} nombreSala={e.nombre} />
 
             <section className="esp-bloque" aria-labelledby="esp-practicos">
               <h2 id="esp-practicos" className="esp-bloque-titulo">Datos prácticos</h2>

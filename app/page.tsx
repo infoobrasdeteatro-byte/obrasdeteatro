@@ -4,12 +4,15 @@ import EcosistemaPulso from '@/components/homepage/EcosistemaPulso'
 import { obtenerDatosPortada, superaUmbral, UMBRALES } from '@/lib/portada/datos'
 import { colaboradoresActivos } from '@/lib/colaboradores/datos'
 import FranjaColaboradores from '@/components/colaboradores/FranjaColaboradores'
+import FranjaEnCartel from '@/components/cartelera/FranjaEnCartel'
+import { enCartelPortada } from '@/lib/cartelera/portada'
 
 // Las cifras y listas de la portada son reales: se vuelven a leer cada 10 minutos.
 export const revalidate = 600
 
 export default async function Home() {
-  const [datos, colaboradores] = await Promise.all([obtenerDatosPortada(), colaboradoresActivos()])
+  const ahora = Date.now()
+  const [datos, colaboradores, cartel] = await Promise.all([obtenerDatosPortada(), colaboradoresActivos(), enCartelPortada(ahora)])
   // La franja se titula «Medios colaboradores»: solo los de tipo medio.
   const medios = colaboradores.filter(c => c.tipo === 'medio')
   const obrasIndicador = superaUmbral(datos.obras, UMBRALES.obras)
@@ -89,6 +92,9 @@ export default async function Home() {
 
       {/* ── MEDIOS COLABORADORES (solo si hay alguno activo) ── */}
       <FranjaColaboradores colaboradores={medios} />
+
+      {/* ── EN CARTEL (solo si hay espectáculos con funciones próximas) ── */}
+      <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} />
 
       {/* ── NARRATIVE ── */}
       <section className="narrative" aria-labelledby="narrative-heading">
