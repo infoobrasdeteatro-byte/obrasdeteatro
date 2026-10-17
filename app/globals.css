@@ -3146,7 +3146,6 @@ a.eco-stat-card { display: block; }
 .eco-two-col--sep { margin-top: 24px; }
 .eco-two-col > :only-child { grid-column: 1 / -1; }
 .eco-two-col .eco-noticias { margin-top: 0; }
-.narrative .eco-stats-grid { margin-bottom: 0; }
 @media (max-width: 768px) {
   .eco-two-col--sep { margin-top: 20px; }
 }
@@ -3162,3 +3161,15 @@ a.eco-stat-card { display: block; }
   .eco-two-col--sep .eco-comunidad-card { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: center; }
   .eco-two-col--sep .eco-ecosystem-map { margin-bottom: 0; }
 }
+
+/* Portada (17/10/2026): las ocho secciones bajo los colaboradores. */
+.secciones { background: var(--white); border-bottom: 1px solid var(--border); padding: 40px 24px; }
+.secciones-grid { max-width: 1272px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.secciones .eco-stat-card { display: flex; flex-direction: column; }
+.secciones .eco-stat-card:hover .eco-stat-value { color: var(--red); }
+.secciones .eco-stat-link { margin-top: auto; padding-top: 6px; }
+@media (max-width: 900px) { .secciones-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .secciones { padding: 28px 16px; } .secciones .eco-stat-link { opacity: 1; transform: none; } }
+@media (max-width: 768px) { .secciones .eco-stat-value { font-size: 18px; } }
+/* Texto de la portada más legible sobre la foto (escaleras claras detrás). */
+.hero-sub { color: rgba(255,255,255,0.86); font-weight: 400; text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 0 18px rgba(0,0,0,0.65); max-width: 640px; }
