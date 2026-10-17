@@ -5,6 +5,8 @@ import type { Metadata } from 'next'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import MisEspectaculosList, { type EspectaculoPropio } from './MisEspectaculosList'
+import { diaLocal } from '@/lib/cartelera/listado'
+import type { Destacado } from '@/lib/cartelera/destacados'
 
 export const metadata: Metadata = {
   title: 'Mis espectáculos | ObrasDeTeatro',
@@ -25,7 +27,7 @@ export default async function MisEspectaculosPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('profiles').select('plan, verificado').eq('id', user.id).single(),
-    supabase.from('cartelera_limites_plan').select('plan, max_activos'),
+    supabase.from('cartelera_limites_plan').select('plan, max_activos, semanas_destacado_mes'),
     supabase.from('cartelera_eventos').select('espectaculo_id').eq('tipo', 'clic_compra').limit(10000),
   ])
 
@@ -44,9 +46,17 @@ export default async function MisEspectaculosPage() {
       clics: porEspectaculo.get(e.id) ?? 0,
     }
   })
+  // Destacados de sus espectáculos (para el botón «Destacar» y su cupo).
+  const ids = (data ?? []).map(e => e.id)
+  const { data: dest } = ids.length
+    ? await supabase.from('cartelera_destacados').select('id, espectaculo_id, desde, hasta, origen').in('espectaculo_id', ids)
+    : { data: [] as Destacado[] }
+  const limitePlan = (limites ?? []).find(l => l.plan === (perfil?.plan ?? 'gratuito'))
+  const hoy = diaLocal(ahora, 'Europe/Madrid')
+
   const publicados = lista.filter(e => e.estado === 'publicado').length
   const revision = lista.filter(e => e.estado === 'pendiente_revision').length
-  const maximo = (limites ?? []).find(l => l.plan === (perfil?.plan ?? 'gratuito'))?.max_activos ?? null
+  const maximo = limitePlan?.max_activos ?? null
 
   return (
     <div style={{ background: 'var(--off)', minHeight: '100vh' }}>
@@ -92,7 +102,7 @@ export default async function MisEspectaculosPage() {
             </p>
           )}
 
-          <MisEspectaculosList espectaculos={lista} />
+          <MisEspectaculosList espectaculos={lista} destacados={dest ?? []} cupoSemanas={limitePlan?.semanas_destacado_mes ?? 0} hoy={hoy} />
         </main>
       </div>
     </div>

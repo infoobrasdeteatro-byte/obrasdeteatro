@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { etiquetaEstado, fechaFuncion, mensajeErrorCartelera } from '@/lib/cartelera/cartelera'
 import Compartir from '@/components/cartelera/Compartir'
+import Destacar from '@/components/cartelera/Destacar'
+import { diaLocal } from '@/lib/cartelera/listado'
+import type { Destacado } from '@/lib/cartelera/destacados'
 
 export type EspectaculoPropio = {
   id: string
@@ -44,7 +47,9 @@ const fechaCorta = (p: { inicio: string; zona: string }) =>
   new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: p.zona })
     .format(new Date(p.inicio)).replace(/\./g, '') + ' h'
 
-export default function MisEspectaculosList({ espectaculos }: { espectaculos: EspectaculoPropio[] }) {
+export default function MisEspectaculosList({ espectaculos, destacados = [], cupoSemanas = 0, hoy }: {
+  espectaculos: EspectaculoPropio[]; destacados?: Destacado[]; cupoSemanas?: number; hoy: string
+}) {
   const router = useRouter()
   const [error, setError] = useState<Record<string, string>>({})
 
@@ -94,6 +99,10 @@ export default function MisEspectaculosList({ espectaculos }: { espectaculos: Es
               <div className="ds-alert-error" style={{ marginTop: '10px' }}>No aprobado: {e.motivo_rechazo}</div>
             )}
             {error[e.id] && <div className="ds-alert-error" style={{ marginTop: '10px' }}>{error[e.id]}</div>}
+            {e.estado === 'publicado' && (
+              <Destacar espectaculoId={e.id} cupo={cupoSemanas} destacados={destacados} hoy={hoy}
+                proximaDia={e.proxima ? diaLocal(e.proxima.inicio, e.proxima.zona) : null} conFunciones={Boolean(e.proxima)} />
+            )}
             {e.estado !== 'retirado' && (
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '14px' }}>
                 <Link href={`/mis-espectaculos/${e.id}/editar`} className="ds-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}>

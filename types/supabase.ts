@@ -4431,6 +4431,11 @@ export type Database = {
     }
     Functions: {
       registrar_clic_compra: { Args: { p_opcion: string }; Returns: string | null }
+      cartelera_destacar: {
+        Args: { p_espectaculo: string; p_desde: string }
+        Returns: { id: string; espectaculo_id: string; desde: string; hasta: string; ambito: string; origen: string; created_at: string }
+      }
+      cartelera_quitar_destacado: { Args: { p_id: string }; Returns: undefined }
       espectaculo_visible: { Args: { p_espectaculo: string }; Returns: boolean }
       espectaculo_editable: { Args: { p_espectaculo: string }; Returns: boolean }
       actividad_por_pais: {

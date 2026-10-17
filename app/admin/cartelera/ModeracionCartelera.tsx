@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import {
   etiquetaEstado, etiquetaGenero, etiquetaRol, etiquetaTipoOpcion, fechaFuncion, precioTexto, mensajeErrorCartelera,
 } from '@/lib/cartelera/cartelera'
+import DestacarModeracion from '@/components/cartelera/DestacarModeracion'
+import type { Destacado } from '@/lib/cartelera/destacados'
 
 export type EspectaculoAdmin = {
   id: string
@@ -27,6 +29,7 @@ export type EspectaculoAdmin = {
   opciones: { id: string; tipo: string; proveedor: string; url: string | null; precio_desde: number | null; moneda: string | null }[]
   equipo: { id: string; nombre: string; rol: string; personaje: string | null }[]
   persona: { nombre: string; slug: string | null; email: string; verificado: boolean; plan: string } | null
+  destacados: (Destacado & { ambito: string })[]
 }
 
 const PESTANAS = [
@@ -44,7 +47,7 @@ const ESTILO_ESTADO: Record<string, React.CSSProperties> = {
 
 const LIMITE = 320
 
-export default function ModeracionCartelera({ inicial }: { inicial: EspectaculoAdmin[] }) {
+export default function ModeracionCartelera({ inicial, hoy }: { inicial: EspectaculoAdmin[]; hoy: string }) {
   const router = useRouter()
   const [pestana, setPestana] = useState<(typeof PESTANAS)[number]['id']>('revision')
   const [abierto, setAbierto] = useState<string | null>(null)
@@ -219,6 +222,7 @@ export default function ModeracionCartelera({ inicial }: { inicial: EspectaculoA
                   )}
                 </div>
               )}
+              {e.estado === 'publicado' && <DestacarModeracion espectaculoId={e.id} destacados={e.destacados} hoy={hoy} />}
               {e.estado === 'pendiente_revision' && futuras.length === 0 && (
                 <p className="ds-form-hint">Ojo: no tiene funciones por delante; si lo apruebas pasará a «Finalizado» esta noche.</p>
               )}

@@ -3130,3 +3130,13 @@ a.eco-stat-card { display: block; }
   .sala-prog-mini { width: 48px; }
   .sala-prog-acc { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
 }
+
+/* Destacados de la cartelera */
+.cart-dest { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--red); margin-bottom: 3px; }
+.cart-card:has(.cart-dest) .cart-poster { box-shadow: 0 0 0 2px var(--red); }
+.dest { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 8px; }
+.dest-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.dest-lista li { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.dest-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--subtle); color: var(--text); font-size: 12px; font-weight: 600; }
+.dest-pill--on { background: var(--red-light); color: var(--red-h); }
+.dest-panel { background: var(--off); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }

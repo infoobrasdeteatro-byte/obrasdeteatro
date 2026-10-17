@@ -463,6 +463,8 @@ export function mensajeErrorCartelera(m?: string): string {
   if (!m) return 'No se pudo guardar. Inténtalo de nuevo.'
   if (m.includes('Tu plan permite') || m.includes('retirado el equipo') || m.includes('no existe o no está publicada')
     || m.includes('no es de este espectáculo')) return m
+  // Mensajes de cartelera_destacar / cartelera_quitar_destacado: ya están escritos para el usuario.
+  if (/destacad|Esa semana|no es tuyo|Inicia sesión|en el pasado|antelación/.test(m)) return m
   if (m.includes('row-level security')) return 'No tienes permiso para cambiar este espectáculo.'
   if (m.includes('funciones_lugar')) return 'Elige una sala o escribe lugar, ciudad y país.'
   if (m.includes('opciones_compra_url')) return 'El enlace de entradas no es válido.'
