@@ -3140,3 +3140,25 @@ a.eco-stat-card { display: block; }
 .dest-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--subtle); color: var(--text); font-size: 12px; font-weight: 600; }
 .dest-pill--on { background: var(--red-light); color: var(--red-h); }
 .dest-panel { background: var(--off); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+
+/* Portada reordenada (17/10/2026): dos filas simétricas en «El pulso» y las
+   cuatro tarjetas en la sección narrativa. */
+.eco-two-col--sep { margin-top: 24px; }
+.eco-two-col > :only-child { grid-column: 1 / -1; }
+.eco-two-col .eco-noticias { margin-top: 0; }
+.narrative .eco-stats-grid { margin-bottom: 0; }
+@media (max-width: 768px) {
+  .eco-two-col--sep { margin-top: 20px; }
+}
+/* Mapa y ScenaIA a la par: en escritorio el mapa y sus cifras van lado a lado
+   dentro de la tarjeta, y las dos tarjetas de cada fila tienen la misma altura. */
+.eco-two-col > div { display: flex; flex-direction: column; min-width: 0; }
+.eco-two-col > div > .eco-conv-list,
+.eco-two-col > div > .eco-comunidad-card,
+.eco-two-col > div > .eco-scenaia-card { flex: 1; }
+.eco-two-col .eco-scenaia-card { display: flex; flex-direction: column; }
+.eco-two-col .eco-scenaia-body-section { flex: 1; }
+@media (min-width: 1000px) {
+  .eco-two-col--sep .eco-comunidad-card { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: center; }
+  .eco-two-col--sep .eco-ecosystem-map { margin-bottom: 0; }
+}

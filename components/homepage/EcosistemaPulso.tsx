@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { IconPlus } from './EcoIcons'
-import EcosistemaStatsGrid from './EcosistemaStatsGrid'
 import EcosistemaObrasDestacadas from './EcosistemaObrasDestacadas'
 import EcosistemaConvocatorias from './EcosistemaConvocatorias'
 import EcosistemaMapaHispano from './EcosistemaMapaHispano'
@@ -11,7 +10,8 @@ import type { DatosPortada } from '@/lib/portada/datos'
 
 /**
  * Bloque "El pulso del ecosistema teatral hispano" de la home pública,
- * entre la sección narrativa y el footer. Cifras, obras, convocatorias y
+ * entre la sección narrativa y «En cartel». Las cuatro tarjetas de cifras
+ * (EcosistemaStatsGrid) van arriba, en la sección narrativa (app/page.tsx). Cifras, obras, convocatorias y
  * noticias vienen de Supabase (lib/portada/datos); lo que no tiene dato
  * real se dice con texto o no se pinta.
  */
@@ -32,18 +32,19 @@ export default function EcosistemaPulso({ datos }: { datos: DatosPortada }) {
             </Link>
           </div>
 
-          <EcosistemaStatsGrid datos={datos} />
           <EcosistemaObrasDestacadas obras={datos.ultimasObras} />
 
+          {/* Convocatorias y noticias, una al lado de la otra. */}
           <div className="eco-two-col">
             <EcosistemaConvocatorias convocatorias={datos.ultimasConvocatorias} />
-            <div className="eco-right-col">
-              <EcosistemaMapaHispano actividad={datos.actividadPaises} />
-              <EcosistemaScenaIACard />
-            </div>
+            <EcosistemaNoticias noticias={datos.ultimasNoticias} />
           </div>
 
-          <EcosistemaNoticias noticias={datos.ultimasNoticias} />
+          {/* Mapa y ScenaIA, uno al lado del otro. */}
+          <div className="eco-two-col eco-two-col--sep">
+            <EcosistemaMapaHispano actividad={datos.actividadPaises} />
+            <EcosistemaScenaIACard />
+          </div>
         </main>
       </div>
     </section>
