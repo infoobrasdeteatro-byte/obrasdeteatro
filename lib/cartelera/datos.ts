@@ -12,16 +12,17 @@ type Cliente = SupabaseClient<Database>
  * de quien publica.
  */
 
-export async function funcionesFuturas(supabase: Cliente, ahora: number): Promise<FuncionListado[]> {
+/** Funciones próximas de espectáculos publicados; con `espacioId`, solo las de esa sala. */
+export async function funcionesFuturas(supabase: Cliente, ahora: number, filtro: { espacioId?: string } = {}): Promise<FuncionListado[]> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const { data } = await supabase
+  let consulta = supabase
     .from('funciones')
     .select('id, inicio, zona_horaria, ciudad, pais_code, lugar_nombre, espacio_id, estado, espectaculos!inner(id, slug, titulo, compania_nombre, cartel_url, genero_id, user_id, estado)')
     .eq('espectaculos.estado', 'publicado')
     .neq('estado', 'cancelada')
     .gte('inicio', new Date(ahora - MARGEN_EMPEZADA_MS).toISOString())
-    .order('inicio', { ascending: true })
-    .limit(3000)
+  if (filtro.espacioId) consulta = consulta.eq('espacio_id', filtro.espacioId)
+  const { data } = await consulta.order('inicio', { ascending: true }).limit(3000)
   return (data ?? []).map(f => {
     const e = f.espectaculos
     return {

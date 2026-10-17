@@ -1,4 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { espectaculosDelPerfil } from '@/lib/cartelera/perfil'
+import { resumenEntradas } from '@/lib/cartelera/datos'
+import EspectaculosPerfil from '@/components/cartelera/EspectaculosPerfil'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -209,6 +212,11 @@ export default async function PerfilPublicoPage({ params }: Props) {
   ])
 
   const siguiendoEstePerfil = followResult.data !== null
+
+  // ── Cartelera: sus espectáculos publicados (en cartel y anteriores) ────
+  const ahora = Date.now()
+  const espectaculos = await espectaculosDelPerfil(supabase, profile.id, ahora)
+  const entradasCartel = await resumenEntradas(supabase, espectaculos.enCartel.map(e => e.id))
 
   // ── Perfil completo: portada, galería, vídeos y portfolio ──────────────
   // Solo con plan de pago: así el dueño ve en su página pública lo mismo que
@@ -486,6 +494,9 @@ export default async function PerfilPublicoPage({ params }: Props) {
             <BioExpander bio={profile.bio} />
           </section>
         )}
+
+        {/* ── EN CARTEL / ANTERIORES (cartelera) ── */}
+        <EspectaculosPerfil enCartel={espectaculos.enCartel} anteriores={espectaculos.anteriores} entradas={entradasCartel} ahora={ahora} />
 
         {/* ── ZONA C — Especialidades ── */}
         {safeSpecialties.length > 0 && (

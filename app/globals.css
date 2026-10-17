@@ -3094,3 +3094,39 @@ a.eco-stat-card { display: block; }
 .compartir-redes a { text-align: center; font-size: 12.5px; padding: 8px 4px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); text-decoration: none; }
 .compartir-redes a:hover { border-color: var(--black); background: var(--subtle); }
 .compartir-panel p { font-size: 11.5px; color: var(--muted); margin: 0; }
+
+/* ═══════════════════════════════════════════════════
+   EN CARTEL — franja de la portada
+═══════════════════════════════════════════════════ */
+.home-cartel { background: var(--off); border-bottom: 1px solid var(--border); padding: 56px 24px 48px; }
+.home-cartel-inner { max-width: 1180px; margin: 0 auto; }
+.home-cartel-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.home-cartel-titulo { font-family: var(--serif); font-size: clamp(26px, 3.2vw, 36px); color: var(--black); letter-spacing: -0.6px; line-height: 1.1; }
+.home-cartel-sub { font-size: 14px; color: var(--muted); margin-top: 6px; }
+.home-cartel-ver { font-size: 13px; font-weight: 600; color: var(--red); text-decoration: none; white-space: nowrap; }
+.home-cartel-ver:hover { color: var(--red-h); }
+.home-cartel-lista { display: flex; gap: 18px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.home-cartel-item { flex: 0 0 190px; scroll-snap-align: start; min-width: 0; }
+@media (max-width: 640px) {
+  .home-cartel { padding: 40px 16px 32px; }
+  .home-cartel-item { flex-basis: 160px; }
+}
+
+/* Perfil: espectáculos anteriores (carteles más pequeños) */
+.cart-grid--mini { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 18px 14px; }
+
+/* Ficha de sala: Programación */
+.sala-prog { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sala-prog-fila { display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: center; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--white); }
+.sala-prog-mini { display: block; width: 56px; aspect-ratio: 2 / 3; border-radius: 5px; overflow: hidden; background: linear-gradient(160deg, #2a2a2a, #0a0a0a); }
+.sala-prog-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sala-prog-t { font-family: var(--serif); font-size: 17px; color: var(--black); text-decoration: none; line-height: 1.2; }
+.sala-prog-t:hover { text-decoration: underline; }
+.sala-prog-m { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.sala-prog-f { font-size: 13px; color: var(--text); margin-top: 4px; font-weight: 500; }
+.sala-prog-acc { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-size: 12.5px; }
+@media (max-width: 560px) {
+  .sala-prog-fila { grid-template-columns: 48px 1fr; }
+  .sala-prog-mini { width: 48px; }
+  .sala-prog-acc { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; }
+}
