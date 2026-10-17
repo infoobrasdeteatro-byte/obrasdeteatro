@@ -3146,7 +3146,6 @@ a.eco-stat-card { display: block; }
 .eco-two-col--sep { margin-top: 24px; }
 .eco-two-col > :only-child { grid-column: 1 / -1; }
 .eco-two-col .eco-noticias { margin-top: 0; }
-.narrative .eco-stats-grid { margin-bottom: 0; }
 @media (max-width: 768px) {
   .eco-two-col--sep { margin-top: 20px; }
 }
@@ -3161,4 +3160,17 @@ a.eco-stat-card { display: block; }
 @media (min-width: 1000px) {
   .eco-two-col--sep .eco-comunidad-card { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: center; }
   .eco-two-col--sep .eco-ecosystem-map { margin-bottom: 0; }
+}
+
+/* Portada (17/10/2026): las cuatro puertas bajo los botones, enlazadas.
+   Sustituyen a «Abierta · 20 · Activa · Gratis» y a la línea pequeña. */
+.hero-indicators--puertas { margin-top: 28px; }
+.hero-indicators--puertas .hero-indicator { text-decoration: none; transition: transform 0.2s ease; }
+.hero-indicators--puertas .hero-indicator:hover { transform: translateY(-2px); }
+.hero-indicators--puertas .hero-indicator:hover .hero-indicator-label { color: #ffffff; }
+.hero-indicators--puertas .hero-indicator-value { font-size: 24px; white-space: nowrap; }
+@media (max-width: 768px) {
+  .hero-indicators--puertas { margin-top: 0; max-width: 360px; }
+  .hero-indicators--puertas .hero-indicator-value { font-size: 18px; white-space: normal; text-align: center; line-height: 1.15; }
+  .hero-indicators--puertas .hero-indicator-label { white-space: normal; text-align: center; line-height: 1.4; }
 }
