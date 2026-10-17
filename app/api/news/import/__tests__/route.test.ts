@@ -145,8 +145,14 @@ describe('POST /api/news/import — sobre', () => {
     expect(res.status).toBe(400)
   })
 
-  it('más de 5 noticias: 400 y no inserta nada', async () => {
-    const noticias = Array.from({ length: 6 }, (_, i) => noticia({ url_original: `https://satch.cl/n${i}` }))
+  it('10 noticias (una por medio, tope diario) pasan el sobre', async () => {
+    const noticias = Array.from({ length: 10 }, (_, i) => noticia({ url_original: `https://satch.cl/n${i}` }))
+    const res = await POST(peticion({ lote: 'L10', noticias }))
+    expect(res.status).not.toBe(400)
+  })
+
+  it('más de 10 noticias: 400 y no inserta nada', async () => {
+    const noticias = Array.from({ length: 11 }, (_, i) => noticia({ url_original: `https://satch.cl/n${i}` }))
     const res = await POST(peticion({ lote: 'L1', noticias }))
     expect(res.status).toBe(400)
     expect(estado.inserts).toHaveLength(0)
