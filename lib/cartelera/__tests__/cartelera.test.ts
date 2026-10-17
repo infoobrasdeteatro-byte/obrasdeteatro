@@ -129,3 +129,20 @@ describe('limpiarCiudad (nombres con el país dentro)', () => {
     expect(limpiarCiudad('San Salvador, El Salvador', 'El Salvador')).toBe('San Salvador')
   })
 })
+
+describe('país que propone «Añadir función»', () => {
+  it('el de la última función del espectáculo, con su zona', async () => {
+    const { paisZonaPorDefecto } = await import('../cartelera')
+    expect(paisZonaPorDefecto([])).toEqual({ pais_code: 'ES', zona_horaria: 'Europe/Madrid' })
+    expect(paisZonaPorDefecto([
+      { inicio: '2026-10-24T23:30:00Z', pais_code: 'VE', zona_horaria: 'America/Caracas' },
+      { inicio: '2026-10-01T18:00:00Z', pais_code: 'ES', zona_horaria: 'Atlantic/Canary' },
+    ])).toEqual({ pais_code: 'VE', zona_horaria: 'America/Caracas' })
+    // Canarias se conserva (no vuelve a la península).
+    expect(paisZonaPorDefecto([{ inicio: '2026-10-01T18:00:00Z', pais_code: 'ES', zona_horaria: 'Atlantic/Canary' }]))
+      .toEqual({ pais_code: 'ES', zona_horaria: 'Atlantic/Canary' })
+    // Zona que no casa con el país → la del país por defecto.
+    expect(paisZonaPorDefecto([{ inicio: '2026-10-01T18:00:00Z', pais_code: 'AR', zona_horaria: 'Europe/Madrid' }]))
+      .toEqual({ pais_code: 'AR', zona_horaria: 'America/Argentina/Buenos_Aires' })
+  })
+})

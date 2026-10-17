@@ -124,6 +124,21 @@ export function zonaPorDefecto(paisCode: string | null | undefined, region?: str
   return ZONAS_PAIS[paisCode ?? '']?.[0]?.value ?? 'Europe/Madrid'
 }
 
+/**
+ * País y zona que propone «Añadir función»: los de la última función que ya
+ * tiene el espectáculo (por fecha). Sin funciones, España peninsular.
+ */
+export function paisZonaPorDefecto(funciones: { inicio: string; pais_code: string | null; zona_horaria: string }[]):
+  { pais_code: string; zona_horaria: string } {
+  const ultima = funciones
+    .filter(f => f.pais_code && ZONAS_PAIS[f.pais_code])
+    .reduce<typeof funciones[number] | null>((m, f) => (m === null || f.inicio > m.inicio ? f : m), null)
+  if (!ultima) return { pais_code: 'ES', zona_horaria: 'Europe/Madrid' }
+  const pais = ultima.pais_code!
+  const zonaValida = ZONAS_PAIS[pais].some(z => z.value === ultima.zona_horaria)
+  return { pais_code: pais, zona_horaria: zonaValida ? ultima.zona_horaria : zonaPorDefecto(pais) }
+}
+
 const ETIQUETAS_ESTADO: Record<string, string> = {
   borrador: 'Borrador',
   pendiente_revision: 'En revisión',

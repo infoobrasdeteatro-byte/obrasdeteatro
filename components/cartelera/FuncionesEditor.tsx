@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  ZONAS_PAIS, zonaPorDefecto, localAUtc, fechaFuncion, validarFuncion, fechasRepetidas, mensajeErrorCartelera,
+  ZONAS_PAIS, zonaPorDefecto, paisZonaPorDefecto, localAUtc, fechaFuncion, validarFuncion, fechasRepetidas, mensajeErrorCartelera,
   MAX_FUNCIONES_DE_UNA_VEZ, limpiarCiudad, HORAS, MINUTOS, etiquetaHora, type CamposFuncion,
 } from '@/lib/cartelera/cartelera'
 import { Seccion } from './EspectaculoForm'
@@ -34,9 +34,10 @@ export default function FuncionesEditor({ espectaculoId, funciones }: { espectac
   const router = useRouter()
   const [otroLugar, setOtroLugar] = useState(false)
   const [sala, setSala] = useState<Sala | null>(null)
-  const [c, setC] = useState<CamposFuncion>({
-    inicio: '', zona_horaria: 'Europe/Madrid', espacio_id: null, lugar_nombre: '', ciudad: '', pais_code: 'ES', nota: '',
-  })
+  // Propone el país (y la zona) de las funciones que ya tiene el espectáculo.
+  const [c, setC] = useState<CamposFuncion>(() => ({
+    inicio: '', espacio_id: null, lugar_nombre: '', ciudad: '', nota: '', ...paisZonaPorDefecto(funciones),
+  }))
   const [fecha, setFecha] = useState('')
   const [hora, setHora] = useState('20')
   const [minuto, setMinuto] = useState('00')
