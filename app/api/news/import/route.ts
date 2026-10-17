@@ -31,7 +31,7 @@ import {
  *
  * RESPUESTA. 200 con un resultado por noticia si el lote se pudo procesar,
  * aunque alguna se rechace; 400 si el cuerpo no es JSON o el sobre no es
- * válido (sin lote, sin noticias o más de 5); 413 si el cuerpo pasa del límite.
+ * válido (sin lote, sin noticias o más de 10); 413 si el cuerpo pasa del límite.
  */
 
 type Resultado = {

@@ -14,7 +14,7 @@ import { COUNTRIES } from '@/lib/geo/countries'
  * URL http(s)) para devolver un motivo legible en vez de un error de CHECK.
  */
 
-export const MAX_NOTICIAS_POR_LOTE = 5
+export const MAX_NOTICIAS_POR_LOTE = 10
 export const MAX_BYTES_CUERPO = 64 * 1024
 export const MAX_TITULAR = 200
 export const MAX_RESUMEN = 400
@@ -45,7 +45,7 @@ export type NoticiaValidada =
 const esObjeto = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
 
-/** El sobre: { lote, noticias: [1..5] }. Si falla, el lote entero es un 400. */
+/** El sobre: { lote, noticias: [1..10] }. Si falla, el lote entero es un 400. */
 export function validarSobre(cuerpo: unknown): SobreValidado {
   if (!esObjeto(cuerpo)) {
     return { ok: false, error: 'El cuerpo debe ser un objeto JSON con «lote» y «noticias».' }
