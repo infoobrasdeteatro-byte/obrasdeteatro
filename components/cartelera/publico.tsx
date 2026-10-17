@@ -20,7 +20,9 @@ export function Poster({ url, titulo, tag, fin, prioridad }: { url: string | nul
   )
 }
 
-export function TarjetaEspectaculo({ e, entradas, ahora, prioridad }: { e: FichaListado; entradas?: ResumenEntradas; ahora: number; prioridad?: boolean }) {
+export function TarjetaEspectaculo({ e, entradas, ahora, prioridad, destacado }: {
+  e: FichaListado; entradas?: ResumenEntradas; ahora: number; prioridad?: boolean; destacado?: boolean
+}) {
   const precio = entradas ? precioTexto(entradas.precio, entradas.moneda, entradas.gratis ? 'gratis' : undefined) : null
   const lugar = e.salas.length > 1 ? `${e.salas.length} salas` : e.salas[0] ?? ''
   const ciudad = e.ciudades.length > 1 ? `${e.ciudades[0]} y ${e.ciudades.length - 1} más` : e.ciudades[0] ?? ''
@@ -30,6 +32,7 @@ export function TarjetaEspectaculo({ e, entradas, ahora, prioridad }: { e: Ficha
         <Poster url={e.cartel_url} titulo={e.titulo} tag={etiquetaProxima(e.proxima, ahora)}
           fin={e.funciones > 1 && terminaPronto(e, ahora)} prioridad={prioridad} />
         <div>
+          {destacado && <span className="cart-dest">Destacado</span>}
           <h3 className="cart-card-t">{e.titulo}</h3>
           <p className="cart-card-m">{[lugar, ciudad].filter(Boolean).join(' · ')}</p>
           <p className="cart-card-m">

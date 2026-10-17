@@ -51,6 +51,13 @@ export const PLANES: Plan[] = [
           'Directorio completo de profesionales',
         ],
       },
+      {
+        titulo: 'Cartelera',
+        items: [
+          'Publica hasta 2 espectáculos a la vez',
+          'Funciones, horarios y enlace a tus entradas',
+        ],
+      },
     ],
     recomendado: false,
   },
@@ -103,6 +110,13 @@ export const PLANES: Plan[] = [
           'Recursos creativos exclusivos',
         ],
         itemsProximamente: ['Recursos creativos exclusivos'],
+      },
+      {
+        titulo: 'Cartelera',
+        items: [
+          'Publica hasta 5 espectáculos a la vez',
+          '1 semana de destacado al mes en la cartelera y la portada',
+        ],
       },
     ],
     recomendado: false,
@@ -173,6 +187,13 @@ export const PLANES: Plan[] = [
           'Recursos exclusivos para destacados',
         ],
       },
+      {
+        titulo: 'Cartelera',
+        items: [
+          'Publica hasta 15 espectáculos a la vez',
+          '5 semanas de destacado al mes: un espectáculo destacado todo el mes',
+        ],
+      },
     ],
     recomendado: true,
   },
@@ -214,6 +235,13 @@ export const PLANES: Plan[] = [
         titulo: 'Castings',
         items: [
           'Gestión de candidaturas recibidas',
+        ],
+      },
+      {
+        titulo: 'Cartelera',
+        items: [
+          'Espectáculos ilimitados en la cartelera',
+          '5 semanas de destacado al mes: un espectáculo destacado todo el mes',
         ],
       },
       {
@@ -334,6 +362,13 @@ export const TABLA_COMPARATIVA: CompareSection[] = [
     filas: [
       { label: 'Castings publicados a la vez',         values: [false,      'Hasta 3',    'Hasta 10',   'Ilimitados'] },
       { label: 'Gestión de candidaturas recibidas',    values: [false,      true,         true,         true] },
+    ],
+  },
+  {
+    titulo: 'Cartelera',
+    filas: [
+      { label: 'Espectáculos publicados a la vez',     values: ['Hasta 2',  'Hasta 5',    'Hasta 15',   'Ilimitados'] },
+      { label: 'Semanas de destacado al mes',          values: [false,      '1',          '5',          '5'] },
     ],
   },
   {

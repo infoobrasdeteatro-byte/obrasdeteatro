@@ -94,7 +94,7 @@ export default async function Home() {
       <FranjaColaboradores colaboradores={medios} />
 
       {/* ── EN CARTEL (solo si hay espectáculos con funciones próximas) ── */}
-      <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} />
+      <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} destacados={cartel.destacados} />
 
       {/* ── NARRATIVE ── */}
       <section className="narrative" aria-labelledby="narrative-heading">

@@ -6,6 +6,7 @@ import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import { cartelValido } from '@/lib/cartelera/cartelera'
 import ModeracionCartelera, { type EspectaculoAdmin } from './ModeracionCartelera'
+import { diaLocal } from '@/lib/cartelera/listado'
 
 export const metadata: Metadata = {
   title: 'Cartelera | Administración | ObrasDeTeatro',
@@ -56,6 +57,11 @@ export default async function AdminCarteleraPage() {
     slug: p.slug, email: p.email, verificado: p.verificado, plan: p.plan as string,
   }]))
 
+  const publicadosIds = (data ?? []).filter(e => e.estado === 'publicado').map(e => e.id)
+  const { data: dest } = publicadosIds.length
+    ? await supabase.from('cartelera_destacados').select('id, espectaculo_id, desde, hasta, origen, ambito').in('espectaculo_id', publicadosIds)
+    : { data: [] }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const lista: EspectaculoAdmin[] = (data ?? []).map(e => ({
     id: e.id, slug: e.slug, titulo: e.titulo, compania_nombre: e.compania_nombre, genero_id: e.genero_id,
@@ -66,6 +72,7 @@ export default async function AdminCarteleraPage() {
     opciones: e.opciones_compra ?? [],
     equipo: [...(e.espectaculo_personas ?? [])].sort((a, b) => a.orden - b.orden),
     persona: personas[e.user_id] ?? null,
+    destacados: (dest ?? []).filter(d => d.espectaculo_id === e.id),
   }))
 
   return (
@@ -88,7 +95,7 @@ export default async function AdminCarteleraPage() {
 
       {error && <div className="ds-alert-error" style={{ marginBottom: '20px' }}>No se pudieron leer los espectáculos: {error.message}</div>}
 
-      <ModeracionCartelera inicial={lista} />
+      <ModeracionCartelera inicial={lista} hoy={diaLocal(Date.now(), 'Europe/Madrid')} />
     </Marco>
   )
 }
