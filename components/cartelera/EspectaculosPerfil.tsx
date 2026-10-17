@@ -17,7 +17,7 @@ export default function EspectaculosPerfil({ enCartel, anteriores, entradas, aho
     <>
       {enCartel.length > 0 && (
         <section style={{ marginBottom: '48px' }} aria-labelledby="perfil-en-cartel">
-          <h2 id="perfil-en-cartel" className="prof-eyebrow">En cartel</h2>
+          <h2 id="perfil-en-cartel" className="prof-eyebrow">Cartelera</h2>
           <div className="cart-grid">
             {enCartel.map(e => <TarjetaEspectaculo key={e.id} e={e} entradas={entradas.get(e.id)} ahora={ahora} />)}
           </div>
