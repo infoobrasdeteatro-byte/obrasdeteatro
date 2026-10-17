@@ -16,7 +16,7 @@ export default function FranjaEnCartel({ fichas, entradas, ahora, destacados = n
       <div className="home-cartel-inner">
         <header className="home-cartel-head">
           <div>
-            <h2 id="home-cartel-titulo" className="home-cartel-titulo">En cartel</h2>
+            <h2 id="home-cartel-titulo" className="home-cartel-titulo">Cartelera</h2>
             <p className="home-cartel-sub">Próximas funciones de teatro en España y Latinoamérica, con horarios y entradas.</p>
           </div>
           <Link href="/cartelera" className="home-cartel-ver">Ver toda la cartelera →</Link>

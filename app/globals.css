@@ -3178,16 +3178,16 @@ a.eco-stat-card { display: block; }
    negra tipo marquesina y un solo logo grande que cruza de derecha a izquierda. */
 .cinta-logo {
   overflow: hidden; background: #0d0d0d;
-  height: 150px; display: flex; align-items: center;
+  height: 116px; display: flex; align-items: center;
 }
 .cinta-pista { width: max-content; animation: cinta-cruza 8s linear infinite; }
 .cinta-logo:hover .cinta-pista { animation-play-state: paused; }
-.cinta-pista img { height: 92px; width: auto; display: block; }
+.cinta-pista img { height: 68px; width: auto; display: block; }
 @keyframes cinta-cruza { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
 @media (max-width: 768px) {
-  .cinta-logo { height: 96px; }
+  .cinta-logo { height: 76px; }
   .cinta-pista { animation-duration: 5s; }
-  .cinta-pista img { height: 52px; }
+  .cinta-pista img { height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cinta-pista { animation: none; margin: 0 auto; }

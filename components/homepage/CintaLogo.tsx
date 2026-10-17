@@ -10,7 +10,7 @@ export default function CintaLogo() {
     <div className="cinta-logo">
       <div className="cinta-pista">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-obrasdeteatro-horizontal-blanco.svg" alt="obrasdeteatro.com" width={590} height={92} />
+        <img src="/logo-obrasdeteatro-horizontal-blanco.svg" alt="obrasdeteatro.com" width={436} height={68} />
       </div>
     </div>
   )
