@@ -3173,3 +3173,26 @@ a.eco-stat-card { display: block; }
 @media (max-width: 768px) { .secciones .eco-stat-value { font-size: 18px; } }
 /* Texto de la portada más legible sobre la foto (escaleras claras detrás). */
 .hero-sub { color: rgba(255,255,255,0.86); font-weight: 400; text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 0 18px rgba(0,0,0,0.65); max-width: 640px; }
+
+/* Cinta con el logo en movimiento (portada, antes de «En cartel»). */
+.cinta-logo {
+  overflow: hidden; background: var(--white);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 26px 0;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+.cinta-pista { display: flex; width: max-content; animation: cinta-desliza 60s linear infinite; }
+.cinta-logo:hover .cinta-pista { animation-play-state: paused; }
+.cinta-fila { display: flex; align-items: center; gap: 96px; list-style: none; margin: 0; padding: 0 48px; }
+.cinta-fila li { flex-shrink: 0; display: flex; }
+.cinta-fila img { height: 30px; width: auto; display: block; }
+@keyframes cinta-desliza { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (max-width: 768px) {
+  .cinta-logo { padding: 18px 0; }
+  .cinta-fila { gap: 56px; padding: 0 28px; }
+  .cinta-fila img { height: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cinta-pista { animation: none; }
+}

@@ -5,6 +5,7 @@ import { obtenerDatosPortada } from '@/lib/portada/datos'
 import { colaboradoresActivos } from '@/lib/colaboradores/datos'
 import FranjaColaboradores from '@/components/colaboradores/FranjaColaboradores'
 import SeccionesPlataforma from '@/components/homepage/SeccionesPlataforma'
+import CintaLogo from '@/components/homepage/CintaLogo'
 import FranjaEnCartel from '@/components/cartelera/FranjaEnCartel'
 import { enCartelPortada } from '@/lib/cartelera/portada'
 
@@ -70,6 +71,9 @@ export default async function Home() {
 
       {/* ── EL PULSO DEL ECOSISTEMA (vista previa visual) ── */}
       <EcosistemaPulso datos={datos} />
+
+      {/* ── CINTA CON EL LOGO EN MOVIMIENTO ── */}
+      <CintaLogo />
 
       {/* ── EN CARTEL: al final, después de lo profesional (solo si hay espectáculos) ── */}
       <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} destacados={cartel.destacados} />
