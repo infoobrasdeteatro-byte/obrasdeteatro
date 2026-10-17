@@ -9,6 +9,7 @@ import { type ReclamacionAdmin } from './BandejaReclamaciones'
 import { type SugerenciaAdmin } from './BandejaSugerencias'
 import Bandejas from './Bandejas'
 import { COLUMNAS_ADMIN } from '@/lib/espacios/espacios'
+import { leerTodasLasPaginas } from '@/lib/espacios/paginar'
 
 export const metadata: Metadata = {
   title: 'Espacios escénicos | Administración | ObrasDeTeatro',
@@ -42,7 +43,8 @@ export default async function AdminEspaciosPage() {
   }
 
   const [{ data: espacios, error }, { data: reclamaciones, error: errorReclamaciones }, { data: sugerencias, error: errorSugerencias }] = await Promise.all([
-    supabase.from('espacios_escenicos').select(COLUMNAS_ADMIN).order('nombre', { ascending: true }).limit(5000),
+    leerTodasLasPaginas((desde, hasta) =>
+      supabase.from('espacios_escenicos').select(COLUMNAS_ADMIN).order('nombre', { ascending: true }).order('id', { ascending: true }).range(desde, hasta)),
     supabase.from('espacios_reclamaciones')
       .select('id, espacio_id, profile_id, mensaje, estado, created_at, resuelta_at')
       .order('created_at', { ascending: false })
