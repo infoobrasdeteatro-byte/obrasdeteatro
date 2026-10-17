@@ -3173,3 +3173,22 @@ a.eco-stat-card { display: block; }
 @media (max-width: 768px) { .secciones .eco-stat-value { font-size: 18px; } }
 /* Texto de la portada más legible sobre la foto (escaleras claras detrás). */
 .hero-sub { color: rgba(255,255,255,0.86); font-weight: 400; text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 0 18px rgba(0,0,0,0.65); max-width: 640px; }
+
+/* Cinta con el logo en movimiento (portada, antes de «En cartel»): franja
+   negra tipo marquesina y un solo logo grande que cruza de derecha a izquierda. */
+.cinta-logo {
+  overflow: hidden; background: #0d0d0d;
+  height: 116px; display: flex; align-items: center;
+}
+.cinta-pista { width: max-content; animation: cinta-cruza 8s linear infinite; }
+.cinta-logo:hover .cinta-pista { animation-play-state: paused; }
+.cinta-pista img { height: 68px; width: auto; display: block; }
+@keyframes cinta-cruza { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+@media (max-width: 768px) {
+  .cinta-logo { height: 76px; }
+  .cinta-pista { animation-duration: 5s; }
+  .cinta-pista img { height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cinta-pista { animation: none; margin: 0 auto; }
+}
