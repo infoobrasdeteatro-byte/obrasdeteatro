@@ -1,6 +1,7 @@
 import TopNav from '@/components/design-system/TopNav'
 import Link from 'next/link'
 import EcosistemaPulso from '@/components/homepage/EcosistemaPulso'
+import EcosistemaStatsGrid from '@/components/homepage/EcosistemaStatsGrid'
 import { obtenerDatosPortada, superaUmbral, UMBRALES } from '@/lib/portada/datos'
 import { colaboradoresActivos } from '@/lib/colaboradores/datos'
 import FranjaColaboradores from '@/components/colaboradores/FranjaColaboradores'
@@ -93,9 +94,6 @@ export default async function Home() {
       {/* ── MEDIOS COLABORADORES (solo si hay alguno activo) ── */}
       <FranjaColaboradores colaboradores={medios} />
 
-      {/* ── EN CARTEL (solo si hay espectáculos con funciones próximas) ── */}
-      <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} destacados={cartel.destacados} />
-
       {/* ── NARRATIVE ── */}
       <section className="narrative" aria-labelledby="narrative-heading">
         <div className="narrative-inner">
@@ -109,42 +107,16 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="narrative-blocks">
-            {[
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                ),
-                title: 'Directorio profesional',
-                text: 'Actores, directores, dramaturgos, compañías y salas conectados en 20 países de habla hispana.',
-              },
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                ),
-                title: 'Convocatorias y castings',
-                text: 'Castings, residencias, festivales y oportunidades de toda Iberoamérica.',
-              },
-              {
-                icon: (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                ),
-                title: 'ScenaIA',
-                text: 'Asistencia inteligente para profesionales del sector teatral hispano. Análisis, recomendaciones y herramientas especializadas.',
-              },
-            ].map((block, i) => (
-              <div key={i} className="narrative-block">
-                <div className="narrative-block-icon" aria-hidden="true">{block.icon}</div>
-                <div className="narrative-block-title">{block.title}</div>
-                <p className="narrative-block-text">{block.text}</p>
-              </div>
-            ))}
-          </div>
+          {/* Las cuatro puertas de la plataforma: biblioteca, directorio, convocatorias y países. */}
+          <EcosistemaStatsGrid datos={datos} />
         </div>
       </section>
 
       {/* ── EL PULSO DEL ECOSISTEMA (vista previa visual) ── */}
       <EcosistemaPulso datos={datos} />
+
+      {/* ── EN CARTEL: al final, después de lo profesional (solo si hay espectáculos) ── */}
+      <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} destacados={cartel.destacados} />
 
       {/* ── FOOTER ── */}
     </>
