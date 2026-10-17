@@ -3162,15 +3162,12 @@ a.eco-stat-card { display: block; }
   .eco-two-col--sep .eco-ecosystem-map { margin-bottom: 0; }
 }
 
-/* Portada (17/10/2026): las cuatro puertas bajo los botones, enlazadas.
-   Sustituyen a «Abierta · 20 · Activa · Gratis» y a la línea pequeña. */
-.hero-indicators--puertas { margin-top: 28px; }
-.hero-indicators--puertas .hero-indicator { text-decoration: none; transition: transform 0.2s ease; }
-.hero-indicators--puertas .hero-indicator:hover { transform: translateY(-2px); }
-.hero-indicators--puertas .hero-indicator:hover .hero-indicator-label { color: #ffffff; }
-.hero-indicators--puertas .hero-indicator-value { font-size: 24px; white-space: nowrap; }
-@media (max-width: 768px) {
-  .hero-indicators--puertas { margin-top: 0; max-width: 360px; }
-  .hero-indicators--puertas .hero-indicator-value { font-size: 18px; white-space: normal; text-align: center; line-height: 1.15; }
-  .hero-indicators--puertas .hero-indicator-label { white-space: normal; text-align: center; line-height: 1.4; }
-}
+/* Portada (17/10/2026): las ocho secciones bajo los colaboradores. */
+.secciones { background: var(--white); border-bottom: 1px solid var(--border); padding: 40px 24px; }
+.secciones-grid { max-width: 1272px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.secciones .eco-stat-card { display: flex; flex-direction: column; }
+.secciones .eco-stat-card:hover .eco-stat-value { color: var(--red); }
+.secciones .eco-stat-link { margin-top: auto; padding-top: 6px; }
+@media (max-width: 900px) { .secciones-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .secciones { padding: 28px 16px; } .secciones .eco-stat-link { opacity: 1; transform: none; } }
+@media (max-width: 768px) { .secciones .eco-stat-value { font-size: 18px; } }

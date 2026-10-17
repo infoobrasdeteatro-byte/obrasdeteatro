@@ -10,9 +10,8 @@ import type { DatosPortada } from '@/lib/portada/datos'
 
 /**
  * Bloque "El pulso del ecosistema teatral hispano" de la home pública,
- * entre los medios colaboradores y «En cartel». Las cuatro puertas de la
- * plataforma (biblioteca, directorio, convocatorias, países) van en la
- * portada, bajo los botones (app/page.tsx). Cifras, obras, convocatorias y
+ * entre las ocho secciones de la plataforma (SeccionesPlataforma) y
+ * «En cartel». Cifras, obras, convocatorias y
  * noticias vienen de Supabase (lib/portada/datos); lo que no tiene dato
  * real se dice con texto o no se pinta.
  */

@@ -1,0 +1,34 @@
+import Link from 'next/link'
+import { IconArrowRight } from './EcoIcons'
+
+/**
+ * Las ocho secciones de la plataforma, bajo los medios colaboradores: dos
+ * filas de cuatro casillas, cada una enlazada a su sección. Orden decidido
+ * por Dirección (17/10/2026).
+ */
+const SECCIONES = [
+  { titulo: 'Convocatorias', texto: 'Festivales, premios, residencias y becas', enlace: 'Ver convocatorias', href: '/convocatoria' },
+  { titulo: 'Castings', texto: 'Audiciones y castings abiertos', enlace: 'Ver castings', href: '/castings' },
+  { titulo: 'Directorio profesional', texto: 'Compañías, salas y profesionales', enlace: 'Explorar el directorio', href: '/directorio' },
+  { titulo: 'ScenaIA', texto: 'Asistente inteligente para el teatro hispano', enlace: 'Conocer ScenaIA', href: '/scenaia' },
+  { titulo: 'Biblioteca', texto: 'Clásicos del teatro hispano y autores actuales', enlace: 'Ver obras', href: '/obras' },
+  { titulo: 'Proscenio', texto: 'Lo mejor de la semana, cada semana en tu correo', enlace: 'Suscribirme', href: '/boletin' },
+  { titulo: 'Espacios escénicos', texto: 'Teatros y salas de los 20 países', enlace: 'Ver espacios', href: '/espacios' },
+  { titulo: 'Cartelera', texto: 'Funciones, horarios y entradas', enlace: 'Ver la cartelera', href: '/cartelera' },
+] as const
+
+export default function SeccionesPlataforma() {
+  return (
+    <section className="secciones" aria-label="Secciones de la plataforma">
+      <div className="secciones-grid">
+        {SECCIONES.map(s => (
+          <Link key={s.href} href={s.href} className="eco-stat-card">
+            <div className="eco-stat-value eco-stat-value--texto">{s.titulo}</div>
+            <div className="eco-stat-label">{s.texto}</div>
+            <div className="eco-stat-link">{s.enlace} <IconArrowRight /></div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
