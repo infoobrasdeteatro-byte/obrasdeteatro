@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache'
 import { clienteAnonimo } from '@/lib/supabase/anonimo'
 import type { EspacioFicha, EspacioTarjeta } from './espacios'
+import { leerTodasLasPaginas } from './paginar'
 
 /**
  * Lecturas públicas de espacios escénicos, con el cliente anónimo: la RLS solo
@@ -26,15 +27,19 @@ const COLUMNAS_FICHA =
   'id, slug, nombre, tipo, pais_code, region, provincia, isla, municipio, municipio_slug, direccion, codigo_postal, lat, lon, web, telefono, email, redes, aforo, num_salas, accesibilidad, anio_inauguracion, arquitecto, titularidad, descripcion, imagen_url, imagen_autor, imagen_licencia, imagen_fuente_url, verificado'
 
 export async function leerTarjetasPublicadas(): Promise<EspacioTarjeta[]> {
-  const { data, error } = await clienteAnonimo()
-    .from('espacios_escenicos')
-    .select(COLUMNAS_TARJETA)
-    .eq('estado', 'publicado')
-    .order('nombre', { ascending: true })
-    .limit(5000)
+  const cliente = clienteAnonimo()
+  const { data, error } = await leerTodasLasPaginas<EspacioTarjeta>((desde, hasta) =>
+    cliente
+      .from('espacios_escenicos')
+      .select(COLUMNAS_TARJETA)
+      .eq('estado', 'publicado')
+      .order('nombre', { ascending: true })
+      .order('id', { ascending: true })
+      .range(desde, hasta),
+  )
 
   if (error) throw new Error(`espacios: no se pudieron leer: ${error.message}`)
-  return data ?? []
+  return data
 }
 
 const tarjetasCacheadas = unstable_cache(leerTarjetasPublicadas, ['espacios-publicados'], {

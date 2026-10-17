@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { leerTodasLasPaginas } from '@/lib/espacios/paginar'
 import { COUNTRIES, getCountryByCode } from '@/lib/geo/countries'
 import {
   ACCESIBILIDAD,
@@ -141,8 +142,10 @@ export default function GestionEspacios({ inicial, personas }: { inicial: Espaci
   }
 
   const recargar = async () => {
-    const { data } = await createClient().from('espacios_escenicos').select(COLUMNAS_ADMIN).order('nombre', { ascending: true }).limit(5000)
-    if (data) setLista(data as EspacioAdmin[])
+    const supabase = createClient()
+    const { data, error } = await leerTodasLasPaginas((desde, hasta) =>
+      supabase.from('espacios_escenicos').select(COLUMNAS_ADMIN).order('nombre', { ascending: true }).order('id', { ascending: true }).range(desde, hasta))
+    if (!error) setLista(data as EspacioAdmin[])
     router.refresh()
   }
 
