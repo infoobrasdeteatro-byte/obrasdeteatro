@@ -72,7 +72,7 @@ export default function Destacar({ espectaculoId, cupo, destacados, hoy, proxima
           <Link href="/precios" className="table-link">Ver planes</Link>
         </p>
       ) : !abierto ? (
-        <button type="button" className="ds-btn-secondary" style={{ padding: '8px 16px', fontSize: '13px' }}
+        <button type="button" className="ds-btn-secondary" style={{ width: 'auto', alignSelf: 'flex-start', padding: '8px 16px', fontSize: '13px' }}
           disabled={!conFunciones} title={conFunciones ? undefined : 'Necesita funciones próximas'}
           onClick={() => { setAbierto(true); setError(null) }}>
           ★ Destacar una semana
