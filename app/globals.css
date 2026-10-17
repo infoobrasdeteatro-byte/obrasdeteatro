@@ -3171,3 +3171,5 @@ a.eco-stat-card { display: block; }
 @media (max-width: 900px) { .secciones-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) { .secciones { padding: 28px 16px; } .secciones .eco-stat-link { opacity: 1; transform: none; } }
 @media (max-width: 768px) { .secciones .eco-stat-value { font-size: 18px; } }
+/* Texto de la portada más legible sobre la foto (escaleras claras detrás). */
+.hero-sub { color: rgba(255,255,255,0.86); font-weight: 400; text-shadow: 0 1px 2px rgba(0,0,0,0.55), 0 0 18px rgba(0,0,0,0.65); max-width: 640px; }
