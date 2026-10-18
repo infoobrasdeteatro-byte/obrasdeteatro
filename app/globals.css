@@ -3002,8 +3002,8 @@ a.eco-stat-card { display: block; }
 .cart-btn:hover { background: var(--red-h); }
 .cart-btn--sec { background: var(--white); color: var(--black); border: 1px solid var(--border); }
 .cart-btn--sec:hover { background: var(--subtle); }
-/* Fondo: silueta ante un telón rojo (Kyle Head, Unsplash License), con un velo
-   oscuro para que el texto blanco se lea sobre el rojo y la silueta se vea. */
+/* Fondo: telón rojo cerrado (imagen elegida por Dirección el 18/10/2026, de
+   banco de imágenes libre), con un velo oscuro para que el texto blanco se lea. */
 .cart-tu-espectaculo { aspect-ratio: 2 / 3; border-radius: 8px; border: 0; background: linear-gradient(180deg, rgba(12,4,6,.48) 0%, rgba(12,4,6,.56) 50%, rgba(12,4,6,.82) 100%), url('/cartelera/tu-espectaculo-fondo.webp') center / cover no-repeat, #5a0010; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 10px; padding: 18px; text-decoration: none; color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,.45); }
 .cart-tu-espectaculo strong { font-family: var(--serif); font-size: 20px; line-height: 1.2; font-weight: 500; }
 .cart-tu-espectaculo span:not(.cart-btn) { font-size: 12.5px; color: rgba(255,255,255,.86); }
