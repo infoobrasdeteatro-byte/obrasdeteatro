@@ -17,6 +17,10 @@ export default async function Home() {
   const [datos, colaboradores, cartel] = await Promise.all([obtenerDatosPortada(), colaboradoresActivos(), enCartelPortada(ahora)])
   // La franja se titula «Medios colaboradores»: solo los de tipo medio.
   const medios = colaboradores.filter(c => c.tipo === 'medio')
+  // Total de espacios escénicos de los 20 países, de la misma rpc del mapa.
+  const totalEspacios = datos.actividadPaises
+    ? datos.actividadPaises.reduce((suma, p) => suma + p.espacios, 0)
+    : null
   return (
     <>
       <TopNav heroMode />
@@ -67,7 +71,7 @@ export default async function Home() {
       <FranjaColaboradores colaboradores={medios} />
 
       {/* ── LAS OCHO SECCIONES DE LA PLATAFORMA ── */}
-      <SeccionesPlataforma />
+      <SeccionesPlataforma totalEspacios={totalEspacios} />
 
       {/* ── EL PULSO DEL ECOSISTEMA (vista previa visual) ── */}
       <EcosistemaPulso datos={datos} />
