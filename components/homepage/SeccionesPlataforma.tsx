@@ -17,14 +17,31 @@ const SECCIONES = [
   { titulo: 'Cartelera', texto: 'Funciones, horarios y entradas', enlace: 'Ver la cartelera', href: '/cartelera' },
 ] as const
 
-export default function SeccionesPlataforma() {
+/** Miles con punto siempre («3.941»): Intl en español no agrupa los de cuatro cifras. */
+export function formatearMiles(n: number): string {
+  return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+/**
+ * Texto de cada casilla. En «Espacios escénicos» se antepone el total de
+ * espacios publicados en los 20 países, dentro de la misma frase y con el
+ * mismo estilo; si no hay cifra se queda el texto de siempre.
+ */
+export function textoSeccion(href: string, texto: string, totalEspacios: number | null): string {
+  if (href === '/espacios' && totalEspacios && totalEspacios > 0) {
+    return `${formatearMiles(totalEspacios)} teatros y salas de los 20 países`
+  }
+  return texto
+}
+
+export default function SeccionesPlataforma({ totalEspacios = null }: { totalEspacios?: number | null }) {
   return (
     <section className="secciones" aria-label="Secciones de la plataforma">
       <div className="secciones-grid">
         {SECCIONES.map(s => (
           <Link key={s.href} href={s.href} className="eco-stat-card">
             <div className="eco-stat-value eco-stat-value--texto">{s.titulo}</div>
-            <div className="eco-stat-label">{s.texto}</div>
+            <div className="eco-stat-label">{textoSeccion(s.href, s.texto, totalEspacios)}</div>
             <div className="eco-stat-link">{s.enlace} <IconArrowRight /></div>
           </Link>
         ))}
