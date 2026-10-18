@@ -883,14 +883,27 @@ body {
   background: var(--white);
   padding: 20px 24px;
 }
+/* Franja negra de marca, a todo el ancho del pie (sale del padding lateral). */
 .site-footer-top {
   display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px 24px;
+  flex-wrap: wrap; gap: 14px 24px;
+  background: #0d0d0d; margin: 0 -24px; padding: 18px 24px;
+}
+.site-footer-top .footer-logo img { height: 22px; width: auto; display: block; }
+.footer-redes { display: flex; align-items: center; gap: 14px; }
+.footer-redes-titulo { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.75); }
+.footer-redes ul { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.footer-red { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; color: #fff; transition: color .15s, background-color .15s; }
+.footer-red svg { fill: currentColor; }
+/* Al pasar el ratón, cada icono toma el color de su marca. */
+.footer-red:hover, .footer-red:focus-visible { color: var(--red-marca); background: rgba(255,255,255,.08); }
+.footer-red:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .site-footer-top { flex-direction: column; justify-content: center; }
 }
 .site-footer-legal {
-  display: flex; flex-wrap: wrap; gap: 6px 18px;
-  margin-top: 14px; padding-top: 14px;
-  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+  margin-top: 16px;
 }
 .site-footer-legal a {
   font-size: 12px; color: var(--muted); text-decoration: none;
@@ -3199,3 +3212,5 @@ a.eco-stat-card { display: block; }
 @media (prefers-reduced-motion: reduce) {
   .cinta-pista { animation: none; margin: 0 auto; }
 }
+/* Sin boletín, la franja abre el pie: pegada arriba, sin la tira blanca del padding. */
+.site-footer > .site-footer-top:first-child { margin-top: -20px; }
