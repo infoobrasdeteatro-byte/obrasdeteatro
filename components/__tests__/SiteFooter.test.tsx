@@ -39,7 +39,7 @@ describe('SiteFooter — franja «Síguenos»', () => {
     for (const red of ['Facebook', 'Instagram', 'LinkedIn', 'X', 'WhatsApp']) {
       expect(h).toContain(`aria-label="obrasdeteatro.com en ${red}"`)
     }
-    expect(h).toContain('href="https://x.com/obrasdeteatro"')
+    expect(h).toContain('href="https://x.com/obrasdereatro"')
     expect(h.match(/target="_blank" rel="noopener noreferrer"/g)?.length).toBe(5)
   })
 })
