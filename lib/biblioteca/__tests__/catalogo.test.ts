@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatearMiles, leerFiltrosCatalogo, libreEnTodosLosPaises, OBRAS_POR_PAGINA,
+  formatearMiles, leerFiltrosCatalogo, obraAnonimaAntigua, libreEnTodosLosPaises, OBRAS_POR_PAGINA,
   patronBusqueda, rangoPagina, totalPaginas, urlCatalogo,
 } from '../catalogo'
 
@@ -48,4 +48,10 @@ describe('dominio público en los 20 países', () => {
 it('formatea miles con punto', () => {
   expect(formatearMiles(4492)).toBe('4.492')
   expect(formatearMiles(11)).toBe('11')
+})
+
+it('reconoce las obras anónimas antiguas de la BNE', () => {
+  expect(obraAnonimaAntigua({ author: 'Anónimo', external_ref: 'bne:a123' })).toBe(true)
+  expect(obraAnonimaAntigua({ author: 'Anónimo', external_ref: null })).toBe(false)
+  expect(obraAnonimaAntigua({ author: 'Lope de Vega', external_ref: 'bne:a1' })).toBe(false)
 })

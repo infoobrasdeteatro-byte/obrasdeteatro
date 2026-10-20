@@ -68,3 +68,13 @@ export function libreEnTodosLosPaises(anioMuerte: number | null | undefined, hoy
 export function formatearMiles(n: number): string {
   return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 }
+
+/**
+ * Obras anónimas de la carga de la BNE: solo entran las impresas o copiadas
+ * en 1830 o antes (en rangos de fecha, el último año posible), así que son
+ * libres en los 20 países. Se reconocen por el autor «Anónimo» y su
+ * referencia a la BNE.
+ */
+export function obraAnonimaAntigua(o: { author: string | null; external_ref: string | null }): boolean {
+  return o.author === 'Anónimo' && !!o.external_ref?.startsWith('bne:')
+}
