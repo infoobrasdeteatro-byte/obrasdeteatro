@@ -293,7 +293,7 @@ describe('listPublishedWorks — género por SQL en modo página (SCENAIA-006 §
       expect(llamadas.some((l) => l.startsWith('limit:'))).toBe(false)
     })
 
-    it('filtra en una sola consulta: ilike sobre genre_normalizado, count exact, orden title e id y range', async () => {
+    it('filtra en una sola consulta: ilike sobre genre_normalizado, count exact, orden autor más antiguo, title e id y range', async () => {
       encender()
       const { llamadas, from } = usar([obra(1, 'Teatro clásico'), obra(2, 'Drama')])
 
@@ -301,7 +301,7 @@ describe('listPublishedWorks — género por SQL en modo página (SCENAIA-006 §
 
       expect(p).toEqual({ works: [expect.objectContaining({ id: 'w-00001', genre: 'Teatro clásico' })], total: 1 })
       expect(from).toHaveBeenCalledTimes(1)
-      expect(llamadas).toEqual(['select:count', 'ilike:genre_normalizado:%clasico%', 'order:title', 'order:id', 'range:0-9'])
+      expect(llamadas).toEqual(['select:count', 'ilike:genre_normalizado:%clasico%', 'order:author_death_year', 'order:title', 'order:id', 'range:0-9'])
     })
 
     it('el término se normaliza como la columna: sin acentos y en minúsculas', async () => {
@@ -414,7 +414,7 @@ describe('listPublishedWorks — género por SQL en modo página (SCENAIA-006 §
 
         const p = await listPublishedWorks({ genre: 'clasico' }, 10, { offset: 0 })
 
-        expect(llamadas).toEqual(['select', 'order:title', 'order:id', 'limit:1000'])
+        expect(llamadas).toEqual(['select', 'order:author_death_year', 'order:title', 'order:id', 'limit:1000'])
         expect(p.total).toBe(15)
       }
     })
@@ -425,7 +425,7 @@ describe('listPublishedWorks — género por SQL en modo página (SCENAIA-006 §
 
       const p = await listPublishedWorks({ author: 'Autor' }, 10, { offset: 10 })
 
-      expect(llamadas).toEqual(['select:count', 'ilike:author:%Autor%', 'order:title', 'order:id', 'range:10-19'])
+      expect(llamadas).toEqual(['select:count', 'ilike:author:%Autor%', 'order:author_death_year', 'order:title', 'order:id', 'range:10-19'])
       expect(p.total).toBe(30)
     })
 

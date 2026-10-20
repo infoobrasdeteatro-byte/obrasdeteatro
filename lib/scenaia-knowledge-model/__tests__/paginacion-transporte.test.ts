@@ -199,7 +199,7 @@ describe('transporte de la página del listado puro (SCENAIA-004B, PR 1)', () =>
 
     await buildKnowledgeContext(LISTADO, {}, { offset: 30, pageSize: PAGINA })
 
-    expect(consultasDeObras()).toEqual([['select:count', 'order:title', 'order:id', 'range:30-39']])
+    expect(consultasDeObras()).toEqual([['select:count', 'order:author_death_year', 'order:title', 'order:id', 'range:30-39']])
   })
 
   it('con género y más de 1.000 candidatos, el recuento null llega intacto hasta el KnowledgeContext', async () => {
