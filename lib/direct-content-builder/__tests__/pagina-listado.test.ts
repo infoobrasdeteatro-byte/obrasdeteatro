@@ -49,6 +49,12 @@ describe('buildDirectContent — página del listado (SCENAIA-004B §4.6)', () =
     expect(texto).toBe(`En obras he encontrado 11 resultados:\n${FICHAS_10}`)
   })
 
+  it('el total se escribe con punto de miles, como el pie del listado (SCENAIA-010)', () => {
+    const texto = buildDirectContent(contexto(10, { worksPage: { offset: 0, pageSize: 10, returned: 10, total: 5840 } }))
+
+    expect(texto).toBe(`En obras he encontrado 5.840 resultados:\n${FICHAS_10}`)
+  })
+
   it('con total null, no da ninguna cifra: "estas son las obras encontradas"', () => {
     const texto = buildDirectContent(contexto(10, { worksPage: { offset: 0, pageSize: 10, returned: 10, total: null } }))
 

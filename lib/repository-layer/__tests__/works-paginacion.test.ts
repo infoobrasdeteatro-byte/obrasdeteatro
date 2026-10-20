@@ -191,7 +191,7 @@ describe('listPublishedWorks — página (orden estable, desplazamiento, recuent
 
     await listPublishedWorks({}, PAGINA, { offset: 60 })
 
-    expect(llamadas).toEqual(['select', 'order:title', 'order:id', 'range:60-79'])
+    expect(llamadas).toEqual(['select', 'order:author_death_year', 'order:title', 'order:id', 'range:60-79'])
   })
 
   it('un desplazamiento igual al total devuelve una página vacía con el recuento correcto', async () => {

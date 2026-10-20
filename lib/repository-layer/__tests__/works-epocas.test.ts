@@ -344,11 +344,11 @@ describe('listPublishedWorks — criterio epocas (SCENAIA-007 §4.3)', () => {
       expect(llamadas.some((l) => l.startsWith('limit:'))).toBe(false)
     })
 
-    it('una sola consulta: overlaps sobre epocas con el literal {a,b}, count exact, orden title e id y range', async () => {
+    it('una sola consulta: overlaps sobre epocas con el literal {a,b}, count exact, orden autor más antiguo, title e id y range', async () => {
       const { llamadas, from } = usar(catalogoGrande(30))
       await listPublishedWorks({ epocas: ['siglo_de_oro', 'barroco'] }, 10, { offset: 0 })
       expect(from).toHaveBeenCalledTimes(1)
-      expect(llamadas).toEqual(['select:count', 'overlaps:epocas:{siglo_de_oro,barroco}', 'order:title', 'order:id', 'range:0-9'])
+      expect(llamadas).toEqual(['select:count', 'overlaps:epocas:{siglo_de_oro,barroco}', 'order:author_death_year', 'order:title', 'order:id', 'range:0-9'])
     })
 
     it('un desplazamiento más allá del total devuelve una página vacía con el total real', async () => {

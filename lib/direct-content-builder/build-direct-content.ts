@@ -1,6 +1,7 @@
 import type { KnowledgeContext } from '@/lib/scenaia-knowledge-model'
 import { unfilteredCriteriaNote } from '@/lib/scenaia-knowledge-model'
 import { languageName } from '@/lib/geo/languages'
+import { formatearMiles } from '@/lib/biblioteca/catalogo'
 
 /**
  * Unico punto de entrada del componente (IA-008, Plan Tecnico aprobado
@@ -46,7 +47,8 @@ function enumerar(etiquetas: readonly string[]): string {
 
 /** Recuento concordado: "un resultado" / "N resultados". */
 function recuento(total: number): string {
-  return total === 1 ? 'un resultado' : `${total} resultados`
+  // SCENAIA-010: miles con punto («5.840»), como el pie «Mostrando 1-10 de 5.840».
+  return total === 1 ? 'un resultado' : `${formatearMiles(total)} resultados`
 }
 
 /**

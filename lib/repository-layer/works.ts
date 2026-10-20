@@ -245,7 +245,11 @@ export async function listPublishedWorks(
 
       const filtered = applyCriteria(baseQuery, sqlCriteria)
 
+      // SCENAIA-010: mismo orden que el catalogo de /obras -- primero los
+      // autores mas antiguos (sin fecha al final), luego titulo e id, que
+      // siguen dando el orden estable que necesita la paginacion.
       const ordered = (genreSql !== null ? filtered.ilike('genre_normalizado', genreSql) : filtered)
+        .order('author_death_year', { ascending: true, nullsFirst: false })
         .order('title', { ascending: true })
         .order('id', { ascending: true })
 
