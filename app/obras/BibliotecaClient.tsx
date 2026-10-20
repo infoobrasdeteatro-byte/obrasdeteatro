@@ -70,13 +70,23 @@ interface Props {
   paginas: number
   q: string
   recientes: ObraCard[]
+  /** Todos los dramaturgos de la biblioteca (sin «Anónimo»), de más a menos obras. */
   autores: AutorDestacado[]
 }
+
+const DRAMATURGOS_POR_PAGINA = 48
 
 /* ── Component ───────────────────────────────────────────── */
 
 export default function BibliotecaClient({ obras, total, totalBiblioteca, pagina, paginas, q, recientes, autores }: Props) {
   const [activa, setActiva] = useState<SeccionId>('catalogo')
+  const [paginaAutores, setPaginaAutores] = useState(1)
+  const paginasAutores = Math.max(1, Math.ceil(autores.length / DRAMATURGOS_POR_PAGINA))
+  const irAPaginaAutores = (n: number) => {
+    setPaginaAutores(n)
+    document.getElementById('bib-autores-h')?.scrollIntoView({ block: 'start' })
+  }
+  const autoresPagina = autores.slice((paginaAutores - 1) * DRAMATURGOS_POR_PAGINA, paginaAutores * DRAMATURGOS_POR_PAGINA)
   const secciones = SECCIONES.filter(s => s.id !== 'dramaturgos' || autores.length > 0)
 
   const counts: Record<SeccionId, number> = {
@@ -198,21 +208,38 @@ export default function BibliotecaClient({ obras, total, totalBiblioteca, pagina
           <section aria-labelledby="bib-autores-h">
             <header className="bib-section-head bib-section-head--sm">
               <div className="bib-section-eyebrow">Dramaturgos</div>
-              <h2 className="bib-section-title" id="bib-autores-h">Autores destacados</h2>
+              <h2 className="bib-section-title" id="bib-autores-h">Todos los dramaturgos</h2>
+              <p className="bib-section-sub">
+                {formatearMiles(autores.length)} autores · de más a menos obras
+                {paginasAutores > 1 ? ` · página ${paginaAutores} de ${formatearMiles(paginasAutores)}` : ''}
+              </p>
             </header>
             <ul className="bib-autores-list">
-              {autores.map(autor => (
-                <li key={autor.nombre} className="bib-autor-item">
-                  <div className="bib-autor-iniciales" aria-hidden="true">
-                    {autor.iniciales}
-                  </div>
-                  <div>
-                    <div className="bib-autor-nombre">{autor.nombre}</div>
-                    <div className="bib-autor-meta">{autor.obras === 1 ? '1 obra' : `${autor.obras} obras`}</div>
-                  </div>
+              {autoresPagina.map(autor => (
+                <li key={autor.nombre}>
+                  <Link href={urlCatalogo(autor.nombre, 1)} className="bib-autor-item" onClick={() => setActiva('catalogo')}>
+                    <div className="bib-autor-iniciales" aria-hidden="true">
+                      {autor.iniciales}
+                    </div>
+                    <div>
+                      <div className="bib-autor-nombre">{autor.nombre}</div>
+                      <div className="bib-autor-meta">{autor.obras === 1 ? '1 obra' : `${formatearMiles(autor.obras)} obras`}</div>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>
+            {paginasAutores > 1 && (
+              <nav className="bib-paginacion" aria-label="Páginas de dramaturgos">
+                {paginaAutores > 1
+                  ? <button type="button" className="bib-paginacion-enlace bib-paginacion-boton" onClick={() => irAPaginaAutores(paginaAutores - 1)}>← Anterior</button>
+                  : <span />}
+                <span className="bib-paginacion-estado">Página {paginaAutores} de {formatearMiles(paginasAutores)}</span>
+                {paginaAutores < paginasAutores
+                  ? <button type="button" className="bib-paginacion-enlace bib-paginacion-boton" onClick={() => irAPaginaAutores(paginaAutores + 1)}>Siguiente →</button>
+                  : <span />}
+              </nav>
+            )}
           </section>
         )}
 

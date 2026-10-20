@@ -13,3 +13,14 @@ describe('casilla «Espacios escénicos» de la portada', () => {
     expect(textoSeccion('/castings', 'Audiciones y castings abiertos', 3941)).toBe('Audiciones y castings abiertos')
   })
 })
+
+describe('casilla «Biblioteca» de la portada', () => {
+  it('antepone el total de obras con punto de miles', () => {
+    expect(textoSeccion('/obras', 'Clásicos del teatro hispano y autores actuales', null, 5840))
+      .toBe('5.840 obras · clásicos del teatro hispano y autores actuales')
+  })
+  it('sin cifra deja el texto de siempre', () => {
+    expect(textoSeccion('/obras', 'Clásicos del teatro hispano y autores actuales', null, null))
+      .toBe('Clásicos del teatro hispano y autores actuales')
+  })
+})
