@@ -34,7 +34,10 @@ export async function paginaCatalogo(f: FiltrosCatalogo): Promise<{ obras: ObraC
     .is('deleted_at', null)
   const patron = patronBusqueda(f.q)
   if (patron) q = q.ilike('busqueda_normalizada', patron)
+  // Primero los autores más antiguos (Siglo de Oro), luego por título: así la
+  // primera página abre con los clásicos y no con títulos que empiezan por «¡».
   const { data, count, error } = await q
+    .order('author_death_year', { ascending: true, nullsFirst: false })
     .order('title', { ascending: true })
     .order('id', { ascending: true })
     .range(desde, hasta)
