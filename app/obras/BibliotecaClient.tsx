@@ -46,14 +46,8 @@ const TAXONOMIA: { section: string; items: string[] }[] = [
 
 /* ── Types ───────────────────────────────────────────────── */
 
-type ObraCard = {
-  id: string
-  title: string
-  author: string | null
-  slug: string | null
-  genre: string | null
-  year: number | null
-}
+import { urlCatalogo, formatearMiles } from '@/lib/biblioteca/catalogo'
+import type { ObraCard, AutorDestacado } from '@/lib/biblioteca/datos'
 
 const SECCIONES = [
   { id: 'catalogo',        num: '01', label: 'Catálogo' },
@@ -64,46 +58,29 @@ const SECCIONES = [
 
 type SeccionId = (typeof SECCIONES)[number]['id']
 
-type AutorDestacado = { nombre: string; obras: number; iniciales: string }
-
-/**
- * Autores con más obras públicas, contados sobre `obrasData` -- el mismo
- * listado que pinta el catálogo, con sus mismos filtros de visibilidad --.
- * Máximo cuatro, de más a menos obras (a igualdad, por nombre). Las obras
- * sin autor no cuentan.
- */
-function autoresDestacados(obras: ObraCard[]): AutorDestacado[] {
-  const recuento = new Map<string, number>()
-  for (const o of obras) {
-    const nombre = o.author?.trim()
-    if (nombre) recuento.set(nombre, (recuento.get(nombre) ?? 0) + 1)
-  }
-  return [...recuento]
-    .sort(([a, na], [b, nb]) => nb - na || a.localeCompare(b, 'es'))
-    .slice(0, 4)
-    .map(([nombre, obras]) => {
-      const palabras = nombre.split(/\s+/)
-      const iniciales = (palabras[0][0] + (palabras.length > 1 ? palabras[palabras.length - 1][0] : '')).toUpperCase()
-      return { nombre, obras, iniciales }
-    })
-}
-
 const GENRES_TOTAL = TAXONOMIA.reduce((acc, { items }) => acc + items.length, 0)
 
 interface Props {
-  obrasData: ObraCard[]
+  /** La página del catálogo que se muestra (48 obras como mucho). */
+  obras: ObraCard[]
+  /** Obras que encajan con la búsqueda (todas, si no hay búsqueda). */
+  total: number
+  totalBiblioteca: number
+  pagina: number
+  paginas: number
+  q: string
+  recientes: ObraCard[]
+  autores: AutorDestacado[]
 }
 
 /* ── Component ───────────────────────────────────────────── */
 
-export default function BibliotecaClient({ obrasData }: Props) {
+export default function BibliotecaClient({ obras, total, totalBiblioteca, pagina, paginas, q, recientes, autores }: Props) {
   const [activa, setActiva] = useState<SeccionId>('catalogo')
-  const recientes = [...obrasData].reverse().slice(0, 4)
-  const autores = autoresDestacados(obrasData)
   const secciones = SECCIONES.filter(s => s.id !== 'dramaturgos' || autores.length > 0)
 
   const counts: Record<SeccionId, number> = {
-    catalogo:        obrasData.length,
+    catalogo:        totalBiblioteca,
     generos:         GENRES_TOTAL,
     incorporaciones: recientes.length,
     dramaturgos:     autores.length,
@@ -126,7 +103,7 @@ export default function BibliotecaClient({ obrasData }: Props) {
             <span className="bib-nav-sep" aria-hidden="true">·</span>
             <span className="bib-nav-label">{s.label}</span>
             <span className="bib-nav-count" aria-hidden="true">
-              {counts[s.id]}
+              {formatearMiles(counts[s.id])}
             </span>
           </button>
         ))}
@@ -136,13 +113,21 @@ export default function BibliotecaClient({ obrasData }: Props) {
       <div className="bib-contenido">
 
         {activa === 'catalogo' && (
-          <section aria-labelledby="bib-catalogo-h">
+          <section aria-labelledby="bib-catalogo-h" id="catalogo">
             <header className="bib-section-head">
               <div className="bib-section-eyebrow">Catálogo</div>
-              <h2 className="bib-section-title" id="bib-catalogo-h">Obras destacadas</h2>
+              <h2 className="bib-section-title" id="bib-catalogo-h">
+                {q ? `Resultados para «${q}»` : 'Todas las obras'}
+              </h2>
+              <p className="bib-section-sub">
+                {total === 0
+                  ? 'No hay obras que coincidan con la búsqueda.'
+                  : `${formatearMiles(total)} ${total === 1 ? 'obra' : 'obras'}${paginas > 1 ? ` · página ${pagina} de ${formatearMiles(paginas)}` : ''}`}
+                {q && <> · <Link href="/obras#catalogo">Ver todas</Link></>}
+              </p>
             </header>
             <div className="bib-cards-grid">
-              {obrasData.map(obra => (
+              {obras.map(obra => (
                 <Link key={obra.id} href={`/obras/${obra.slug}`} className="bib-card">
                   <div className="bib-card-genero">{obra.genre}</div>
                   <h3 className="bib-card-titulo">{obra.title}</h3>
@@ -154,6 +139,17 @@ export default function BibliotecaClient({ obrasData }: Props) {
                 </Link>
               ))}
             </div>
+            {paginas > 1 && (
+              <nav className="bib-paginacion" aria-label="Páginas del catálogo">
+                {pagina > 1
+                  ? <Link href={urlCatalogo(q, pagina - 1)} className="bib-paginacion-enlace" rel="prev">← Anterior</Link>
+                  : <span />}
+                <span className="bib-paginacion-estado">Página {pagina} de {formatearMiles(paginas)}</span>
+                {pagina < paginas
+                  ? <Link href={urlCatalogo(q, pagina + 1)} className="bib-paginacion-enlace" rel="next">Siguiente →</Link>
+                  : <span />}
+              </nav>
+            )}
           </section>
         )}
 

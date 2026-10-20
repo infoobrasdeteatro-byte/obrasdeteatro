@@ -7,6 +7,7 @@ import { COUNTRIES } from '@/lib/geo/countries'
 import { languageName } from '@/lib/geo/languages'
 import { WORK_RIGHTS_LABELS } from '@/lib/obras-system'
 import type { WorkRightsStatus } from '@/lib/obras-system'
+import { libreEnTodosLosPaises } from '@/lib/biblioteca/catalogo'
 
 const RIGHTS_DOT: Record<string, string> = {
   public_domain: 'obra-rights-dot--green',
@@ -44,7 +45,7 @@ export default async function ObraPublicaPage({ params }: Props) {
 
   const { data: obra } = await supabase
     .from('works')
-    .select('id, title, subtitle, author, synopsis, synopsis_short, synopsis_full, genre, secondary_genres, duration_minutes, min_age, cast_size_min, cast_size_max, language, country_code, year, rights_status, rights_manager, access_type, cover_image_url, source_name, source_url, is_library_work, is_published, deleted_at, created_at, profile_id, institution_id')
+    .select('id, title, subtitle, author, synopsis, synopsis_short, synopsis_full, genre, secondary_genres, duration_minutes, min_age, cast_size_min, cast_size_max, language, country_code, year, rights_status, rights_manager, access_type, cover_image_url, source_name, source_url, license, author_death_year, is_library_work, is_published, deleted_at, created_at, profile_id, institution_id')
     .eq('slug', slug)
     .single()
 
@@ -125,7 +126,7 @@ export default async function ObraPublicaPage({ params }: Props) {
   const hasRelated =
     (obrasMismoAutor?.length ?? 0) > 0 || (obrasMismoGenero?.length ?? 0) > 0
 
-  const showDerechos = !!(rightsLabel || institution || obra.rights_manager)
+  const showDerechos = !!(rightsLabel || institution || obra.rights_manager || obra.source_name)
   const hasTecnica = !!(
     obra.duration_minutes || reparto || obra.language || countryName || obra.min_age !== null
   )
@@ -281,6 +282,20 @@ export default async function ObraPublicaPage({ params }: Props) {
                       )}
                       {institution && !obra.rights_manager && (
                         <p className="obra-rights-detail">{institution.name}</p>
+                      )}
+                      {obra.rights_status === 'public_domain' && libreEnTodosLosPaises(obra.author_death_year) && (
+                        <p className="obra-rights-detail">
+                          Libre en los 20 países de habla hispana · autor fallecido en {obra.author_death_year}
+                        </p>
+                      )}
+                      {obra.source_name && (
+                        <p className="obra-rights-detail">
+                          Fuente:{' '}
+                          {obra.source_url
+                            ? <a href={obra.source_url} target="_blank" rel="noopener noreferrer">{obra.source_name}</a>
+                            : obra.source_name}
+                          {obra.license && <> · {obra.license}</>}
+                        </p>
                       )}
                     </div>
                   </div>

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import TopNav from '@/components/design-system/TopNav'
-import { createClient } from '@/lib/supabase/server'
 import BibliotecaClient from './BibliotecaClient'
+import { leerFiltrosCatalogo, totalPaginas, formatearMiles } from '@/lib/biblioteca/catalogo'
+import { paginaCatalogo, resumenBiblioteca } from '@/lib/biblioteca/datos'
 
 export const metadata: Metadata = {
   title: 'Biblioteca de Obras | ObrasDeTeatro®',
@@ -17,17 +18,12 @@ const PROXIMAS_FUNCIONALIDADES = [
   'Buscador avanzado',
 ]
 
-export default async function ObrasPage() {
-  const supabase = await createClient()
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
-  const { data: obras } = await supabase
-    .from('works')
-    .select('id, title, author, slug, genre, year')
-    .eq('is_published', true)
-    .is('deleted_at', null)
-    .order('year', { ascending: true })
-
-  const obrasData = obras ?? []
+export default async function ObrasPage({ searchParams }: Props) {
+  const filtros = leerFiltrosCatalogo(await searchParams)
+  const [{ obras, total }, resumen] = await Promise.all([paginaCatalogo(filtros), resumenBiblioteca()])
+  const paginas = totalPaginas(total)
 
   return (
     <>
@@ -41,7 +37,8 @@ export default async function ObrasPage() {
               <span className="bib-eyebrow-dot" aria-hidden="true" />
               BIBLIOTECA OFICIAL · <span style={{ color: 'var(--red)' }}>PATRIMONIO TEATRAL</span>
             </div>
-            <div className="bib-search-wrap" role="search" aria-label="Buscador de la biblioteca">
+            {/* Formulario GET: la búsqueda queda en la URL y funciona sin JavaScript. */}
+            <form className="bib-search-wrap" role="search" aria-label="Buscador de la biblioteca" action="/obras#catalogo" method="get">
               <svg
                 className="bib-search-icon"
                 width="16" height="16" viewBox="0 0 24 24"
@@ -54,23 +51,34 @@ export default async function ObrasPage() {
               </svg>
               <input
                 type="search"
+                name="q"
                 className="bib-search-input"
                 placeholder="Buscar una obra, autor o género..."
                 aria-label="Buscar en la biblioteca"
-                disabled
+                defaultValue={filtros.q}
+                maxLength={80}
               />
-              <button className="bib-search-btn" disabled aria-disabled="true">
+              <button type="submit" className="bib-search-btn">
                 Buscar
               </button>
-            </div>
+            </form>
             <p className="bib-search-coming">
-              Buscador avanzado disponible en la próxima versión
+              {formatearMiles(resumen.total)} obras en la biblioteca
             </p>
           </div>
         </section>
 
         {/* ── NAVEGACIÓN MODULAR ── */}
-        <BibliotecaClient obrasData={obrasData} />
+        <BibliotecaClient
+          obras={obras}
+          total={total}
+          totalBiblioteca={resumen.total}
+          pagina={filtros.pagina}
+          paginas={paginas}
+          q={filtros.q}
+          recientes={resumen.recientes}
+          autores={resumen.autores}
+        />
 
         {/* ── PRÓXIMAMENTE ── */}
         <section className="bib-pronto" aria-labelledby="pronto-heading">

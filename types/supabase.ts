@@ -4263,6 +4263,8 @@ export type Database = {
         Row: {
           access_type: string | null
           author: string | null
+          author_death_year: number | null
+          busqueda_normalizada: string | null
           cast_size_max: number | null
           cast_size_min: number | null
           country_code: string | null
@@ -4271,6 +4273,7 @@ export type Database = {
           deleted_at: string | null
           duration_minutes: number | null
           epocas: string[]
+          external_ref: string | null
           genre: string | null
           genre_normalizado: string | null
           id: string
@@ -4279,6 +4282,7 @@ export type Database = {
           is_library_work: boolean
           is_published: boolean | null
           language: string | null
+          license: string | null
           min_age: number | null
           profile_id: string | null
           rights_manager: string | null
@@ -4299,6 +4303,8 @@ export type Database = {
         Insert: {
           access_type?: string | null
           author?: string | null
+          author_death_year?: number | null
+          busqueda_normalizada?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
           country_code?: string | null
@@ -4307,6 +4313,7 @@ export type Database = {
           deleted_at?: string | null
           duration_minutes?: number | null
           epocas?: string[]
+          external_ref?: string | null
           genre?: string | null
           genre_normalizado?: string | null
           id?: string
@@ -4315,6 +4322,7 @@ export type Database = {
           is_library_work?: boolean
           is_published?: boolean | null
           language?: string | null
+          license?: string | null
           min_age?: number | null
           profile_id?: string | null
           rights_manager?: string | null
@@ -4335,6 +4343,8 @@ export type Database = {
         Update: {
           access_type?: string | null
           author?: string | null
+          author_death_year?: number | null
+          busqueda_normalizada?: string | null
           cast_size_max?: number | null
           cast_size_min?: number | null
           country_code?: string | null
@@ -4343,6 +4353,7 @@ export type Database = {
           deleted_at?: string | null
           duration_minutes?: number | null
           epocas?: string[]
+          external_ref?: string | null
           genre?: string | null
           genre_normalizado?: string | null
           id?: string
@@ -4351,6 +4362,7 @@ export type Database = {
           is_library_work?: boolean
           is_published?: boolean | null
           language?: string | null
+          license?: string | null
           min_age?: number | null
           profile_id?: string | null
           rights_manager?: string | null
