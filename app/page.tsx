@@ -71,7 +71,7 @@ export default async function Home() {
       <FranjaColaboradores colaboradores={medios} />
 
       {/* ── LAS OCHO SECCIONES DE LA PLATAFORMA ── */}
-      <SeccionesPlataforma totalEspacios={totalEspacios} />
+      <SeccionesPlataforma totalEspacios={totalEspacios} totalObras={datos.obras} />
 
       {/* ── EL PULSO DEL ECOSISTEMA (vista previa visual) ── */}
       <EcosistemaPulso datos={datos} />

@@ -1761,6 +1761,7 @@ body {
 .bib-paginacion-enlace { color: var(--red); font-weight: 600; text-decoration: none; }
 .bib-paginacion-enlace:hover { text-decoration: underline; }
 .bib-paginacion-estado { color: var(--muted); }
+.bib-paginacion-boton { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
 .bib-card {
   background: var(--white); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 24px;
@@ -1806,6 +1807,9 @@ body {
   font-family: var(--serif); font-size: 14px; color: var(--muted); flex-shrink: 0;
 }
 .bib-autor-nombre { font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--black); }
+#bib-autores-h { scroll-margin-top: 140px; }
+a.bib-autor-item { text-decoration: none; color: inherit; }
+a.bib-autor-item:hover .bib-autor-nombre { color: var(--red); }
 .bib-autor-meta { font-family: var(--sans); font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* Próximamente */

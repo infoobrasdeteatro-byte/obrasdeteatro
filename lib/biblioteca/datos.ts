@@ -61,29 +61,28 @@ async function leerResumen(): Promise<{ total: number; recientes: ObraCard[]; au
   return {
     total: autoresLeidos.data.length,
     recientes: recientes ?? [],
-    autores: autoresDestacados(autoresLeidos.data),
+    autores: listaDramaturgos(autoresLeidos.data),
   }
 }
 
-/** Total, últimas incorporaciones y autores con más obras (cacheado). */
-export const resumenBiblioteca = unstable_cache(leerResumen, ['obras-resumen'], {
+/** Total, últimas incorporaciones y todos los dramaturgos (cacheado). */
+export const resumenBiblioteca = unstable_cache(leerResumen, ['obras-resumen-v2'], {
   revalidate: REVALIDAR_OBRAS,
   tags: ['obras'],
 })
 
 /**
- * Autores con más obras públicas: máximo cuatro, de más a menos obras (a
- * igualdad, por nombre). Las obras sin autor no cuentan.
+ * Todos los dramaturgos con obras públicas, de más a menos obras (a igualdad,
+ * por nombre). «Anónimo» no es un autor y las obras sin autor no cuentan.
  */
-export function autoresDestacados(obras: { author: string | null }[]): AutorDestacado[] {
+export function listaDramaturgos(obras: { author: string | null }[]): AutorDestacado[] {
   const recuento = new Map<string, number>()
   for (const o of obras) {
     const nombre = o.author?.trim()
-    if (nombre) recuento.set(nombre, (recuento.get(nombre) ?? 0) + 1)
+    if (nombre && nombre !== 'Anónimo') recuento.set(nombre, (recuento.get(nombre) ?? 0) + 1)
   }
   return [...recuento]
     .sort(([a, na], [b, nb]) => nb - na || a.localeCompare(b, 'es'))
-    .slice(0, 4)
     .map(([nombre, obras]) => {
       const palabras = nombre.split(/\s+/)
       const iniciales = (palabras[0][0] + (palabras.length > 1 ? palabras[palabras.length - 1][0] : '')).toUpperCase()

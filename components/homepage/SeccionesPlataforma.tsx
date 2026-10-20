@@ -23,25 +23,28 @@ export function formatearMiles(n: number): string {
 }
 
 /**
- * Texto de cada casilla. En «Espacios escénicos» se antepone el total de
- * espacios publicados en los 20 países, dentro de la misma frase y con el
+ * Texto de cada casilla. En «Espacios escénicos» y «Biblioteca» se antepone
+ * el total publicado (espacios de los 20 países, obras de la biblioteca), dentro de la misma frase y con el
  * mismo estilo; si no hay cifra se queda el texto de siempre.
  */
-export function textoSeccion(href: string, texto: string, totalEspacios: number | null): string {
+export function textoSeccion(href: string, texto: string, totalEspacios: number | null, totalObras: number | null = null): string {
   if (href === '/espacios' && totalEspacios && totalEspacios > 0) {
     return `${formatearMiles(totalEspacios)} teatros y salas de los 20 países`
+  }
+  if (href === '/obras' && totalObras && totalObras > 0) {
+    return `${formatearMiles(totalObras)} obras · clásicos del teatro hispano y autores actuales`
   }
   return texto
 }
 
-export default function SeccionesPlataforma({ totalEspacios = null }: { totalEspacios?: number | null }) {
+export default function SeccionesPlataforma({ totalEspacios = null, totalObras = null }: { totalEspacios?: number | null; totalObras?: number | null }) {
   return (
     <section className="secciones" aria-label="Secciones de la plataforma">
       <div className="secciones-grid">
         {SECCIONES.map(s => (
           <Link key={s.href} href={s.href} className="eco-stat-card">
             <div className="eco-stat-value eco-stat-value--texto">{s.titulo}</div>
-            <div className="eco-stat-label">{textoSeccion(s.href, s.texto, totalEspacios)}</div>
+            <div className="eco-stat-label">{textoSeccion(s.href, s.texto, totalEspacios, totalObras)}</div>
             <div className="eco-stat-link">{s.enlace} <IconArrowRight /></div>
           </Link>
         ))}
