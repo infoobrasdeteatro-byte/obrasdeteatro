@@ -7,7 +7,7 @@ import { COUNTRIES } from '@/lib/geo/countries'
 import { languageName } from '@/lib/geo/languages'
 import { WORK_RIGHTS_LABELS } from '@/lib/obras-system'
 import type { WorkRightsStatus } from '@/lib/obras-system'
-import { libreEnTodosLosPaises } from '@/lib/biblioteca/catalogo'
+import { libreEnTodosLosPaises, obraAnonimaAntigua } from '@/lib/biblioteca/catalogo'
 
 const RIGHTS_DOT: Record<string, string> = {
   public_domain: 'obra-rights-dot--green',
@@ -45,7 +45,7 @@ export default async function ObraPublicaPage({ params }: Props) {
 
   const { data: obra } = await supabase
     .from('works')
-    .select('id, title, subtitle, author, synopsis, synopsis_short, synopsis_full, genre, secondary_genres, duration_minutes, min_age, cast_size_min, cast_size_max, language, country_code, year, rights_status, rights_manager, access_type, cover_image_url, source_name, source_url, license, author_death_year, is_library_work, is_published, deleted_at, created_at, profile_id, institution_id')
+    .select('id, title, subtitle, author, synopsis, synopsis_short, synopsis_full, genre, secondary_genres, duration_minutes, min_age, cast_size_min, cast_size_max, language, country_code, year, rights_status, rights_manager, access_type, cover_image_url, source_name, source_url, license, author_death_year, external_ref, is_library_work, is_published, deleted_at, created_at, profile_id, institution_id')
     .eq('slug', slug)
     .single()
 
@@ -286,6 +286,11 @@ export default async function ObraPublicaPage({ params }: Props) {
                       {obra.rights_status === 'public_domain' && libreEnTodosLosPaises(obra.author_death_year) && (
                         <p className="obra-rights-detail">
                           Libre en los 20 países de habla hispana · autor fallecido en {obra.author_death_year}
+                        </p>
+                      )}
+                      {obra.rights_status === 'public_domain' && obraAnonimaAntigua(obra) && (
+                        <p className="obra-rights-detail">
+                          Libre en los 20 países de habla hispana · obra anónima publicada en 1830 o antes
                         </p>
                       )}
                       {obra.source_name && (
