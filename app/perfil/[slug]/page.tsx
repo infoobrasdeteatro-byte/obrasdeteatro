@@ -635,12 +635,10 @@ export default async function PerfilPublicoPage({ params }: Props) {
                     rel="noopener noreferrer"
                     style={{
                       fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)',
-                      textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px',
+                      textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px',
                     }}
                   >
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--muted)', letterSpacing: '0.08em', minWidth: '32px' }}>
-                      {key.slice(0, 3).toUpperCase()}
-                    </span>
+                    <IconoContacto tipo={key} />
                     {SOCIAL_LABEL[key]}
                     <span style={{ color: 'var(--muted)', fontSize: '11px' }}>↗</span>
                   </a>
