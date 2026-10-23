@@ -27,7 +27,9 @@ export function nombreArchivoQr(slug: string): string {
  * X, Telegram, LinkedIn y correo). Solo en el móvil se añade «Más opciones»
  * con el menú del sistema (en el ordenador ese menú es el de Windows/macOS).
  */
-export default function CompartirPerfil({ slug, nombre }: { slug: string; nombre: string }) {
+export default function CompartirPerfil({ slug, nombre: nombreBruto }: { slug: string; nombre: string }) {
+  // Recortado: «Renee Bausson » dejaba un espacio doble en el asunto del correo.
+  const nombre = nombreBruto.trim()
   const url = urlPerfil(slug)
   const [abierto, setAbierto] = useState(false)
   const [qr, setQr] = useState<string | null>(null)
