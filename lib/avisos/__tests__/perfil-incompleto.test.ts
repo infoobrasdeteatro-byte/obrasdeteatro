@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import { construirHtmlAvisoPerfil, construirTextoAvisoPerfil, faltasDelPerfil } from '../perfil-incompleto'
 
-const base = { avatar_url: null, bio: null, num_profesiones: 0 }
+const base = { avatar_url: null, bio: null, ciudad: null, num_profesiones: 0 }
 
 describe('faltasDelPerfil', () => {
   it('público general: tipo, foto y biografía, nunca profesiones', () => {
-    expect(faltasDelPerfil({ ...base, tipo_perfil: 'publico' })).toEqual(['tipo', 'foto', 'bio'])
+    expect(faltasDelPerfil({ ...base, tipo_perfil: 'publico' })).toEqual(['tipo', 'foto', 'bio', 'ciudad'])
   })
   it('persona: foto, profesiones y biografía', () => {
-    expect(faltasDelPerfil({ ...base, tipo_perfil: 'actor' })).toEqual(['foto', 'profesiones', 'bio'])
+    expect(faltasDelPerfil({ ...base, tipo_perfil: 'actor' })).toEqual(['foto', 'profesiones', 'bio', 'ciudad'])
   })
   it('organización: nunca tipo ni profesiones', () => {
-    expect(faltasDelPerfil({ ...base, tipo_perfil: 'teatro', bio: 'Sala.' })).toEqual(['foto'])
+    expect(faltasDelPerfil({ ...base, tipo_perfil: 'teatro', bio: 'Sala.', ciudad: 'Madrid' })).toEqual(['foto'])
   })
   it('perfil completo: nada', () => {
-    expect(faltasDelPerfil({ tipo_perfil: 'director', avatar_url: 'x', bio: 'Bio', num_profesiones: 1 })).toEqual([])
+    expect(faltasDelPerfil({ tipo_perfil: 'director', avatar_url: 'x', bio: 'Bio', ciudad: 'Lima', num_profesiones: 1 })).toEqual([])
   })
   it('biografía o foto en blanco cuentan como vacías', () => {
-    expect(faltasDelPerfil({ tipo_perfil: 'compania', avatar_url: ' ', bio: '  ', num_profesiones: 0 })).toEqual(['foto', 'bio'])
+    expect(faltasDelPerfil({ tipo_perfil: 'compania', avatar_url: ' ', bio: '  ', ciudad: ' ', num_profesiones: 0 })).toEqual(['foto', 'bio', 'ciudad'])
   })
 })
 
@@ -30,6 +30,10 @@ describe('correo del aviso', () => {
     expect(html).not.toContain('Público general')
     expect(html).toContain('Renee Bausson')
     expect(html).not.toContain('Díaz')
+  })
+  it('ciudad: tú para personas, vosotros para organizaciones', () => {
+    expect(construirHtmlAvisoPerfil('A', 'actor', ['ciudad'])).toContain('Tu ciudad.')
+    expect(construirHtmlAvisoPerfil('A', 'compania', ['ciudad'])).toContain('Vuestra ciudad.')
   })
   it('escapa el nombre', () => {
     expect(construirHtmlAvisoPerfil('<b>x</b>', 'publico', ['tipo'])).toContain('Hola, &lt;b&gt;x&lt;/b&gt;:')

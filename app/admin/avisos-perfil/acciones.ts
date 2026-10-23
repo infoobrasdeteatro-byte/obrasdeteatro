@@ -25,8 +25,8 @@ export async function enviarPruebaAviso(): Promise<string> {
   if (!a) return 'Solo administración.'
   if (!a.email) return 'Tu cuenta no tiene correo.'
   const ok = await enviarLoteAviso([
-    { para: a.email, nombre: 'Renee', tipo: 'publico', faltas: ['tipo', 'foto', 'bio'] },
-    { para: a.email, nombre: 'Renee', tipo: 'actor', faltas: ['foto', 'profesiones', 'bio'] },
+    { para: a.email, nombre: 'Renee', tipo: 'publico', faltas: ['tipo', 'foto', 'bio', 'ciudad'] },
+    { para: a.email, nombre: 'Renee', tipo: 'actor', faltas: ['foto', 'profesiones', 'bio', 'ciudad'] },
   ])
   return ok ? `Prueba enviada a ${a.email} (2 correos).` : 'No se envió: error de Resend.'
 }

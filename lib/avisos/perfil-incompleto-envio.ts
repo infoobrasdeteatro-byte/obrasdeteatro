@@ -27,7 +27,7 @@ export type ResumenAviso = {
 export async function cargarDestinatariosAviso(servicio: SupabaseClient): Promise<ResumenAviso> {
   const [perfiles, profesiones, equipo, enviados] = await Promise.all([
     servicio.from('profiles')
-      .select('id, nombre, nombre_artistico, email, tipo_perfil, avatar_url, bio, verificado')
+      .select('id, nombre, nombre_artistico, email, tipo_perfil, avatar_url, bio, ciudad, verificado')
       .eq('activo', true).is('deleted_at', null).is('extincion_solicitada_at', null)
       .order('created_at', { ascending: true }).limit(5000),
     servicio.from('profile_specialties').select('profile_id').limit(20000),
@@ -45,13 +45,13 @@ export async function cargarDestinatariosAviso(servicio: SupabaseClient): Promis
   const esEquipo = new Set(((equipo.data ?? []) as { profile_id: string }[]).map(r => r.profile_id))
   const yaEnviado = new Set(((enviados.data ?? []) as { profile_id: string }[]).map(r => r.profile_id))
 
-  type Fila = { id: string; nombre: string | null; nombre_artistico: string | null; email: string | null; tipo_perfil: string; avatar_url: string | null; bio: string | null; verificado: boolean }
+  type Fila = { id: string; nombre: string | null; nombre_artistico: string | null; email: string | null; tipo_perfil: string; avatar_url: string | null; bio: string | null; ciudad: string | null; verificado: boolean }
   const pendientes: DestinatarioAviso[] = []
   let yaEnviados = 0
   let sinVerificar = 0
   for (const p of (perfiles.data ?? []) as Fila[]) {
     if (esEquipo.has(p.id)) continue
-    const faltas = faltasDelPerfil({ tipo_perfil: p.tipo_perfil, avatar_url: p.avatar_url, bio: p.bio, num_profesiones: numProf.get(p.id) ?? 0 })
+    const faltas = faltasDelPerfil({ tipo_perfil: p.tipo_perfil, avatar_url: p.avatar_url, bio: p.bio, ciudad: p.ciudad, num_profesiones: numProf.get(p.id) ?? 0 })
     if (faltas.length === 0) continue
     if (!p.verificado) { sinVerificar++; continue }
     if (yaEnviado.has(p.id)) { yaEnviados++; continue }

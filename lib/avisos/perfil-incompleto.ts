@@ -10,12 +10,13 @@ export const REMITENTE_AVISO_PERFIL = 'Renee Bausson · ObrasDeTeatro® <hola@ob
 export const RESPONDER_A_AVISO_PERFIL = 'hola@obrasdeteatro.com'
 export const URL_PANEL_PERFIL = 'https://www.obrasdeteatro.com/perfil'
 
-export type Falta = 'tipo' | 'foto' | 'profesiones' | 'bio'
+export type Falta = 'tipo' | 'foto' | 'profesiones' | 'bio' | 'ciudad'
 
 export type DatosPerfil = {
   tipo_perfil: string
   avatar_url: string | null
   bio: string | null
+  ciudad: string | null
   num_profesiones: number
 }
 
@@ -30,6 +31,7 @@ export function faltasDelPerfil(p: DatosPerfil): Falta[] {
   // Las profesiones solo existen para personas con perfil profesional.
   if (esPersona(p.tipo_perfil) && p.num_profesiones === 0) faltas.push('profesiones')
   if (!p.bio?.trim()) faltas.push('bio')
+  if (!p.ciudad?.trim()) faltas.push('ciudad')
   return faltas
 }
 
@@ -52,6 +54,10 @@ export function textoFalta(f: Falta, tipo: string): [string, string] {
       return esOrganizacion(tipo)
         ? ['Una breve presentación.', ' Tres o cuatro líneas sobre vuestra trayectoria bastan para empezar.']
         : ['Una breve biografía.', ' Tres o cuatro líneas bastan para empezar.']
+    case 'ciudad':
+      return esOrganizacion(tipo)
+        ? ['Vuestra ciudad.', ' Así os encuentran quienes buscan compañías o salas en vuestra zona.']
+        : ['Tu ciudad.', ' Así te encuentran quienes buscan profesionales o salas en tu zona.']
   }
 }
 
