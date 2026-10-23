@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { translateAuthError } from '@/lib/auth-errors'
@@ -18,7 +18,16 @@ interface Props {
 export default function CorreoForm({ emailActual }: Props) {
   const searchParams = useSearchParams()
   const confirmado = searchParams.get('confirmado') === 'true'
-  const expirado = searchParams.get('expirado') === 'true'
+  const [pendienteHash, setPendienteHash] = useState(false)
+  // Supabase puede devolver el aviso de «primer enlace aceptado» en el
+  // fragmento (#message=...), que el servidor no ve y el navegador conserva
+  // tras la redirección: se lee aquí.
+  useEffect(() => {
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    if (!h.get('error') && /confirmation link accepted/i.test(h.get('message') ?? '')) setPendienteHash(true)
+  }, [])
+  const pendiente = searchParams.get('pendiente') === 'true' || pendienteHash
+  const expirado = searchParams.get('expirado') === 'true' && !pendiente
 
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -58,6 +67,11 @@ export default function CorreoForm({ emailActual }: Props) {
       {confirmado && (
         <p className="auth-message auth-message--success" style={{ marginBottom: '16px' }}>
           Correo confirmado correctamente.
+        </p>
+      )}
+      {pendiente && (
+        <p className="auth-message auth-message--success" style={{ marginBottom: '16px' }}>
+          Paso 1 confirmado. Para terminar, abre el enlace que te hemos enviado a tu otro correo (el actual o el nuevo).
         </p>
       )}
       {expirado && (
