@@ -3345,6 +3345,36 @@ export type Database = {
         }
         Relationships: []
       }
+      conexiones: {
+        Row: {
+          created_at: string
+          destinatario: string
+          estado: string
+          id: string
+          mensaje: string | null
+          resuelta_at: string | null
+          solicitante: string
+        }
+        Insert: {
+          created_at?: string
+          destinatario: string
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          resuelta_at?: string | null
+          solicitante: string
+        }
+        Update: {
+          created_at?: string
+          destinatario?: string
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          resuelta_at?: string | null
+          solicitante?: string
+        }
+        Relationships: []
+      }
       solicitudes_contacto: {
         Row: {
           created_at: string
@@ -4578,6 +4608,25 @@ export type Database = {
           id: string; direccion: string; estado: string; mensaje: string | null; created_at: string
           otro_id: string; otro_nombre: string; otro_slug: string | null; otro_avatar: string | null; otro_publico: boolean
           email: string | null; telefono: string | null; whatsapp: string | null
+        }[]
+      }
+      estado_conexion: { Args: { p_perfil: string }; Returns: { estado: string; solicitud: string | null }[] }
+      solicitar_conexion: { Args: { p_perfil: string; p_mensaje?: string | null }; Returns: string }
+      responder_conexion: { Args: { p_id: string; p_aceptar: boolean }; Returns: boolean }
+      cancelar_conexion: { Args: { p_perfil: string }; Returns: boolean }
+      eliminar_conexion: { Args: { p_perfil: string }; Returns: boolean }
+      mis_conexiones: {
+        Args: never
+        Returns: {
+          id: string; direccion: string; estado: string; mensaje: string | null; created_at: string
+          otro_id: string; otro_nombre: string; otro_slug: string | null; otro_avatar: string | null; otro_publico: boolean
+        }[]
+      }
+      mis_seguimientos: {
+        Args: never
+        Returns: {
+          direccion: string; created_at: string
+          otro_id: string; otro_nombre: string; otro_slug: string | null; otro_avatar: string | null; otro_publico: boolean
         }[]
       }
       codigo_verificacion: { Args: { p_profile: string }; Returns: string }

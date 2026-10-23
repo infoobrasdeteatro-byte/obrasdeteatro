@@ -14,6 +14,7 @@ import FormacionExpander from './FormacionExpander'
 import PremiosExpander from './PremiosExpander'
 import FollowButton from './FollowButton'
 import ContactoPerfil from './ContactoPerfil'
+import ConectarPerfil, { type EstadoConexion } from './ConectarPerfil'
 import { estadoContacto } from '@/lib/red/contacto'
 import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
@@ -184,6 +185,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: videosDb },
     { data: proyectosDb },
     { data: contactoDb },
+    { data: conexionDb },
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -222,11 +224,19 @@ export default async function PerfilPublicoPage({ params }: Props) {
     supabase.from('perfil_portfolio').select('id, titulo, anio, rol, compania, descripcion, imagen_ruta, enlace').eq('profile_id', profile.id).order('orden', { ascending: true }),
     // Correo (si es público) y teléfono/WhatsApp (solo con solicitud aceptada).
     supabase.rpc('contacto_de', { p_perfil: profile.id }),
+    // Conexión entre quien mira y este perfil (solo con sesión y si no es el suyo).
+    (user && !isOwner)
+      ? supabase.rpc('estado_conexion', { p_perfil: profile.id })
+      : Promise.resolve({ data: null }),
   ])
   const contacto = contactoDb?.[0] ?? null
   const hayContacto = Boolean(contacto?.email) || Boolean(contacto?.tiene_privado) || isOwner
 
   const siguiendoEstePerfil = followResult.data !== null
+  const conexion = conexionDb?.[0] ?? null
+  const estadoConexion: EstadoConexion | null =
+    conexion && ['conectados', 'enviada', 'recibida', 'ninguna'].includes(conexion.estado)
+      ? conexion.estado as EstadoConexion : null
 
   // ── Cartelera: sus espectáculos publicados (en cartel y anteriores) ────
   const ahora = Date.now()
@@ -641,6 +651,11 @@ export default async function PerfilPublicoPage({ params }: Props) {
                   paddingTop: (safeWebsite || visibleSocials.length > 0 || hayContacto) ? '14px' : 0,
                   borderTop: (safeWebsite || visibleSocials.length > 0 || hayContacto) ? '1px solid var(--border)' : 'none',
                 }}>
+                  {estadoConexion && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <ConectarPerfil perfilId={profile.id} nombre={nombrePublico} estado={estadoConexion} solicitud={conexion?.solicitud ?? null} />
+                    </div>
+                  )}
                   <FollowButton profileId={profile.id} siguiendo={siguiendoEstePerfil} />
                 </div>
               )}
