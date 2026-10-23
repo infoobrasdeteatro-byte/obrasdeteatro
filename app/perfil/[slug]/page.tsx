@@ -17,7 +17,7 @@ import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
 import PortfolioPerfil, { type ProyectoPublico } from '@/components/perfil/PortfolioPerfil'
 import { BUCKET_GALERIA, analizarVideo, esPlanDePago, portadaValida, urlPublica } from '@/lib/perfil-multimedia/multimedia'
-import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO } from '@/lib/perfiles/profesiones'
+import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO, ordenarProfesiones } from '@/lib/perfiles/profesiones'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -241,7 +241,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
 
   // ── Derived values ─────────────────────────────────────────────────────
 
-  const safeSpecialties = specialties ?? []
+  const safeSpecialties = ordenarProfesiones(specialties ?? [])
   const { data: rolAdmin } = await supabase
     .from('profile_roles').select('profile_id').eq('profile_id', profile.id).eq('role', 'admin').maybeSingle()
   const esEquipo = !!rolAdmin

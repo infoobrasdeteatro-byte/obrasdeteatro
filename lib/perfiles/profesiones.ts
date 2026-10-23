@@ -44,6 +44,13 @@ export const PROFESIONES: readonly Profesion[] = [
 ]
 
 const POR_ID = new Map(PROFESIONES.map(p => [p.id, p]))
+const ORDEN = new Map(PROFESIONES.map((p, i) => [p.id, i]))
+
+/** Principal primero y el resto en el orden de la lista: igual en todas las pantallas. */
+export function ordenarProfesiones<T extends { specialty: string; is_primary: boolean }>(filas: T[]): T[] {
+  return [...filas].sort((a, b) =>
+    Number(b.is_primary) - Number(a.is_primary) || (ORDEN.get(a.specialty) ?? 999) - (ORDEN.get(b.specialty) ?? 999))
+}
 
 export function nombreProfesion(id: string): string | null {
   return POR_ID.get(id)?.nombre ?? null
@@ -58,8 +65,7 @@ export function esProfesion(id: unknown): id is string {
  * y como mucho `max`. Ignora ids desconocidos.
  */
 export function textoProfesiones(filas: { specialty: string; is_primary: boolean }[], max = 3): string | null {
-  const nombres = [...filas]
-    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+  const nombres = ordenarProfesiones(filas)
     .map(f => nombreProfesion(f.specialty))
     .filter((n): n is string => !!n)
   if (nombres.length === 0) return null
