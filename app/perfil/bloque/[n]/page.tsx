@@ -12,6 +12,7 @@ import EspecialidadesEditor from '@/app/perfil/EspecialidadesEditor'
 import ExperienciaEditor from '@/app/perfil/ExperienciaEditor'
 import RedesEditor from '@/app/perfil/RedesEditor'
 import ContactoEditor from '@/app/perfil/ContactoEditor'
+import ActividadEditor from '@/app/perfil/ActividadEditor'
 import DisponibilidadEditor from '@/app/perfil/DisponibilidadEditor'
 import MaterialAudiovisualEditor, { type Foto, type Video, type Proyecto } from '@/app/perfil/MaterialAudiovisualEditor'
 import DocumentacionPanel from '@/app/perfil/DocumentacionPanel'
@@ -47,7 +48,7 @@ export default async function BloqueEditorPage({ params }: Props) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, nombre, apellidos, nombre_artistico, bio, pais, ciudad, country_code, region, postal_code, tipo_perfil, perfil_publico, slug, avatar_url, cover_url, plan, website_url, social_links')
+    .select('id, nombre, apellidos, nombre_artistico, bio, pais, ciudad, country_code, region, postal_code, tipo_perfil, perfil_publico, slug, avatar_url, cover_url, plan, website_url, social_links, mostrar_actividad')
     .eq('id', user.id)
     .single()
 
@@ -163,6 +164,7 @@ export default async function BloqueEditorPage({ params }: Props) {
           initialSocial={profile?.social_links as SocialLinks | null}
         />
         <ContactoEditor profileId={user.id} emailCuenta={user.email ?? null} inicial={contacto} />
+        <ActividadEditor profileId={user.id} inicial={profile?.mostrar_actividad ?? true} />
       </Layout>
     )
   }

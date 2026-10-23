@@ -47,7 +47,7 @@ export default function VistaRed({ filas, conexiones = [], seguimientos = [] }: 
         </p>
       </div>
 
-      <div className="obras-stat-grid">
+      <div className="obras-stat-grid obras-stat-grid--4">
         <Contador href="#conexiones" etiqueta="Conexiones" valor={conectados.length} />
         <Contador href="#seguidores" etiqueta="Seguidores" valor={seguidores.length} />
         <Contador href="#siguiendo" etiqueta="Siguiendo" valor={siguiendo.length} />

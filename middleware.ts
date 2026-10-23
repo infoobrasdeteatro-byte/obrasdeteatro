@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { safeNextPath, withNext } from '@/lib/auth/next-param'
+import { COOKIE_ACTIVIDAD, SEGUNDOS_ACTIVIDAD } from '@/lib/red/actividad'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -31,6 +32,20 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+
+  // «Última actividad» (Fase 2 de la red): como mucho una vez por hora por
+  // navegador, marcado con una cookie. Un fallo no bloquea la navegación.
+  if (user && !request.cookies.get(COOKIE_ACTIVIDAD)) {
+    try {
+      // La cookie solo se pone si se ha guardado: con error, se reintenta.
+      const { error } = await supabase.rpc('registrar_actividad')
+      if (!error) {
+        supabaseResponse.cookies.set(COOKIE_ACTIVIDAD, '1', {
+          maxAge: SEGUNDOS_ACTIVIDAD, httpOnly: true, sameSite: 'lax', secure: true, path: '/',
+        })
+      }
+    } catch { /* se reintenta en la siguiente petición */ }
+  }
 
   const { pathname } = request.nextUrl
 
