@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { solicitarContacto, cancelarSolicitudContacto } from '../red/acciones'
 import { MAX_MENSAJE_SOLICITUD, hrefTelefono, hrefWhatsapp, type EstadoContacto } from '@/lib/red/contacto'
+import IconoContacto from '@/components/perfil/IconoContacto'
 
 interface Props {
   perfilId: string
@@ -18,9 +19,8 @@ interface Props {
 
 const fila: React.CSSProperties = {
   fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)',
-  textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px',
+  textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px',
 }
-const sigla: React.CSSProperties = { fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--muted)', letterSpacing: '0.08em', minWidth: '32px' }
 const nota: React.CSSProperties = { fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)', lineHeight: 1.5, margin: 0 }
 
 /** Correo (si es público), y teléfono/WhatsApp solo con solicitud aceptada. */
@@ -48,26 +48,26 @@ export default function ContactoPerfil({ perfilId, slug, nombre, estado: inicial
     <>
       {email && (
         <a href={`mailto:${email}`} style={fila}>
-          <span style={sigla}>EML</span>
+          <IconoContacto tipo="email" />
           {email}
         </a>
       )}
 
       {ve && telefono && (
         <a href={hrefTelefono(telefono)} style={fila}>
-          <span style={sigla}>TEL</span>
+          <IconoContacto tipo="telefono" />
           {telefono}
         </a>
       )}
       {ve && whatsapp && (
         wa ? (
           <a href={wa} target="_blank" rel="noopener noreferrer" style={fila}>
-            <span style={sigla}>WAP</span>
+            <IconoContacto tipo="whatsapp" />
             WhatsApp · {whatsapp}
             <span style={{ color: 'var(--muted)', fontSize: '11px' }}>↗</span>
           </a>
         ) : (
-          <span style={fila}><span style={sigla}>WAP</span>WhatsApp · {whatsapp}</span>
+          <span style={fila}><IconoContacto tipo="whatsapp" />WhatsApp · {whatsapp}</span>
         )
       )}
 

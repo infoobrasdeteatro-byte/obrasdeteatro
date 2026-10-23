@@ -16,6 +16,7 @@ import FollowButton from './FollowButton'
 import ContactoPerfil from './ContactoPerfil'
 import ConectarPerfil, { type EstadoConexion } from './ConectarPerfil'
 import CompartirPerfil from './CompartirPerfil'
+import IconoContacto from '@/components/perfil/IconoContacto'
 import { textoActividad } from '@/lib/red/actividad'
 import { estadoContacto } from '@/lib/red/contacto'
 import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
@@ -614,12 +615,10 @@ export default async function PerfilPublicoPage({ params }: Props) {
                   rel="noopener noreferrer"
                   style={{
                     fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)',
-                    textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '10px',
                   }}
                 >
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--muted)', letterSpacing: '0.08em', minWidth: '32px' }}>
-                    WEB
-                  </span>
+                  <IconoContacto tipo="web" />
                   {safeWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                   <span style={{ color: 'var(--muted)', fontSize: '11px' }}>↗</span>
                 </a>
