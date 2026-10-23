@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import QRCode from 'qrcode'
+import { enlacesCompartir } from '@/components/cartelera/Compartir'
 
 const SITIO = 'https://www.obrasdeteatro.com'
 
@@ -22,8 +23,9 @@ export function nombreArchivoQr(slug: string): string {
 
 /**
  * «Compartir perfil»: panel con el código QR de la ficha (descargable en PNG
- * para dossieres y carteles), copiar enlace y compartir por WhatsApp. En el
- * móvil, «Más opciones» abre el menú del sistema.
+ * para dossieres y carteles), copiar enlace y las redes (WhatsApp, Facebook,
+ * X, Telegram, LinkedIn y correo). Solo en el móvil se añade «Más opciones»
+ * con el menú del sistema (en el ordenador ese menú es el de Windows/macOS).
  */
 export default function CompartirPerfil({ slug, nombre }: { slug: string; nombre: string }) {
   const url = urlPerfil(slug)
@@ -33,7 +35,9 @@ export default function CompartirPerfil({ slug, nombre }: { slug: string; nombre
   const [nativo, setNativo] = useState(false)
   const caja = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setNativo(typeof navigator !== 'undefined' && 'share' in navigator) }, [])
+  useEffect(() => {
+    setNativo(typeof navigator !== 'undefined' && 'share' in navigator && window.matchMedia('(pointer: coarse)').matches)
+  }, [])
 
   useEffect(() => {
     if (!abierto || qr) return
@@ -91,12 +95,14 @@ export default function CompartirPerfil({ slug, nombre }: { slug: string; nombre
             <input readOnly value={url} aria-label="Enlace del perfil" onFocus={e => e.currentTarget.select()} />
             <button type="button" onClick={copiar}>{copiado ? '✓ Copiado' : 'Copiar enlace'}</button>
           </div>
-          <div className="compartir-redes compartir-redes--2">
-            <a href={enlaceWhatsappPerfil(nombre, url)} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-            {nativo
-              ? <button type="button" onClick={masOpciones}>Más opciones</button>
-              : <a href={`mailto:?subject=${encodeURIComponent(`${nombre} en ObrasDeTeatro®`)}&body=${encodeURIComponent(url)}`}>Correo</a>}
+          <div className="compartir-redes">
+            {enlacesCompartir(url, `${nombre} en ObrasDeTeatro®`).map(r => (
+              <a key={r.red} href={r.red === 'WhatsApp' ? enlaceWhatsappPerfil(nombre, url) : r.href} target="_blank" rel="noopener noreferrer">{r.red}</a>
+            ))}
           </div>
+          {nativo && (
+            <button type="button" className="compartir-mas" onClick={masOpciones}>Más opciones del teléfono</button>
+          )}
           <p>Al escanear el QR se abre esta ficha: úsalo en dossieres, carteles o tarjetas.</p>
         </div>
       )}

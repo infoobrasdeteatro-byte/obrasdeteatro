@@ -37,10 +37,13 @@ export async function middleware(request: NextRequest) {
   // navegador, marcado con una cookie. Un fallo no bloquea la navegación.
   if (user && !request.cookies.get(COOKIE_ACTIVIDAD)) {
     try {
-      await supabase.rpc('registrar_actividad')
-      supabaseResponse.cookies.set(COOKIE_ACTIVIDAD, '1', {
-        maxAge: SEGUNDOS_ACTIVIDAD, httpOnly: true, sameSite: 'lax', secure: true, path: '/',
-      })
+      // La cookie solo se pone si se ha guardado: con error, se reintenta.
+      const { error } = await supabase.rpc('registrar_actividad')
+      if (!error) {
+        supabaseResponse.cookies.set(COOKIE_ACTIVIDAD, '1', {
+          maxAge: SEGUNDOS_ACTIVIDAD, httpOnly: true, sameSite: 'lax', secure: true, path: '/',
+        })
+      }
     } catch { /* se reintenta en la siguiente petición */ }
   }
 
