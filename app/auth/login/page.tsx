@@ -13,6 +13,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  // Cuenta sin confirmar: se ofrece pedir un enlace nuevo (el del registro caduca).
+  const [sinConfirmar, setSinConfirmar] = useState(false)
   // Ruta de vuelta ya validada; se conserva también en el enlace a registro.
   const [next, setNext] = useState<string | null>(null)
   const router = useRouter()
@@ -29,6 +31,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setMessage('')
+    setSinConfirmar(false)
 
     const supabase = createClient()
 
@@ -39,6 +42,7 @@ export default function LoginPage() {
 
     if (error) {
       setMessage(translateAuthError(error.message, error.code))
+      setSinConfirmar(error.code === 'email_not_confirmed' || /email not confirmed/i.test(error.message))
     } else {
       // Vuelta a donde estaba el usuario (p. ej. /precios tras un 401 del
       // checkout). Solo rutas internas: ver lib/auth/next-param.ts.
@@ -85,6 +89,11 @@ export default function LoginPage() {
         </form>
         {message && (
           <p className="auth-message auth-message--error">{message}</p>
+        )}
+        {sinConfirmar && (
+          <Link href={`/auth/confirmar?email=${encodeURIComponent(email)}`} className="ds-btn-secondary" style={{ marginTop: '10px', textDecoration: 'none' }}>
+            Reenviar el correo de confirmación
+          </Link>
         )}
         <div className="auth-footer">
           <p>
