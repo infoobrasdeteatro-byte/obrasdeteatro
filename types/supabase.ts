@@ -4146,6 +4146,48 @@ export type Database = {
           },
         ]
       }
+      verificaciones_profesionales: {
+        Row: {
+          codigo: string
+          codigo_detectado: boolean | null
+          created_at: string
+          enlace: string
+          estado: string
+          id: string
+          motivo: string | null
+          profile_id: string
+          resuelta_at: string | null
+          resuelta_por: string | null
+          tipo_enlace: string
+        }
+        Insert: {
+          codigo: string
+          codigo_detectado?: boolean | null
+          created_at?: string
+          enlace: string
+          estado?: string
+          id?: string
+          motivo?: string | null
+          profile_id: string
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          tipo_enlace: string
+        }
+        Update: {
+          codigo?: string
+          codigo_detectado?: boolean | null
+          created_at?: string
+          enlace?: string
+          estado?: string
+          id?: string
+          motivo?: string | null
+          profile_id?: string
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          tipo_enlace?: string
+        }
+        Relationships: []
+      }
       verification_requests: {
         Row: {
           document_url: string | null
@@ -4466,6 +4508,10 @@ export type Database = {
       }
     }
     Functions: {
+      codigo_verificacion: { Args: { p_profile: string }; Returns: string }
+      requisitos_verificacion: { Args: { p_profile: string }; Returns: Json }
+      resolver_verificacion: { Args: { p_aprobar: boolean; p_id: string; p_motivo?: string }; Returns: undefined }
+      solicitar_verificacion: { Args: { p_enlace: string; p_tipo: string }; Returns: string }
       registrar_clic_compra: { Args: { p_opcion: string }; Returns: string | null }
       cartelera_destacar: {
         Args: { p_espectaculo: string; p_desde: string }

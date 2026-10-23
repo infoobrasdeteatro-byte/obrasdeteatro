@@ -3245,3 +3245,23 @@ a.eco-stat-card { display: block; }
 .reg-chip--activa { background: var(--black); border-color: var(--black); color: var(--white); }
 .reg-chip:disabled { opacity: .4; cursor: not-allowed; }
 @media (max-width: 420px) { .reg-tipo { grid-template-columns: 1fr; } }
+
+/* Verificación profesional (B9) */
+.verif { display: flex; flex-direction: column; gap: 16px; }
+.verif-card { display: flex; flex-direction: column; gap: 10px; }
+.verif-titulo { font-family: var(--serif); font-size: 20px; color: var(--black); letter-spacing: -0.3px; }
+.verif-texto { font-size: 14px; color: var(--muted); line-height: 1.6; }
+.verif-paso { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--black); margin-top: 8px; }
+.verif-requisitos { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.verif-requisitos li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
+.verif-ok > span:first-child { color: #166534; font-weight: 700; }
+.verif-falta > span:first-child { color: var(--muted); }
+.verif-enlace { margin-left: auto; font-size: 12px; color: var(--red); text-decoration: none; font-weight: 500; }
+.verif-codigo { display: flex; align-items: center; gap: 12px; }
+.verif-codigo code { font-family: var(--mono); font-size: 22px; letter-spacing: 2px; padding: 8px 14px; background: var(--off); border: 1px dashed var(--border); border-radius: var(--radius); color: var(--black); }
+.verif-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.verif-form select { flex: 0 0 200px; }
+.verif-form input { flex: 1 1 260px; }
+.verif-bloqueado { opacity: .6; }
+.verif-nota { font-size: 12px; color: var(--muted); }
+.verif-sello { display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 600; color: #1d4ed8; background: #eff6ff; padding: 3px 12px; border-radius: 20px; }
