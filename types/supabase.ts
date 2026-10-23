@@ -3889,6 +3889,7 @@ export type Database = {
           marketing_comercial: boolean
           marketing_general: boolean
           mayor_de_edad: boolean
+          mostrar_actividad: boolean
           nombre: string
           nombre_artistico: string | null
           pais: string
@@ -3930,6 +3931,7 @@ export type Database = {
           marketing_comercial?: boolean
           marketing_general?: boolean
           mayor_de_edad?: boolean
+          mostrar_actividad?: boolean
           nombre: string
           nombre_artistico?: string | null
           pais?: string
@@ -3971,6 +3973,7 @@ export type Database = {
           marketing_comercial?: boolean
           marketing_general?: boolean
           mayor_de_edad?: boolean
+          mostrar_actividad?: boolean
           nombre?: string
           nombre_artistico?: string | null
           pais?: string
@@ -4611,6 +4614,8 @@ export type Database = {
         }[]
       }
       estado_conexion: { Args: { p_perfil: string }; Returns: { estado: string; solicitud: string | null }[] }
+      registrar_actividad: { Args: never; Returns: undefined }
+      actividad_de: { Args: { p_perfil: string }; Returns: string | null }
       solicitar_conexion: { Args: { p_perfil: string; p_mensaje?: string | null }; Returns: string }
       responder_conexion: { Args: { p_id: string; p_aceptar: boolean }; Returns: boolean }
       cancelar_conexion: { Args: { p_perfil: string }; Returns: boolean }

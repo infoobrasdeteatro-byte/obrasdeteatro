@@ -15,6 +15,8 @@ import PremiosExpander from './PremiosExpander'
 import FollowButton from './FollowButton'
 import ContactoPerfil from './ContactoPerfil'
 import ConectarPerfil, { type EstadoConexion } from './ConectarPerfil'
+import CompartirPerfil from './CompartirPerfil'
+import { textoActividad } from '@/lib/red/actividad'
 import { estadoContacto } from '@/lib/red/contacto'
 import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
@@ -186,6 +188,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: proyectosDb },
     { data: contactoDb },
     { data: conexionDb },
+    { data: actividadDb },
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -228,7 +231,10 @@ export default async function PerfilPublicoPage({ params }: Props) {
     (user && !isOwner)
       ? supabase.rpc('estado_conexion', { p_perfil: profile.id })
       : Promise.resolve({ data: null }),
+    // Tramo de la última actividad (la fecha exacta no sale de la base).
+    supabase.rpc('actividad_de', { p_perfil: profile.id }),
   ])
+  const actividad = textoActividad(actividadDb)
   const contacto = contactoDb?.[0] ?? null
   const hayContacto = Boolean(contacto?.email) || Boolean(contacto?.tiene_privado) || isOwner
 
@@ -433,6 +439,12 @@ export default async function PerfilPublicoPage({ params }: Props) {
                 </p>
               )}
 
+              {actividad && (
+                <p style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px', marginBottom: 0, fontFamily: 'var(--sans)' }}>
+                  {actividad}
+                </p>
+              )}
+
               {availMessage && availStyle && (
                 <div style={{ marginTop: '12px' }}>
                   <span style={{
@@ -476,9 +488,9 @@ export default async function PerfilPublicoPage({ params }: Props) {
             </div>
           </div>
 
-          {/* CTA principal */}
-          {safeWebsite && (
-            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+          {/* CTA principal + Compartir perfil */}
+          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+            {safeWebsite && (
               <a
                 href={safeWebsite}
                 target="_blank"
@@ -493,8 +505,9 @@ export default async function PerfilPublicoPage({ params }: Props) {
               >
                 Ver web profesional →
               </a>
-            </div>
-          )}
+            )}
+            <CompartirPerfil slug={profile.slug ?? slug} nombre={nombrePublico} />
+          </div>
         </header>
 
         {/* ── ZONA HERO — Extracto editorial ── */}
