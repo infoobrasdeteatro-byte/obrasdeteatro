@@ -16,6 +16,7 @@ import FollowButton from './FollowButton'
 import ContactoPerfil from './ContactoPerfil'
 import ConectarPerfil, { type EstadoConexion } from './ConectarPerfil'
 import CompartirPerfil from './CompartirPerfil'
+import { motivoEscribir, textoNoPuede } from '@/lib/mensajes/mensajes'
 import IconoContacto from '@/components/perfil/IconoContacto'
 import { textoActividad } from '@/lib/red/actividad'
 import { estadoContacto } from '@/lib/red/contacto'
@@ -190,6 +191,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: contactoDb },
     { data: conexionDb },
     { data: actividadDb },
+    { data: escribirDb },
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -234,7 +236,12 @@ export default async function PerfilPublicoPage({ params }: Props) {
       : Promise.resolve({ data: null }),
     // Tramo de la última actividad (la fecha exacta no sale de la base).
     supabase.rpc('actividad_de', { p_perfil: profile.id }),
+    // ¿Puede quien mira escribirle? (Fase 3: reglas en la base.)
+    (user && !isOwner)
+      ? supabase.rpc('puede_escribir', { p_perfil: profile.id })
+      : Promise.resolve({ data: null }),
   ])
+  const motivoMensaje = escribirDb ? motivoEscribir(escribirDb) : null
   const actividad = textoActividad(actividadDb)
   const contacto = contactoDb?.[0] ?? null
   const hayContacto = Boolean(contacto?.email) || Boolean(contacto?.tiene_privado) || isOwner
@@ -661,6 +668,21 @@ export default async function PerfilPublicoPage({ params }: Props) {
                   paddingTop: (safeWebsite || visibleSocials.length > 0 || hayContacto) ? '14px' : 0,
                   borderTop: (safeWebsite || visibleSocials.length > 0 || hayContacto) ? '1px solid var(--border)' : 'none',
                 }}>
+                  {motivoMensaje && (
+                    <div style={{ marginBottom: '12px' }}>
+                      {motivoMensaje === 'si' ? (
+                        <Link href={`/perfil/mensajes?con=${profile.id}`} className="ds-btn-primary"
+                          style={{ width: 'auto', display: 'inline-flex', padding: '8px 16px', fontSize: '13px', textDecoration: 'none' }}>
+                          Enviar mensaje
+                        </Link>
+                      ) : (
+                        <p style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)', lineHeight: 1.5, margin: 0 }}>
+                          {textoNoPuede(motivoMensaje, nombrePublico.trim())}
+                          {motivoMensaje === 'plan' && <>{' '}<Link href="/precios" style={{ color: 'var(--black)', fontWeight: 500 }}>Ver planes</Link></>}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {estadoConexion && (
                     <div style={{ marginBottom: '12px' }}>
                       <ConectarPerfil perfilId={profile.id} nombre={nombrePublico} estado={estadoConexion} solicitud={conexion?.solicitud ?? null} />

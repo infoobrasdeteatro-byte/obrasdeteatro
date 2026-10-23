@@ -3890,6 +3890,7 @@ export type Database = {
           marketing_general: boolean
           mayor_de_edad: boolean
           mostrar_actividad: boolean
+          mensajes_solo_contactos: boolean
           nombre: string
           nombre_artistico: string | null
           pais: string
@@ -3932,6 +3933,7 @@ export type Database = {
           marketing_general?: boolean
           mayor_de_edad?: boolean
           mostrar_actividad?: boolean
+          mensajes_solo_contactos?: boolean
           nombre: string
           nombre_artistico?: string | null
           pais?: string
@@ -3974,6 +3976,7 @@ export type Database = {
           marketing_general?: boolean
           mayor_de_edad?: boolean
           mostrar_actividad?: boolean
+          mensajes_solo_contactos?: boolean
           nombre?: string
           nombre_artistico?: string | null
           pais?: string
@@ -4615,6 +4618,21 @@ export type Database = {
       }
       estado_conexion: { Args: { p_perfil: string }; Returns: { estado: string; solicitud: string | null }[] }
       registrar_actividad: { Args: never; Returns: undefined }
+      puede_escribir: { Args: { p_perfil: string }; Returns: string }
+      enviar_mensaje: { Args: { p_perfil: string; p_texto: string }; Returns: { conversacion: string | null; resultado: string }[] }
+      mis_conversaciones: {
+        Args: never
+        Returns: {
+          id: string; otro_id: string; otro_nombre: string; otro_slug: string | null; otro_avatar: string | null; otro_publico: boolean
+          ultimo_texto: string | null; ultimo_mio: boolean | null; ultimo_at: string; sin_leer: number
+        }[]
+      }
+      mensajes_de: {
+        Args: { p_conversacion: string; p_limite?: number }
+        Returns: { id: string; mio: boolean; texto: string; created_at: string; leido: boolean }[]
+      }
+      marcar_conversacion_leida: { Args: { p_conversacion: string }; Returns: number }
+      mensajes_sin_leer: { Args: never; Returns: number }
       actividad_de: { Args: { p_perfil: string }; Returns: string | null }
       solicitar_conexion: { Args: { p_perfil: string; p_mensaje?: string | null }; Returns: string }
       responder_conexion: { Args: { p_id: string; p_aceptar: boolean }; Returns: boolean }
