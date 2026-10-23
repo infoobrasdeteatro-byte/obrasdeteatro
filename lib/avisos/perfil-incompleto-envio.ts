@@ -21,12 +21,13 @@ export type ResumenAviso = {
 /**
  * Quién debe recibir el aviso: cuentas activas y verificadas (correo
  * confirmado), sin baja ni extinción, que no son del equipo ni cuentas
- * internas (@obrasdeteatro.com), a las que les
+ * internas (@obrasdeteatro.com) ni excluidas a mano (avisos_perfil_excluidos),
+ * a las que les
  * falta algo y que aún no lo han recibido. Usa el cliente de servicio: el
  * correo de profiles no lo puede leer ninguna sesión.
  */
 export async function cargarDestinatariosAviso(servicio: SupabaseClient): Promise<ResumenAviso> {
-  const [perfiles, profesiones, equipo, enviados] = await Promise.all([
+  const [perfiles, profesiones, equipo, enviados, excluidos] = await Promise.all([
     servicio.from('profiles')
       .select('id, nombre, nombre_artistico, email, tipo_perfil, avatar_url, bio, ciudad, verificado')
       .eq('activo', true).is('deleted_at', null).is('extincion_solicitada_at', null)
@@ -34,8 +35,9 @@ export async function cargarDestinatariosAviso(servicio: SupabaseClient): Promis
     servicio.from('profile_specialties').select('profile_id').limit(20000),
     servicio.from('profile_roles').select('profile_id').eq('role', 'admin'),
     servicio.from('avisos_perfil_enviados').select('profile_id'),
+    servicio.from('avisos_perfil_excluidos').select('profile_id'),
   ])
-  for (const r of [perfiles, profesiones, equipo, enviados]) {
+  for (const r of [perfiles, profesiones, equipo, enviados, excluidos]) {
     if (r.error) throw new Error(`avisos: no se pudieron leer los datos: ${r.error.message}`)
   }
 
@@ -44,6 +46,7 @@ export async function cargarDestinatariosAviso(servicio: SupabaseClient): Promis
     numProf.set(f.profile_id, (numProf.get(f.profile_id) ?? 0) + 1)
   }
   const esEquipo = new Set(((equipo.data ?? []) as { profile_id: string }[]).map(r => r.profile_id))
+  const excluido = new Set(((excluidos.data ?? []) as { profile_id: string }[]).map(r => r.profile_id))
   const yaEnviado = new Set(((enviados.data ?? []) as { profile_id: string }[]).map(r => r.profile_id))
 
   type Fila = { id: string; nombre: string | null; nombre_artistico: string | null; email: string | null; tipo_perfil: string; avatar_url: string | null; bio: string | null; ciudad: string | null; verificado: boolean }
@@ -51,7 +54,7 @@ export async function cargarDestinatariosAviso(servicio: SupabaseClient): Promis
   let yaEnviados = 0
   let sinVerificar = 0
   for (const p of (perfiles.data ?? []) as Fila[]) {
-    if (esEquipo.has(p.id)) continue
+    if (esEquipo.has(p.id) || excluido.has(p.id)) continue
     const faltas = faltasDelPerfil({ tipo_perfil: p.tipo_perfil, avatar_url: p.avatar_url, bio: p.bio, ciudad: p.ciudad, num_profesiones: numProf.get(p.id) ?? 0 })
     if (faltas.length === 0) continue
     if (!p.verificado) { sinVerificar++; continue }
