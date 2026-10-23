@@ -17,7 +17,7 @@ import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
 import PortfolioPerfil, { type ProyectoPublico } from '@/components/perfil/PortfolioPerfil'
 import { BUCKET_GALERIA, analizarVideo, esPlanDePago, portadaValida, urlPublica } from '@/lib/perfil-multimedia/multimedia'
-import { textoProfesiones, TIPOS_PERSONA } from '@/lib/perfiles/profesiones'
+import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO } from '@/lib/perfiles/profesiones'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -242,13 +242,16 @@ export default async function PerfilPublicoPage({ params }: Props) {
   // ── Derived values ─────────────────────────────────────────────────────
 
   const safeSpecialties = specialties ?? []
+  const { data: rolAdmin } = await supabase
+    .from('profile_roles').select('profile_id').eq('profile_id', profile.id).eq('role', 'admin').maybeSingle()
+  const esEquipo = !!rolAdmin
   const safeExperience  = experience  ?? []
   const safeTraining    = training    ?? []
   const safeAwards      = awards      ?? []
 
   const nombrePublico    = profile.nombre_artistico || profile.nombre
   const esPersona        = (TIPOS_PERSONA as readonly string[]).includes(profile.tipo_perfil)
-  const tipoLabel        = esPersona
+  const tipoLabel        = esEquipo ? ETIQUETA_EQUIPO : esPersona
     ? (textoProfesiones(safeSpecialties) ?? 'Profesional de las artes escénicas')
     : (TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil)
   const flag             = getFlag(profile.country_code)
