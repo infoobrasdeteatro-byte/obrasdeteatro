@@ -7,6 +7,7 @@ import type { Database } from '@/types/supabase'
 import { COUNTRIES } from '@/lib/geo/countries'
 import FiltrosDirectorio from './FiltrosDirectorio'
 import TopNav from '@/components/design-system/TopNav'
+import { textoProfesiones, TIPOS_PERSONA } from '@/lib/perfiles/profesiones'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
 
@@ -37,6 +38,14 @@ const FILTROS = [
 ] as const
 
 const TIPOS_VALIDOS = FILTROS.filter(f => f.value !== 'todos').map(f => f.value)
+
+// Los filtros de persona buscan por profesión (profile_specialties), no por
+// tipo de perfil: una actriz que también dirige sale en los dos.
+const PROFESION_POR_FILTRO: Record<string, string> = {
+  actor: 'actor',
+  director: 'direccion-escenica',
+  dramaturgo: 'dramaturgia',
+}
 
 const AVAIL_DISPLAY: Record<string, { label: string; color: string; dot: string }> = {
   disponible:              { label: 'Disponible',             color: '#166534', dot: '#22c55e' },
@@ -120,20 +129,35 @@ export default async function DirectorioPage({ searchParams }: Props) {
     disponibleIds = availIds?.map(a => a.profile_id) ?? []
   }
 
+  // Pre-query profesión si el filtro es de persona
+  const profesionFiltro = tipoValido ? PROFESION_POR_FILTRO[tipoValido] ?? null : null
+  if (profesionFiltro) {
+    const { data: conProfesion } = await supabase
+      .from('profile_specialties')
+      .select('profile_id')
+      .eq('specialty', profesionFiltro)
+    const ids = conProfesion?.map(s => s.profile_id) ?? []
+    disponibleIds = disponibleIds === null ? ids : disponibleIds.filter(id => ids.includes(id))
+  }
+
   // Cortocircuito: filtro activo sin perfiles disponibles
   const noDisponibles = disponibleIds !== null && disponibleIds.length === 0
 
   let query = supabase
     .from('profiles')
-    .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, country_code, pais, bio, slug, avatar_url, verificado, plan')
+    .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, ciudad, region, country_code, pais, bio, slug, avatar_url, verificado_profesional, plan')
     .eq('perfil_publico', true)
     .eq('verificado', true)
     .eq('activo', true)
     .is('extincion_solicitada_at', null)
     .is('deleted_at', null)
     .not('slug', 'is', null)
+    // Directorio profesional: con foto (o logo) y sin el público general.
+    .not('avatar_url', 'is', null)
+    .neq('avatar_url', '')
+    .neq('tipo_perfil', 'publico')
 
-  if (tipoValido) query = query.eq('tipo_perfil', tipoValido)
+  if (tipoValido && !profesionFiltro) query = query.eq('tipo_perfil', tipoValido)
   if (paisValido) query = query.eq('country_code', paisValido)
   if (regionValida) query = query.eq('region', regionValida)
   if (busqueda) {
@@ -149,24 +173,23 @@ export default async function DirectorioPage({ searchParams }: Props) {
 
   const perfilesRaw = rawData ?? []
 
-  // Batch enrichment — especialidades primarias + disponibilidad (3 queries total, sin N+1)
+  // Batch enrichment — profesiones + disponibilidad (3 queries total, sin N+1)
   const profileIds = perfilesRaw.map(p => p.id)
-  const specMap = new Map<string, string>()
+  const specMap = new Map<string, { specialty: string; is_primary: boolean }[]>()
   const availMap = new Map<string, { estado: string; nota: string | null }>()
 
   if (profileIds.length > 0) {
     const [specsResult, availResult] = await Promise.all([
       supabase
         .from('profile_specialties')
-        .select('profile_id, specialty')
-        .eq('is_primary', true)
+        .select('profile_id, specialty, is_primary')
         .in('profile_id', profileIds),
       supabase
         .from('profile_availability')
         .select('profile_id, estado, nota')
         .in('profile_id', profileIds),
     ])
-    for (const s of (specsResult.data ?? [])) specMap.set(s.profile_id, s.specialty)
+    for (const s of (specsResult.data ?? [])) specMap.set(s.profile_id, [...(specMap.get(s.profile_id) ?? []), s])
     for (const a of (availResult.data ?? [])) {
       availMap.set(a.profile_id, { estado: a.estado as string, nota: a.nota as string | null })
     }
@@ -177,8 +200,8 @@ export default async function DirectorioPage({ searchParams }: Props) {
     const tA = (a.plan === 'destacado' || a.plan === 'empresas') ? 0 : 1
     const tB = (b.plan === 'destacado' || b.plan === 'empresas') ? 0 : 1
     if (tA !== tB) return tA - tB
-    const vA = a.verificado ? 0 : 1
-    const vB = b.verificado ? 0 : 1
+    const vA = a.verificado_profesional ? 0 : 1
+    const vB = b.verificado_profesional ? 0 : 1
     if (vA !== vB) return vA - vB
     return (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es', { sensitivity: 'base' })
   })
@@ -365,12 +388,14 @@ export default async function DirectorioPage({ searchParams }: Props) {
             {perfilesPagina.map(perfil => {
               const nombrePublico = perfil.nombre_artistico || perfil.nombre
               const inicial = (nombrePublico ?? '?').charAt(0).toUpperCase()
-              const label = TIPO_PERFIL_LABEL[perfil.tipo_perfil] ?? perfil.tipo_perfil
+              const esPersona = (TIPOS_PERSONA as readonly string[]).includes(perfil.tipo_perfil)
+              const label = esPersona
+                ? (textoProfesiones(specMap.get(perfil.id) ?? []) ?? 'Profesional de las artes escénicas')
+                : (TIPO_PERFIL_LABEL[perfil.tipo_perfil] ?? perfil.tipo_perfil)
               const flag = getFlag(perfil.country_code)
               const ubicacion = perfil.ciudad
                 ? `${flag ? flag + ' ' : ''}${perfil.ciudad}`
                 : flag || null
-              const especialidad = specMap.get(perfil.id) ?? null
               const avail = availMap.get(perfil.id) ?? null
               const availDisplay = avail ? (AVAIL_DISPLAY[avail.estado] ?? null) : null
               const bioExtracto = extracto(perfil.bio)
@@ -401,12 +426,11 @@ export default async function DirectorioPage({ searchParams }: Props) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p className="dir2-tipo">{label}</p>
                       <h2 className="dir2-name">{nombrePublico}</h2>
-                      {especialidad && <p className="dir2-spec">{especialidad}</p>}
                       {ubicacion   && <p className="dir2-loc">{ubicacion}</p>}
 
-                      {(perfil.verificado || isPlan) && (
+                      {(perfil.verificado_profesional || isPlan) && (
                         <div className="dir2-badges">
-                          {perfil.verificado && (
+                          {perfil.verificado_profesional && (
                             <span className="dir2-badge dir2-badge--verificado">✓ Verificado</span>
                           )}
                           {perfil.plan === 'destacado' && (

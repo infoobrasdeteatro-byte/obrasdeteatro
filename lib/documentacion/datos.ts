@@ -4,6 +4,7 @@ import { BUCKET_GALERIA, analizarVideo, esPlanDePago, portadaValida, urlPublica 
 import {
   ALCANCE_LABEL, DISPONIBILIDAD_LABEL, TIPO_EXPERIENCIA_LABEL, TIPO_PERFIL_LABEL, enlaceSeguro, periodo, redesDe,
 } from './formato'
+import { nombreProfesion } from '@/lib/perfiles/profesiones'
 
 /**
  * Bloque 8: todo lo que va al CV y al dossier, leído con la SESIÓN del propio
@@ -69,7 +70,7 @@ export async function cargarDatosDocumento(supabase: Cliente, profileId: string)
 
   const conPlan = esPlanDePago(p.plan)
   const nombreCompleto = [p.nombre, p.apellidos].filter(Boolean).join(' ').trim()
-  const especialidades = (esp.data ?? []).map(e => e.specialty)
+  const especialidades = (esp.data ?? []).map(e => nombreProfesion(e.specialty) ?? e.specialty)
   const d = disp.data
   const disponibilidad = d
     ? [DISPONIBILIDAD_LABEL[d.estado] ?? null, ALCANCE_LABEL[d.alcance] ?? null].filter(Boolean).join(' · ') || null
@@ -90,7 +91,10 @@ export async function cargarDatosDocumento(supabase: Cliente, profileId: string)
     perfilUrl: p.slug && p.perfil_publico && p.verificado ? `${SITIO}/perfil/${p.slug}` : null,
     redes: redesDe(p.social_links),
     especialidades,
-    especialidadPrincipal: (esp.data ?? []).find(e => e.is_primary)?.specialty ?? null,
+    especialidadPrincipal: (() => {
+      const principal = (esp.data ?? []).find(e => e.is_primary)?.specialty
+      return principal ? (nombreProfesion(principal) ?? principal) : null
+    })(),
     experiencia: (exp.data ?? []).map(e => ({
       titulo: e.titulo, detalle: e.organizacion, periodo: periodo(e.fecha_inicio, e.fecha_fin, e.en_curso),
       descripcion: e.descripcion, etiqueta: TIPO_EXPERIENCIA_LABEL[e.tipo] ?? null,

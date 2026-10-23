@@ -5,6 +5,7 @@ import Image from 'next/image'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import BlockCard, { type BlockStatus } from '@/components/dashboard/BlockCard'
+import { TIPOS_PERSONA } from '@/lib/perfiles/profesiones'
 
 // ── Label maps ────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ export default async function PerfilPage() {
   ] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nombre, nombre_artistico, tipo_perfil, slug, perfil_publico, avatar_url, cover_url, bio, ciudad, pais, country_code, plan, verificado, updated_at, website_url, social_links')
+      .select('id, nombre, nombre_artistico, tipo_perfil, slug, perfil_publico, avatar_url, cover_url, bio, ciudad, pais, country_code, plan, verificado_profesional, updated_at, website_url, social_links')
       .eq('id', user.id)
       .single(),
     supabase.from('profile_training').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
@@ -126,7 +127,19 @@ export default async function PerfilPage() {
   const b8: BlockStatus = profile?.plan === 'gratuito'
     ? 'locked'
     : profile?.bio?.trim() && ((expCount ?? 0) > 0 || (trainingCount ?? 0) > 0) ? 'complete' : 'partial'
-  const b9: BlockStatus = profile?.verificado ? 'verified' : 'soon'
+  const b9: BlockStatus = profile?.verificado_profesional ? 'verified' : 'soon'
+
+  // Qué le falta para aparecer en el directorio (en este orden).
+  const esPersona = (TIPOS_PERSONA as readonly string[]).includes(profile?.tipo_perfil ?? '')
+  const avisoDirectorio: { texto: string; boton: string; href: string } | null =
+    !profile ? null
+    : profile.tipo_perfil === 'publico'
+      ? { texto: 'Tu perfil es de público general y no aparece en el directorio. Si trabajas en las artes escénicas, cambia el tipo de perfil a profesional u organización.', boton: 'Cambiar tipo de perfil', href: '/perfil/bloque/1' }
+    : !profile.avatar_url
+      ? { texto: 'Añade una foto de perfil (o el logo, si es una organización) para aparecer en el directorio.', boton: 'Subir foto', href: '/perfil/bloque/1' }
+    : esPersona && (specCount ?? 0) === 0
+      ? { texto: 'Elige tus profesiones para que el directorio muestre a qué te dedicas.', boton: 'Elegir profesiones', href: '/perfil/bloque/3' }
+    : null
 
   // Field completion for B1
   const b1Fields = {
@@ -143,7 +156,7 @@ export default async function PerfilPage() {
   }> = [
     { n: 1, title: 'Información Personal',    description: 'Nombre, avatar, biografía breve y ubicación',       status: b1, fields: b1Fields },
     { n: 2, title: 'Formación y Premios',     description: 'Estudios, cursos y reconocimientos profesionales',   status: b2 },
-    { n: 3, title: 'Especialidades',          description: 'Géneros y áreas de especialización escénica',        status: b3 },
+    { n: 3, title: 'Profesiones',             description: 'Las profesiones que ejerces en las artes escénicas', status: b3 },
     { n: 4, title: 'Experiencia Profesional', description: 'Trayectoria y experiencia en el sector escénico',    status: b4 },
     { n: 5, title: 'Material Audiovisual',    description: 'Portada, galería de fotos, vídeos y portfolio',      status: b5 },
     { n: 6, title: 'Redes y Contacto',        description: 'Web profesional y redes sociales',                   status: b6 },
@@ -235,7 +248,7 @@ export default async function PerfilPage() {
                   <span style={{ fontSize: '11px', fontWeight: 600, color: planInfo.color, background: planInfo.bg, padding: '3px 10px', borderRadius: '20px', fontFamily: 'var(--sans)' }}>
                     {planInfo.label}
                   </span>
-                  {profile?.verificado && (
+                  {profile?.verificado_profesional && (
                     <span style={{ fontSize: '11px', fontWeight: 600, color: '#1d4ed8', background: '#eff6ff', padding: '3px 10px', borderRadius: '20px', fontFamily: 'var(--sans)' }}>
                       🔵 Verificado
                     </span>
@@ -267,6 +280,22 @@ export default async function PerfilPage() {
               </div>
             </div>
           </div>
+
+          {/* ── Aviso: qué falta para salir en el directorio ───────────────── */}
+          {avisoDirectorio && (
+            <div role="status" style={{
+              background: '#fff8e6', border: '1px solid #f3d58a',
+              borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: '16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
+            }}>
+              <p style={{ fontSize: '14px', color: '#5c4400', fontFamily: 'var(--sans)', margin: 0, lineHeight: 1.5, flex: '1 1 320px' }}>
+                {avisoDirectorio.texto}
+              </p>
+              <Link href={avisoDirectorio.href} className="ds-btn-primary" style={{ width: 'auto', padding: '8px 16px', fontSize: '13px', textDecoration: 'none' }}>
+                {avisoDirectorio.boton}
+              </Link>
+            </div>
+          )}
 
           {/* ── Siguiente paso recomendado ─────────────────────────────────── */}
           {nextBlock && (

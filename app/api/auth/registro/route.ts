@@ -3,6 +3,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { PASSWORD_POLICY } from '@/lib/auth/password-policy'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE, NEXT_TRAS_REGISTRO_MAX_AGE_S } from '@/lib/auth/next-param'
+import { TIPOS_REGISTRO, esProfesion } from '@/lib/perfiles/profesiones'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
@@ -50,7 +51,7 @@ async function emailAlreadyRegistered(email: string): Promise<boolean> {
 }
 
 export async function POST(req: NextRequest) {
-  const { email, password, nombre, website, turnstileToken, next } = await req.json()
+  const { email, password, nombre, website, turnstileToken, next, tipoPerfil, profesiones } = await req.json()
 
   // Honeypot: verificado también en servidor, no solo en el cliente.
   if (typeof website === 'string' && website.trim() !== '') {
@@ -62,6 +63,13 @@ export async function POST(req: NextRequest) {
   }
 
   const normalizedEmail = email.trim().toLowerCase()
+
+  // Tipo de perfil y profesiones elegidos en el registro. La base vuelve a
+  // validarlos en handle_new_user(); aquí se descarta lo que no encaja.
+  const tipo = (TIPOS_REGISTRO as readonly string[]).includes(tipoPerfil) ? (tipoPerfil as string) : 'publico'
+  const listaProfesiones = tipo === 'profesional' && Array.isArray(profesiones)
+    ? [...new Set(profesiones.filter(esProfesion))].slice(0, 3)
+    : []
 
   if (!PASSWORD_POLICY.test(password)) {
     return NextResponse.json({ ok: false, code: 'weak_password' }, { status: 400 })
@@ -88,7 +96,7 @@ export async function POST(req: NextRequest) {
     email: normalizedEmail,
     password,
     options: {
-      data: { nombre },
+      data: { nombre, tipo_perfil: tipo, profesiones: listaProfesiones },
       emailRedirectTo: `${origin}/auth/callback`,
     },
   })

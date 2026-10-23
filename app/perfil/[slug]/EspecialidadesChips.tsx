@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { nombreProfesion } from '@/lib/perfiles/profesiones'
 
 interface Specialty {
   specialty: string
@@ -23,13 +24,13 @@ export default function EspecialidadesChips({ specialties }: { specialties: Spec
           fontSize: '15px', fontWeight: 500, color: 'var(--black)',
           fontFamily: 'var(--sans)', margin: secondary.length > 0 ? '0 0 12px' : '0',
         }}>
-          {primary.specialty}
+          {nombreProfesion(primary.specialty) ?? primary.specialty}
         </p>
       )}
       {secondary.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
           {visible.map((s, i) => (
-            <span key={i} className="prof-chip">{s.specialty}</span>
+            <span key={i} className="prof-chip">{nombreProfesion(s.specialty) ?? s.specialty}</span>
           ))}
           {!expanded && hiddenCount > 0 && (
             <button

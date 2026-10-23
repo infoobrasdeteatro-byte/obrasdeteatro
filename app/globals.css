@@ -3223,3 +3223,25 @@ a.eco-stat-card { display: block; }
 }
 /* Sin boletín, la franja abre el pie: pegada arriba, sin la tira blanca del padding. */
 .site-footer > .site-footer-top:first-child { margin-top: -20px; }
+
+/* Registro: tipo de cuenta y profesiones */
+.reg-tipo, .reg-profesiones { border: 0; padding: 0; margin: 0; min-width: 0; }
+.reg-legend { font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 8px; line-height: 1.4; }
+.reg-tipo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.reg-tipo .reg-legend { grid-column: 1 / -1; }
+.reg-opcion { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; background: var(--white); }
+.reg-opcion input { position: absolute; opacity: 0; pointer-events: none; }
+.reg-opcion--activa { border-color: var(--black); background: var(--off); }
+.reg-opcion:focus-within { outline: 2px solid var(--black); outline-offset: 1px; }
+.reg-opcion-label { font-size: 13px; font-weight: 600; color: var(--black); }
+.reg-opcion-ayuda { font-size: 11px; color: var(--muted); line-height: 1.35; }
+.reg-ayuda { font-size: 11px; color: var(--muted); margin: -2px 0 8px; line-height: 1.45; }
+.reg-chips-caja { max-height: 260px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+.reg-grupo + .reg-grupo { margin-top: 10px; }
+.reg-grupo-titulo { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.reg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.reg-chip { font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--white); color: var(--text); cursor: pointer; }
+.reg-chip:hover:not(:disabled) { border-color: var(--black); }
+.reg-chip--activa { background: var(--black); border-color: var(--black); color: var(--white); }
+.reg-chip:disabled { opacity: .4; cursor: not-allowed; }
+@media (max-width: 420px) { .reg-tipo { grid-template-columns: 1fr; } }

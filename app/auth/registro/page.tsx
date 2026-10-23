@@ -7,6 +7,11 @@ import BrandIcon from '@/components/brand/BrandIcon'
 import { translateAuthError } from '@/lib/auth-errors'
 import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
 import { safeNextPath } from '@/lib/auth/next-param'
+import { GRUPOS_PROFESIONES, PROFESIONES, TIPOS_ORGANIZACION } from '@/lib/perfiles/profesiones'
+
+// Al registrarse, el plan es Gratuito: hasta 3 profesiones (como en el perfil).
+const MAX_PROFESIONES_REGISTRO = 3
+type Registro = 'profesional' | 'organizacion' | 'publico'
 
 declare global {
   interface Window {
@@ -32,6 +37,9 @@ export default function RegistroPage() {
   const [password, setPassword] = useState('')
   const [nombre, setNombre] = useState('')
   const [website, setWebsite] = useState('')
+  const [registro, setRegistro] = useState<Registro | ''>('')
+  const [tipoOrganizacion, setTipoOrganizacion] = useState('')
+  const [profesiones, setProfesiones] = useState<string[]>([])
   const [turnstileToken, setTurnstileToken] = useState('')
   const [turnstileScriptReady, setTurnstileScriptReady] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -80,6 +88,25 @@ export default function RegistroPage() {
       return
     }
 
+    if (!registro) {
+      setMessage('Indica si te registras como profesional, como organización o como público.')
+      setIsSuccess(false)
+      setLoading(false)
+      return
+    }
+    if (registro === 'profesional' && profesiones.length === 0) {
+      setMessage('Selecciona al menos una profesión.')
+      setIsSuccess(false)
+      setLoading(false)
+      return
+    }
+    if (registro === 'organizacion' && !tipoOrganizacion) {
+      setMessage('Selecciona el tipo de organización.')
+      setIsSuccess(false)
+      setLoading(false)
+      return
+    }
+
     if (!PASSWORD_POLICY.test(password)) {
       setMessage(PASSWORD_HINT)
       setIsSuccess(false)
@@ -98,7 +125,11 @@ export default function RegistroPage() {
       const res = await fetch('/api/auth/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, nombre, website, turnstileToken, next }),
+        body: JSON.stringify({
+          email, password, nombre, website, turnstileToken, next,
+          tipoPerfil: registro === 'organizacion' ? tipoOrganizacion : registro,
+          profesiones: registro === 'profesional' ? profesiones : [],
+        }),
       })
       const data = await res.json()
 
@@ -165,6 +196,76 @@ export default function RegistroPage() {
             required
             className="ds-input"
           />
+          <fieldset className="reg-tipo">
+            <legend className="reg-legend">¿Te registras como profesional o como organización?</legend>
+            {([
+              { value: 'profesional', label: 'Profesional', ayuda: 'Trabajo en las artes escénicas' },
+              { value: 'organizacion', label: 'Organización', ayuda: 'Compañía, sala, festival, escuela…' },
+              { value: 'publico', label: 'Público', ayuda: 'Sigo la actividad teatral' },
+            ] as const).map(op => (
+              <label key={op.value} className={`reg-opcion${registro === op.value ? ' reg-opcion--activa' : ''}`}>
+                <input
+                  type="radio"
+                  name="registro"
+                  value={op.value}
+                  checked={registro === op.value}
+                  onChange={() => setRegistro(op.value)}
+                />
+                <span className="reg-opcion-label">{op.label}</span>
+                <span className="reg-opcion-ayuda">{op.ayuda}</span>
+              </label>
+            ))}
+          </fieldset>
+
+          {registro === 'organizacion' && (
+            <select
+              value={tipoOrganizacion}
+              onChange={e => setTipoOrganizacion(e.target.value)}
+              required
+              className="ds-input"
+              aria-label="Tipo de organización"
+            >
+              <option value="">Tipo de organización…</option>
+              {TIPOS_ORGANIZACION.map(t => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          )}
+
+          {registro === 'profesional' && (
+            <fieldset className="reg-profesiones">
+              <legend className="reg-legend">¿Cuál es tu perfil profesional en las artes escénicas?</legend>
+              <p className="reg-ayuda">
+                Puedes seleccionar hasta {MAX_PROFESIONES_REGISTRO}. La primera será la principal; podrás cambiarla en tu perfil.
+              </p>
+              <div className="reg-chips-caja">
+                {GRUPOS_PROFESIONES.map(grupo => (
+                  <div key={grupo} className="reg-grupo">
+                    <p className="reg-grupo-titulo">{grupo}</p>
+                    <div className="reg-chips">
+                      {PROFESIONES.filter(p => p.grupo === grupo).map(p => {
+                        const activa = profesiones.includes(p.id)
+                        const lleno = !activa && profesiones.length >= MAX_PROFESIONES_REGISTRO
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            aria-pressed={activa}
+                            disabled={lleno}
+                            onClick={() => setProfesiones(prev => activa ? prev.filter(x => x !== p.id) : [...prev, p.id])}
+                            className={`reg-chip${activa ? ' reg-chip--activa' : ''}`}
+                          >
+                            {activa && profesiones[0] === p.id ? '★ ' : ''}{p.nombre}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           <input
             type="password"
             placeholder="Contraseña"

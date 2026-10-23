@@ -3318,6 +3318,27 @@ export type Database = {
           },
         ]
       }
+      profesiones: {
+        Row: {
+          grupo: string
+          id: string
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          grupo: string
+          id: string
+          nombre: string
+          orden: number
+        }
+        Update: {
+          grupo?: string
+          id?: string
+          nombre?: string
+          orden?: number
+        }
+        Relationships: []
+      }
       professional_experience: {
         Row: {
           created_at: string
@@ -3796,6 +3817,7 @@ export type Database = {
           tipo_perfil: Database["public"]["Enums"]["tipo_perfil"]
           updated_at: string
           verificado: boolean
+          verificado_profesional: boolean
           website_url: string | null
           welcome_email_sent_at: string | null
         }
@@ -3836,6 +3858,7 @@ export type Database = {
           tipo_perfil?: Database["public"]["Enums"]["tipo_perfil"]
           updated_at?: string
           verificado?: boolean
+          verificado_profesional?: boolean
           website_url?: string | null
           welcome_email_sent_at?: string | null
         }
@@ -3876,6 +3899,7 @@ export type Database = {
           tipo_perfil?: Database["public"]["Enums"]["tipo_perfil"]
           updated_at?: string
           verificado?: boolean
+          verificado_profesional?: boolean
           website_url?: string | null
           welcome_email_sent_at?: string | null
         }
