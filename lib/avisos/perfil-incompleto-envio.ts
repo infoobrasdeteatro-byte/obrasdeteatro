@@ -20,7 +20,8 @@ export type ResumenAviso = {
 
 /**
  * Quién debe recibir el aviso: cuentas activas y verificadas (correo
- * confirmado), sin baja ni extinción, que no son del equipo, a las que les
+ * confirmado), sin baja ni extinción, que no son del equipo ni cuentas
+ * internas (@obrasdeteatro.com), a las que les
  * falta algo y que aún no lo han recibido. Usa el cliente de servicio: el
  * correo de profiles no lo puede leer ninguna sesión.
  */
@@ -56,6 +57,8 @@ export async function cargarDestinatariosAviso(servicio: SupabaseClient): Promis
     if (!p.verificado) { sinVerificar++; continue }
     if (yaEnviado.has(p.id)) { yaEnviados++; continue }
     if (!p.email?.trim()) continue
+    // Cuentas internas de la plataforma (redacción, etc.): no se les avisa.
+    if (/@obrasdeteatro\.com$/i.test(p.email.trim())) continue
     pendientes.push({
       id: p.id,
       nombre: p.nombre_artistico?.trim() || p.nombre?.trim() || '',
