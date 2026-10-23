@@ -21,7 +21,7 @@ export default async function SiteFooter() {
         <section className="site-footer-boletin" aria-labelledby="pie-boletin">
           <div>
             <p id="pie-boletin" className="site-footer-boletin-titulo">{boletin.nombre}</p>
-            <p className="site-footer-boletin-texto">Lo mejor de la semana en el teatro en español, cada semana en tu correo.</p>
+            <p className="site-footer-boletin-texto">La actualidad de las artes escénicas en español, en tu correo cada semana.</p>
           </div>
           {boletin.acceso === 'pago' ? (
             <p className="site-footer-boletin-texto">Exclusivo para los planes de pago. <Link href="/precios">Ver planes →</Link></p>
