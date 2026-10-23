@@ -49,7 +49,7 @@ const SECTIONS = [
   {
     title: "5. Proceso y plazo de revisión",
     content: [
-      { type: "text", text: "El proceso incluye la solicitud desde el perfil, una comprobación automática del enlace cuando la web lo permite, la revisión manual por el equipo de moderación y la resolución, que se comunica por correo electrónico." },
+      { type: "text", text: "El proceso incluye la solicitud desde el perfil y una comprobación automática del enlace. Si el código se encuentra, la verificación se aprueba en el momento; si la web o la red no permiten comprobarlo, la solicitud pasa a revisión manual por el equipo de moderación. La resolución se comunica por correo electrónico." },
       { type: "text", text: "ObrasDeTeatro® podrá aprobar o rechazar la solicitud de forma motivada en un plazo aproximado de hasta 30 días naturales. Una vez aprobada, el titular puede retirar el código de su red o su web." },
     ],
   },

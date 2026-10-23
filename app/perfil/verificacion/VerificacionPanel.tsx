@@ -19,13 +19,14 @@ export default function VerificacionPanel({ verificado, requisitos, codigo, ulti
   const [enlace, setEnlace] = useState('')
   const [error, setError] = useState('')
   const [enviado, setEnviado] = useState(false)
+  const [aprobadaAhora, setAprobadaAhora] = useState(false)
   const [copiado, setCopiado] = useState(false)
   const [pendiente, startTransition] = useTransition()
 
   const cumple = cumpleRequisitos(requisitos)
   const enRevision = enviado || ultima?.estado === 'pendiente'
 
-  if (verificado) {
+  if (verificado || aprobadaAhora) {
     return (
       <div className="account-card verif-card">
         <p className="verif-sello">✓ Verificado</p>
@@ -44,6 +45,7 @@ export default function VerificacionPanel({ verificado, requisitos, codigo, ulti
     startTransition(async () => {
       const r = await solicitarVerificacion(tipo, enlace)
       if ('error' in r) setError(r.error)
+      else if (r.aprobada) setAprobadaAhora(true)
       else setEnviado(true)
     })
   }
@@ -76,8 +78,9 @@ export default function VerificacionPanel({ verificado, requisitos, codigo, ulti
         <div className="account-card verif-card verif-estado">
           <h3 className="verif-paso">Solicitud en revisión</h3>
           <p className="verif-texto">
-            Hemos recibido tu solicitud{ultima?.estado === 'pendiente' ? ` del ${fecha(ultima.created_at)}` : ''}. El equipo la revisará
-            en unos días y te avisaremos por correo. Mantén el código en tu red o tu web hasta entonces.
+            Hemos recibido tu solicitud{ultima?.estado === 'pendiente' ? ` del ${fecha(ultima.created_at)}` : ''}. No hemos podido comprobar
+            el código de forma automática (algunas redes no lo permiten), así que el equipo la revisará en unos días y te avisaremos por
+            correo. Mantén el código en tu red o tu web hasta entonces.
           </p>
         </div>
       ) : (
@@ -90,7 +93,9 @@ export default function VerificacionPanel({ verificado, requisitos, codigo, ulti
 
           <h3 className="verif-paso">2 · Tu código</h3>
           <p className="verif-texto">
-            Ponlo en la biografía de una de tus redes profesionales o en una página de tu web. Puedes quitarlo cuando te confirmemos la verificación.
+            Ponlo en la biografía de una de tus redes profesionales o en una página de tu web. Si podemos leerlo
+            automáticamente (sobre todo en webs propias), la verificación es inmediata; si no, la revisa el equipo.
+            Puedes quitarlo cuando te confirmemos la verificación.
           </p>
           <div className="verif-codigo">
             <code>{codigo}</code>
