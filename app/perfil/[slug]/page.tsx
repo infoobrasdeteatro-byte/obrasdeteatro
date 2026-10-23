@@ -1,4 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { after } from 'next/server'
+import { headers } from 'next/headers'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabase/service'
+import { esBot, huellaVisitante, ipDe, registrarVisita } from '@/lib/red/visitas'
 import { espectaculosDelPerfil } from '@/lib/cartelera/perfil'
 import { resumenEntradas } from '@/lib/cartelera/datos'
 import EspectaculosPerfil from '@/components/cartelera/EspectaculosPerfil'
@@ -175,6 +180,16 @@ export default async function PerfilPublicoPage({ params }: Props) {
 
   const user = authResult.data.user
   const isOwner = user?.id === profile.id
+
+  // PP2-E.3B: visita (una por persona y día; ni el titular ni bots). Después de responder.
+  if (!isOwner) {
+    const cab = await headers()
+    const ua = cab.get('user-agent')
+    if (!esBot(ua)) {
+      const huella = huellaVisitante({ userId: user?.id, ip: ipDe(cab), userAgent: ua })
+      after(() => registrarVisita(createServiceClient() as unknown as SupabaseClient, profile.id, huella))
+    }
+  }
 
   type MaybeFollow = { data: { id: string } | null; error: unknown }
 

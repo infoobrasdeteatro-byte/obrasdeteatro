@@ -1,5 +1,10 @@
 import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { after } from 'next/server'
+import { headers } from 'next/headers'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { createServiceClient } from '@/lib/supabase/service'
+import { esBot, registrarApariciones } from '@/lib/red/visitas'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
@@ -217,6 +222,12 @@ export default async function DirectorioPage({ searchParams }: Props) {
   const totalPages = Math.ceil(total / PER_PAGE)
   const offset = (pageNum - 1) * PER_PAGE
   const perfilesPagina = sorted.slice(offset, offset + PER_PAGE)
+
+  // PP2-E.3B: aparición de cada tarjeta mostrada (no para bots). Después de responder.
+  if (perfilesPagina.length > 0 && !esBot((await headers()).get('user-agent'))) {
+    const ids = perfilesPagina.map(p => p.id)
+    after(() => registrarApariciones(createServiceClient() as unknown as SupabaseClient, ids))
+  }
 
   // H1 dinámico según filtros activos
   const tipoLabel = tipoValido ? TIPO_PERFIL_LABEL[tipoValido] : null

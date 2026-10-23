@@ -4,6 +4,7 @@ import Link from 'next/link'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import AlertasConvocatorias from './AlertasConvocatorias'
+import { variacion } from '@/lib/red/visitas'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,8 @@ export default async function CentroProfesionalPage() {
     { data: availability },
     { data: alerta },
     { data: disciplinasCasting },
+    { data: estadisticasDb },
+    { data: visitasMesDb },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -89,6 +92,9 @@ export default async function CentroProfesionalPage() {
       .select('id, etiqueta')
       .eq('activo', true)
       .order('orden', { ascending: true }),
+    // PP2-E.3B: visitas y apariciones (solo las del titular).
+    supabase.rpc('mis_estadisticas_perfil'),
+    supabase.rpc('mis_visitas_por_mes'),
   ])
 
   // ── Phase 2: mutual follows (requires follower list from Phase 1) ──────────
@@ -130,6 +136,17 @@ export default async function CentroProfesionalPage() {
     count: followerList.filter(f => f.created_at.startsWith(m.key)).length,
   }))
   const maxBar = Math.max(...monthlyData.map(m => m.count), 1)
+
+  // PP2-E.3B: visitas y apariciones (datos desde la publicación de la función).
+  const est = estadisticasDb?.[0]
+  const visitas30      = est?.visitas_30 ?? 0
+  const apariciones30  = est?.apariciones_30 ?? 0
+  const varVisitas     = variacion(visitas30, est?.visitas_prev ?? 0)
+  const varApariciones = variacion(apariciones30, est?.apariciones_prev ?? 0)
+  const visitasPorMes  = new Map((visitasMesDb ?? []).map(v => [v.mes, v.visitas]))
+  const visitasMensuales = months.map(m => ({ label: m.label, count: visitasPorMes.get(m.key) ?? 0 }))
+  const maxVisitas     = Math.max(...visitasMensuales.map(m => m.count), 1)
+  const hayVisitas     = visitasMensuales.some(m => m.count > 0)
 
   // Completeness dimensions (weighted 0-100)
   const hasAvatar         = !!profile?.avatar_url
@@ -228,15 +245,16 @@ export default async function CentroProfesionalPage() {
               </div>
             </div>
 
-            {/* View tracking placeholder */}
-            <div style={{ background: 'var(--subtle)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: '20px' }}>
-              <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', fontFamily: 'var(--mono)', marginBottom: '2px' }}>
-                Próximamente — PP2-E.3B
-              </p>
-              <p style={{ fontSize: '13px', color: 'var(--text)', fontFamily: 'var(--sans)' }}>
-                Seguimiento de visitas al perfil y apariciones en el directorio.
-              </p>
+            {/* PP2-E.3B — Visitas y apariciones (últimos 30 días) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', marginBottom: '8px' }}>
+              <Metric label="Visitas · 30 días" value={visitas30} />
+              <Metric label="Apariciones en el directorio · 30 días" value={apariciones30} />
             </div>
+            <p style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)', marginBottom: '20px', lineHeight: 1.6 }}>
+              {varVisitas !== null && <>Visitas: <Variacion v={varVisitas} /> · </>}
+              {varApariciones !== null && <>Apariciones: <Variacion v={varApariciones} /> respecto a los 30 días anteriores · </>}
+              Cada persona cuenta una vez al día; no se incluyen tus propias visitas ni las de buscadores. Datos desde el 24 oct 2026.
+            </p>
 
             <Accion>
               {score < 50
@@ -433,9 +451,37 @@ export default async function CentroProfesionalPage() {
                     })}
                   </svg>
 
-                  {/* View tracking coming soon */}
-                  <p style={{ fontSize: '11px', color: 'var(--muted)', fontFamily: 'var(--mono)', marginTop: '12px' }}>
-                    La evolución de visitas al perfil estará disponible en PP2-E.3B.
+
+                </div>
+              )}
+            </div>
+
+            {/* PP2-E.3B — Visitas al perfil por mes */}
+            <div style={{ margin: '0 0 20px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)', marginBottom: '10px' }}>Visitas al perfil por mes</p>
+              {hayVisitas ? (
+                <svg viewBox="0 0 324 80" preserveAspectRatio="xMidYMid meet" width="100%"
+                  style={{ maxWidth: '380px', display: 'block', overflow: 'visible' }}
+                  aria-label="Visitas al perfil por mes" role="img">
+                  {visitasMensuales.map((m, i) => {
+                    const barH = m.count > 0 ? Math.max(Math.round((m.count / maxVisitas) * 54), 6) : 2
+                    const x = i * 54 + 2
+                    const isLast = i === visitasMensuales.length - 1
+                    return (
+                      <g key={`v-${m.label}-${i}`}>
+                        <rect x={x} y={58 - barH} width={44} height={barH} rx={3} style={{ fill: isLast ? '#b91c1c' : '#f3d4d4' }} />
+                        <text x={x + 22} y={75} textAnchor="middle" style={{ fontSize: '9px', fill: isLast ? '#0a0a0a' : '#9ca3af', fontFamily: 'monospace' }}>{m.label}</text>
+                        {m.count > 0 && (
+                          <text x={x + 22} y={54 - barH} textAnchor="middle" style={{ fontSize: '9px', fill: isLast ? '#0a0a0a' : '#9ca3af', fontFamily: 'monospace' }}>{m.count}</text>
+                        )}
+                      </g>
+                    )
+                  })}
+                </svg>
+              ) : (
+                <div style={{ background: 'var(--subtle)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)', margin: 0 }}>
+                    Todavía no hay visitas registradas. Los datos se acumulan desde el 24 oct 2026.
                   </p>
                 </div>
               )}
@@ -660,4 +706,10 @@ function Accion({ children }: { children: React.ReactNode }) {
       </p>
     </div>
   )
+}
+
+/** Variación en % con color: verde si sube, rojo si baja. */
+function Variacion({ v }: { v: number }) {
+  const color = v > 0 ? '#166534' : v < 0 ? '#b91c1c' : 'var(--muted)'
+  return <span style={{ color, fontWeight: 600 }}>{v > 0 ? '+' : ''}{v} %</span>
 }
