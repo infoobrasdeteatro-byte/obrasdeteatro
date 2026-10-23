@@ -44,13 +44,21 @@ export type DatosDocumento = {
 
 const SITIO = 'https://www.obrasdeteatro.com'
 
-export async function cargarDatosDocumento(supabase: Cliente, profileId: string): Promise<DatosDocumento | null> {
+/**
+ * `emailCuenta`: el correo de la cuenta (auth). profiles.email ya no se puede
+ * leer con la sesión; el CV usa el correo de contacto del bloque 6 y, si no
+ * hay, el de la cuenta. El teléfono sale del bloque 6 (perfil_contacto).
+ */
+export async function cargarDatosDocumento(supabase: Cliente, profileId: string, emailCuenta: string | null = null): Promise<DatosDocumento | null> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const { data: p } = await supabase
-    .from('profiles')
-    .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, bio, avatar_url, cover_url, ciudad, pais, email, phone, website_url, social_links, slug, plan, perfil_publico, verificado')
-    .eq('id', profileId)
-    .single()
+  const [{ data: p }, { data: contacto }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, nombre, apellidos, nombre_artistico, tipo_perfil, bio, avatar_url, cover_url, ciudad, pais, website_url, social_links, slug, plan, perfil_publico, verificado')
+      .eq('id', profileId)
+      .single(),
+    supabase.from('perfil_contacto').select('email, telefono').eq('profile_id', profileId).maybeSingle(),
+  ])
   if (!p) return null
 
   const [esp, exp, form, prem, disp, fotos, videos, proyectos] = await Promise.all([
@@ -84,8 +92,8 @@ export async function cargarDatosDocumento(supabase: Cliente, profileId: string)
     tipo: TIPO_PERFIL_LABEL[p.tipo_perfil] ?? p.tipo_perfil,
     bio: p.bio?.trim() ?? '',
     ubicacion: [p.ciudad, p.pais].filter(Boolean).join(', '),
-    email: p.email ?? null,
-    telefono: p.phone?.trim() || null,
+    email: contacto?.email?.trim() || emailCuenta || null,
+    telefono: contacto?.telefono?.trim() || null,
     web: enlaceSeguro(p.website_url),
     // Solo si el perfil es visible para el público: un enlace que da 404 no sirve en un CV.
     perfilUrl: p.slug && p.perfil_publico && p.verificado ? `${SITIO}/perfil/${p.slug}` : null,

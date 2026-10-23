@@ -3318,6 +3318,63 @@ export type Database = {
           },
         ]
       }
+      perfil_contacto: {
+        Row: {
+          email: string | null
+          email_publico: boolean
+          profile_id: string
+          telefono: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          email?: string | null
+          email_publico?: boolean
+          profile_id: string
+          telefono?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          email?: string | null
+          email_publico?: boolean
+          profile_id?: string
+          telefono?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      solicitudes_contacto: {
+        Row: {
+          created_at: string
+          destinatario: string
+          estado: string
+          id: string
+          mensaje: string | null
+          resuelta_at: string | null
+          solicitante: string
+        }
+        Insert: {
+          created_at?: string
+          destinatario: string
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          resuelta_at?: string | null
+          solicitante: string
+        }
+        Update: {
+          created_at?: string
+          destinatario?: string
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          resuelta_at?: string | null
+          solicitante?: string
+        }
+        Relationships: []
+      }
       profesiones: {
         Row: {
           grupo: string
@@ -4508,6 +4565,21 @@ export type Database = {
       }
     }
     Functions: {
+      contacto_de: {
+        Args: { p_perfil: string }
+        Returns: { email: string | null; telefono: string | null; whatsapp: string | null; estado: string; tiene_privado: boolean }[]
+      }
+      solicitar_contacto: { Args: { p_perfil: string; p_mensaje?: string | null }; Returns: string }
+      responder_solicitud_contacto: { Args: { p_id: string; p_aceptar: boolean }; Returns: boolean }
+      cancelar_solicitud_contacto: { Args: { p_perfil: string }; Returns: boolean }
+      mis_solicitudes_contacto: {
+        Args: never
+        Returns: {
+          id: string; direccion: string; estado: string; mensaje: string | null; created_at: string
+          otro_id: string; otro_nombre: string; otro_slug: string | null; otro_avatar: string | null; otro_publico: boolean
+          email: string | null; telefono: string | null; whatsapp: string | null
+        }[]
+      }
       codigo_verificacion: { Args: { p_profile: string }; Returns: string }
       requisitos_verificacion: { Args: { p_profile: string }; Returns: Json }
       resolver_verificacion: { Args: { p_aprobar: boolean; p_id: string; p_motivo?: string }; Returns: undefined }

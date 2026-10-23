@@ -11,6 +11,7 @@ import FormacionPremiosEditor from '@/app/perfil/FormacionPremiosEditor'
 import EspecialidadesEditor from '@/app/perfil/EspecialidadesEditor'
 import ExperienciaEditor from '@/app/perfil/ExperienciaEditor'
 import RedesEditor from '@/app/perfil/RedesEditor'
+import ContactoEditor from '@/app/perfil/ContactoEditor'
 import DisponibilidadEditor from '@/app/perfil/DisponibilidadEditor'
 import MaterialAudiovisualEditor, { type Foto, type Video, type Proyecto } from '@/app/perfil/MaterialAudiovisualEditor'
 import DocumentacionPanel from '@/app/perfil/DocumentacionPanel'
@@ -24,7 +25,7 @@ const BLOCK_META: Record<string, { title: string; description: string }> = {
   '3': { title: 'Profesiones',             description: 'Las profesiones que ejerces en las artes escénicas'               },
   '4': { title: 'Experiencia Profesional', description: 'Trayectoria y experiencia en el sector escénico'                   },
   '5': { title: 'Material Audiovisual',    description: 'Portada, galería de fotos, vídeos y portfolio de proyectos'        },
-  '6': { title: 'Redes y Contacto',        description: 'Web profesional y redes sociales'                                  },
+  '6': { title: 'Redes y Contacto',        description: 'Web profesional, redes sociales y contacto'                       },
   '7': { title: 'Disponibilidad',          description: 'Disponibilidad para proyectos, giras y colaboraciones'              },
   '8': { title: 'Documentación',           description: 'CV descargable y dossier artístico profesional'                    },
   '9': { title: 'Perfil Verificado',       description: 'Sello de perfil profesional verificado'                           },
@@ -151,6 +152,8 @@ export default async function BloqueEditorPage({ params }: Props) {
 
   // ── B6: Redes y Contacto ──────────────────────────────────────────────────
   if (n === '6') {
+    const { data: contacto } = await supabase
+      .from('perfil_contacto').select('email, email_publico, telefono, whatsapp').eq('profile_id', user.id).maybeSingle()
     return (
       <Layout>
         <RedesEditor
@@ -159,6 +162,7 @@ export default async function BloqueEditorPage({ params }: Props) {
           initialWebsite={profile?.website_url ?? null}
           initialSocial={profile?.social_links as SocialLinks | null}
         />
+        <ContactoEditor profileId={user.id} emailCuenta={user.email ?? null} inicial={contacto} />
       </Layout>
     )
   }
@@ -207,7 +211,7 @@ export default async function BloqueEditorPage({ params }: Props) {
     const [exp, form, prem, esp, fotos, proy, vids, { data: contacto }] = await Promise.all([
       cuenta('professional_experience'), cuenta('profile_training'), cuenta('profile_awards'), cuenta('profile_specialties'),
       cuenta('perfil_galeria_fotos'), cuenta('perfil_portfolio'), cuenta('perfil_galeria_videos'),
-      supabase.from('profiles').select('phone').eq('id', user.id).single(),
+      supabase.from('perfil_contacto').select('telefono').eq('profile_id', user.id).maybeSingle(),
     ])
     return (
       <Layout>
@@ -216,7 +220,7 @@ export default async function BloqueEditorPage({ params }: Props) {
           experiencia: exp.count ?? 0, formacion: form.count ?? 0, premios: prem.count ?? 0, especialidades: esp.count ?? 0,
           fotos: fotos.count ?? 0, proyectos: proy.count ?? 0, videos: vids.count ?? 0,
           avatar: Boolean(profile?.avatar_url), portada: Boolean(profile?.cover_url),
-          tieneTelefono: Boolean(contacto?.phone?.trim()),
+          tieneTelefono: Boolean(contacto?.telefono?.trim()),
         }} />
       </Layout>
     )
