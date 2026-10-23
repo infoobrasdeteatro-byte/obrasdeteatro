@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { enviarMensaje, marcarLeida } from './acciones'
-import { MAX_MENSAJE, fechaMensaje, type MotivoEscribir } from '@/lib/mensajes/mensajes'
+import Hora from './Hora'
+import { MAX_MENSAJE, type MotivoEscribir } from '@/lib/mensajes/mensajes'
 
 export type Otro = { id: string; nombre: string; slug: string | null; avatar: string | null; publico: boolean }
 type Mensaje = { id: string; mio: boolean; texto: string; created_at: string; leido: boolean }
@@ -23,10 +24,13 @@ export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, mot
   const fondo = useRef<HTMLDivElement>(null)
 
   // Al abrir y con cada mensaje nuevo: bajar al final y marcar como leída.
+  // Después se refresca para que la bandeja y el menú quiten el contador.
   useEffect(() => {
     fondo.current?.scrollIntoView({ block: 'end' })
-    if (conversacionId && mensajes.some(m => !m.mio && !m.leido)) void marcarLeida(conversacionId)
-  }, [conversacionId, mensajes])
+    if (conversacionId && mensajes.some(m => !m.mio && !m.leido)) {
+      void marcarLeida(conversacionId).then(() => router.refresh())
+    }
+  }, [conversacionId, mensajes, router])
 
   // Mensajes nuevos: se refresca la página cada 20 s mientras se ve.
   useEffect(() => {
@@ -69,7 +73,7 @@ export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, mot
           <div key={m.id} className={`msj-burbuja${m.mio ? ' msj-burbuja--mia' : ''}`}>
             <p>{m.texto}</p>
             <span className="msj-hora">
-              {fechaMensaje(m.created_at)}{m.mio && m.leido ? ' · Leído' : ''}
+              <Hora iso={m.created_at} />{m.mio && m.leido ? ' · Leído' : ''}
             </span>
           </div>
         ))}
