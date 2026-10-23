@@ -33,5 +33,13 @@ export async function GET(request: Request) {
     }
   }
 
+  // Cambio de correo seguro: al confirmar el primero de los dos enlaces,
+  // Supabase redirige aquí sin code ni token, con un «message» de enlace
+  // aceptado. No es un error: falta confirmar el enlace del otro correo.
+  const mensaje = searchParams.get('message') ?? ''
+  if (!searchParams.get('error') && /confirmation link accepted/i.test(mensaje)) {
+    return NextResponse.redirect(`${origin}/cuenta/correo?pendiente=true`)
+  }
+
   return NextResponse.redirect(`${origin}/cuenta/correo?expirado=true`)
 }
