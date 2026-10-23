@@ -4636,6 +4636,13 @@ export type Database = {
       }
       marcar_conversacion_leida: { Args: { p_conversacion: string }; Returns: number }
       mensajes_sin_leer: { Args: never; Returns: number }
+      registrar_visita: { Args: { p_perfil: string; p_huella: string }; Returns: boolean }
+      registrar_apariciones: { Args: { p_perfiles: string[] }; Returns: number }
+      mis_estadisticas_perfil: {
+        Args: never
+        Returns: { visitas_30: number; visitas_prev: number; apariciones_30: number; apariciones_prev: number; desde: string | null }[]
+      }
+      mis_visitas_por_mes: { Args: never; Returns: { mes: string; visitas: number }[] }
       bloquear: { Args: { p_perfil: string }; Returns: boolean | null }
       desbloquear: { Args: { p_perfil: string }; Returns: boolean | null }
       reclamar_aviso_mensaje: { Args: { p_conversacion: string }; Returns: string | null }
