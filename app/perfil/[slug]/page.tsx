@@ -17,6 +17,7 @@ import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
 import PortfolioPerfil, { type ProyectoPublico } from '@/components/perfil/PortfolioPerfil'
 import { BUCKET_GALERIA, analizarVideo, esPlanDePago, portadaValida, urlPublica } from '@/lib/perfil-multimedia/multimedia'
+import { textoProfesiones, TIPOS_PERSONA } from '@/lib/perfiles/profesiones'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -145,7 +146,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
   const [{ data: profile }, authResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, cover_url, ciudad, pais, country_code, plan, verificado, website_url, social_links, slug')
+      .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url, cover_url, ciudad, pais, country_code, plan, verificado, verificado_profesional, website_url, social_links, slug')
       .eq('slug', slug)
       .eq('perfil_publico', true)
       .eq('verificado', true)
@@ -246,14 +247,16 @@ export default async function PerfilPublicoPage({ params }: Props) {
   const safeAwards      = awards      ?? []
 
   const nombrePublico    = profile.nombre_artistico || profile.nombre
-  const tipoLabel        = TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil
-  const primarySpecialty = safeSpecialties.find(s => s.is_primary)?.specialty ?? null
+  const esPersona        = (TIPOS_PERSONA as readonly string[]).includes(profile.tipo_perfil)
+  const tipoLabel        = esPersona
+    ? (textoProfesiones(safeSpecialties) ?? 'Profesional de las artes escénicas')
+    : (TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil)
   const flag             = getFlag(profile.country_code)
   const ubicacion        = [profile.ciudad, profile.pais].filter(Boolean).join(', ')
   const ubicacionDisplay = flag ? `${flag} ${ubicacion}` : ubicacion
   const isPremiumPlus    = profile.plan !== 'gratuito'
   const planBadge        = profile.plan === 'destacado' ? 'Destacado' : profile.plan === 'empresas' ? 'Empresa' : null
-  const isVerificado     = profile.verificado === true
+  const isVerificado     = profile.verificado_profesional === true
 
   const heroText = extractHero(profile.bio)
   const showHero = (profile.bio?.length ?? 0) > 280 && heroText !== null
@@ -396,12 +399,6 @@ export default async function PerfilPublicoPage({ params }: Props) {
               <p style={{ fontSize: '14px', color: 'var(--muted)', marginTop: '5px', marginBottom: 0, fontFamily: 'var(--sans)' }}>
                 {tipoLabel}
               </p>
-
-              {primarySpecialty && (
-                <p style={{ fontSize: '13px', color: 'var(--text)', marginTop: '3px', marginBottom: 0, fontFamily: 'var(--sans)' }}>
-                  {primarySpecialty}
-                </p>
-              )}
 
               {ubicacionDisplay && (
                 <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '4px', marginBottom: 0, fontFamily: 'var(--sans)' }}>

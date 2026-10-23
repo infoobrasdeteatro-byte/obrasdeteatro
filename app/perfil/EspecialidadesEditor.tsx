@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { GRUPOS_PROFESIONES, PROFESIONES, nombreProfesion } from '@/lib/perfiles/profesiones'
 
 interface Specialty {
   id: string
@@ -91,10 +92,10 @@ export default function EspecialidadesEditor({ profileId, plan, initialData }: P
   return (
     <div className="account-card">
       <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)', marginBottom: '24px', lineHeight: 1.6 }}>
-        Define tus especialidades escénicas. La especialidad principal aparecerá destacada en tu perfil.
+        Elige las profesiones que ejerces en las artes escénicas. La principal aparecerá destacada en tu perfil y en el directorio.
         {!isPremium && (
           <>
-            {' '}· Plan Gratuito: hasta {MAX_GRATUITO} especialidades.{' '}
+            {' '}· Plan Gratuito: hasta {MAX_GRATUITO} profesiones.{' '}
             <Link href="/precios" style={{ color: 'var(--black)', fontWeight: 500 }}>Ampliar →</Link>
           </>
         )}
@@ -115,7 +116,7 @@ export default function EspecialidadesEditor({ profileId, plan, initialData }: P
               }}
             >
               <span style={{ flex: 1, fontSize: '14px', color: 'var(--black)', fontFamily: 'var(--sans)' }}>
-                {s.specialty}
+                {nombreProfesion(s.specialty) ?? s.specialty}
               </span>
 
               {s.is_primary ? (
@@ -136,7 +137,7 @@ export default function EspecialidadesEditor({ profileId, plan, initialData }: P
                 type="button"
                 onClick={() => handleDelete(s.id)}
                 disabled={deletingId === s.id}
-                aria-label={`Eliminar ${s.specialty}`}
+                aria-label={`Eliminar ${nombreProfesion(s.specialty) ?? s.specialty}`}
                 style={{ fontSize: '13px', color: 'var(--muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}
               >
                 ✕
@@ -150,16 +151,23 @@ export default function EspecialidadesEditor({ profileId, plan, initialData }: P
       {canAdd ? (
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
           <div className="ds-form-group" style={{ flex: 1, marginBottom: 0 }}>
-            <label className="ds-label">Nueva especialidad</label>
-            <input
-              type="text"
+            <label className="ds-label" htmlFor="nueva-profesion">Añadir profesión</label>
+            <select
+              id="nueva-profesion"
               value={newText}
               onChange={e => setNewText(e.target.value)}
               className="ds-input"
-              placeholder="Dirección escénica, dramaturgia contemporánea..."
-              maxLength={120}
               required
-            />
+            >
+              <option value="">Selecciona una profesión…</option>
+              {GRUPOS_PROFESIONES.map(grupo => (
+                <optgroup key={grupo} label={grupo}>
+                  {PROFESIONES.filter(p => p.grupo === grupo && !specialties.some(s => s.specialty === p.id)).map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </div>
           <button
             type="submit"
@@ -173,7 +181,7 @@ export default function EspecialidadesEditor({ profileId, plan, initialData }: P
       ) : (
         <div style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--off)', textAlign: 'center' }}>
           <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '12px' }}>
-            Has alcanzado el límite de {MAX_GRATUITO} especialidades del plan Gratuito.
+            Has alcanzado el límite de {MAX_GRATUITO} profesiones del plan Gratuito.
           </p>
           <Link href="/precios" className="ds-btn-secondary" style={{ width: 'auto', display: 'inline-block', padding: '8px 16px', fontSize: '13px' }}>
             Ampliar con Premium →

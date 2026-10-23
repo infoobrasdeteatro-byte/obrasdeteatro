@@ -19,7 +19,7 @@ import { esPlanDePago } from '@/lib/perfil-multimedia/multimedia'
 const BLOCK_META: Record<string, { title: string; description: string }> = {
   '1': { title: 'Información Personal',    description: 'Nombre, avatar, biografía breve y ubicación geográfica'           },
   '2': { title: 'Formación y Premios',     description: 'Estudios, cursos, talleres y reconocimientos profesionales'        },
-  '3': { title: 'Especialidades',          description: 'Géneros y áreas de especialización escénica'                       },
+  '3': { title: 'Profesiones',             description: 'Las profesiones que ejerces en las artes escénicas'               },
   '4': { title: 'Experiencia Profesional', description: 'Trayectoria y experiencia en el sector escénico'                   },
   '5': { title: 'Material Audiovisual',    description: 'Portada, galería de fotos, vídeos y portfolio de proyectos'        },
   '6': { title: 'Redes y Contacto',        description: 'Web profesional y redes sociales'                                  },
