@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ tipo
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.redirect(new URL(`/auth/login?next=/perfil/bloque/8`, req.url))
 
-  const d = await cargarDatosDocumento(supabase, user.id)
+  const d = await cargarDatosDocumento(supabase, user.id, user.email ?? null)
   if (!d) return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
   if (!esPlanDePago(d.plan)) return NextResponse.redirect(new URL('/precios', req.url))
 

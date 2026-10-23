@@ -77,7 +77,7 @@ export default function DocumentacionPanel({ c }: { c: Contenido }) {
             <label style={casilla}><input type="checkbox" checked={email} onChange={e => setEmail(e.target.checked)} /> Mi correo electrónico</label>
             <label style={{ ...casilla, opacity: c.tieneTelefono ? 1 : 0.5 }}>
               <input type="checkbox" checked={telefono && c.tieneTelefono} disabled={!c.tieneTelefono} onChange={e => setTelefono(e.target.checked)} />
-              Mi teléfono{!c.tieneTelefono && ' (no hay ninguno en tu perfil)'}
+              Mi teléfono{!c.tieneTelefono && ' (añádelo en el bloque 6 · Redes y Contacto)'}
             </label>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)', margin: '8px 0 0' }}>

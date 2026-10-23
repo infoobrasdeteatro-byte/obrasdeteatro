@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+// profiles.email no se lee con sesión: tras comprobar el rol, el servidor la lee.
+import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -62,7 +64,7 @@ export default async function AdminEspaciosPage() {
     ...(espacios ?? []).map(e => e.gestionado_por).filter((v): v is string => v !== null),
   ])]
   const { data: perfiles } = ids.length
-    ? await supabase.from('profiles').select('id, nombre, apellidos, nombre_artistico, slug, email').in('id', ids)
+    ? await createServiceClient().from('profiles').select('id, nombre, apellidos, nombre_artistico, slug, email').in('id', ids)
     : { data: [] as { id: string; nombre: string | null; apellidos: string | null; nombre_artistico: string | null; slug: string | null; email: string }[] }
   const personas = Object.fromEntries((perfiles ?? []).map(p => [p.id, {
     nombre: p.nombre_artistico || [p.nombre, p.apellidos].filter(Boolean).join(' ') || 'Sin nombre',

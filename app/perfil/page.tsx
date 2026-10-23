@@ -66,6 +66,7 @@ export default async function PerfilPage() {
     { count: portfolioCount },
     { data: verifPendiente },
     { data: rolAdmin },
+    { count: solicitudesPendientes },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -82,6 +83,7 @@ export default async function PerfilPage() {
     supabase.from('perfil_portfolio').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('verificaciones_profesionales').select('id').eq('profile_id', user.id).eq('estado', 'pendiente').maybeSingle(),
     supabase.from('profile_roles').select('profile_id').eq('profile_id', user.id).eq('role', 'admin').maybeSingle(),
+    supabase.from('solicitudes_contacto').select('id', { count: 'exact', head: true }).eq('destinatario', user.id).eq('estado', 'pendiente'),
   ])
 
   // ── Block statuses ─────────────────────────────────────────────────────────
@@ -163,7 +165,7 @@ export default async function PerfilPage() {
     { n: 3, title: 'Profesiones',             description: 'Las profesiones que ejerces en las artes escénicas', status: b3 },
     { n: 4, title: 'Experiencia Profesional', description: 'Trayectoria y experiencia en el sector escénico',    status: b4 },
     { n: 5, title: 'Material Audiovisual',    description: 'Portada, galería de fotos, vídeos y portfolio',      status: b5 },
-    { n: 6, title: 'Redes y Contacto',        description: 'Web profesional y redes sociales',                   status: b6 },
+    { n: 6, title: 'Redes y Contacto',        description: 'Web profesional, redes sociales y contacto',          status: b6 },
     { n: 7, title: 'Disponibilidad',          description: 'Disponibilidad para proyectos y colaboraciones',     status: b7 },
     { n: 8, title: 'Documentación',           description: 'CV descargable y dossier artístico',                 status: b8 },
     { n: 9, title: 'Perfil Verificado',       description: 'Sello de perfil profesional verificado',             status: b9 },
@@ -297,6 +299,24 @@ export default async function PerfilPage() {
               </p>
               <Link href={avisoDirectorio.href} className="ds-btn-primary" style={{ width: 'auto', padding: '8px 16px', fontSize: '13px', textDecoration: 'none' }}>
                 {avisoDirectorio.boton}
+              </Link>
+            </div>
+          )}
+
+          {/* ── Aviso: solicitudes de contacto pendientes (Mi red) ─────────── */}
+          {(solicitudesPendientes ?? 0) > 0 && (
+            <div role="status" style={{
+              background: 'var(--white)', border: '1px solid var(--black)',
+              borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: '16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
+            }}>
+              <p style={{ fontSize: '14px', color: 'var(--text)', fontFamily: 'var(--sans)', margin: 0, lineHeight: 1.5, flex: '1 1 320px' }}>
+                {solicitudesPendientes === 1
+                  ? 'Tienes 1 solicitud de contacto pendiente.'
+                  : `Tienes ${solicitudesPendientes} solicitudes de contacto pendientes.`} Tú decides si compartes tu teléfono y tu WhatsApp.
+              </p>
+              <Link href="/perfil/red" className="ds-btn-primary" style={{ width: 'auto', padding: '8px 16px', fontSize: '13px', textDecoration: 'none' }}>
+                Ver en Mi red
               </Link>
             </div>
           )}

@@ -13,6 +13,8 @@ import TrayectoriaExpander from './TrayectoriaExpander'
 import FormacionExpander from './FormacionExpander'
 import PremiosExpander from './PremiosExpander'
 import FollowButton from './FollowButton'
+import ContactoPerfil from './ContactoPerfil'
+import { estadoContacto } from '@/lib/red/contacto'
 import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
 import PortfolioPerfil, { type ProyectoPublico } from '@/components/perfil/PortfolioPerfil'
@@ -174,6 +176,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: fotosDb },
     { data: videosDb },
     { data: proyectosDb },
+    { data: contactoDb },
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -210,7 +213,11 @@ export default async function PerfilPublicoPage({ params }: Props) {
     supabase.from('perfil_galeria_fotos').select('id, ruta, pie, credito').eq('profile_id', profile.id).order('orden', { ascending: true }),
     supabase.from('perfil_galeria_videos').select('id, url, plataforma, titulo').eq('profile_id', profile.id).order('orden', { ascending: true }),
     supabase.from('perfil_portfolio').select('id, titulo, anio, rol, compania, descripcion, imagen_ruta, enlace').eq('profile_id', profile.id).order('orden', { ascending: true }),
+    // Correo (si es público) y teléfono/WhatsApp (solo con solicitud aceptada).
+    supabase.rpc('contacto_de', { p_perfil: profile.id }),
   ])
+  const contacto = contactoDb?.[0] ?? null
+  const hayContacto = Boolean(contacto?.email) || Boolean(contacto?.tiene_privado) || isOwner
 
   const siguiendoEstePerfil = followResult.data !== null
 
@@ -566,7 +573,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
         {/* ── ZONA OE — Obras relacionadas — RESERVADO PP2-C ── */}
 
         {/* ── ZONA F — Contacto ── */}
-        {(safeWebsite || visibleSocials.length > 0 || (user !== null && !isOwner)) && (
+        {(safeWebsite || visibleSocials.length > 0 || (user !== null && !isOwner) || hayContacto) && (
           <section style={{ marginBottom: '48px' }}>
             <h2 className="prof-eyebrow">Contacto</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -610,10 +617,22 @@ export default async function PerfilPublicoPage({ params }: Props) {
                   </a>
                 )
               })}
+              {contacto && (
+                <ContactoPerfil
+                  perfilId={profile.id}
+                  slug={profile.slug ?? slug}
+                  nombre={nombrePublico}
+                  estado={estadoContacto(contacto.estado)}
+                  email={contacto.email}
+                  telefono={contacto.telefono}
+                  whatsapp={contacto.whatsapp}
+                  tienePrivado={contacto.tiene_privado}
+                />
+              )}
               {user && !isOwner && (
                 <div style={{
-                  paddingTop: (safeWebsite || visibleSocials.length > 0) ? '14px' : 0,
-                  borderTop: (safeWebsite || visibleSocials.length > 0) ? '1px solid var(--border)' : 'none',
+                  paddingTop: (safeWebsite || visibleSocials.length > 0 || hayContacto) ? '14px' : 0,
+                  borderTop: (safeWebsite || visibleSocials.length > 0 || hayContacto) ? '1px solid var(--border)' : 'none',
                 }}>
                   <FollowButton profileId={profile.id} siguiendo={siguiendoEstePerfil} />
                 </div>
