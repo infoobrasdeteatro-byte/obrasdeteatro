@@ -19,7 +19,7 @@ import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
 import PortfolioPerfil, { type ProyectoPublico } from '@/components/perfil/PortfolioPerfil'
 import { BUCKET_GALERIA, analizarVideo, esPlanDePago, portadaValida, urlPublica } from '@/lib/perfil-multimedia/multimedia'
-import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO, ordenarProfesiones } from '@/lib/perfiles/profesiones'
+import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO, ordenarProfesiones, etiquetaPerfil } from '@/lib/perfiles/profesiones'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -104,7 +104,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const { data } = await supabase
     .from('profiles')
-    .select('nombre, nombre_artistico, tipo_perfil, bio, avatar_url')
+    .select('id, nombre, nombre_artistico, tipo_perfil, bio, avatar_url')
     .eq('slug', slug)
     .eq('perfil_publico', true)
     .eq('verificado', true)
@@ -115,8 +115,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!data) return { title: 'Perfil no encontrado | ObrasDeTeatro®' }
 
-  const nombre = data.nombre_artistico || data.nombre
-  const tipo = TIPO_PERFIL_LABEL[data.tipo_perfil] ?? data.tipo_perfil
+  // Recortado: un espacio al final del nombre dejaba «Nombre  —» en el título.
+  const nombre = (data.nombre_artistico?.trim() || data.nombre?.trim() || '')
+  // Igual que en la ficha: equipo, las profesiones si es persona, o el tipo
+  // si es organización.
+  const [{ data: profesiones }, { data: rolAdmin }] = await Promise.all([
+    supabase.from('profile_specialties').select('specialty, is_primary').eq('profile_id', data.id),
+    supabase.from('profile_roles').select('profile_id').eq('profile_id', data.id).eq('role', 'admin').maybeSingle(),
+  ])
+  const tipo = etiquetaPerfil(data.tipo_perfil, profesiones ?? [], TIPO_PERFIL_LABEL, !!rolAdmin)
   const bio = data.bio?.trim() ?? ''
   const description = bio
     ? bio.slice(0, 155) + (bio.length > 155 ? '…' : '')
@@ -505,10 +512,10 @@ export default async function PerfilPublicoPage({ params }: Props) {
         {/* ── EN CARTEL / ANTERIORES (cartelera) ── */}
         <EspectaculosPerfil enCartel={espectaculos.enCartel} anteriores={espectaculos.anteriores} entradas={entradasCartel} ahora={ahora} />
 
-        {/* ── ZONA C — Especialidades ── */}
+        {/* ── ZONA C — Profesiones ── */}
         {safeSpecialties.length > 0 && (
           <section style={{ marginBottom: '48px' }}>
-            <h2 className="prof-eyebrow">Especialidades</h2>
+            <h2 className="prof-eyebrow">Profesiones</h2>
             <EspecialidadesChips specialties={safeSpecialties} />
           </section>
         )}
