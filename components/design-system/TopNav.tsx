@@ -170,6 +170,14 @@ export default function TopNav({ heroMode = false }: Props) {
 
       {mobileOpen && (
         <div className="nav-mobile-menu">
+          <span className="nav-mobile-section-label">Cuenta</span>
+          <Link href="/auth/login" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
+            Iniciar sesión
+          </Link>
+          <Link href="/auth/registro" className="nav-mobile-cta" onClick={() => setMobileOpen(false)}>
+            Crear cuenta gratis
+          </Link>
+          <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Ecosistema</span>
           <Link href="/directorio" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Profesionales
@@ -197,14 +205,6 @@ export default function TopNav({ heroMode = false }: Props) {
           </Link>
           <Link href="/noticias" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Noticias
-          </Link>
-          <hr className="nav-mobile-divider" />
-          <span className="nav-mobile-section-label">Cuenta</span>
-          <Link href="/auth/login" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
-            Iniciar sesión
-          </Link>
-          <Link href="/auth/registro" className="nav-mobile-cta" onClick={() => setMobileOpen(false)}>
-            Crear cuenta gratis
           </Link>
         </div>
       )}

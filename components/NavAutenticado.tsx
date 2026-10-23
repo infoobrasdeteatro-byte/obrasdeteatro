@@ -75,6 +75,14 @@ export default function NavAutenticado() {
 
       {mobileOpen && (
         <div className="nav-mobile-menu">
+          <span className="nav-mobile-section-label">Mi cuenta</span>
+          <Link href="/perfil/centro" className="nav-mobile-link">Centro Profesional</Link>
+          <form action="/auth/logout" method="POST">
+            <button type="submit" className="nav-mobile-cta" style={{ background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)' }}>
+              Cerrar sesión
+            </button>
+          </form>
+          <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Ecosistema</span>
           <Link href="/directorio" className="nav-mobile-link">Profesionales</Link>
           <Link href="/obras" className="nav-mobile-link">Obras</Link>
@@ -84,15 +92,6 @@ export default function NavAutenticado() {
           <Link href="/formacion" className="nav-mobile-link">Formación</Link>
           <Link href="/mediateca" className="nav-mobile-link">Mediateca</Link>
           <Link href="/noticias" className="nav-mobile-link">Noticias</Link>
-          <hr className="nav-mobile-divider" />
-          <span className="nav-mobile-section-label">Mi cuenta</span>
-          <Link href="/perfil/centro" className="nav-mobile-link">Centro Profesional</Link>
-          <hr className="nav-mobile-divider" />
-          <form action="/auth/logout" method="POST">
-            <button type="submit" className="nav-mobile-cta" style={{ background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)' }}>
-              Cerrar sesión
-            </button>
-          </form>
         </div>
       )}
     </>

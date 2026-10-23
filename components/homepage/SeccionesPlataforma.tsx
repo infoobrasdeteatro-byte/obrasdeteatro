@@ -12,7 +12,7 @@ const SECCIONES = [
   { titulo: 'Directorio profesional', texto: 'Compañías, salas y profesionales', enlace: 'Explorar el directorio', href: '/directorio' },
   { titulo: 'ScenaIA', texto: 'Asistente inteligente para el teatro hispano', enlace: 'Conocer ScenaIA', href: '/scenaia' },
   { titulo: 'Biblioteca', texto: 'Clásicos del teatro hispano y autores actuales', enlace: 'Ver obras', href: '/obras' },
-  { titulo: 'Proscenio', texto: 'Lo mejor de la semana, cada semana en tu correo', enlace: 'Suscribirme', href: '/boletin' },
+  { titulo: 'Proscenio', texto: 'La crónica semanal de la escena en español', enlace: 'Suscribirme', href: '/boletin' },
   { titulo: 'Espacios escénicos', texto: 'Teatros y salas de los 20 países', enlace: 'Ver espacios', href: '/espacios' },
   { titulo: 'Cartelera', texto: 'Funciones, horarios y entradas', enlace: 'Ver la cartelera', href: '/cartelera' },
 ] as const

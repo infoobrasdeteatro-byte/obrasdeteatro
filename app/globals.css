@@ -1599,8 +1599,15 @@ body {
   .nav-logo { font-size: 15px; margin-right: 0; }
   .nav-divider, .nav-links { display: none; }
   .nav-right { gap: 6px; }
-  .nav-btn-login, .nav-btn-cta, .nav-btn-logout { display: none; }
+  /* Iniciar / cerrar sesión siguen en la barra, junto a la hamburguesa:
+     antes solo estaban al final del menú desplegable. */
+  .nav-btn-login, .nav-btn-cta, .nav-btn-logout { padding: 6px 12px; font-size: 12.5px; }
   .nav-mobile-toggle { display: flex; }
+}
+@media (max-width: 600px) {
+  /* En el móvil: «Iniciar sesión» y «Cerrar sesión» sí; «Registrarse» y
+     «Centro Profesional» quedan dentro del menú. */
+  .nav-btn-cta, .nav-right .nav-link { display: none; }
 }
 
 @media (max-width: 768px) {
