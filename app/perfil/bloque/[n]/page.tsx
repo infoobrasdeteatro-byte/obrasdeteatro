@@ -5,6 +5,8 @@ import type { ReactNode } from 'react'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import PerfilForm from '@/app/perfil/PerfilForm'
+import VerificacionPanel from '@/app/perfil/verificacion/VerificacionPanel'
+import type { Requisitos } from '@/lib/perfiles/verificacion'
 import FormacionPremiosEditor from '@/app/perfil/FormacionPremiosEditor'
 import EspecialidadesEditor from '@/app/perfil/EspecialidadesEditor'
 import ExperienciaEditor from '@/app/perfil/ExperienciaEditor'
@@ -25,7 +27,7 @@ const BLOCK_META: Record<string, { title: string; description: string }> = {
   '6': { title: 'Redes y Contacto',        description: 'Web profesional y redes sociales'                                  },
   '7': { title: 'Disponibilidad',          description: 'Disponibilidad para proyectos, giras y colaboraciones'              },
   '8': { title: 'Documentación',           description: 'CV descargable y dossier artístico profesional'                    },
-  '9': { title: 'Perfil Verificado',       description: 'Solicitar verificación de identidad profesional'                   },
+  '9': { title: 'Perfil Verificado',       description: 'Sello de perfil profesional verificado'                           },
 }
 
 type SocialLinks = Partial<Record<'instagram' | 'linkedin' | 'twitter' | 'facebook' | 'tiktok' | 'youtube', string>>
@@ -256,6 +258,31 @@ export default async function BloqueEditorPage({ params }: Props) {
           fotos={(fotos ?? []) as Foto[]}
           videos={(videos ?? []) as Video[]}
           proyectos={(proyectos ?? []) as Proyecto[]}
+        />
+      </Layout>
+    )
+  }
+
+  // ── B9: Perfil verificado ─────────────────────────────────────────────────
+  if (n === '9') {
+    const [{ data: requisitos }, { data: codigo }, { data: ultima }, { data: sello }] = await Promise.all([
+      supabase.rpc('requisitos_verificacion', { p_profile: user.id }),
+      supabase.rpc('codigo_verificacion', { p_profile: user.id }),
+      supabase.from('verificaciones_profesionales')
+        .select('estado, enlace, motivo, created_at')
+        .eq('profile_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase.from('profiles').select('verificado_profesional').eq('id', user.id).single(),
+    ])
+    return (
+      <Layout>
+        <VerificacionPanel
+          verificado={sello?.verificado_profesional === true}
+          requisitos={(requisitos ?? {}) as Requisitos}
+          codigo={codigo ?? ''}
+          ultima={ultima ?? null}
         />
       </Layout>
     )

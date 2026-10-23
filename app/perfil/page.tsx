@@ -64,6 +64,7 @@ export default async function PerfilPage() {
     { count: fotosCount },
     { count: videosCount },
     { count: portfolioCount },
+    { data: verifPendiente },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -78,6 +79,7 @@ export default async function PerfilPage() {
     supabase.from('perfil_galeria_fotos').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('perfil_galeria_videos').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('perfil_portfolio').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
+    supabase.from('verificaciones_profesionales').select('id').eq('profile_id', user.id).eq('estado', 'pendiente').maybeSingle(),
   ])
 
   // ── Block statuses ─────────────────────────────────────────────────────────
@@ -127,7 +129,7 @@ export default async function PerfilPage() {
   const b8: BlockStatus = profile?.plan === 'gratuito'
     ? 'locked'
     : profile?.bio?.trim() && ((expCount ?? 0) > 0 || (trainingCount ?? 0) > 0) ? 'complete' : 'partial'
-  const b9: BlockStatus = profile?.verificado_profesional ? 'verified' : 'soon'
+  const b9: BlockStatus = profile?.verificado_profesional ? 'verified' : verifPendiente ? 'partial' : 'empty'
 
   // Qué le falta para aparecer en el directorio (en este orden).
   const esPersona = (TIPOS_PERSONA as readonly string[]).includes(profile?.tipo_perfil ?? '')
@@ -162,7 +164,7 @@ export default async function PerfilPage() {
     { n: 6, title: 'Redes y Contacto',        description: 'Web profesional y redes sociales',                   status: b6 },
     { n: 7, title: 'Disponibilidad',          description: 'Disponibilidad para proyectos y colaboraciones',     status: b7 },
     { n: 8, title: 'Documentación',           description: 'CV descargable y dossier artístico',                 status: b8 },
-    { n: 9, title: 'Perfil Verificado',       description: 'Verificación de identidad profesional',              status: b9 },
+    { n: 9, title: 'Perfil Verificado',       description: 'Sello de perfil profesional verificado',             status: b9 },
   ]
 
   // ── Progress (exclude 'soon') ──────────────────────────────────────────────
