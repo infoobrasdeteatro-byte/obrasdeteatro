@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
+import { etiquetaPerfil } from '@/lib/perfiles/profesiones'
 
 const TIPO_PERFIL_LABEL: Record<string, string> = {
   actor:        'Actor / Actriz',
@@ -38,14 +39,18 @@ export default async function DashboardPage({
   const params = await searchParams
   const showSuccess = !!params.success
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('nombre, apellidos, tipo_perfil, plan, slug, perfil_publico, created_at, is_premium')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: misProfesiones }, { data: rolAdmin }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('nombre, apellidos, tipo_perfil, plan, slug, perfil_publico, created_at, is_premium')
+      .eq('id', user.id)
+      .single(),
+    supabase.from('profile_specialties').select('specialty, is_primary').eq('profile_id', user.id),
+    supabase.from('profile_roles').select('profile_id').eq('profile_id', user.id).eq('role', 'admin').maybeSingle(),
+  ])
 
   const nombreMostrado = profile?.nombre ?? user.email ?? '—'
-  const tipo  = profile ? (TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil) : '—'
+  const tipo  = profile ? etiquetaPerfil(profile.tipo_perfil, misProfesiones ?? [], TIPO_PERFIL_LABEL, !!rolAdmin) : '—'
   const plan  = profile ? (PLAN_LABEL[profile.plan] ?? profile.plan) : '—'
   const fechaRegistro = profile?.created_at
     ? new Date(profile.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
