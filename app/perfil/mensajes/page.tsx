@@ -113,6 +113,7 @@ export default async function MensajesPage({ searchParams }: Props) {
                   puede={motivo === 'si'}
                   aviso={textoNoPuede(motivo, otro.nombre)}
                   motivo={motivo}
+                  bloqueado={seleccion?.bloqueado ?? motivo === 'bloqueado'}
                 />
               ) : (
                 <p className="msj-vacio msj-vacio--centro">Elige una conversación para leerla.</p>

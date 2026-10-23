@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { enviarMensaje, marcarLeida } from './acciones'
+import { cambiarBloqueo, enviarMensaje, marcarLeida } from './acciones'
 import Hora from './Hora'
 import { MAX_MENSAJE, type MotivoEscribir } from '@/lib/mensajes/mensajes'
 
@@ -14,8 +14,8 @@ type Mensaje = { id: string; mio: boolean; texto: string; created_at: string; le
 /** Cada cuánto se buscan mensajes nuevos con la conversación abierta y visible. */
 const REFRESCO_MS = 20000
 
-export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, motivo }: {
-  conversacionId: string | null; otro: Otro; mensajes: Mensaje[]; puede: boolean; aviso: string | null; motivo: MotivoEscribir
+export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, motivo, bloqueado }: {
+  conversacionId: string | null; otro: Otro; mensajes: Mensaje[]; puede: boolean; aviso: string | null; motivo: MotivoEscribir; bloqueado: boolean
 }) {
   const router = useRouter()
   const [texto, setTexto] = useState('')
@@ -51,6 +51,17 @@ export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, mot
     })
   }
 
+  const bloqueo = () => {
+    const pregunta = bloqueado
+      ? `¿Desbloquear a ${otro.nombre}? Podréis volver a escribiros.`
+      : `¿Bloquear a ${otro.nombre}? No podrá escribirte y no se le avisará.`
+    if (!window.confirm(pregunta)) return
+    startTransition(async () => {
+      const r = await cambiarBloqueo(otro.id, !bloqueado)
+      if (r.ok) router.refresh(); else setError('No se pudo guardar. Inténtalo de nuevo.')
+    })
+  }
+
   return (
     <div className="msj-hilo">
       <header className="msj-hilo-cabecera">
@@ -61,6 +72,11 @@ export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, mot
         {otro.publico && otro.slug
           ? <Link href={`/perfil/${otro.slug}`} className="red-nombre">{otro.nombre}</Link>
           : <span className="red-nombre">{otro.nombre}</span>}
+        {conversacionId && (
+          <button type="button" className="red-enlace msj-bloquear" disabled={pending} onClick={bloqueo}>
+            {bloqueado ? 'Desbloquear' : 'Bloquear'}
+          </button>
+        )}
       </header>
 
       <div className="msj-mensajes" aria-live="polite">
@@ -102,6 +118,7 @@ export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, mot
         <div className="msj-aviso">
           <p>{aviso}</p>
           {motivo === 'plan' && <Link href="/precios" className="ds-btn-secondary">Ver planes</Link>}
+          {error && <p className="red-error msj-error">{error}</p>}
           {(motivo === 'plan' || motivo === 'solo_contactos') && otro.slug && (
             <Link href={`/perfil/${otro.slug}`} className="ds-btn-secondary">Conectar con {otro.nombre}</Link>
           )}

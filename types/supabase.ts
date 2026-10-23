@@ -3891,6 +3891,7 @@ export type Database = {
           mayor_de_edad: boolean
           mostrar_actividad: boolean
           mensajes_solo_contactos: boolean
+          avisos_mensajes_email: boolean
           nombre: string
           nombre_artistico: string | null
           pais: string
@@ -3934,6 +3935,7 @@ export type Database = {
           mayor_de_edad?: boolean
           mostrar_actividad?: boolean
           mensajes_solo_contactos?: boolean
+          avisos_mensajes_email?: boolean
           nombre: string
           nombre_artistico?: string | null
           pais?: string
@@ -3977,6 +3979,7 @@ export type Database = {
           mayor_de_edad?: boolean
           mostrar_actividad?: boolean
           mensajes_solo_contactos?: boolean
+          avisos_mensajes_email?: boolean
           nombre?: string
           nombre_artistico?: string | null
           pais?: string
@@ -4624,7 +4627,7 @@ export type Database = {
         Args: never
         Returns: {
           id: string; otro_id: string; otro_nombre: string; otro_slug: string | null; otro_avatar: string | null; otro_publico: boolean
-          ultimo_texto: string | null; ultimo_mio: boolean | null; ultimo_at: string; sin_leer: number
+          ultimo_texto: string | null; ultimo_mio: boolean | null; ultimo_at: string; sin_leer: number; bloqueado: boolean
         }[]
       }
       mensajes_de: {
@@ -4633,6 +4636,9 @@ export type Database = {
       }
       marcar_conversacion_leida: { Args: { p_conversacion: string }; Returns: number }
       mensajes_sin_leer: { Args: never; Returns: number }
+      bloquear: { Args: { p_perfil: string }; Returns: boolean | null }
+      desbloquear: { Args: { p_perfil: string }; Returns: boolean | null }
+      reclamar_aviso_mensaje: { Args: { p_conversacion: string }; Returns: string | null }
       actividad_de: { Args: { p_perfil: string }; Returns: string | null }
       solicitar_conexion: { Args: { p_perfil: string; p_mensaje?: string | null }; Returns: string }
       responder_conexion: { Args: { p_id: string; p_aceptar: boolean }; Returns: boolean }
