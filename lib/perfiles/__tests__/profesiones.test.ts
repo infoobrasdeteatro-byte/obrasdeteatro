@@ -35,7 +35,7 @@ describe('profesiones', () => {
       { specialty: 'dramaturgia', is_primary: false },
       { specialty: 'docencia', is_primary: false },
       { specialty: 'produccion', is_primary: false },
-    ])).toBe('Actor / Actriz · Dramaturgia · Docencia · +1')
+    ])).toBe('Actor / Actriz · Dramaturgia · Producción · +1')
   })
 })
 
