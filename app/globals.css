@@ -116,7 +116,8 @@ body {
   transition: color 0.35s, background 0.18s;
   border: none; background: transparent;
 }
-.nav--hero .nav-btn-login { color: rgba(255,255,255,0.65); }
+/* Sobre la foto de la portada: legible sin competir con «Registrarse». */
+.nav--hero .nav-btn-login { color: rgba(255,255,255,0.9); }
 .nav-btn-login:hover { background: var(--subtle); color: var(--text); }
 .nav-btn-cta {
   font-family: var(--sans);
