@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/server'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import Hilo, { type Otro } from './Hilo'
-import { fechaMensaje, motivoEscribir, textoNoPuede } from '@/lib/mensajes/mensajes'
+import Hora from './Hora'
+import { motivoEscribir, textoNoPuede } from '@/lib/mensajes/mensajes'
 
 export const metadata: Metadata = {
   title: 'Mensajes | ObrasDeTeatro',
@@ -88,7 +89,7 @@ export default async function MensajesPage({ searchParams }: Props) {
                         <span className="msj-item-texto">
                           <span className="msj-item-cabecera">
                             <span className="msj-item-nombre">{x.otro_nombre}</span>
-                            <span className="msj-item-fecha">{fechaMensaje(x.ultimo_at)}</span>
+                            <span className="msj-item-fecha"><Hora iso={x.ultimo_at} /></span>
                           </span>
                           <span className={`msj-item-ultimo${x.sin_leer > 0 ? ' msj-item-ultimo--nuevo' : ''}`}>
                             {x.ultimo_mio ? 'Tú: ' : ''}{x.ultimo_texto}
