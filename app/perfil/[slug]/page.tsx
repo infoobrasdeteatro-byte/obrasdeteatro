@@ -63,7 +63,7 @@ const AVAIL_STYLE: Record<string, AvailStyle> = {
   disponible:              { bg: '#dcfce7', color: '#166534', dot: '#22c55e' },
   buscando_trabajo:        { bg: '#dcfce7', color: '#166534', dot: '#22c55e' },
   parcialmente_disponible: { bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
-  abierto_a_propuestas:    { bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
+  abierto_a_propuestas:    { bg: '#dcfce7', color: '#166534', dot: '#22c55e' },
   no_disponible:           { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' },
 }
 const AVAIL_FALLBACK: AvailStyle = { bg: '#f3f4f6', color: '#6b7280', dot: '#9ca3af' }
