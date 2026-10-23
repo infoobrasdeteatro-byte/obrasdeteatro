@@ -84,3 +84,20 @@ export const TIPOS_REGISTRO = ['profesional', 'publico', ...TIPOS_ORGANIZACION.m
 
 /** Etiqueta de los perfiles del equipo (rol admin) en directorio y ficha. */
 export const ETIQUETA_EQUIPO = 'Equipo ObrasDeTeatro®'
+
+/**
+ * Etiqueta de un perfil para mostrar en cualquier pantalla: equipo, las
+ * profesiones si es persona, o el tipo si es organización.
+ */
+export function etiquetaPerfil(
+  tipo: string,
+  profesiones: { specialty: string; is_primary: boolean }[],
+  etiquetasTipo: Record<string, string>,
+  esEquipo = false,
+): string {
+  if (esEquipo) return ETIQUETA_EQUIPO
+  if ((TIPOS_PERSONA as readonly string[]).includes(tipo)) {
+    return textoProfesiones(profesiones) ?? 'Profesional de las artes escénicas'
+  }
+  return etiquetasTipo[tipo] ?? tipo
+}

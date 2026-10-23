@@ -38,3 +38,12 @@ describe('profesiones', () => {
     ])).toBe('Actor / Actriz · Dramaturgia · Docencia · +1')
   })
 })
+
+import { etiquetaPerfil, ETIQUETA_EQUIPO } from '../profesiones'
+it('etiquetaPerfil: equipo, persona con profesiones y organización', () => {
+  const tipos = { productora: 'Productora' }
+  expect(etiquetaPerfil('profesional', [{ specialty: 'produccion', is_primary: true }, { specialty: 'gestion-cultural', is_primary: false }], tipos)).toBe('Producción · Gestión cultural')
+  expect(etiquetaPerfil('profesional', [], tipos)).toBe('Profesional de las artes escénicas')
+  expect(etiquetaPerfil('productora', [], tipos)).toBe('Productora')
+  expect(etiquetaPerfil('profesional', [], tipos, true)).toBe(ETIQUETA_EQUIPO)
+})

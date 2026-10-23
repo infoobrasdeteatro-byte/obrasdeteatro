@@ -5,7 +5,7 @@ import Image from 'next/image'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import BlockCard, { type BlockStatus } from '@/components/dashboard/BlockCard'
-import { TIPOS_PERSONA } from '@/lib/perfiles/profesiones'
+import { TIPOS_PERSONA, etiquetaPerfil } from '@/lib/perfiles/profesiones'
 
 // ── Label maps ────────────────────────────────────────────────────────────────
 
@@ -58,13 +58,14 @@ export default async function PerfilPage() {
     { data: profile },
     { count: trainingCount },
     { count: awardsCount },
-    { count: specCount },
+    { count: specCount, data: misProfesiones },
     { count: expCount },
     { data: availability },
     { count: fotosCount },
     { count: videosCount },
     { count: portfolioCount },
     { data: verifPendiente },
+    { data: rolAdmin },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -73,13 +74,14 @@ export default async function PerfilPage() {
       .single(),
     supabase.from('profile_training').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('profile_awards').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
-    supabase.from('profile_specialties').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
+    supabase.from('profile_specialties').select('specialty, is_primary', { count: 'exact' }).eq('profile_id', user.id),
     supabase.from('professional_experience').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('profile_availability').select('id').eq('profile_id', user.id).maybeSingle(),
     supabase.from('perfil_galeria_fotos').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('perfil_galeria_videos').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('perfil_portfolio').select('*', { count: 'exact', head: true }).eq('profile_id', user.id),
     supabase.from('verificaciones_profesionales').select('id').eq('profile_id', user.id).eq('estado', 'pendiente').maybeSingle(),
+    supabase.from('profile_roles').select('profile_id').eq('profile_id', user.id).eq('role', 'admin').maybeSingle(),
   ])
 
   // ── Block statuses ─────────────────────────────────────────────────────────
@@ -185,7 +187,7 @@ export default async function PerfilPage() {
   // ── Display values ─────────────────────────────────────────────────────────
 
   const nombrePublico    = profile?.nombre_artistico || profile?.nombre || ''
-  const tipoLabel        = profile ? (TIPO_PERFIL_LABEL[profile.tipo_perfil] ?? profile.tipo_perfil) : ''
+  const tipoLabel        = profile ? etiquetaPerfil(profile.tipo_perfil, misProfesiones ?? [], TIPO_PERFIL_LABEL, !!rolAdmin) : ''
   const planInfo         = PLAN_DISPLAY[profile?.plan ?? 'gratuito'] ?? PLAN_DISPLAY.gratuito
   const flag             = flagEmoji(profile?.country_code ?? null)
   const locationFull     = [profile?.ciudad, profile?.pais].filter(Boolean).join(' · ')
