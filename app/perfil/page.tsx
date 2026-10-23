@@ -6,6 +6,7 @@ import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import BlockCard, { type BlockStatus } from '@/components/dashboard/BlockCard'
 import { TIPOS_PERSONA, etiquetaPerfil } from '@/lib/perfiles/profesiones'
+import { BLOQUE_PROFESIONES, bloquesQueCuentan, porcentajeCompleto } from '@/lib/perfiles/completitud'
 
 // ── Label maps ────────────────────────────────────────────────────────────────
 
@@ -171,19 +172,19 @@ export default async function PerfilPage() {
     { n: 9, title: 'Perfil Verificado',       description: 'Sello de perfil profesional verificado',             status: b9 },
   ]
 
-  // ── Progress (exclude 'soon') ──────────────────────────────────────────────
+  // ── Progreso: solo los bloques que corresponden a esta cuenta ──────────────
+  // Fuera los «próximamente», los bloqueados por el plan y Profesiones si es
+  // una organización. En «Público general» no hay barra: sale el aviso de
+  // cambiar el tipo de perfil.
 
-  const applicable     = blocks.filter(b => b.status !== 'soon')
-  const score          = applicable.reduce((acc, b) => {
-    if (b.status === 'complete' || b.status === 'verified') return acc + 1
-    if (b.status === 'partial') return acc + 0.5
-    return acc
-  }, 0)
-  const completedCount = applicable.filter(b => b.status === 'complete' || b.status === 'verified').length
-  const pct            = applicable.length > 0 ? Math.round((score / applicable.length) * 100) : 0
+  const tipoPerfil     = profile?.tipo_perfil ?? ''
+  const mostrarBarra   = !!profile && tipoPerfil !== 'publico'
+  const applicable     = bloquesQueCuentan(blocks, tipoPerfil)
+  const pct            = porcentajeCompleto(applicable)
   const soonCount      = blocks.filter(b => b.status === 'soon').length
 
-  const nextBlock  = blocks.find(b => b.status === 'empty' || b.status === 'partial')
+  const nextBlock  = blocks.find(b =>
+    (b.status === 'empty' || b.status === 'partial') && (esPersona || b.n !== BLOQUE_PROFESIONES))
   const barColor   = pct >= 100 ? '#15803d' : pct >= 60 ? 'var(--black)' : '#b45309'
 
   // ── Display values ─────────────────────────────────────────────────────────
@@ -269,10 +270,11 @@ export default async function PerfilPage() {
             </div>
 
             {/* Progress */}
+            {mostrarBarra && (
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
                 <span style={{ fontSize: '12px', color: '#444444', fontFamily: 'var(--sans)' }}>
-                  {completedCount} de {applicable.length} bloque{applicable.length !== 1 ? 's' : ''} completado{completedCount !== 1 ? 's' : ''}
+                  Perfil completo al
                   {soonCount > 0 && (
                     <span style={{ color: 'var(--muted)', marginLeft: '8px' }}>· {soonCount} próximamente</span>
                   )}
@@ -281,10 +283,11 @@ export default async function PerfilPage() {
                   {pct}%
                 </span>
               </div>
-              <div style={{ height: '6px', borderRadius: '3px', background: 'var(--off)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+              <div role="progressbar" aria-label="Perfil completo" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} style={{ height: '6px', borderRadius: '3px', background: 'var(--off)', border: '1px solid var(--border)', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: '3px', transition: 'width 0.4s ease' }} />
               </div>
             </div>
+            )}
           </div>
 
           {/* ── Aviso: qué falta para salir en el directorio ───────────────── */}
