@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const NAV_SECTIONS = [
   {
@@ -40,6 +42,7 @@ const NAV_SECTIONS = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const sinLeer = useSinLeer(pathname)
 
   return (
     <aside className="sidebar">
@@ -56,10 +59,33 @@ export default function Sidebar() {
                 {item.icon}
               </span>
               {item.label}
+              {item.href === '/perfil/mensajes' && sinLeer > 0 && (
+                <span className="sid-contador" aria-label={`${sinLeer} sin leer`}>{sinLeer > 99 ? '99+' : sinLeer}</span>
+              )}
             </Link>
           ))}
         </div>
       ))}
     </aside>
   )
+}
+
+/**
+ * Mensajes sin leer (Fase 3 de la red). Se consulta al cambiar de página y
+ * cada minuto mientras la pestaña está visible. Sin sesión, 0.
+ */
+function useSinLeer(pathname: string): number {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    let vivo = true
+    const leer = async () => {
+      if (document.visibilityState !== 'visible') return
+      const { data, error } = await createClient().rpc('mensajes_sin_leer')
+      if (vivo && !error) setN(typeof data === 'number' ? data : 0)
+    }
+    void leer()
+    const t = setInterval(leer, 60000)
+    return () => { vivo = false; clearInterval(t) }
+  }, [pathname])
+  return n
 }
