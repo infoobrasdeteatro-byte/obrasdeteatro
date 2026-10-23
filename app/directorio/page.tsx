@@ -7,7 +7,7 @@ import type { Database } from '@/types/supabase'
 import { COUNTRIES } from '@/lib/geo/countries'
 import FiltrosDirectorio from './FiltrosDirectorio'
 import TopNav from '@/components/design-system/TopNav'
-import { textoProfesiones, TIPOS_PERSONA } from '@/lib/perfiles/profesiones'
+import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO } from '@/lib/perfiles/profesiones'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
 
@@ -177,9 +177,10 @@ export default async function DirectorioPage({ searchParams }: Props) {
   const profileIds = perfilesRaw.map(p => p.id)
   const specMap = new Map<string, { specialty: string; is_primary: boolean }[]>()
   const availMap = new Map<string, { estado: string; nota: string | null }>()
+  const equipo = new Set<string>()
 
   if (profileIds.length > 0) {
-    const [specsResult, availResult] = await Promise.all([
+    const [specsResult, availResult, rolesResult] = await Promise.all([
       supabase
         .from('profile_specialties')
         .select('profile_id, specialty, is_primary')
@@ -188,7 +189,13 @@ export default async function DirectorioPage({ searchParams }: Props) {
         .from('profile_availability')
         .select('profile_id, estado, nota')
         .in('profile_id', profileIds),
+      supabase
+        .from('profile_roles')
+        .select('profile_id')
+        .eq('role', 'admin')
+        .in('profile_id', profileIds),
     ])
+    for (const r of (rolesResult.data ?? [])) equipo.add(r.profile_id)
     for (const s of (specsResult.data ?? [])) specMap.set(s.profile_id, [...(specMap.get(s.profile_id) ?? []), s])
     for (const a of (availResult.data ?? [])) {
       availMap.set(a.profile_id, { estado: a.estado as string, nota: a.nota as string | null })
@@ -389,7 +396,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
               const nombrePublico = perfil.nombre_artistico || perfil.nombre
               const inicial = (nombrePublico ?? '?').charAt(0).toUpperCase()
               const esPersona = (TIPOS_PERSONA as readonly string[]).includes(perfil.tipo_perfil)
-              const label = esPersona
+              const label = equipo.has(perfil.id) ? ETIQUETA_EQUIPO : esPersona
                 ? (textoProfesiones(specMap.get(perfil.id) ?? []) ?? 'Profesional de las artes escénicas')
                 : (TIPO_PERFIL_LABEL[perfil.tipo_perfil] ?? perfil.tipo_perfil)
               const flag = getFlag(perfil.country_code)

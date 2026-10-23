@@ -81,3 +81,6 @@ export const TIPOS_ORGANIZACION = [
 ] as const
 
 export const TIPOS_REGISTRO = ['profesional', 'publico', ...TIPOS_ORGANIZACION.map(t => t.value)] as const
+
+/** Etiqueta de los perfiles del equipo (rol admin) en directorio y ficha. */
+export const ETIQUETA_EQUIPO = 'Equipo ObrasDeTeatro®'
