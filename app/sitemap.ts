@@ -2,11 +2,13 @@ import type { MetadataRoute } from 'next'
 import { SITIO } from '@/lib/convocatorias/resumen-semanal'
 import { espaciosPublicados } from '@/lib/espacios/datos'
 import { municipiosConEspacios, rutaFicha, rutaMunicipio } from '@/lib/espacios/espacios'
+import { perfilesPublicos } from '@/lib/perfiles/publicos'
 
 /**
  * /sitemap.xml. Hasta ahora el proyecto no tenía sitemap; nace con la
  * portada y el catálogo de espacios escénicos (buscador, fichas publicadas y
- * páginas por municipio con al menos un espacio publicado). El resto de
+ * páginas por municipio con al menos un espacio publicado), y después los
+ * perfiles públicos (/perfil/[slug]). El resto de
  * secciones se añadirán aquí cuando Dirección lo decida.
  *
  * Si la lectura falla (o la tabla aún no existe, durante el build de un
@@ -16,7 +18,7 @@ import { municipiosConEspacios, rutaFicha, rutaMunicipio } from '@/lib/espacios/
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const espacios = await espaciosPublicados()
+  const [espacios, perfiles] = await Promise.all([espaciosPublicados(), perfilesPublicos()])
 
   return [
     { url: SITIO, changeFrequency: 'daily', priority: 1 },
@@ -30,6 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITIO}${rutaFicha(e.slug)}`,
       changeFrequency: 'monthly' as const,
       priority: 0.5,
+    })),
+    ...perfiles.map(p => ({
+      url: `${SITIO}/perfil/${encodeURIComponent(p.slug)}`,
+      ...(p.updated_at ? { lastModified: p.updated_at } : {}),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
     })),
   ]
 }
