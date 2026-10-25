@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { sendWelcomeEmail } from '@/lib/email/welcome-email'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE } from '@/lib/auth/next-param'
+import { COOKIE_REFERIDO, codigoValido } from '@/lib/embajadores/textos'
 
 /**
  * AEC-001: tras un intercambio de código/OTP exitoso, esta es la confirmación
@@ -38,7 +39,19 @@ function redirigirTrasConfirmar(request: NextRequest, origin: string): NextRespo
   const destino = safeNextPath(request.cookies.get(NEXT_TRAS_REGISTRO_COOKIE)?.value) ?? '/auth/update-password'
   const respuesta = NextResponse.redirect(`${origin}${destino}`)
   respuesta.cookies.delete(NEXT_TRAS_REGISTRO_COOKIE)
+  respuesta.cookies.delete(COOKIE_REFERIDO)
   return respuesta
+}
+
+/**
+ * Embajadores de Escena: si la persona llegó con el enlace personal de un/a
+ * embajador/a, se canjea su mes de Premium. Las reglas (solo cuentas nuevas,
+ * una vez por persona) las aplica canjear_referido. Un fallo no bloquea.
+ */
+async function canjearReferido(request: NextRequest, supabase: Awaited<ReturnType<typeof createClient>>): Promise<void> {
+  const codigo = codigoValido(request.cookies.get(COOKIE_REFERIDO)?.value)
+  if (!codigo) return
+  try { await supabase.rpc('canjear_referido', { p_codigo: codigo }) } catch { /* no bloquea la confirmación */ }
 }
 
 export async function GET(request: NextRequest) {
@@ -54,6 +67,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
+      await canjearReferido(request, supabase)
       return redirigirTrasConfirmar(request, origin)
     }
   }
@@ -63,6 +77,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
+      await canjearReferido(request, supabase)
       return redirigirTrasConfirmar(request, origin)
     }
   }

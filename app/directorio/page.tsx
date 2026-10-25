@@ -13,6 +13,7 @@ import { COUNTRIES } from '@/lib/geo/countries'
 import FiltrosDirectorio from './FiltrosDirectorio'
 import TopNav from '@/components/design-system/TopNav'
 import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO } from '@/lib/perfiles/profesiones'
+import { tituloEmbajador } from '@/lib/embajadores/textos'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
 
@@ -222,6 +223,13 @@ export default async function DirectorioPage({ searchParams }: Props) {
   const totalPages = Math.ceil(total / PER_PAGE)
   const offset = (pageNum - 1) * PER_PAGE
   const perfilesPagina = sorted.slice(offset, offset + PER_PAGE)
+
+  // Embajadores de Escena: distintivo en la tarjeta (en lugar de «Destacado»).
+  const embajadores = new Map<string, string | null>()
+  if (perfilesPagina.length > 0) {
+    const { data: emb } = await supabase.rpc('embajadores_activos', { p_perfiles: perfilesPagina.map(p => p.id) })
+    for (const e of emb ?? []) embajadores.set(e.profile_id, e.genero)
+  }
 
   // PP2-E.3B: aparición de cada tarjeta mostrada (no para bots). Después de responder.
   if (perfilesPagina.length > 0 && !esBot((await headers()).get('user-agent'))) {
@@ -446,12 +454,15 @@ export default async function DirectorioPage({ searchParams }: Props) {
                       <h2 className="dir2-name">{nombrePublico}</h2>
                       {ubicacion   && <p className="dir2-loc">{ubicacion}</p>}
 
-                      {(perfil.verificado_profesional || isPlan) && (
+                      {(perfil.verificado_profesional || isPlan || embajadores.has(perfil.id)) && (
                         <div className="dir2-badges">
                           {perfil.verificado_profesional && (
                             <span className="dir2-badge dir2-badge--verificado">✓ Verificado</span>
                           )}
-                          {perfil.plan === 'destacado' && (
+                          {embajadores.has(perfil.id) && (
+                            <span className="dir2-badge dir2-badge--embajador">{tituloEmbajador(embajadores.get(perfil.id))}</span>
+                          )}
+                          {perfil.plan === 'destacado' && !embajadores.has(perfil.id) && (
                             <span className="dir2-badge dir2-badge--plan">Destacado</span>
                           )}
                           {perfil.plan === 'empresas' && (

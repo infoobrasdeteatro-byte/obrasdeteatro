@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { planConCortesia } from '@/lib/embajadores/plan-efectivo'
 
 function getServiceClient() {
   return createClient(
@@ -28,8 +30,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     updated_at: now,
   }, { onConflict: 'profile_id' })
 
+  // Embajadores de Escena: nunca por debajo de una membresía de cortesía activa.
+  const efectivo = await planConCortesia(supabase as unknown as SupabaseClient, userId, plan)
   await supabase.from('profiles')
-    .update({ plan, is_premium: plan !== 'gratuito', updated_at: now })
+    .update({ plan: efectivo, is_premium: efectivo !== 'gratuito', updated_at: now })
     .eq('id', userId)
 }
 
@@ -49,8 +53,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .single()
 
   if (data?.profile_id) {
+    // Si tiene una membresía de cortesía activa, conserva ese plan hasta que termine.
+    const efectivo = await planConCortesia(supabase as unknown as SupabaseClient, data.profile_id, 'gratuito')
     await supabase.from('profiles')
-      .update({ plan: 'gratuito', is_premium: false, updated_at: now })
+      .update({ plan: efectivo, is_premium: efectivo !== 'gratuito', updated_at: now })
       .eq('id', data.profile_id)
   }
 }
@@ -116,16 +122,19 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const revokesAccess = status === 'canceled' || status === 'unpaid' || status === 'incomplete_expired'
 
   if (grantsAccess && plan) {
+    const efectivo = await planConCortesia(supabase as unknown as SupabaseClient, subRow.profile_id, plan)
     const { error } = await supabase.from('profiles')
-      .update({ plan, is_premium: true })
+      .update({ plan: efectivo, is_premium: true })
       .eq('id', subRow.profile_id)
     if (error) {
       console.error('Error sincronizando profile (grant):', error)
       throw error
     }
   } else if (revokesAccess) {
+    // Embajadores de Escena: con cortesía activa, conserva ese plan hasta que termine.
+    const efectivo = await planConCortesia(supabase as unknown as SupabaseClient, subRow.profile_id, 'gratuito')
     const { error } = await supabase.from('profiles')
-      .update({ plan: 'gratuito', is_premium: false })
+      .update({ plan: efectivo, is_premium: efectivo !== 'gratuito' })
       .eq('id', subRow.profile_id)
     if (error) {
       console.error('Error sincronizando profile (revoke):', error)

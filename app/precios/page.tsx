@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import PreciosClient from './PreciosClient'
+import { tituloEmbajador } from '@/lib/embajadores/textos'
 import { PLANES, type CellValue } from '@/lib/plans'
 import { getUsageLimit } from '@/lib/repository-layer'
 import { parseAuthorizedLimit } from '@/lib/credit-manager/parse-authorized-limit'
@@ -33,6 +34,7 @@ export default async function PreciosPage({
   const params = await searchParams
 
   let currentPlan: string | null = null
+  let cortesia: { plan: string; hasta: string; titulo: string } | null = null
 
   if (user) {
     const { data: profile } = await supabase
@@ -42,6 +44,16 @@ export default async function PreciosPage({
       .single()
 
     currentPlan = profile?.plan ?? 'gratuito'
+
+    // Embajadores de Escena / invitación: la membresía de cortesía activa.
+    const { data: c } = await supabase.rpc('mi_cortesia')
+    const fila = c?.[0]
+    if (fila?.activa) {
+      cortesia = {
+        plan: fila.plan, hasta: fila.hasta,
+        titulo: fila.tipo === 'embajador' ? tituloEmbajador(fila.genero) : 'Premium por invitación',
+      }
+    }
   }
 
   return (
@@ -49,6 +61,7 @@ export default async function PreciosPage({
       userId={user?.id ?? null}
       userEmail={user?.email ?? null}
       currentPlan={currentPlan}
+      cortesia={cortesia}
       cancelled={!!params.cancelled}
       cuotasIA={PLANES.map(p => cuotaIATexto(p.id))}
     />

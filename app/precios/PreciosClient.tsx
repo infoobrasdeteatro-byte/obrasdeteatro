@@ -12,12 +12,16 @@ interface Props {
   userId: string | null
   userEmail: string | null
   currentPlan: string | null
+  /** Membresía de cortesía activa (Embajadores de Escena o invitación). */
+  cortesia?: { plan: string; hasta: string; titulo: string } | null
   cancelled: boolean
   /** Cuota real de IA por plan, en el orden de PLANES (fila `cuotaIA` de la tabla). */
   cuotasIA: CellValue[]
 }
 
-export default function PreciosClient({ userId, userEmail, currentPlan, cancelled, cuotasIA }: Props) {
+export default function PreciosClient({ userId, userEmail, currentPlan, cancelled, cuotasIA, cortesia = null }: Props) {
+  const RANGO: Record<string, number> = { gratuito: 0, premium: 1, destacado: 2, empresas: 3 }
+  const hastaCortesia = cortesia ? new Date(cortesia.hasta).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -158,7 +162,11 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                   ))}
                 </div>
 
-                {isCurrent ? (
+                {cortesia && plan.id === cortesia.plan ? (
+                  <div className="precios-card-current">{cortesia.titulo} · hasta el {hastaCortesia}</div>
+                ) : cortesia && plan.id !== 'gratuito' && (RANGO[plan.id] ?? 0) < (RANGO[cortesia.plan] ?? 0) ? (
+                  <div className="precios-card-current">Incluido en tu membresía</div>
+                ) : isCurrent ? (
                   <div className="precios-card-current">Plan actual</div>
                 ) : !isAuthenticated ? (
                   <Link

@@ -3345,6 +3345,21 @@ export type Database = {
         }
         Relationships: []
       }
+      membresias_cortesia: {
+        Row: {
+          profile_id: string; tipo: string; plan: string; desde: string; hasta: string; genero: string | null; oficio: string | null
+          invitacion_id: string | null; codigo_referido: string | null; referido_por: string | null; renunciada_at: string | null; procesada: boolean
+        }
+        Insert: {
+          profile_id: string; tipo: string; plan: string; desde?: string; hasta: string; genero?: string | null; oficio?: string | null
+          invitacion_id?: string | null; codigo_referido?: string | null; referido_por?: string | null; renunciada_at?: string | null; procesada?: boolean
+        }
+        Update: {
+          profile_id?: string; tipo?: string; plan?: string; desde?: string; hasta?: string; genero?: string | null; oficio?: string | null
+          invitacion_id?: string | null; codigo_referido?: string | null; referido_por?: string | null; renunciada_at?: string | null; procesada?: boolean
+        }
+        Relationships: []
+      }
       conexiones: {
         Row: {
           created_at: string
@@ -4643,6 +4658,16 @@ export type Database = {
         Returns: { visitas_30: number; visitas_prev: number; apariciones_30: number; apariciones_prev: number; desde: string | null }[]
       }
       mis_visitas_por_mes: { Args: never; Returns: { mes: string; visitas: number }[] }
+      invitacion_publica: { Args: { p_token: string }; Returns: { nombre: string; genero: string; oficio: string; estado: string }[] }
+      aceptar_invitacion_embajador: { Args: { p_token: string }; Returns: string }
+      canjear_referido: { Args: { p_codigo: string }; Returns: string }
+      renunciar_cortesia: { Args: never; Returns: boolean }
+      mi_cortesia: {
+        Args: never
+        Returns: { tipo: string; plan: string; hasta: string; genero: string | null; codigo_referido: string | null; activa: boolean; referidos: number }[]
+      }
+      embajadores_activos: { Args: { p_perfiles: string[] }; Returns: { profile_id: string; genero: string | null }[] }
+      plan_tras_cortesia: { Args: { p_perfil: string }; Returns: string }
       bloquear: { Args: { p_perfil: string }; Returns: boolean | null }
       desbloquear: { Args: { p_perfil: string }; Returns: boolean | null }
       reclamar_aviso_mensaje: { Args: { p_conversacion: string }; Returns: string | null }

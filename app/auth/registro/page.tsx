@@ -48,8 +48,13 @@ export default function RegistroPage() {
   // Ruta de vuelta tras confirmar el email (p. ej. /precios), ya validada.
   const [next, setNext] = useState<string | null>(null)
 
+  // Llega desde el enlace personal de un/a Embajador/a de Escena (/r/<código>).
+  const [invitado, setInvitado] = useState(false)
+
   useEffect(() => {
-    setNext(safeNextPath(new URLSearchParams(window.location.search).get('next')))
+    const p = new URLSearchParams(window.location.search)
+    setNext(safeNextPath(p.get('next')))
+    setInvitado(p.get('invitado') === '1')
   }, [])
 
   const turnstileContainer = useRef<HTMLDivElement>(null)
@@ -167,6 +172,11 @@ export default function RegistroPage() {
       <div className="auth-card">
         <h1 className="auth-title">Crear cuenta</h1>
         <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
+        {invitado && (
+          <p className="ds-alert-success" style={{ marginBottom: '14px', fontSize: '13px', lineHeight: 1.5 }}>
+            Vienes invitado/a por un/a Embajador/a de Escena: al confirmar tu cuenta tendrás <strong>un mes de Premium gratis</strong>, sin tarjeta.
+          </p>
+        )}
         <form onSubmit={handleRegistro} className="auth-form">
           <div className="hp-field" aria-hidden="true">
             <label htmlFor="website">No rellenar este campo</label>

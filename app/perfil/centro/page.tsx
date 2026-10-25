@@ -5,6 +5,7 @@ import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import AlertasConvocatorias from './AlertasConvocatorias'
 import { variacion } from '@/lib/red/visitas'
+import TarjetaCortesia from '@/components/embajadores/TarjetaCortesia'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -26,7 +27,8 @@ const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'O
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default async function CentroProfesionalPage() {
+export default async function CentroProfesionalPage({ searchParams }: { searchParams: Promise<{ embajador?: string }> }) {
+  const { embajador: bienvenidaEmbajador } = await searchParams
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -46,6 +48,7 @@ export default async function CentroProfesionalPage() {
     { data: disciplinasCasting },
     { data: estadisticasDb },
     { data: visitasMesDb },
+    { data: cortesiaDb },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -95,7 +98,10 @@ export default async function CentroProfesionalPage() {
     // PP2-E.3B: visitas y apariciones (solo las del titular).
     supabase.rpc('mis_estadisticas_perfil'),
     supabase.rpc('mis_visitas_por_mes'),
+    // Embajadores de Escena: membresía de cortesía (solo la propia).
+    supabase.rpc('mi_cortesia'),
   ])
+  const cortesia = cortesiaDb?.[0]?.activa ? cortesiaDb[0] : null
 
   // ── Phase 2: mutual follows (requires follower list from Phase 1) ──────────
   const followerList = followers ?? []
@@ -219,6 +225,11 @@ export default async function CentroProfesionalPage() {
               <p style={{ fontSize: '13px', color: 'var(--muted)', fontFamily: 'var(--sans)' }}>{nombre}</p>
             )}
           </div>
+
+          {cortesia && (
+            <TarjetaCortesia tipo={cortesia.tipo} plan={cortesia.plan} hasta={cortesia.hasta} genero={cortesia.genero}
+              codigo={cortesia.codigo_referido} referidos={cortesia.referidos} bienvenida={bienvenidaEmbajador === '1'} />
+          )}
 
           {/* ═══════════════════════════════════════════════════════════════
               MÓDULO I — IMPACTO PROFESIONAL

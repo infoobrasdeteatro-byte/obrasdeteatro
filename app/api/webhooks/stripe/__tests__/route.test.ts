@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ── Stripe: constructEvent devuelve el evento que prepara cada test ─────────
 const mockConstructEvent = vi.fn()
@@ -13,6 +13,8 @@ const mockSubscriptionsUpdate = vi.fn()
 const mockSubscriptionsMaybeSingle = vi.fn()
 const mockProfilesUpdate = vi.fn()
 const mockProfilesEq = vi.fn()
+// Embajadores de Escena: membresía de cortesía activa (por defecto, ninguna).
+const mockCortesia = vi.fn(() => ({ data: null as { plan: string } | null }))
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
     from: (table: string) => {
@@ -35,6 +37,10 @@ vi.mock('@supabase/supabase-js', () => ({
             return { eq: mockProfilesEq }
           },
         }
+      }
+      if (table === 'membresias_cortesia') {
+        const q = { select: () => q, eq: () => q, gt: () => q, is: () => q, maybeSingle: () => Promise.resolve(mockCortesia()) }
+        return q
       }
       throw new Error(`Tabla inesperada: ${table}`)
     },
@@ -246,5 +252,35 @@ describe('POST /api/webhooks/stripe — customer.subscription.updated', () => {
 
     expect(res.status).toBe(500)
     expect(mockProfilesUpdate).not.toHaveBeenCalled()
+  })
+})
+
+describe('Embajadores de Escena: el webhook no baja una membresía de cortesía', () => {
+  afterEach(() => { mockCortesia.mockReturnValue({ data: null }) })
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockSubscriptionsMaybeSingle.mockResolvedValue({ data: { profile_id: PROFILE_ID }, error: null })
+    mockProfilesEq.mockResolvedValue({ error: null })
+  })
+
+  it('al cancelar la suscripción, conserva el plan de cortesía', async () => {
+    mockCortesia.mockReturnValue({ data: { plan: 'destacado' } })
+    mockConstructEvent.mockReturnValue(subscriptionUpdated({ status: 'canceled' }))
+    await POST(fakeRequest())
+    expect(mockProfilesUpdate).toHaveBeenCalledWith({ plan: 'destacado', is_premium: true })
+  })
+
+  it('al contratar un plan inferior, conserva el de cortesía', async () => {
+    mockCortesia.mockReturnValue({ data: { plan: 'destacado' } })
+    mockConstructEvent.mockReturnValue(subscriptionUpdated({ priceId: 'price_premium_test', status: 'active' }))
+    await POST(fakeRequest())
+    expect(mockProfilesUpdate).toHaveBeenCalledWith({ plan: 'destacado', is_premium: true })
+  })
+
+  it('un plan superior de pago sí se aplica', async () => {
+    mockCortesia.mockReturnValue({ data: { plan: 'destacado' } })
+    mockConstructEvent.mockReturnValue(subscriptionUpdated({ priceId: 'price_empresas_test', status: 'active' }))
+    await POST(fakeRequest())
+    expect(mockProfilesUpdate).toHaveBeenCalledWith({ plan: 'empresas', is_premium: true })
   })
 })
