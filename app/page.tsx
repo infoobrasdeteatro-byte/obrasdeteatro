@@ -80,7 +80,7 @@ export default async function Home() {
       <CintaLogo />
 
       {/* ── EN CARTEL: al final, después de lo profesional (solo si hay espectáculos) ── */}
-      <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} destacados={cartel.destacados} />
+      <FranjaEnCartel fichas={cartel.fichas} entradas={cartel.entradas} ahora={ahora} destacados={cartel.destacados} anteriores={cartel.anteriores} />
 
       {/* ── FOOTER ── */}
     </>
