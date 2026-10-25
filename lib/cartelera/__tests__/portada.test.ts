@@ -32,3 +32,27 @@ describe('franja «En cartel» de la portada', () => {
     expect(r.fichas).toEqual([])
   })
 })
+
+describe('franja de la portada sin funciones próximas', async () => {
+  const { renderToStaticMarkup } = await import('react-dom/server')
+  const { createElement } = await import('react')
+  const { default: FranjaEnCartel } = await import('@/components/cartelera/FranjaEnCartel')
+
+  it('no desaparece: enseña los anteriores como «Función pasada» y la invitación a publicar', () => {
+    const html = renderToStaticMarkup(createElement(FranjaEnCartel, {
+      fichas: [], entradas: new Map(), ahora: Date.parse('2026-10-25T08:00:00Z'),
+      anteriores: [{ id: 'g', slug: 'el-metodo', titulo: 'El Método', cartel_url: null, genero_id: 'teatro', ultima: '2026-10-24T23:30:00Z', ciudades: ['Caracas'] }],
+    }))
+    expect(html).toContain('Cartelera')
+    expect(html).toContain('no hay funciones próximas')
+    expect(html).toContain('FUNCIÓN PASADA')
+    expect(html).toContain('/cartelera/el-metodo')
+    expect(html).not.toContain('Entradas')
+    expect(html).toContain('Publica tu espectáculo gratis')
+  })
+
+  it('sin anteriores ni próximas, queda la invitación a publicar', () => {
+    const html = renderToStaticMarkup(createElement(FranjaEnCartel, { fichas: [], entradas: new Map(), ahora: 0 }))
+    expect(html).toContain('Publica tu espectáculo gratis')
+  })
+})

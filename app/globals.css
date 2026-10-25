@@ -3146,6 +3146,7 @@ a.eco-stat-card { display: block; }
 /* ═══════════════════════════════════════════════════
    EN CARTEL — franja de la portada
 ═══════════════════════════════════════════════════ */
+.cart-card--pasada .cart-poster img { filter: grayscale(0.6); opacity: 0.85; }
 .home-cartel { background: var(--off); border-bottom: 1px solid var(--border); padding: 56px 24px 48px; }
 .home-cartel-inner { max-width: 1180px; margin: 0 auto; }
 .home-cartel-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
