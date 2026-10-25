@@ -24,6 +24,7 @@ import CompartirPerfil from './CompartirPerfil'
 import { motivoEscribir, textoNoPuede } from '@/lib/mensajes/mensajes'
 import IconoContacto from '@/components/perfil/IconoContacto'
 import { textoActividad } from '@/lib/red/actividad'
+import { tituloEmbajador } from '@/lib/embajadores/textos'
 import { estadoContacto } from '@/lib/red/contacto'
 import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
@@ -207,6 +208,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: conexionDb },
     { data: actividadDb },
     { data: escribirDb },
+    { data: embajadorDb },
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -255,7 +257,10 @@ export default async function PerfilPublicoPage({ params }: Props) {
     (user && !isOwner)
       ? supabase.rpc('puede_escribir', { p_perfil: profile.id })
       : Promise.resolve({ data: null }),
+    // Embajadores de Escena: distintivo público.
+    supabase.rpc('embajadores_activos', { p_perfiles: [profile.id] }),
   ])
+  const embajador = embajadorDb?.[0] ?? null
   const motivoMensaje = escribirDb ? motivoEscribir(escribirDb) : null
   const actividad = textoActividad(actividadDb)
   const contacto = contactoDb?.[0] ?? null
@@ -485,7 +490,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
                 </div>
               )}
 
-              {(isVerificado || planBadge) && (
+              {(isVerificado || planBadge || embajador) && (
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
                   {isVerificado && (
                     <span style={{
@@ -496,7 +501,10 @@ export default async function PerfilPublicoPage({ params }: Props) {
                       ✓ Verificado
                     </span>
                   )}
-                  {planBadge && (
+                  {embajador && (
+                    <span className="prof-badge-embajador">{tituloEmbajador(embajador.genero)}</span>
+                  )}
+                  {planBadge && !embajador && (
                     <span style={{
                       fontSize: '11px', fontWeight: 600, fontFamily: 'var(--sans)',
                       color: 'var(--black)', background: 'var(--subtle)',
