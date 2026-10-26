@@ -94,7 +94,7 @@ export default async function CastingsPublicoPage({ searchParams }: Props) {
             </div>
 
             <span className="ds-label">Categorías</span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+            <div className="cast-filtro-cats">
               {(categorias ?? []).map(c => (
                 <label key={c.id} htmlFor={`f-${c.id}`}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>

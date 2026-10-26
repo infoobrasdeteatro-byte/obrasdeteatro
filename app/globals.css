@@ -723,9 +723,9 @@ body {
 .account-dt { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
 .account-dd { font-size: 14px; font-weight: 500; color: var(--black); }
 .account-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0 0; }
-.account-slug-row { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; }
+.account-slug-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; padding-top: 12px; }
 .account-slug-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 2px; }
-.account-slug-url { font-family: monospace; font-size: 13px; color: var(--text); }
+.account-slug-url { font-family: monospace; font-size: 13px; color: var(--text); overflow-wrap: anywhere; }
 .plan-badge {
   display: inline-block; font-size: 11px; font-weight: 600;
   padding: 3px 10px; border-radius: 20px;
@@ -911,6 +911,11 @@ body {
   font-size: 12px; color: var(--muted); text-decoration: none;
 }
 .site-footer-legal a:hover { color: var(--black); text-decoration: underline; }
+/* Móvil: más superficie para pulsar los enlaces legales con el dedo. */
+@media (max-width: 640px) {
+  .site-footer-legal a { display: inline-block; padding: 7px 0; }
+  .site-footer-grupo { gap: 0 18px; }
+}
 .site-footer-grupo { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 
 /* ═══════════════════════════════════════════════════
@@ -2985,8 +2990,19 @@ a.eco-stat-card { display: block; }
 .cart-ubicacion summary { cursor: pointer; color: var(--red); font-weight: 500; list-style: none; }
 .cart-ubicacion summary::-webkit-details-marker { display: none; }
 .cart-ubicacion-panel { position: absolute; z-index: 50; top: 28px; left: 0; width: min(420px, 86vw); max-height: 420px; overflow: auto; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; }
+/* Móvil: el panel se ancla al bloque de ubicación (no al enlace, que está a la derecha) para no salirse de la pantalla. */
+@media (max-width: 640px) {
+  .cart-ubicacion { position: relative; }
+  .cart-ubicacion details { position: static; }
+  .cart-ubicacion-panel { top: calc(100% + 6px); width: min(420px, calc(100vw - 48px)); }
+}
 .cart-ubicacion-panel h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 10px 0 6px; font-weight: 600; }
 .cart-buscar { display: flex; gap: 8px; }
+/* Castings: categorías del filtro; en móvil, a dos columnas para que los resultados aparezcan antes. */
+.cast-filtro-cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 640px) {
+  .cast-filtro-cats { grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+}
 .cart-buscar input { min-width: 220px; }
 
 .cart-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }

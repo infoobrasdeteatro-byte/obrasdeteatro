@@ -141,7 +141,7 @@ export default async function DashboardPage({
           {profile?.slug && (
             <div className="account-card" style={{ marginBottom: '20px' }}>
               <div className="account-slug-row" style={{ padding: 0 }}>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div className="account-slug-label">URL pública de tu perfil</div>
                   <div className="account-slug-url">obrasdeteatro.com/perfil/{profile.slug}</div>
                 </div>

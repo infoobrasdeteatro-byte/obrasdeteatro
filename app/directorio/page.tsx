@@ -299,7 +299,6 @@ export default async function DirectorioPage({ searchParams }: Props) {
             fontSize: 'clamp(26px, 3.5vw, 40px)',
             color: 'var(--black)', letterSpacing: '-0.6px',
             lineHeight: 1.1, marginBottom: '12px',
-            textTransform: 'capitalize',
           }}>
             {h1}
           </h1>
