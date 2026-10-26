@@ -11,10 +11,14 @@ describe('textos de Embajadores de Escena', () => {
 
   it('mensaje para quien no conoce el proyecto: oficio, cortesía y enlace; sin precio ni otros invitados', () => {
     const m = mensajeWhatsapp({ nombre: 'Blanca Pérez', genero: 'f', oficio: 'dramaturgia', token: 'abc', version: 'nuevo' })
-    expect(m.startsWith('Hola, Blanca.')).toBe(true)
+    expect(m.startsWith('Hola, Blanca:')).toBe(true)
+    expect(m).toContain('Tu trayectoria como dramaturga es un referente')
+    expect(m).toContain('Como Embajadora tendrás')
+    expect(m).toContain('un distintivo en tu perfil que reconoce tu carrera')
+    expect(m.endsWith('Será un honor contar contigo.\nUn abrazo,\nRenee Bausson')).toBe(true)
     expect(m).toContain('estrenarlas, adaptarlas o programarlas')
     expect(m).toContain('*Embajadora de Escena*')
-    expect(m).toContain('sin tarjeta y sin compromiso.')
+    expect(m).toContain('sin tarjeta y sin compromiso, y un distintivo')
     expect(m).toContain('https://www.obrasdeteatro.com/invitacion/abc')
     expect(m).not.toMatch(/€|50|renovación/)
   })
@@ -22,7 +26,11 @@ describe('textos de Embajadores de Escena', () => {
   it('mensaje corto para quien ya lo conoce', () => {
     const m = mensajeWhatsapp({ nombre: 'Juan', genero: 'm', oficio: 'direccion', token: 't', version: 'conoce' })
     expect(m).toContain('*Embajador de Escena*')
+    expect(m).toContain('Por tu trayectoria como director,')
     expect(m).not.toContain('productoras, salas y festivales buscan')
+    expect(m).not.toContain('Soy Renee Bausson')
+    expect(m).toContain('Renee Bausson')
+    expect(m).not.toMatch(/€|50|renovación/)
   })
 
   it('enlace de WhatsApp: al número con prefijo, o para elegir contacto', () => {

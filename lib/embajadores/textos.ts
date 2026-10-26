@@ -83,25 +83,34 @@ export function enlaceReferido(codigo: string): string {
   return `${SITIO}/r/${codigo}`
 }
 
-/** Mensaje de WhatsApp. 'conoce': ya conoce el proyecto; 'nuevo': no lo conoce. */
+/**
+ * Mensaje de WhatsApp. 'conoce': ya conoce el proyecto (corto); 'nuevo': no
+ * lo conoce (presenta la plataforma con la frase de su oficio). Pone en primer
+ * plano su trayectoria y firma Renee Bausson.
+ */
 export function mensajeWhatsapp(opts: { nombre: string; genero: Genero; oficio: Oficio; token: string; version: 'conoce' | 'nuevo' }): string {
   const nombre = opts.nombre.trim().split(/\s+/)[0] || opts.nombre.trim()
   const titulo = tituloEmbajador(opts.genero)
+  const rol = opts.genero === 'f' ? 'Embajadora' : 'Embajador'
+  const persona = oficioPersona(opts.oficio, opts.genero)
   const enlace = enlaceInvitacion(opts.token)
+  const firma = 'Será un honor contar contigo.\nUn abrazo,\nRenee Bausson'
   if (opts.version === 'conoce') {
     return [
-      `Hola, ${nombre}. Soy Renee Bausson, fundador de ObrasDeTeatro®.`,
-      `Por tu trayectoria, me gustaría invitarte a formar parte de ObrasDeTeatro® como *${titulo}*: un año de membresía Destacado por cortesía nuestra, sin tarjeta y sin compromiso.`,
-      `Puedes aceptar la invitación aquí: ${enlace}`,
-      'Un abrazo.',
+      `Hola, ${nombre}:`,
+      `Por tu trayectoria como ${persona}, me gustaría invitarte personalmente a formar parte de *ObrasDeTeatro®* como *${titulo}*: un año de membresía Destacado por cortesía nuestra, sin tarjeta y sin compromiso, y un distintivo en tu perfil que reconoce tu carrera.`,
+      `Puedes aceptar la invitación aquí:\n${enlace}`,
+      firma,
     ].join('\n\n')
   }
   return [
-    `Hola, ${nombre}. Soy Renee Bausson, fundador de *ObrasDeTeatro®*, la plataforma profesional del teatro en español en los 20 países de habla hispana.`,
+    `Hola, ${nombre}:`,
+    'Soy Renee Bausson, fundador de *ObrasDeTeatro®*, la plataforma profesional del teatro en español en los 20 países de habla hispana.',
+    `Tu trayectoria como ${persona} es un referente en nuestra profesión, y por eso me gustaría invitarte personalmente a formar parte de ella como *${titulo}*.`,
     FRASE_OFICIO[opts.oficio],
-    `Por tu trayectoria, me gustaría invitarte a formar parte de ObrasDeTeatro® como *${titulo}*: un año de membresía Destacado por cortesía nuestra, sin tarjeta y sin compromiso.`,
-    `Aquí tienes los detalles y puedes aceptar la invitación: ${enlace}`,
-    'Un abrazo.',
+    `Como ${rol} tendrás un año de membresía Destacado por cortesía nuestra, sin tarjeta y sin compromiso, y un distintivo en tu perfil que reconoce tu carrera.`,
+    `Aquí tienes los detalles y puedes aceptar la invitación:\n${enlace}`,
+    firma,
   ].join('\n\n')
 }
 
@@ -135,6 +144,16 @@ export function mensajeColegas(enlace: string): string {
   return `Te invito a ObrasDeTeatro®, la plataforma profesional del teatro en español. Con mi enlace tienes un mes de Premium gratis, sin tarjeta: ${enlace}`
 }
 export const ASUNTO_COLEGAS = 'Te invito a ObrasDeTeatro®'
+
+/** Vista previa (Open Graph) de los enlaces de invitación, al compartirlos. */
+export const VISTA_PREVIA_INVITACION = {
+  titulo: 'Invitación personal · Embajadores de Escena',
+  descripcion: 'ObrasDeTeatro®, la plataforma profesional del teatro en español en los 20 países de habla hispana.',
+}
+export const VISTA_PREVIA_REFERIDO = {
+  titulo: 'Te invitan a ObrasDeTeatro® · Un mes de Premium gratis',
+  descripcion: 'La plataforma profesional del teatro en español en los 20 países de habla hispana. Sin tarjeta.',
+}
 
 /** Cookie del código de referido entre el enlace y la confirmación del correo. */
 export const COOKIE_REFERIDO = 'odt_ref'
