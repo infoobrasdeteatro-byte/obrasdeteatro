@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { renunciarCortesia } from '@/app/perfil/centro/cortesia-acciones'
-import { ASUNTO_COLEGAS, enlaceCorreo, enlaceReferido, enlaceWhatsapp, mensajeColegas as textoColegas, tituloEmbajador } from '@/lib/embajadores/textos'
+import { ASUNTO_COLEGAS, enlaceCorreo, enlaceGmail, enlaceOutlook, enlaceReferido, enlaceWhatsapp, mensajeColegas as textoColegas, tituloEmbajador } from '@/lib/embajadores/textos'
 
 const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -22,6 +22,7 @@ export default function TarjetaCortesia({ tipo, plan, hasta, genero, codigo, ref
   const mensajeColegas = enlace ? textoColegas(enlace) : ''
   // «Compartir…» solo en el móvil (pantalla táctil con menú de compartir del sistema).
   const [puedeCompartir, setPuedeCompartir] = useState(false)
+  const [correoAbierto, setCorreoAbierto] = useState(false)
   useEffect(() => {
     setPuedeCompartir(typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches)
   }, [])
@@ -74,8 +75,18 @@ export default function TarjetaCortesia({ tipo, plan, hasta, genero, codigo, ref
           <div className="cortesia-botones">
             {puedeCompartir && <button type="button" className="ds-btn-secondary cortesia-wa" onClick={compartir}>Compartir…</button>}
             <a className="ds-btn-secondary cortesia-wa" href={enlaceWhatsapp(mensajeColegas)} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
-            <a className="ds-btn-secondary cortesia-wa" href={enlaceCorreo(ASUNTO_COLEGAS, mensajeColegas)}>Enviar por correo</a>
+            <button type="button" className="ds-btn-secondary cortesia-wa" aria-expanded={correoAbierto} onClick={() => setCorreoAbierto(v => !v)}>
+              Enviar por correo
+            </button>
           </div>
+          {correoAbierto && (
+            <div className="cortesia-correo">
+              <span>Enviar con:</span>
+              <a href={enlaceGmail(ASUNTO_COLEGAS, mensajeColegas)} target="_blank" rel="noopener noreferrer">Gmail</a>
+              <a href={enlaceOutlook(ASUNTO_COLEGAS, mensajeColegas)} target="_blank" rel="noopener noreferrer">Outlook</a>
+              <a href={enlaceCorreo(ASUNTO_COLEGAS, mensajeColegas)}>Otro programa de correo</a>
+            </div>
+          )}
           <p className="cortesia-cifra">
             {referidos === 0 ? 'Todavía no se ha registrado nadie con tu enlace.' : `Has invitado a ${referidos} colega${referidos === 1 ? '' : 's'}.`}
           </p>

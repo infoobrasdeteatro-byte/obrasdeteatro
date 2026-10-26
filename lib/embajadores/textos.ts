@@ -120,6 +120,16 @@ export function enlaceCorreo(asunto: string, cuerpo: string): string {
   return `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
 }
 
+/** Redactar en Gmail web con asunto y mensaje. */
+export function enlaceGmail(asunto: string, cuerpo: string): string {
+  return `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
+}
+
+/** Redactar en Outlook web con asunto y mensaje. */
+export function enlaceOutlook(asunto: string, cuerpo: string): string {
+  return `https://outlook.live.com/mail/0/deeplink/compose?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
+}
+
 /** Mensaje de un/a embajador/a para sus colegas, con su enlace personal. */
 export function mensajeColegas(enlace: string): string {
   return `Te invito a ObrasDeTeatro®, la plataforma profesional del teatro en español. Con mi enlace tienes un mes de Premium gratis, sin tarjeta: ${enlace}`

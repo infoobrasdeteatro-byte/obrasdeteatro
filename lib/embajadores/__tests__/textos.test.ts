@@ -48,4 +48,9 @@ describe('compartir el enlace personal', () => {
     expect(url.startsWith('mailto:?subject=Te%20invito%20a%20ObrasDeTeatro%C2%AE&body=')).toBe(true)
     expect(decodeURIComponent(url.split('body=')[1])).toBe(m)
   })
+  it('Gmail y Outlook web con asunto y mensaje', async () => {
+    const { enlaceGmail, enlaceOutlook } = await import('../textos')
+    expect(enlaceGmail('Hola', 'a b')).toBe('https://mail.google.com/mail/?view=cm&fs=1&su=Hola&body=a%20b')
+    expect(enlaceOutlook('Hola', 'a b')).toBe('https://outlook.live.com/mail/0/deeplink/compose?subject=Hola&body=a%20b')
+  })
 })
