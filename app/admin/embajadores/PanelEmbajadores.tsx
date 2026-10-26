@@ -22,7 +22,7 @@ const SITUACION: Record<string, string> = { activa: 'Activa', vencida: 'Vencida'
 
 export default function PanelEmbajadores({ invitaciones, embajadores }: { invitaciones: FilaInvitacion[]; embajadores: FilaEmbajador[] }) {
   const router = useRouter()
-  const [f, setF] = useState({ nombre: '', genero: 'f', oficio: 'interpretacion', telefono: '', email: '', nota: '' })
+  const [f, setF] = useState({ nombre: '', genero: '', oficio: 'interpretacion', telefono: '', email: '', nota: '' })
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
   const [version, setVersion] = useState<Record<string, 'conoce' | 'nuevo'>>({})
   const [copiado, setCopiado] = useState<string | null>(null)
@@ -35,7 +35,7 @@ export default function PanelEmbajadores({ invitaciones, embajadores }: { invita
       const r = await crearInvitacion(f)
       if (r.ok) {
         setAviso({ ok: true, texto: `Invitación creada para ${f.nombre.trim()}. Envíala desde la lista.` })
-        setF({ nombre: '', genero: f.genero, oficio: f.oficio, telefono: '', email: '', nota: '' })
+        setF({ nombre: '', genero: '', oficio: f.oficio, telefono: '', email: '', nota: '' })
         router.refresh()
       } else setAviso({ ok: false, texto: r.error })
     })
@@ -68,7 +68,8 @@ export default function PanelEmbajadores({ invitaciones, embajadores }: { invita
           </div>
           <div className="ds-form-group" style={campo}>
             <label className="ds-label" htmlFor="emb-genero">Distintivo</label>
-            <select id="emb-genero" className="ds-select" value={f.genero} onChange={e => setF({ ...f, genero: e.target.value })}>
+            <select id="emb-genero" className="ds-select" value={f.genero} required onChange={e => setF({ ...f, genero: e.target.value })}>
+              <option value="" disabled>Elige…</option>
               <option value="f">Embajadora de Escena</option>
               <option value="m">Embajador de Escena</option>
             </select>
