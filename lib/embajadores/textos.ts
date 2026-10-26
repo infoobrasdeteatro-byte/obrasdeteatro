@@ -115,6 +115,17 @@ export function enlaceWhatsapp(mensaje: string, telefono?: string | null): strin
   return `${base}?text=${encodeURIComponent(mensaje)}`
 }
 
+/** Enlace de correo (mailto) con asunto y mensaje: abre el programa de correo de quien lo pulsa. */
+export function enlaceCorreo(asunto: string, cuerpo: string): string {
+  return `mailto:?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`
+}
+
+/** Mensaje de un/a embajador/a para sus colegas, con su enlace personal. */
+export function mensajeColegas(enlace: string): string {
+  return `Te invito a ObrasDeTeatro®, la plataforma profesional del teatro en español. Con mi enlace tienes un mes de Premium gratis, sin tarjeta: ${enlace}`
+}
+export const ASUNTO_COLEGAS = 'Te invito a ObrasDeTeatro®'
+
 /** Cookie del código de referido entre el enlace y la confirmación del correo. */
 export const COOKIE_REFERIDO = 'odt_ref'
 export const REFERIDO_MAX_AGE_S = 60 * 60 * 24 * 30

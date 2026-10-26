@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { renunciarCortesia } from '@/app/perfil/centro/cortesia-acciones'
-import { enlaceReferido, enlaceWhatsapp, tituloEmbajador } from '@/lib/embajadores/textos'
+import { ASUNTO_COLEGAS, enlaceCorreo, enlaceReferido, enlaceWhatsapp, mensajeColegas as textoColegas, tituloEmbajador } from '@/lib/embajadores/textos'
 
 const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -19,9 +19,15 @@ export default function TarjetaCortesia({ tipo, plan, hasta, genero, codigo, ref
   const [copiado, setCopiado] = useState(false)
   const [pending, startTransition] = useTransition()
   const enlace = codigo ? enlaceReferido(codigo) : null
-  const mensajeColegas = enlace
-    ? `Te invito a ObrasDeTeatro®, la plataforma profesional del teatro en español. Con mi enlace tienes un mes de Premium gratis, sin tarjeta: ${enlace}`
-    : ''
+  const mensajeColegas = enlace ? textoColegas(enlace) : ''
+  // «Compartir…» solo en el móvil (pantalla táctil con menú de compartir del sistema).
+  const [puedeCompartir, setPuedeCompartir] = useState(false)
+  useEffect(() => {
+    setPuedeCompartir(typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches)
+  }, [])
+  const compartir = async () => {
+    try { await navigator.share({ title: ASUNTO_COLEGAS, text: mensajeColegas }) } catch { /* cancelado */ }
+  }
 
   const copiar = async () => {
     if (!enlace) return
@@ -65,7 +71,11 @@ export default function TarjetaCortesia({ tipo, plan, hasta, genero, codigo, ref
             <input readOnly value={enlace} aria-label="Tu enlace personal" onFocus={e => e.currentTarget.select()} />
             <button type="button" onClick={copiar}>{copiado ? '✓ Copiado' : 'Copiar enlace'}</button>
           </div>
-          <a className="ds-btn-secondary cortesia-wa" href={enlaceWhatsapp(mensajeColegas)} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
+          <div className="cortesia-botones">
+            {puedeCompartir && <button type="button" className="ds-btn-secondary cortesia-wa" onClick={compartir}>Compartir…</button>}
+            <a className="ds-btn-secondary cortesia-wa" href={enlaceWhatsapp(mensajeColegas)} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
+            <a className="ds-btn-secondary cortesia-wa" href={enlaceCorreo(ASUNTO_COLEGAS, mensajeColegas)}>Enviar por correo</a>
+          </div>
           <p className="cortesia-cifra">
             {referidos === 0 ? 'Todavía no se ha registrado nadie con tu enlace.' : `Has invitado a ${referidos} colega${referidos === 1 ? '' : 's'}.`}
           </p>
