@@ -173,7 +173,7 @@ export default function RegistroPage() {
         <h1 className="auth-title">Crear cuenta</h1>
         <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
         {invitado && (
-          <p className="ds-alert-success" style={{ marginBottom: '14px', fontSize: '13px', lineHeight: 1.5 }}>
+          <p className="ds-alert-success" style={{ display: 'block', marginBottom: '14px', fontSize: '13px', lineHeight: 1.5 }}>
             Vienes invitado/a por un/a Embajador/a de Escena: al confirmar tu cuenta tendrás <strong>un mes de Premium gratis</strong>, sin tarjeta.
           </p>
         )}
