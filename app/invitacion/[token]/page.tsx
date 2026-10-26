@@ -3,11 +3,20 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import TopNav from '@/components/design-system/TopNav'
 import Aceptar from './Aceptar'
-import { CORTESIA, VENTAJAS_OFICIO, esOficio, oficioPersona, tituloEmbajador, type Genero } from '@/lib/embajadores/textos'
+import { CORTESIA, VENTAJAS_OFICIO, VISTA_PREVIA_INVITACION, esOficio, oficioPersona, tituloEmbajador, type Genero } from '@/lib/embajadores/textos'
 
 export const metadata: Metadata = {
   title: 'Invitación · Embajadores de Escena | ObrasDeTeatro®',
+  description: VISTA_PREVIA_INVITACION.descripcion,
   robots: { index: false, follow: false },
+  // Vista previa al compartir el enlace (WhatsApp, correo…). La imagen es la de siempre.
+  openGraph: {
+    title: VISTA_PREVIA_INVITACION.titulo,
+    description: VISTA_PREVIA_INVITACION.descripcion,
+    siteName: 'ObrasDeTeatro®',
+    type: 'website',
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'ObrasDeTeatro®' }],
+  },
 }
 export const dynamic = 'force-dynamic'
 
