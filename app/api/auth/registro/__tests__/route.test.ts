@@ -75,3 +75,30 @@ describe('POST /api/auth/registro — vuelta tras el registro (next)', () => {
     expect(res.cookies.get(NEXT_TRAS_REGISTRO_COOKIE)).toBeUndefined()
   })
 })
+
+describe('POST /api/auth/registro — Embajadores de Escena', () => {
+  const TOKEN = '372ede63068e4b46bf06d147ecc83444'
+  const datos = () => mockSignUp.mock.calls[0][0].options.data
+
+  it('desde una invitación, la guarda con la cuenta (vale aunque se confirme en otro navegador)', async () => {
+    await POST(peticion({ next: `/invitacion/${TOKEN}` }))
+    expect(datos().invitacion_embajador).toBe(TOKEN)
+  })
+
+  it('con el enlace de un/a embajador/a, guarda el código con la cuenta', async () => {
+    const { NextRequest } = await import('next/server')
+    const req = new NextRequest('https://app.test/api/auth/registro', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie: 'odt_ref=ab12cd34' },
+      body: JSON.stringify({ email: 'n@example.com', password: 'Segura123', nombre: 'N', website: '', turnstileToken: 't' }),
+    })
+    await POST(req)
+    expect(datos().codigo_referido).toBe('AB12CD34')
+  })
+
+  it('sin invitación ni código, no añade nada', async () => {
+    await POST(peticion({ next: '/precios' }))
+    expect(datos()).not.toHaveProperty('invitacion_embajador')
+    expect(datos()).not.toHaveProperty('codigo_referido')
+  })
+})

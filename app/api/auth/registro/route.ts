@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PASSWORD_POLICY } from '@/lib/auth/password-policy'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE, NEXT_TRAS_REGISTRO_MAX_AGE_S } from '@/lib/auth/next-param'
 import { TIPOS_REGISTRO, esProfesion } from '@/lib/perfiles/profesiones'
+import { COOKIE_REFERIDO, codigoValido, tokenDeInvitacion } from '@/lib/embajadores/textos'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
@@ -91,12 +92,23 @@ export async function POST(req: NextRequest) {
 
   const origin = new URL(req.url).origin
   const supabase = await createClient()
+  const destino = safeNextPath(typeof next === 'string' ? next : null)
+
+  // Embajadores de Escena: la invitación y el código de referido viajan con la
+  // cuenta (no solo en cookies), para que se apliquen al confirmar el correo
+  // aunque se abra el enlace en otro navegador o en el móvil.
+  const invitacion = tokenDeInvitacion(destino)
+  const referido = codigoValido(req.cookies?.get(COOKIE_REFERIDO)?.value)
 
   const { error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password,
     options: {
-      data: { nombre, tipo_perfil: tipo, profesiones: listaProfesiones },
+      data: {
+        nombre, tipo_perfil: tipo, profesiones: listaProfesiones,
+        ...(invitacion ? { invitacion_embajador: invitacion } : {}),
+        ...(referido ? { codigo_referido: referido } : {}),
+      },
       emailRedirectTo: `${origin}/auth/callback`,
     },
   })
@@ -109,7 +121,6 @@ export async function POST(req: NextRequest) {
 
   // Vuelta tras confirmar el email: la lee y la borra /auth/callback (ver
   // NEXT_TRAS_REGISTRO_COOKIE). Solo rutas internas.
-  const destino = safeNextPath(typeof next === 'string' ? next : null)
   if (destino !== null) {
     respuesta.cookies.set(NEXT_TRAS_REGISTRO_COOKIE, destino, {
       httpOnly: true,

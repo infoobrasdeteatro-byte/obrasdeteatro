@@ -119,6 +119,17 @@ export function enlaceWhatsapp(mensaje: string, telefono?: string | null): strin
 export const COOKIE_REFERIDO = 'odt_ref'
 export const REFERIDO_MAX_AGE_S = 60 * 60 * 24 * 30
 
+/** Token de una ruta /invitacion/<token> (32 hex), o null. */
+export function tokenDeInvitacion(ruta: string | null | undefined): string | null {
+  const m = /^\/invitacion\/([0-9a-f]{32})$/.exec(ruta ?? '')
+  return m ? m[1] : null
+}
+
+/** Token de invitación válido (32 hex), o null. */
+export function tokenValido(v: unknown): string | null {
+  return typeof v === 'string' && /^[0-9a-f]{32}$/.test(v) ? v : null
+}
+
 export function codigoValido(v: string | null | undefined): string | null {
   const c = (v ?? '').trim().toUpperCase()
   return /^[0-9A-Z]{8}$/.test(c) ? c : null
