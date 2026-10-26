@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { sendWelcomeEmail } from '@/lib/email/welcome-email'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE } from '@/lib/auth/next-param'
-import { COOKIE_REFERIDO, codigoValido } from '@/lib/embajadores/textos'
+import { COOKIE_REFERIDO, codigoValido, tokenValido } from '@/lib/embajadores/textos'
 
 /**
  * AEC-001: tras un intercambio de código/OTP exitoso, esta es la confirmación
@@ -35,8 +35,8 @@ async function notifyWelcomeIfFirstConfirmation(
  * NEXT_TRAS_REGISTRO_COOKIE, p. ej. /precios), si es una ruta interna válida;
  * si no, el de siempre. La cookie se borra en cualquier caso: sirve una vez.
  */
-function redirigirTrasConfirmar(request: NextRequest, origin: string): NextResponse {
-  const destino = safeNextPath(request.cookies.get(NEXT_TRAS_REGISTRO_COOKIE)?.value) ?? '/auth/update-password'
+function redirigirTrasConfirmar(request: NextRequest, origin: string, forzado?: string): NextResponse {
+  const destino = forzado ?? safeNextPath(request.cookies.get(NEXT_TRAS_REGISTRO_COOKIE)?.value) ?? '/auth/update-password'
   const respuesta = NextResponse.redirect(`${origin}${destino}`)
   respuesta.cookies.delete(NEXT_TRAS_REGISTRO_COOKIE)
   respuesta.cookies.delete(COOKIE_REFERIDO)
@@ -44,14 +44,28 @@ function redirigirTrasConfirmar(request: NextRequest, origin: string): NextRespo
 }
 
 /**
- * Embajadores de Escena: si la persona llegó con el enlace personal de un/a
- * embajador/a, se canjea su mes de Premium. Las reglas (solo cuentas nuevas,
- * una vez por persona) las aplica canjear_referido. Un fallo no bloquea.
+ * Embajadores de Escena, al confirmar el correo (en cualquier navegador):
+ * - si se registró desde su invitación, se acepta (destino: su Centro
+ *   Profesional con la bienvenida);
+ * - si llegó con el enlace personal de un/a embajador/a, se canjea su mes de
+ *   Premium (cookie o, si confirma en otro navegador, el dato de la cuenta).
+ * Las reglas están en la base; un fallo nunca bloquea la confirmación.
  */
-async function canjearReferido(request: NextRequest, supabase: Awaited<ReturnType<typeof createClient>>): Promise<void> {
-  const codigo = codigoValido(request.cookies.get(COOKIE_REFERIDO)?.value)
-  if (!codigo) return
-  try { await supabase.rpc('canjear_referido', { p_codigo: codigo }) } catch { /* no bloquea la confirmación */ }
+async function aplicarEmbajadores(request: NextRequest, supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | undefined> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const meta = (user?.user_metadata ?? {}) as Record<string, unknown>
+    const token = tokenValido(meta.invitacion_embajador)
+    if (token) {
+      const { data } = await supabase.rpc('aceptar_invitacion_embajador', { p_token: token })
+      if (data === 'ok' || data === 'ya_embajador') return '/perfil/centro?embajador=1'
+      return `/invitacion/${token}`
+    }
+    const codigo = codigoValido(request.cookies.get(COOKIE_REFERIDO)?.value)
+      ?? codigoValido(typeof meta.codigo_referido === 'string' ? meta.codigo_referido : null)
+    if (codigo) await supabase.rpc('canjear_referido', { p_codigo: codigo })
+  } catch { /* no bloquea la confirmación */ }
+  return undefined
 }
 
 export async function GET(request: NextRequest) {
@@ -67,8 +81,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
-      await canjearReferido(request, supabase)
-      return redirigirTrasConfirmar(request, origin)
+      return redirigirTrasConfirmar(request, origin, await aplicarEmbajadores(request, supabase))
     }
   }
 
@@ -77,8 +90,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
-      await canjearReferido(request, supabase)
-      return redirigirTrasConfirmar(request, origin)
+      return redirigirTrasConfirmar(request, origin, await aplicarEmbajadores(request, supabase))
     }
   }
 

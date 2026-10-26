@@ -2,14 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 const mockExchange = vi.fn()
+const mockRpc = vi.fn()
+let usuario: { email?: string; user_metadata: Record<string, unknown> } | null = null
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: {
       exchangeCodeForSession: mockExchange,
       verifyOtp: vi.fn(),
-      // Sin usuario: el email de bienvenida no se envía en estos tests.
-      getUser: async () => ({ data: { user: null } }),
+      // Sin email: el email de bienvenida no se envía en estos tests.
+      getUser: async () => ({ data: { user: usuario } }),
     },
+    rpc: mockRpc,
   }),
 }))
 vi.mock('@/lib/email/welcome-email', () => ({ sendWelcomeEmail: vi.fn() }))
@@ -26,6 +29,7 @@ function confirmacion(cookie?: string) {
 beforeEach(() => {
   vi.clearAllMocks()
   mockExchange.mockResolvedValue({ error: null })
+  usuario = null
 })
 
 describe('GET /auth/callback — vuelta tras confirmar el registro', () => {
@@ -59,5 +63,43 @@ describe('GET /auth/callback — vuelta tras confirmar el registro', () => {
     const res = await GET(confirmacion('/precios'))
 
     expect(res.headers.get('location')).toBe('https://app.test/auth/recuperar?expired=true')
+  })
+})
+
+describe('GET /auth/callback — Embajadores de Escena', () => {
+  const TOKEN = '372ede63068e4b46bf06d147ecc83444'
+
+  it('registrada desde su invitación: la acepta al confirmar, sin cookie (otro navegador)', async () => {
+    usuario = { user_metadata: { invitacion_embajador: TOKEN } }
+    mockRpc.mockResolvedValue({ data: 'ok', error: null })
+
+    const res = await GET(confirmacion())
+
+    expect(mockRpc).toHaveBeenCalledWith('aceptar_invitacion_embajador', { p_token: TOKEN })
+    expect(res.headers.get('location')).toBe('https://app.test/perfil/centro?embajador=1')
+  })
+
+  it('si la invitación ya no vale, vuelve a su página para ver el motivo', async () => {
+    usuario = { user_metadata: { invitacion_embajador: TOKEN } }
+    mockRpc.mockResolvedValue({ data: 'caducada', error: null })
+
+    const res = await GET(confirmacion())
+
+    expect(res.headers.get('location')).toBe(`https://app.test/invitacion/${TOKEN}`)
+  })
+
+  it('referido que confirma en otro navegador: canjea el código guardado en la cuenta', async () => {
+    usuario = { user_metadata: { codigo_referido: 'AB12CD34' } }
+    mockRpc.mockResolvedValue({ data: 'ok', error: null })
+
+    await GET(confirmacion())
+
+    expect(mockRpc).toHaveBeenCalledWith('canjear_referido', { p_codigo: 'AB12CD34' })
+  })
+
+  it('sin nada de embajadores, no llama a la base', async () => {
+    usuario = { user_metadata: {} }
+    await GET(confirmacion())
+    expect(mockRpc).not.toHaveBeenCalled()
   })
 })
