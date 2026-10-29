@@ -9,6 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { PLAZAS_FUNDADORAS } from '@/lib/embajadores/textos'
 import { plazasOcupadas } from '@/lib/embajadores/plazas'
 import { leerEstadoMake } from './make'
+import { contar } from './colas'
 import {
   PATRON_BDNS, PATRON_LATAM, saludConvocatorias, saludCorreo, saludMake, saludMediateca, saludNoticias, saludProscenio,
   type ProgramaSalud, type Semaforo,
@@ -80,10 +81,8 @@ export type Cifras = {
 }
 
 export async function cargarCifras(sesion: SupabaseClient, servicio: SupabaseClient, esAdmin: boolean, ahora: Date): Promise<Cifras> {
-  const cuenta = async (q: PromiseLike<{ count: number | null; error: unknown }>) => {
-    const { count, error } = await q
-    return error ? null : count ?? 0
-  }
+  // Mismo criterio que las colas: un recuento fallido o vacío es null («—»), nunca 0.
+  const cuenta = contar
   const perfiles = () => servicio.from('profiles').select('id', { count: 'exact', head: true }).is('deleted_at', null)
   const hace7d = new Date(ahora.getTime() - 7 * 86_400_000).toISOString()
 
