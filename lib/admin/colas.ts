@@ -7,6 +7,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { cargarDestinatariosAviso } from '@/lib/avisos/perfil-incompleto-envio'
 import { cargarPendientesConfirmar } from '@/lib/avisos/confirmacion'
+import { ESTADOS_SIN_ATENDER } from '@/lib/correo/presentacion'
 import type { ClaveCola } from './secciones'
 
 /** Estado que marca «pendiente» en cada tabla. */
@@ -40,6 +41,7 @@ export const COLAS: Cola[] = [
   { clave: 'sugerencias', href: '/admin/espacios', uno: 'sugerencia de espacio pendiente', varios: 'sugerencias de espacios pendientes' },
   { clave: 'avisos', href: '/admin/avisos-perfil', uno: 'aviso de perfil por enviar', varios: 'avisos de perfil por enviar', soloAdmin: true },
   { clave: 'recordatorios', href: '/admin/recordatorio-confirmacion', uno: 'recordatorio de confirmación por enviar', varios: 'recordatorios de confirmación por enviar', soloAdmin: true },
+  { clave: 'correo', href: '/admin/correo?estado=pendientes', uno: 'correo sin atender', varios: 'correos sin atender', soloAdmin: true },
 ]
 
 /** null = no se pudo contar (se muestra como aviso, no como cero). */
@@ -79,7 +81,7 @@ async function contar(q: PromiseLike<{ count: number | null; error: unknown }>):
 export async function cargarPendientes(sesion: SupabaseClient, servicio: SupabaseClient, esAdmin: boolean): Promise<Pendientes> {
   const n = (tabla: string, estado: string) => sesion.from(tabla).select('id', { count: 'exact', head: true }).eq('estado', estado)
 
-  const [noticias, castings, reportes, convocatorias, cartelera, verificaciones, reclamaciones, sugerencias, avisos, recordatorios] = await Promise.all([
+  const [noticias, castings, reportes, convocatorias, cartelera, verificaciones, reclamaciones, sugerencias, avisos, recordatorios, correo] = await Promise.all([
     contar(n('noticias', ESTADO_PENDIENTE.noticias)),
     contar(n('castings', ESTADO_PENDIENTE.castings)),
     contar(n('casting_reportes', ESTADO_PENDIENTE.reportes)),
@@ -90,9 +92,13 @@ export async function cargarPendientes(sesion: SupabaseClient, servicio: Supabas
     contar(n('espacios_sugerencias', ESTADO_PENDIENTE.sugerencias)),
     esAdmin ? cargarDestinatariosAviso(servicio).then(r => r.pendientes.length, () => null) : Promise.resolve(undefined),
     esAdmin ? cargarPendientesConfirmar(servicio).then(r => r.pendientes.length, () => null) : Promise.resolve(undefined),
+    // Correo escrito por personas que nadie ha atendido (la RLS solo lo deja leer a admin).
+    esAdmin
+      ? contar(sesion.from('correos_entrantes').select('id', { count: 'exact', head: true }).eq('categoria', 'persona').in('estado', ESTADOS_SIN_ATENDER))
+      : Promise.resolve(undefined),
   ])
 
   const p: Pendientes = { noticias, castings, reportes, convocatorias, cartelera, verificaciones, reclamaciones, sugerencias }
-  if (esAdmin) { p.avisos = avisos ?? null; p.recordatorios = recordatorios ?? null }
+  if (esAdmin) { p.avisos = avisos ?? null; p.recordatorios = recordatorios ?? null; p.correo = correo ?? null }
   return p
 }

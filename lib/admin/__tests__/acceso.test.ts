@@ -37,17 +37,18 @@ describe('guard de roles del Master Control', () => {
 })
 
 describe('secciones', () => {
-  it('son 15 en cuatro grupos', () => {
-    expect(GRUPOS_SECCIONES.flatMap(g => g.secciones)).toHaveLength(15)
+  it('son 16 en cuatro grupos', () => {
+    expect(GRUPOS_SECCIONES.flatMap(g => g.secciones)).toHaveLength(16)
     expect(GRUPOS_SECCIONES.map(g => g.titulo)).toEqual(['Moderación', 'Catálogos', 'Comunidad', 'Comunicación'])
   })
-  it('moderación no ve Embajadores, Avisos de perfil ni Recordatorio de confirmación', () => {
+  it('moderación no ve Embajadores, Avisos de perfil, Recordatorio de confirmación ni Correo entrante', () => {
     const hrefs = seccionesVisibles(false).flatMap(g => g.secciones.map(s => s.href))
     expect(hrefs).toHaveLength(12)
     expect(hrefs).not.toContain('/admin/embajadores')
     expect(hrefs).not.toContain('/admin/avisos-perfil')
     expect(hrefs).not.toContain('/admin/recordatorio-confirmacion')
-    expect(seccionesVisibles(true).flatMap(g => g.secciones)).toHaveLength(15)
+    expect(hrefs).not.toContain('/admin/correo')
+    expect(seccionesVisibles(true).flatMap(g => g.secciones)).toHaveLength(16)
   })
 })
 
@@ -66,6 +67,8 @@ describe('requiere tu atención', () => {
   it('moderación no ve las colas de solo administración', () => {
     expect(elementosAtencion({ avisos: 4, recordatorios: 2, noticias: 1 }, false).map(x => x.clave)).toEqual(['noticias'])
     expect(elementosAtencion({ avisos: 4, recordatorios: 2 }, true).map(x => x.clave)).toEqual(['avisos', 'recordatorios'])
+    expect(elementosAtencion({ correo: 3 }, false)).toEqual([])
+    expect(elementosAtencion({ correo: 1 }, true)[0]).toMatchObject({ texto: '1 correo sin atender', href: '/admin/correo?estado=pendientes' })
   })
   it('totalColas suma las colas de una sección', () => {
     expect(totalColas({ reclamaciones: 2, sugerencias: 3 }, ['reclamaciones', 'sugerencias'])).toBe(5)

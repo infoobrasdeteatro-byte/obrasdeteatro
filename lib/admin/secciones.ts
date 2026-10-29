@@ -1,12 +1,12 @@
 /**
- * Las 15 secciones de /admin, agrupadas como en el Master Control. Cada una
+ * Las secciones de /admin, agrupadas como en el Master Control. Cada una
  * dice si es solo de administración y qué cola de pendientes la acompaña.
  * Añadir una sección nueva es añadir una fila aquí.
  */
 
 export type ClaveCola =
   | 'noticias' | 'castings' | 'reportes' | 'convocatorias' | 'cartelera'
-  | 'verificaciones' | 'reclamaciones' | 'sugerencias' | 'avisos' | 'recordatorios'
+  | 'verificaciones' | 'reclamaciones' | 'sugerencias' | 'avisos' | 'recordatorios' | 'correo'
 
 export type Seccion = {
   href: string
@@ -53,6 +53,7 @@ export const GRUPOS_SECCIONES: GrupoSecciones[] = [
     titulo: 'Comunicación',
     secciones: [
       { href: '/admin/boletin', titulo: 'Boletín', descripcion: 'Proscenio, el boletín semanal' },
+      { href: '/admin/correo', titulo: 'Correo entrante', descripcion: 'Copias de hola@ y del Gmail', soloAdmin: true, colas: ['correo'] },
     ],
   },
 ]

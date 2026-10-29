@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   hace, lunesMadrid, peorColor, PATRON_BDNS, PATRON_LATAM,
-  saludConvocatorias, saludMake, saludMediateca, saludNoticias, saludProscenio,
+  saludConvocatorias, saludCorreo, saludMake, saludMediateca, saludNoticias, saludProscenio,
   type EscenarioMake, type EstadoMake,
 } from '../salud'
 
@@ -160,5 +160,17 @@ describe('peorColor', () => {
     expect(peorColor(['verde', 'ambar', 'gris'])).toBe('ambar')
     expect(peorColor(['gris', 'verde'])).toBe('verde')
     expect(peorColor(['gris'])).toBe('gris')
+  })
+})
+
+describe('saludCorreo', () => {
+  it('gris «Sin configurar» sin la clave del webhook o sin ningún correo', () => {
+    expect(saludCorreo({ configurado: false, ultimo: horasAntes(1), sinAtender: null }, AHORA)).toMatchObject({ color: 'gris', frase: expect.stringContaining('RESEND_INBOUND_WEBHOOK_SECRET') })
+    expect(saludCorreo({ configurado: true, ultimo: null, sinAtender: null }, AHORA)).toMatchObject({ color: 'gris', frase: expect.stringContaining('ningún correo') })
+  })
+  it('verde con la fecha del último correo', () => {
+    const s = saludCorreo({ configurado: true, ultimo: horasAntes(3), sinAtender: 2 }, AHORA)
+    expect(s).toMatchObject({ color: 'verde', ultimoDato: horasAntes(3) })
+    expect(s.frase).toBe('El último correo llegó hace 3 h. 2 correos sin atender.')
   })
 })
