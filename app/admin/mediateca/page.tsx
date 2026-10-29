@@ -54,6 +54,7 @@ export default async function AdminMediatecaPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/mediateca" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/colaboradores" className="table-link">Colaboradores →</Link>
           <Link href="/admin/boletin" className="table-link">Boletín →</Link>

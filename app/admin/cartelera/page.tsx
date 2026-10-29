@@ -87,6 +87,7 @@ export default async function AdminCarteleraPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/admin/castings" className="table-link">Castings →</Link>
           <Link href="/admin/formaciones" className="table-link">Formación →</Link>
           <span className="status-pill status-pill--draft" style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>

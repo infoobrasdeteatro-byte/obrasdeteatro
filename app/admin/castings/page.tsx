@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { ESTADO_PENDIENTE } from '@/lib/admin/colas'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import NavAutenticado from '@/components/NavAutenticado'
@@ -83,7 +84,7 @@ export default async function ModeracionCastingsPage() {
     .select(
       'id, titulo, nombre_proyecto, entidad_organizadora, descripcion, sinopsis, fecha_apertura, fecha_cierre, created_at, user_id, motivo_filtro'
     )
-    .eq('estado', 'pendiente_revision')
+    .eq('estado', ESTADO_PENDIENTE.castings)
     .order('created_at', { ascending: true })
 
   const filas = castings ?? []
@@ -139,12 +140,15 @@ export default async function ModeracionCastingsPage() {
                 Castings en espera de revisión, del más antiguo al más reciente.
               </span>
             </div>
-            <span
-              className="status-pill status-pill--draft"
-              style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}
-            >
-              ADMINISTRACIÓN
-            </span>
+            <div className="admin-header-actions">
+              <Link href="/admin" className="table-link">← Master Control</Link>
+              <span
+                className="status-pill status-pill--draft"
+                style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}
+              >
+                ADMINISTRACIÓN
+              </span>
+            </div>
           </div>
 
           {error && (

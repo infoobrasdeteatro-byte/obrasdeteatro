@@ -100,6 +100,7 @@ export default async function ReportesCastingsPage({ searchParams }: Props) {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/admin/castings" className="table-link">Cola de moderación →</Link>
           <span className="status-pill status-pill--draft"
             style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>

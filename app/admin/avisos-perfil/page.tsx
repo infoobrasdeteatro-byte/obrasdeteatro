@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import NavAutenticado from '@/components/NavAutenticado'
@@ -41,6 +42,9 @@ export default async function AvisosPerfilPage() {
         <div className="page-title-group">
           <h1 className="page-title">Aviso de perfil incompleto</h1>
           <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Correo a las cuentas verificadas con el perfil a medias. Cada persona recibe solo lo que le falta.</span>
+        </div>
+        <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
         </div>
       </div>
 

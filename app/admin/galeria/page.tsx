@@ -91,6 +91,7 @@ export default async function AdminGaleriaPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/admin/convocatorias" className="table-link">Convocatorias →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>
           <Link href="/admin/formaciones" className="table-link">Formación →</Link>

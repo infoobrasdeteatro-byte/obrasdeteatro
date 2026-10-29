@@ -43,17 +43,19 @@ const NAV_SECTIONS = [
 export default function Sidebar() {
   const pathname = usePathname()
   const sinLeer = useSinLeer(pathname)
+  const esEquipo = useEsEquipo()
+  const secciones = esEquipo ? [...NAV_SECTIONS, SECCION_EQUIPO] : NAV_SECTIONS
 
   return (
     <aside className="sidebar">
-      {NAV_SECTIONS.map(section => (
+      {secciones.map(section => (
         <div key={section.label} className="sid-section">
           <span className="sid-label">{section.label}</span>
           {section.items.map(item => (
             <Link
               key={item.href}
               href={item.href}
-              className={`sid-item${pathname === item.href ? ' active' : ''}`}
+              className={`sid-item${pathname === item.href || (item.href === '/admin' && pathname.startsWith('/admin/')) ? ' active' : ''}`}
             >
               <span style={{ fontSize: '14px', width: '16px', textAlign: 'center', flexShrink: 0 }}>
                 {item.icon}
@@ -68,6 +70,33 @@ export default function Sidebar() {
       ))}
     </aside>
   )
+}
+
+/** Solo para cuentas con rol admin o moderator (Master Control). */
+const SECCION_EQUIPO = {
+  label: 'Equipo',
+  items: [{ href: '/admin', label: 'Administración', icon: '◐' }],
+}
+
+/**
+ * ¿La cuenta es del equipo (admin o moderator)? Se lee una vez con la sesión:
+ * la política de profile_roles solo deja ver los roles propios. Esconder el
+ * enlace es cortesía; /admin vuelve a comprobar el rol en el servidor.
+ */
+function useEsEquipo(): boolean {
+  const [es, setEs] = useState(false)
+  useEffect(() => {
+    let vivo = true
+    const supabase = createClient()
+    void (async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('profile_roles').select('role').eq('profile_id', user.id).in('role', ['admin', 'moderator'])
+      if (vivo) setEs((data ?? []).length > 0)
+    })()
+    return () => { vivo = false }
+  }, [])
+  return es
 }
 
 /**

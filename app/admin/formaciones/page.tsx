@@ -66,6 +66,7 @@ export default async function AdminFormacionesPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/formacion" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/cartelera" className="table-link">Cartelera →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>

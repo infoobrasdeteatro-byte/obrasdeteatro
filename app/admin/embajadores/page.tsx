@@ -1,12 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import PanelEmbajadores, { type FilaInvitacion, type FilaEmbajador } from './PanelEmbajadores'
 import { PLAZAS_FUNDADORAS } from '@/lib/embajadores/textos'
+import { plazasOcupadas } from '@/lib/embajadores/plazas'
 
 export const metadata: Metadata = { title: 'Embajadores de Escena | Administración | ObrasDeTeatro', robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
@@ -63,7 +65,7 @@ export default async function AdminEmbajadoresPage() {
     referidos: porEmbajador.get(f.aceptada_por!)?.referidos ?? 0,
     pagan: porEmbajador.get(f.aceptada_por!)?.pagan ?? 0,
   }))
-  const ocupadas = filas.filter(f => f.estado === 'aceptada' || f.estado === 'pendiente').length
+  const ocupadas = plazasOcupadas((invitaciones ?? []) as I[], ahora)
 
   return (
     <Marco>
@@ -71,6 +73,9 @@ export default async function AdminEmbajadoresPage() {
         <div className="page-title-group">
           <h1 className="page-title">Embajadores de Escena</h1>
           <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Invitaciones personales: un año de Destacado por cortesía, sin tarjeta y sin compromiso. Todo lo de esta página es interno.</span>
+        </div>
+        <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
         </div>
       </div>
 

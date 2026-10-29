@@ -40,6 +40,7 @@ export default async function AdminBoletinPage() {
           <span style={{ fontSize: '13px', color: 'var(--muted)' }}>El boletín semanal por correo: se arma solo con lo publicado en la semana.</span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/boletin" className="table-link">Ver la página pública →</Link>
           <span className="status-pill status-pill--draft" style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>ADMINISTRACIÓN</span>
         </div>

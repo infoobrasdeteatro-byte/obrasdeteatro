@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { ESTADO_PENDIENTE } from '@/lib/admin/colas'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import NavAutenticado from '@/components/NavAutenticado'
@@ -70,7 +71,7 @@ export default async function AdminNoticiasPage() {
 
   const [candidatas, publicadas, recientes, ultimos30, fuentes, categorias] = await Promise.all([
     supabase.from('noticias').select(columnas)
-      .eq('estado', 'candidata')
+      .eq('estado', ESTADO_PENDIENTE.noticias)
       .order('created_at', { ascending: true })
       .limit(100),
     supabase.from('noticias').select(columnas)
@@ -140,6 +141,7 @@ export default async function AdminNoticiasPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/noticias" className="table-link">Ver sección pública →</Link>
           <span className="status-pill status-pill--draft"
             style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>
