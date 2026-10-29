@@ -68,9 +68,16 @@ export function totalColas(p: Pendientes, claves: ClaveCola[] = []): number | nu
   return numeros.length ? numeros.reduce((a, b) => a + b, 0) : null
 }
 
-async function contar(q: PromiseLike<{ count: number | null; error: unknown }>): Promise<number | null> {
+/**
+ * Recuento de una cola. Con { count: 'exact', head: true } una respuesta
+ * buena siempre trae un número; si no lo trae, algo falló aunque no haya
+ * error (PostgREST no da cuerpo a una petición HEAD, y con una tabla que no
+ * existe supabase-js devuelve count null sin error). Se trata como fallo
+ * («No se pudo contar»), nunca como 0.
+ */
+export async function contar(q: PromiseLike<{ count: number | null; error: unknown }>): Promise<number | null> {
   const { count, error } = await q
-  return error ? null : count ?? 0
+  return error || typeof count !== 'number' ? null : count
 }
 
 /**

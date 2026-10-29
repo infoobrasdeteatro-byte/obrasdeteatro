@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { accesoDesdeRoles, leerAcceso } from '../acceso'
 import { seccionesVisibles, GRUPOS_SECCIONES } from '../secciones'
-import { elementosAtencion, totalColas } from '../colas'
+import { contar, elementosAtencion, totalColas } from '../colas'
 
 describe('guard de roles del Master Control', () => {
   it('admin entra y ve lo de administración', () => {
@@ -75,5 +75,22 @@ describe('requiere tu atención', () => {
     expect(totalColas({ reclamaciones: null, sugerencias: 3 }, ['reclamaciones', 'sugerencias'])).toBe(3)
     expect(totalColas({}, ['noticias'])).toBeNull()
     expect(totalColas({ noticias: 2 })).toBeNull()
+  })
+})
+
+describe('contar: un recuento vacío es un fallo, no un cero', () => {
+  const r = (v: { count: number | null; error: unknown }) => Promise.resolve(v)
+  it('un número vale tal cual, incluido el 0', async () => {
+    expect(await contar(r({ count: 3, error: null }))).toBe(3)
+    expect(await contar(r({ count: 0, error: null }))).toBe(0)
+  })
+  it('con error, null', async () => {
+    expect(await contar(r({ count: null, error: { message: 'x' } }))).toBeNull()
+  })
+  it('sin error pero sin número (HEAD a una tabla que no existe), null', async () => {
+    expect(await contar(r({ count: null, error: null }))).toBeNull()
+  })
+  it('y en el panel sale como «No se pudo contar», no desaparece', () => {
+    expect(elementosAtencion({ correo: null }, true)[0].texto).toBe('No se pudo contar: correos sin atender')
   })
 })
