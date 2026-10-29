@@ -15,6 +15,7 @@ export type TipoEvento =
   | 'registro' | 'verificacion' | 'casting' | 'obra' | 'espectaculo' | 'formacion'
   | 'convocatoria_entrada' | 'convocatoria_publicada' | 'noticia_entrada' | 'noticia_publicada'
   | 'episodio' | 'suscripcion_nueva' | 'suscripcion_cancelada' | 'proscenio' | 'embajador' | 'correo'
+  | 'tarea_creada' | 'tarea_asignada' | 'tarea_resuelta'
 
 export type Evento = { id: string; tipo: TipoEvento; texto: string; at: string; href: string | null }
 
@@ -22,6 +23,7 @@ export const ICONO: Record<TipoEvento, string> = {
   registro: '＋', verificacion: '✓', casting: '◉', obra: '▣', espectaculo: '▤', formacion: '◇',
   convocatoria_entrada: '↓', convocatoria_publicada: '◆', noticia_entrada: '↓', noticia_publicada: '◆',
   episodio: '▶', suscripcion_nueva: '★', suscripcion_cancelada: '☆', proscenio: '✉', embajador: '♦', correo: '✎',
+  tarea_creada: '☐', tarea_asignada: '→', tarea_resuelta: '☑',
 }
 
 export const PERIODOS = {
@@ -76,7 +78,8 @@ export async function cargarActividad(
     filas<T>(q.gte(col, d).order(col, { ascending: false }).limit(limite))
 
   const [registros, verificaciones, castings, obras, espectaculos, formaciones, convEntradas, convPublicadas,
-    notEntradas, notPublicadas, episodios, subsNuevas, subsCanceladas, envios, embajadores, correos] = await Promise.all([
+    notEntradas, notPublicadas, episodios, subsNuevas, subsCanceladas, envios, embajadores, correos,
+    tareasCreadas, tareasResueltas, asignaciones] = await Promise.all([
     ultimos<Perfil & { created_at: string }>(servicio.from('profiles').select('id, nombre, apellidos, nombre_artistico, slug, perfil_publico, created_at').is('deleted_at', null), 'created_at'),
     ultimos<{ id: string; profile_id: string; resuelta_at: string }>(servicio.from('verificaciones_profesionales').select('id, profile_id, resuelta_at').eq('estado', 'aprobada'), 'resuelta_at'),
     ultimos<{ id: string; titulo: string; publicado_at: string }>(sesion.from('castings').select('id, titulo, publicado_at'), 'publicado_at'),
@@ -98,6 +101,12 @@ export async function cargarActividad(
     esAdmin
       ? ultimos<{ id: string; remitente_nombre: string | null; asunto: string | null; recibido_at: string }>(sesion.from('correos_entrantes').select('id, remitente_nombre, asunto, recibido_at').eq('categoria', 'persona'), 'recibido_at')
       : Promise.resolve([]),
+    // Tareas, con la sesión: admin ve todas; moderator, las suyas.
+    ultimos<{ id: string; titulo: string; created_at: string }>(sesion.from('tareas_admin').select('id, titulo, created_at'), 'created_at'),
+    ultimos<{ id: string; titulo: string; resuelta_at: string }>(sesion.from('tareas_admin').select('id, titulo, resuelta_at').eq('estado', 'resuelta'), 'resuelta_at'),
+    // «Asignada a <nombre visible>»: la nota que deja la base al asignar.
+    ultimos<{ id: string; tarea_id: string; texto: string; created_at: string; tareas_admin: { titulo: string } | { titulo: string }[] | null }>(
+      sesion.from('tareas_admin_notas').select('id, tarea_id, texto, created_at, tareas_admin(titulo)').eq('tipo', 'asignacion'), 'created_at'),
   ])
 
   // Nombres de los perfiles citados y slugs de los programas, en una lectura cada uno.
@@ -139,6 +148,9 @@ export async function cargarActividad(
     subsCanceladas.map(s => ev('suscripcion_cancelada', s.id, s.updated_at, `Suscripción ${plan(s.plan)} cancelada: ${nombreVisible(perfil.get(s.profile_id))}`, enlacePerfil(perfil.get(s.profile_id)))),
     envios.map(e => ev('proscenio', e.id, e.enviado_at, `Proscenio enviado a ${e.destinatarios} ${e.destinatarios === 1 ? 'suscriptor' : 'suscriptores'}`, '/admin/boletin')),
     correos.map(c => ev('correo', c.id, c.recibido_at, `Correo recibido: ${c.remitente_nombre?.trim() || 'Remitente sin nombre'} — ${c.asunto?.trim() || '(sin asunto)'}`, `/admin/correo?id=${c.id}`)),
+    tareasCreadas.map(t => ev('tarea_creada', t.id, t.created_at, `Tarea creada: ${t.titulo}`, `/admin/tareas/${t.id}`)),
+    tareasResueltas.map(t => ev('tarea_resuelta', t.id, t.resuelta_at, `Tarea resuelta: ${t.titulo}`, `/admin/tareas/${t.id}`)),
+    asignaciones.map(n => ev('tarea_asignada', n.id, n.created_at, `Tarea «${(Array.isArray(n.tareas_admin) ? n.tareas_admin[0] : n.tareas_admin)?.titulo ?? 'sin título'}»: ${n.texto.charAt(0).toLowerCase()}${n.texto.slice(1)}`, `/admin/tareas/${n.tarea_id}`)),
     embajadores.map(e => ev('embajador', e.id, e.aceptada_at, `${e.genero === 'f' ? 'Embajadora' : 'Embajador'} de Escena: ${e.nombre} aceptó la invitación`, '/admin/embajadores')),
   ], limite)
 }

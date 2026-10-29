@@ -37,18 +37,19 @@ describe('guard de roles del Master Control', () => {
 })
 
 describe('secciones', () => {
-  it('son 16 en cuatro grupos', () => {
-    expect(GRUPOS_SECCIONES.flatMap(g => g.secciones)).toHaveLength(16)
-    expect(GRUPOS_SECCIONES.map(g => g.titulo)).toEqual(['Moderación', 'Catálogos', 'Comunidad', 'Comunicación'])
+  it('son 17 en cinco grupos', () => {
+    expect(GRUPOS_SECCIONES.flatMap(g => g.secciones)).toHaveLength(17)
+    expect(GRUPOS_SECCIONES.map(g => g.titulo)).toEqual(['Moderación', 'Catálogos', 'Comunidad', 'Equipo', 'Comunicación'])
   })
   it('moderación no ve Embajadores, Avisos de perfil, Recordatorio de confirmación ni Correo entrante', () => {
     const hrefs = seccionesVisibles(false).flatMap(g => g.secciones.map(s => s.href))
-    expect(hrefs).toHaveLength(12)
+    expect(hrefs).toHaveLength(13)
+    expect(hrefs).toContain('/admin/tareas')
     expect(hrefs).not.toContain('/admin/embajadores')
     expect(hrefs).not.toContain('/admin/avisos-perfil')
     expect(hrefs).not.toContain('/admin/recordatorio-confirmacion')
     expect(hrefs).not.toContain('/admin/correo')
-    expect(seccionesVisibles(true).flatMap(g => g.secciones)).toHaveLength(16)
+    expect(seccionesVisibles(true).flatMap(g => g.secciones)).toHaveLength(17)
   })
 })
 
@@ -92,5 +93,14 @@ describe('contar: un recuento vacío es un fallo, no un cero', () => {
   })
   it('y en el panel sale como «No se pudo contar», no desaparece', () => {
     expect(elementosAtencion({ correo: null }, true)[0].texto).toBe('No se pudo contar: correos sin atender')
+  })
+})
+
+describe('colas de tareas', () => {
+  it('vencidas y urgentes salen para todo el equipo; las abiertas solo cuentan en su sección', () => {
+    const p = { tareas: 5, tareas_vencidas: 2, tareas_urgentes: 1 }
+    expect(elementosAtencion(p, false).map(x => x.texto)).toEqual(['2 tareas vencidas', '1 tarea urgente'])
+    expect(elementosAtencion(p, true).map(x => x.clave)).toEqual(['tareas_vencidas', 'tareas_urgentes'])
+    expect(totalColas(p, ['tareas'])).toBe(5)
   })
 })

@@ -12,6 +12,7 @@ import { leerAcceso } from '@/lib/admin/acceso'
 import { cargarPendientes, elementosAtencion } from '@/lib/admin/colas'
 import { cargarCifras, cargarSalud } from '@/lib/admin/datos'
 import { cargarActividad, inicioPeriodo, LIMITE_EVENTOS, LIMITE_MAXIMO, periodoValido } from '@/lib/admin/actividad'
+import { tareasAbiertasPorOrigen } from '@/lib/tareas/datos'
 import MasterControl from './MasterControl'
 
 export const metadata: Metadata = {
@@ -63,11 +64,16 @@ export default async function MasterControlPage({ searchParams }: Props) {
     cargarActividad(sesion, servicio, { desde: inicioPeriodo(periodo, ahora), limite, esAdmin }),
   ])
   const atencion = elementosAtencion(pendientes, esAdmin)
+  // ¿Ya hay una tarea abierta para alguna tarjeta? Entonces se enlaza en vez de duplicarla.
+  const tareasOrigen = await tareasAbiertasPorOrigen(sesion, [
+    ...atencion.map(a => ({ tipo: 'cola' as const, ref: a.clave })),
+    ...salud.filter(s => s.color === 'ambar' || s.color === 'rojo').map(s => ({ tipo: 'salud' as const, ref: s.clave })),
+  ])
 
   return (
     <Marco>
       <MasterControl ahora={ahora} esAdmin={esAdmin} pendientes={pendientes} atencion={atencion} salud={salud}
-        cifras={cifras} eventos={eventos} periodo={periodo} limite={limite} />
+        cifras={cifras} eventos={eventos} periodo={periodo} limite={limite} tareasOrigen={tareasOrigen} />
     </Marco>
   )
 }

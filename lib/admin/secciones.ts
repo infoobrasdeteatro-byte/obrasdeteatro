@@ -7,6 +7,7 @@
 export type ClaveCola =
   | 'noticias' | 'castings' | 'reportes' | 'convocatorias' | 'cartelera'
   | 'verificaciones' | 'reclamaciones' | 'sugerencias' | 'avisos' | 'recordatorios' | 'correo'
+  | 'tareas' | 'tareas_vencidas' | 'tareas_urgentes'
 
 export type Seccion = {
   href: string
@@ -47,6 +48,12 @@ export const GRUPOS_SECCIONES: GrupoSecciones[] = [
       { href: '/admin/verificaciones', titulo: 'Verificaciones', descripcion: 'Sello «✓ Verificado»', colas: ['verificaciones'] },
       { href: '/admin/avisos-perfil', titulo: 'Avisos de perfil', descripcion: 'Correo «completa tu perfil»', soloAdmin: true, colas: ['avisos'] },
       { href: '/admin/recordatorio-confirmacion', titulo: 'Recordatorio de confirmación', descripcion: 'Cuentas sin confirmar el correo', soloAdmin: true, colas: ['recordatorios'] },
+    ],
+  },
+  {
+    titulo: 'Equipo',
+    secciones: [
+      { href: '/admin/tareas', titulo: 'Tareas', descripcion: 'Lo que hay que hacer y quién lo hace', colas: ['tareas'] },
     ],
   },
   {

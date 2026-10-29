@@ -7,6 +7,8 @@ import {
   type EstadoCorreo, type Filtros,
 } from '@/lib/correo/presentacion'
 import AccionesCorreo from './AccionesCorreo'
+import EnlaceTarea from '../tareas/EnlaceTarea'
+import { tareasAbiertasPorOrigen } from '@/lib/tareas/datos'
 
 /**
  * Bandeja y detalle de /admin/correo. Reciben el cliente con la sesión de
@@ -104,12 +106,16 @@ export async function Detalle({ sesion, id, filtros }: { sesion: SupabaseClient;
     return <>{volver}<div className="obras-empty"><p className="obras-empty-text">{error ? `No se pudo leer el correo: ${error.message}` : 'Correo no encontrado.'}</p></div></>
   }
   const etiqueta = etiquetaDestino(c.direccion_destino)
+  const abiertas = await tareasAbiertasPorOrigen(sesion, [{ tipo: 'correo', ref: c.id }])
 
   return (
     <>
       {volver}
       <article className="account-card correo-detalle">
         <h2 className="correo-detalle-asunto">{c.asunto || '(sin asunto)'}</h2>
+        <div style={{ marginBottom: '12px' }}>
+          <EnlaceTarea origen="correo" refOrigen={c.id} titulo={`Correo: ${(c.asunto || '(sin asunto)').slice(0, 180)}`} enlace={`/admin/correo?id=${c.id}`} abiertas={abiertas} />
+        </div>
         <dl className="correo-datos">
           <dt>De</dt><dd>{c.remitente_nombre ? `${c.remitente_nombre} <${c.remitente_email ?? '?'}>` : c.remitente_email ?? 'desconocido'}</dd>
           <dt>Para</dt><dd>{c.direccion_destino ?? '—'}{etiqueta && <span className="correo-etiqueta" style={{ marginLeft: '8px' }}>{etiqueta}</span>}</dd>

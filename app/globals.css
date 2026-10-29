@@ -1198,7 +1198,36 @@ a.mc-evento-texto:hover { text-decoration: underline; }
 .correo-adjuntos { list-style: none; margin: 6px 0 0; padding: 0; font-size: 13px; line-height: 1.8; }
 .correo-adjuntos em { color: var(--muted); font-style: normal; }
 
+/* ═══ Tareas (/admin/tareas) ═══ */
+.tarea-fila {
+  display: grid; grid-template-columns: 76px 1fr auto; gap: 14px; align-items: baseline;
+  padding: 11px 18px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text); text-decoration: none;
+}
+.correo-lista li:first-child .tarea-fila { border-top: 0; }
+.tarea-fila:hover { background: var(--subtle); }
+.tarea-fila--vencida { background: var(--red-light); }
+.tarea-prioridad { font-family: var(--mono); font-size: 10px; letter-spacing: .03em; padding: 2px 8px; border-radius: 10px; text-align: center; white-space: nowrap; }
+.tarea-prioridad--urgente { background: #c8001a; color: #fff; }
+.tarea-prioridad--alta { background: #fef3c7; color: #92400e; }
+.tarea-prioridad--normal { background: var(--subtle); color: var(--text); }
+.tarea-prioridad--baja { background: var(--subtle); color: var(--muted); }
+.tarea-vence { white-space: nowrap; }
+.tarea-vence--pasada { color: var(--red); font-weight: 600; }
+.tarea-notas { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tarea-notas li { border-left: 2px solid var(--black); padding: 2px 0 2px 12px; }
+.tarea-notas li.tarea-nota--auto { border-left-color: var(--border); }
+.tarea-nota-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.tarea-nota-texto { font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tarea-nota--auto .tarea-nota-texto { color: var(--muted); }
+.mc-atencion-celda { display: flex; flex-direction: column; gap: 4px; }
+.mc-tarea-enlace { font-size: 12px; color: var(--muted); text-decoration: underline; padding-left: 4px; overflow-wrap: anywhere; }
+.mc-tarea-enlace:hover { color: var(--black); }
+.mc-tarea-enlace--abierta { color: #92400e; }
+.mc-salud-tarjeta .mc-tarea-enlace { display: inline-block; margin-top: 8px; padding-left: 0; }
+
 @media (max-width: 600px) {
+  .tarea-fila { grid-template-columns: 1fr; gap: 4px; padding: 11px 14px; }
+  .tarea-fila .tarea-prioridad { justify-self: start; }
   .correo-fila { grid-template-columns: 1fr; gap: 3px; padding: 11px 14px; }
   .correo-meta { flex-wrap: wrap; white-space: normal; }
   .correo-iframe { height: 420px; }

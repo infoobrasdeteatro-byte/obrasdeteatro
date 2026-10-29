@@ -8,6 +8,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { cargarDestinatariosAviso } from '@/lib/avisos/perfil-incompleto-envio'
 import { cargarPendientesConfirmar } from '@/lib/avisos/confirmacion'
 import { ESTADOS_SIN_ATENDER } from '@/lib/correo/presentacion'
+import { consultasRecuentoTareas } from '@/lib/tareas/datos'
 import type { ClaveCola } from './secciones'
 
 /** Estado que marca «pendiente» en cada tabla. */
@@ -28,6 +29,8 @@ type Cola = {
   uno: string
   varios: string
   soloAdmin?: boolean
+  /** Solo para el contador de su sección; no sale en «Requiere tu atención». */
+  soloContador?: boolean
 }
 
 export const COLAS: Cola[] = [
@@ -41,6 +44,9 @@ export const COLAS: Cola[] = [
   { clave: 'sugerencias', href: '/admin/espacios', uno: 'sugerencia de espacio pendiente', varios: 'sugerencias de espacios pendientes' },
   { clave: 'avisos', href: '/admin/avisos-perfil', uno: 'aviso de perfil por enviar', varios: 'avisos de perfil por enviar', soloAdmin: true },
   { clave: 'recordatorios', href: '/admin/recordatorio-confirmacion', uno: 'recordatorio de confirmación por enviar', varios: 'recordatorios de confirmación por enviar', soloAdmin: true },
+  { clave: 'tareas_vencidas', href: '/admin/tareas?vista=todas&estado=vencidas', uno: 'tarea vencida', varios: 'tareas vencidas' },
+  { clave: 'tareas_urgentes', href: '/admin/tareas?vista=todas&prioridad=urgente', uno: 'tarea urgente', varios: 'tareas urgentes' },
+  { clave: 'tareas', href: '/admin/tareas', uno: 'tarea abierta', varios: 'tareas abiertas', soloContador: true },
   { clave: 'correo', href: '/admin/correo?estado=pendientes', uno: 'correo sin atender', varios: 'correos sin atender', soloAdmin: true },
 ]
 
@@ -52,7 +58,7 @@ export type ElementoAtencion = { clave: ClaveCola; n: number | null; texto: stri
 /** Puro: solo las colas con algo pendiente, o que no se pudieron contar. */
 export function elementosAtencion(p: Pendientes, esAdmin: boolean): ElementoAtencion[] {
   return COLAS
-    .filter(c => esAdmin || !c.soloAdmin)
+    .filter(c => (esAdmin || !c.soloAdmin) && !c.soloContador)
     .filter(c => p[c.clave] !== undefined && p[c.clave] !== 0)
     .map(c => {
       const n = p[c.clave] ?? null
@@ -86,9 +92,11 @@ export async function contar(q: PromiseLike<{ count: number | null; error: unkno
  * avisos y recordatorios). Las de solo administración no se leen a moderación.
  */
 export async function cargarPendientes(sesion: SupabaseClient, servicio: SupabaseClient, esAdmin: boolean): Promise<Pendientes> {
+  // Tareas: la RLS da a admin todas y a moderator las suyas.
+  const tareas = consultasRecuentoTareas(sesion)
   const n = (tabla: string, estado: string) => sesion.from(tabla).select('id', { count: 'exact', head: true }).eq('estado', estado)
 
-  const [noticias, castings, reportes, convocatorias, cartelera, verificaciones, reclamaciones, sugerencias, avisos, recordatorios, correo] = await Promise.all([
+  const [noticias, castings, reportes, convocatorias, cartelera, verificaciones, reclamaciones, sugerencias, avisos, recordatorios, correo, tareasAbiertas, tareasVencidas, tareasUrgentes] = await Promise.all([
     contar(n('noticias', ESTADO_PENDIENTE.noticias)),
     contar(n('castings', ESTADO_PENDIENTE.castings)),
     contar(n('casting_reportes', ESTADO_PENDIENTE.reportes)),
@@ -103,9 +111,13 @@ export async function cargarPendientes(sesion: SupabaseClient, servicio: Supabas
     esAdmin
       ? contar(sesion.from('correos_entrantes').select('id', { count: 'exact', head: true }).eq('categoria', 'persona').in('estado', ESTADOS_SIN_ATENDER))
       : Promise.resolve(undefined),
+    contar(tareas.abiertas), contar(tareas.vencidas), contar(tareas.urgentes),
   ])
 
-  const p: Pendientes = { noticias, castings, reportes, convocatorias, cartelera, verificaciones, reclamaciones, sugerencias }
+  const p: Pendientes = {
+    noticias, castings, reportes, convocatorias, cartelera, verificaciones, reclamaciones, sugerencias,
+    tareas: tareasAbiertas, tareas_vencidas: tareasVencidas, tareas_urgentes: tareasUrgentes,
+  }
   if (esAdmin) { p.avisos = avisos ?? null; p.recordatorios = recordatorios ?? null; p.correo = correo ?? null }
   return p
 }
