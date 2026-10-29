@@ -14,7 +14,7 @@ export default function EnvioAviso({ pendientes }: { pendientes: number }) {
     setAviso({ ok: texto.startsWith('Prueba enviada'), texto })
   }
   const todos = async () => {
-    if (!window.confirm(`Se enviará el aviso a ${pendientes} cuentas. ¿Continuar?`)) return
+    if (!window.confirm(`Se enviará el aviso a ${pendientes} ${pendientes === 1 ? 'cuenta' : 'cuentas'}. ¿Continuar?`)) return
     setOcupado('todos'); setAviso(null)
     const r = await enviarAvisoATodos(pendientes)
     setOcupado(null)
