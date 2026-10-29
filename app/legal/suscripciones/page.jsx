@@ -45,6 +45,7 @@ const SECTIONS = [
     title: "3. Método de pago",
     content: [
       { type: "text", text: "Los pagos serán gestionados mediante Stripe u otros proveedores autorizados. Los métodos disponibles podrán incluir tarjeta de crédito, tarjeta de débito, Apple Pay, Google Pay y otros métodos habilitados." },
+      { type: "text", text: "Los precios se expresan en euros. Cuando el pago se realice desde fuera de la zona euro, el proveedor de pagos podrá mostrar y cobrar el importe en la moneda local del usuario, convertido al tipo de cambio vigente en el momento de cada cobro e incluyendo el coste de conversión que aplica dicho proveedor. Por ello, el importe en moneda local de las renovaciones puede variar ligeramente de un período a otro, aunque el precio en euros no cambie." },
     ],
   },
   {

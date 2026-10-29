@@ -120,6 +120,12 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
           </div>
         )}
 
+        {/* Moneda: los precios son en euros; Stripe muestra y cobra en la moneda local (Adaptive Pricing). */}
+        <p className="precios-moneda">
+          Precios en euros. Al pagar verás el importe en tu moneda local, convertido al cambio del día.
+          En las renovaciones, el importe en tu moneda puede variar ligeramente según el tipo de cambio.
+        </p>
+
         {/* Banner: pago cancelado */}
         {cancelled && (
           <div className="ds-status-banner ds-status-banner--draft" style={{ maxWidth: '520px', margin: '0 auto 32px' }}>
