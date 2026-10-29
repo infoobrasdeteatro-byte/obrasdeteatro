@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createClient } from '@/lib/supabase/server'
+import { esPeriodo, esPlanDePago, priceIdDe } from '@/lib/stripe-precios'
 
 /**
  * Crea la sesión de Stripe Checkout para suscribirse a un plan.
@@ -10,7 +11,8 @@ import { createClient } from '@/lib/supabase/server'
  * podía pagar poniendo el `userId` de otra persona, y el webhook
  * (checkout.session.completed, que guarda la suscripción por profile_id)
  * sustituía la suscripción de esa persona por la del que pagaba. Del cuerpo
- * solo se lee `plan`; si llegan `userId` o `email`, se ignoran.
+ * solo se leen `plan` y `periodo` ('mensual' por defecto, o 'anual'); si
+ * llegan `userId` o `email`, se ignoran.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -21,21 +23,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    const { plan } = await req.json()
+    const { plan, periodo: periodoPedido } = await req.json()
 
     if (!plan) {
       return NextResponse.json({ error: 'Faltan parámetros requeridos' }, { status: 400 })
     }
 
-    const PLANES: Record<string, string | undefined> = {
-      premium:   process.env.STRIPE_PRICE_PREMIUM_ID,
-      destacado: process.env.STRIPE_PRICE_DESTACADO_ID,
-      empresas:  process.env.STRIPE_PRICE_EMPRESAS_ID,
+    const periodo = periodoPedido ?? 'mensual'
+    if (!esPeriodo(periodo)) {
+      return NextResponse.json({ error: 'Periodo no válido' }, { status: 400 })
     }
 
-    const priceId = PLANES[plan]
+    const priceId = esPlanDePago(plan) ? priceIdDe(plan, periodo) : undefined
     if (!priceId) {
-      return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
+      return NextResponse.json(
+        { error: periodo === 'anual' && esPlanDePago(plan) ? 'El pago anual no está disponible' : 'Plan no válido' },
+        { status: 400 },
+      )
     }
 
     const session = await getStripe().checkout.sessions.create({
@@ -43,7 +47,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ['card'],
       customer_email: user.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      metadata: { userId: user.id, plan },
+      metadata: { userId: user.id, plan, periodo },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/precios?cancelled=true`,
     })

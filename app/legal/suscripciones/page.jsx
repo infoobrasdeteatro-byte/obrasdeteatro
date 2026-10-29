@@ -18,8 +18,13 @@ const BENEFICIOS = {
   empresas: "perfil institucional con gestión de equipo, prioridad máxima en el directorio, convocatorias sin límite mensual, castings activos ilimitados y soporte prioritario con gestor asignado.",
 };
 
-const formatoPrecio = (precio) =>
-  precio === 0 ? "0 €" : `${precio.toFixed(2).replace(".", ",")} €/mes`;
+const importe = (valor) => `${valor.toFixed(2).replace(".", ",")} €`;
+const formatoPrecio = (plan) =>
+  plan.precio === 0
+    ? "0 €"
+    : plan.precioAnual
+      ? `${importe(plan.precio)}/mes o ${importe(plan.precioAnual)}/año en pago anual por adelantado`
+      : `${importe(plan.precio)}/mes`;
 
 const SECTIONS = [
   {
@@ -32,7 +37,7 @@ const SECTIONS = [
   {
     title: "2. Planes disponibles",
     content: [
-      { type: "list", items: PLANES.map((plan) => `${plan.nombre} (${formatoPrecio(plan.precio)}): ${BENEFICIOS[plan.id]}`) },
+      { type: "list", items: PLANES.map((plan) => `${plan.nombre} (${formatoPrecio(plan)}): ${BENEFICIOS[plan.id]}`) },
       { type: "text", text: "El detalle completo y actualizado de las funcionalidades de cada plan se publica en la página de precios (/precios)." },
     ],
   },
@@ -45,7 +50,7 @@ const SECTIONS = [
   {
     title: "4. Renovación automática",
     content: [
-      { type: "text", text: "Las suscripciones de pago se renovarán automáticamente al finalizar cada período contratado." },
+      { type: "text", text: "Las suscripciones de pago se renovarán automáticamente al finalizar cada período contratado: cada mes en la modalidad mensual y cada año en la modalidad anual, por el mismo importe del período elegido." },
       { type: "highlight", text: "El usuario autoriza expresamente dicha renovación al contratar un plan de pago." },
     ],
   },
@@ -89,7 +94,7 @@ export default function SuscripcionesPage() {
   return (
     <LegalPage
       title="Condiciones de Suscripción"
-      lastUpdate="18 de septiembre de 2026"
+      lastUpdate="29 de octubre de 2026"
       sections={SECTIONS}
     />
   );

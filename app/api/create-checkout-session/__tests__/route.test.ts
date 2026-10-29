@@ -25,6 +25,9 @@ beforeEach(() => {
   process.env.STRIPE_PRICE_PREMIUM_ID = 'price_premium_test'
   process.env.STRIPE_PRICE_DESTACADO_ID = 'price_destacado_test'
   process.env.STRIPE_PRICE_EMPRESAS_ID = 'price_empresas_test'
+  process.env.STRIPE_PRICE_PREMIUM_ANUAL_ID = 'price_premium_anual_test'
+  process.env.STRIPE_PRICE_DESTACADO_ANUAL_ID = 'price_destacado_anual_test'
+  process.env.STRIPE_PRICE_EMPRESAS_ANUAL_ID = 'price_empresas_anual_test'
   process.env.NEXT_PUBLIC_APP_URL = 'https://app.test'
   mockGetUser.mockResolvedValue({ data: { user: USUARIO_SESION } })
   mockCheckoutCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/c/pay/cs_test_1' })
@@ -47,7 +50,7 @@ describe('POST /api/create-checkout-session', () => {
 
     expect(res.status).toBe(200)
     const args = mockCheckoutCreate.mock.calls[0][0]
-    expect(args.metadata).toEqual({ userId: 'user-sesion', plan: 'premium' })
+    expect(args.metadata).toEqual({ userId: 'user-sesion', plan: 'premium', periodo: 'mensual' })
     expect(args.customer_email).toBe('sesion@example.com')
     expect(JSON.stringify(args)).not.toMatch(/user-victima|victima@example\.com/)
   })
@@ -61,7 +64,7 @@ describe('POST /api/create-checkout-session', () => {
       expect.objectContaining({
         mode: 'subscription',
         line_items: [{ price: 'price_destacado_test', quantity: 1 }],
-        metadata: { userId: 'user-sesion', plan: 'destacado' },
+        metadata: { userId: 'user-sesion', plan: 'destacado', periodo: 'mensual' },
       })
     )
   })
@@ -77,6 +80,41 @@ describe('POST /api/create-checkout-session', () => {
     const res = await POST(peticion({}))
 
     expect(res.status).toBe(400)
+    expect(mockCheckoutCreate).not.toHaveBeenCalled()
+  })
+
+  it('con periodo anual usa el precio anual del plan', async () => {
+    const res = await POST(peticion({ plan: 'empresas', periodo: 'anual' }))
+
+    expect(res.status).toBe(200)
+    expect(mockCheckoutCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: 'price_empresas_anual_test', quantity: 1 }],
+        metadata: { userId: 'user-sesion', plan: 'empresas', periodo: 'anual' },
+      })
+    )
+  })
+
+  it('sin periodo cobra el precio mensual', async () => {
+    await POST(peticion({ plan: 'premium' }))
+
+    expect(mockCheckoutCreate.mock.calls[0][0].line_items).toEqual([{ price: 'price_premium_test', quantity: 1 }])
+  })
+
+  it('un periodo desconocido responde 400', async () => {
+    const res = await POST(peticion({ plan: 'premium', periodo: 'semanal' }))
+
+    expect(res.status).toBe(400)
+    expect(mockCheckoutCreate).not.toHaveBeenCalled()
+  })
+
+  it('anual sin precio anual configurado responde 400 y no crea la sesión', async () => {
+    delete process.env.STRIPE_PRICE_DESTACADO_ANUAL_ID
+
+    const res = await POST(peticion({ plan: 'destacado', periodo: 'anual' }))
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'El pago anual no está disponible' })
     expect(mockCheckoutCreate).not.toHaveBeenCalled()
   })
 })
