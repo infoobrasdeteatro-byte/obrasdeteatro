@@ -84,6 +84,7 @@ export default async function AdminEspaciosPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/espacios" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/galeria" className="table-link">Galerías de perfiles →</Link>
           <Link href="/admin/formaciones" className="table-link">Formación →</Link>

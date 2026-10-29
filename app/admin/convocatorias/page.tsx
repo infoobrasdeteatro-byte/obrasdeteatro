@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { ESTADO_PENDIENTE } from '@/lib/admin/colas'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import NavAutenticado from '@/components/NavAutenticado'
@@ -79,7 +80,7 @@ export default async function ModeracionConvocatoriasPage() {
   const { data: filas, error } = await supabase
     .from('calls')
     .select('id, title, description, category, location, deadline, prize, created_at, moderacion_entrada_at, motivo_filtro, profile_id, origen, entidad_convocante, pais_code, ciudad, url_bases, fuente_dominio')
-    .eq('estado', 'pendiente_revision')
+    .eq('estado', ESTADO_PENDIENTE.convocatorias)
     .is('deleted_at', null)
     .order('moderacion_entrada_at', { ascending: true, nullsFirst: true })
 
@@ -135,6 +136,7 @@ export default async function ModeracionConvocatoriasPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/admin/castings" className="table-link">Cola de castings →</Link>
           <Link href="/admin/galeria" className="table-link">Galerías de perfiles →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>

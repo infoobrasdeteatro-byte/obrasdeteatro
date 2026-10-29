@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import NavAutenticado from '@/components/NavAutenticado'
@@ -36,6 +37,9 @@ export default async function RecordatorioConfirmacionPage() {
         <div className="page-title-group">
           <h1 className="page-title">Recordatorio de confirmación</h1>
           <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Correo a las cuentas registradas que nunca confirmaron su dirección.</span>
+        </div>
+        <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
         </div>
       </div>
 

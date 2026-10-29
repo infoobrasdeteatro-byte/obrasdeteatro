@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { redirect } from 'next/navigation'
+import { ESTADO_PENDIENTE } from '@/lib/admin/colas'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import NavAutenticado from '@/components/NavAutenticado'
@@ -49,7 +50,7 @@ export default async function VerificacionesPage() {
   const { data: filas } = await servicio
     .from('verificaciones_profesionales')
     .select('id, profile_id, tipo_enlace, enlace, codigo, codigo_detectado, created_at')
-    .eq('estado', 'pendiente')
+    .eq('estado', ESTADO_PENDIENTE.verificaciones)
     .order('created_at', { ascending: true })
 
   const ids = [...new Set((filas ?? []).map(f => f.profile_id))]
@@ -66,6 +67,9 @@ export default async function VerificacionesPage() {
           <span style={{ fontSize: '13px', color: 'var(--muted)' }}>
             Abre el enlace y comprueba que el código aparece en la biografía o en la web y que corresponde a la persona u organización del perfil.
           </span>
+        </div>
+        <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
         </div>
       </div>
 

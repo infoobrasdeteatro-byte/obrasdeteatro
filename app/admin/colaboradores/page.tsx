@@ -64,6 +64,7 @@ export default async function AdminColaboradoresPage() {
           </span>
         </div>
         <div className="admin-header-actions">
+          <Link href="/admin" className="table-link">← Master Control</Link>
           <Link href="/colaboradores" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/galeria" className="table-link">Galerías de perfiles →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>
