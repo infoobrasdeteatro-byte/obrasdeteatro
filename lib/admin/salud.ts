@@ -202,3 +202,18 @@ export function peorColor(colores: Color[]): Color {
   for (const c of ['rojo', 'ambar', 'verde'] as const) if (colores.includes(c)) return c
   return 'gris'
 }
+
+// ── Correo entrante ─────────────────────────────────────────────────────────
+
+/**
+ * Correo entrante (Resend). Gris «Sin configurar» mientras falte la clave de
+ * firma del webhook o no haya llegado ningún correo; si no, verde con la
+ * fecha del último recibido.
+ */
+export function saludCorreo(d: { configurado: boolean; ultimo: string | null; sinAtender: number | null }, ahora: Date): Semaforo {
+  const base = { clave: 'correo', titulo: 'Correo entrante', href: '/admin/correo', ultimoDato: d.ultimo }
+  if (!d.configurado) return { ...base, color: 'gris', frase: 'Sin configurar: falta RESEND_INBOUND_WEBHOOK_SECRET.' }
+  if (!d.ultimo) return { ...base, color: 'gris', frase: 'Sin configurar: todavía no ha llegado ningún correo.' }
+  const pendientes = d.sinAtender ? ` ${d.sinAtender} ${d.sinAtender === 1 ? 'correo sin atender' : 'correos sin atender'}.` : ''
+  return { ...base, color: 'verde', frase: `El último correo llegó ${hace(d.ultimo, ahora)}.${pendientes}` }
+}

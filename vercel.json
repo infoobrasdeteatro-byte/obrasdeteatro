@@ -5,6 +5,7 @@
     { "path": "/api/cron/resumen-convocatorias", "schedule": "0 8 * * 1" },
     { "path": "/api/cron/alertas-convocatorias", "schedule": "30 7 * * *" },
     { "path": "/api/cron/mediateca", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/boletin", "schedule": "0 7 * * *" }
+    { "path": "/api/cron/boletin", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/correo-entrante", "schedule": "20 4 * * *" }
   ]
 }

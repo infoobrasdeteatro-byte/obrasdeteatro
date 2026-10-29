@@ -58,7 +58,7 @@ export default async function MasterControlPage({ searchParams }: Props) {
 
   const [pendientes, salud, cifras, eventos] = await Promise.all([
     cargarPendientes(sesion, servicio, esAdmin),
-    cargarSalud(sesion, ahora),
+    cargarSalud(sesion, ahora, esAdmin),
     cargarCifras(sesion, servicio, esAdmin, ahora),
     cargarActividad(sesion, servicio, { desde: inicioPeriodo(periodo, ahora), limite, esAdmin }),
   ])

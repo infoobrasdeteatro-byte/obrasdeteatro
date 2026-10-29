@@ -10,7 +10,7 @@ import { PLAZAS_FUNDADORAS } from '@/lib/embajadores/textos'
 import { plazasOcupadas } from '@/lib/embajadores/plazas'
 import { leerEstadoMake } from './make'
 import {
-  PATRON_BDNS, PATRON_LATAM, saludConvocatorias, saludMake, saludMediateca, saludNoticias, saludProscenio,
+  PATRON_BDNS, PATRON_LATAM, saludConvocatorias, saludCorreo, saludMake, saludMediateca, saludNoticias, saludProscenio,
   type ProgramaSalud, type Semaforo,
 } from './salud'
 
@@ -30,11 +30,12 @@ async function ultimaFecha(q: PromiseLike<{ data: unknown; error: unknown }>, co
   return fila?.[columna] ?? null
 }
 
-export async function cargarSalud(sesion: SupabaseClient, ahora: Date): Promise<Semaforo[]> {
+/** esAdmin: el semáforo del correo entrante solo lo ve administración. */
+export async function cargarSalud(sesion: SupabaseClient, ahora: Date, esAdmin = false): Promise<Semaforo[]> {
   const ultimaConvocatoria = (lote: string) => ultimaFecha(
     sesion.from('calls').select('created_at').like('lote', `${lote}%`).order('created_at', { ascending: false }).limit(1), 'created_at')
 
-  const [make, ultimaNoticia, fuentes, bdns, latam, programas, config, envio] = await Promise.all([
+  const [make, ultimaNoticia, fuentes, bdns, latam, programas, config, envio, ultimoCorreo] = await Promise.all([
     leerEstadoMake(),
     ultimaFecha(sesion.from('noticias').select('created_at').order('created_at', { ascending: false }).limit(1), 'created_at'),
     sesion.from('noticias_fuentes').select('activa'),
@@ -43,6 +44,7 @@ export async function cargarSalud(sesion: SupabaseClient, ahora: Date): Promise<
     sesion.from('mediateca_programas').select('id, nombre, ultima_importacion_at, ultimo_error').eq('activo', true).order('orden', { ascending: true }),
     sesion.from('boletin_config').select('nombre, activo, dia_envio').maybeSingle(),
     sesion.from('boletin_envios').select('enviado_at, destinatarios, errores').eq('es_prueba', false).order('enviado_at', { ascending: false }).limit(1),
+    esAdmin ? ultimaFecha(sesion.from('correos_entrantes').select('recibido_at').order('recibido_at', { ascending: false }).limit(1), 'recibido_at') : Promise.resolve(null),
   ])
 
   const listaFuentes = (fuentes.data ?? []) as { activa: boolean }[]
@@ -59,6 +61,9 @@ export async function cargarSalud(sesion: SupabaseClient, ahora: Date): Promise<
   if (c) {
     const ultimo = ((envio.data ?? []) as { enviado_at: string; destinatarios: number; errores: number }[])[0] ?? null
     semaforos.push(saludProscenio({ ...c, ultimo }, ahora))
+  }
+  if (esAdmin) {
+    semaforos.push(saludCorreo({ configurado: !!process.env.RESEND_INBOUND_WEBHOOK_SECRET?.trim(), ultimo: ultimoCorreo, sinAtender: null }, ahora))
   }
   semaforos.push(saludMake(make, ahora))
   return semaforos
