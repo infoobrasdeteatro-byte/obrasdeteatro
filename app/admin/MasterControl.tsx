@@ -5,6 +5,7 @@ import { ICONO, LIMITE_EVENTOS, LIMITE_MAXIMO, PERIODOS, type Evento, type Perio
 import { totalColas, type ElementoAtencion, type Pendientes } from '@/lib/admin/colas'
 import { seccionesVisibles } from '@/lib/admin/secciones'
 import { peorColor, type Color, type Semaforo } from '@/lib/admin/salud'
+import EnlaceTarea from './tareas/EnlaceTarea'
 
 const ZONA = 'Atlantic/Canary'
 const fechaHora = (iso: string) => new Date(iso).toLocaleString('es-ES', { timeZone: ZONA, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -23,6 +24,8 @@ export type DatosMasterControl = {
   eventos: { eventos: Evento[]; hayMas: boolean }
   periodo: Periodo
   limite: number
+  /** Tareas abiertas por origen («cola:noticias», «salud:latam»…). */
+  tareasOrigen?: Record<string, { id: string; titulo: string }>
 }
 
 /**
@@ -30,7 +33,7 @@ export type DatosMasterControl = {
  * nada. Un bloque nuevo (correo entrante, tareas…) es una sección más aquí y
  * su carga en page.tsx.
  */
-export default function MasterControl({ ahora, esAdmin, pendientes, atencion, salud, cifras, eventos, periodo, limite }: DatosMasterControl) {
+export default function MasterControl({ ahora, esAdmin, pendientes, atencion, salud, cifras, eventos, periodo, limite, tareasOrigen = {} }: DatosMasterControl) {
   return (
     <>
       <div className="page-header">
@@ -51,12 +54,16 @@ export default function MasterControl({ ahora, esAdmin, pendientes, atencion, sa
         ) : (
           <ul className="mc-atencion">
             {atencion.map(a => (
-              <li key={a.clave}>
+              <li key={a.clave} className="mc-atencion-celda">
                 <Link href={a.href} className="mc-atencion-item">
                   <span className={`mc-atencion-n${a.n === null ? ' mc-atencion-n--error' : ''}`}>{a.n ?? '?'}</span>
                   <span>{a.texto}</span>
                   <span className="mc-flecha" aria-hidden>→</span>
                 </Link>
+                {/* Las de tareas ya son tareas: no se convierten en otra. */}
+                {!a.clave.startsWith('tareas') && (
+                  <EnlaceTarea origen="cola" refOrigen={a.clave} titulo={a.texto} enlace={a.href} abiertas={tareasOrigen} />
+                )}
               </li>
             ))}
           </ul>
@@ -65,7 +72,7 @@ export default function MasterControl({ ahora, esAdmin, pendientes, atencion, sa
 
       <Bloque titulo="Salud de las automatizaciones" resumen={peorColor(salud.map(s => s.color))}>
         <div className="mc-salud">
-          {salud.map(s => <TarjetaSalud key={s.clave} s={s} />)}
+          {salud.map(s => <TarjetaSalud key={s.clave} s={s} abiertas={tareasOrigen} />)}
         </div>
       </Bloque>
 
@@ -134,7 +141,7 @@ export default function MasterControl({ ahora, esAdmin, pendientes, atencion, sa
   )
 }
 
-function TarjetaSalud({ s }: { s: Semaforo }) {
+function TarjetaSalud({ s, abiertas }: { s: Semaforo; abiertas: Record<string, { id: string; titulo: string }> }) {
   const cuerpo = (
     <>
       <div className="mc-salud-cabecera">
@@ -154,8 +161,12 @@ function TarjetaSalud({ s }: { s: Semaforo }) {
   )
   return <div className={`account-card mc-salud-tarjeta mc-salud-tarjeta--${s.color}`}>
     {s.href && !s.href.startsWith('http') ? <Link href={s.href} className="mc-salud-enlace">{cuerpo}</Link> : cuerpo}
+    {(s.color === 'ambar' || s.color === 'rojo') && (
+      <EnlaceTarea origen="salud" refOrigen={s.clave} titulo={`${s.titulo}: revisar`} enlace={s.href && !s.href.startsWith('http') ? s.href : '/admin'} abiertas={abiertas} />
+    )}
   </div>
 }
+
 
 function BloqueCifras({ c }: { c: Cifras }) {
   const v = (n: number | null | undefined) => (n === null || n === undefined ? '—' : miles(n))
