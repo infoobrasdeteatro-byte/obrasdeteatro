@@ -86,7 +86,7 @@ export default async function AdminCarteleraPage() {
             Espectáculos en revisión, publicados y retirados. Los perfiles verificados con texto limpio se publican solos.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="admin-header-actions">
           <Link href="/admin/castings" className="table-link">Castings →</Link>
           <Link href="/admin/formaciones" className="table-link">Formación →</Link>
           <span className="status-pill status-pill--draft" style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>

@@ -83,7 +83,7 @@ export default async function AdminEspaciosPage() {
             Catálogo de teatros, auditorios y salas. Solo lo publicado se ve en la web (tarda hasta 10 minutos).
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="admin-header-actions">
           <Link href="/espacios" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/galeria" className="table-link">Galerías de perfiles →</Link>
           <Link href="/admin/formaciones" className="table-link">Formación →</Link>

@@ -65,7 +65,7 @@ export default async function AdminFormacionesPage() {
             Cursos, talleres y masterclass publicados. Se publican sin revisión previa; aquí se retiran o se restauran.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="admin-header-actions">
           <Link href="/formacion" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/cartelera" className="table-link">Cartelera →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>

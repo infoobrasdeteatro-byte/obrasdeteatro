@@ -90,7 +90,7 @@ export default async function AdminGaleriaPage() {
             Últimas fotos, vídeos y proyectos subidos (se publican al momento). Retirar borra la fila y el archivo.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-header-actions">
           <Link href="/admin/convocatorias" className="table-link">Convocatorias →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>
           <Link href="/admin/formaciones" className="table-link">Formación →</Link>

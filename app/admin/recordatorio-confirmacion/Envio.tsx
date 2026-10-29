@@ -29,7 +29,7 @@ export default function Envio({ pendientes }: { pendientes: number }) {
           {ocupado === 'prueba' ? 'Enviando…' : 'Enviarme una prueba'}
         </button>
         <button type="button" className="ds-btn-primary" disabled={ocupado !== null || pendientes === 0} style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }} onClick={todos}>
-          {ocupado === 'todos' ? 'Enviando…' : `Enviar a ${pendientes} cuentas`}
+          {ocupado === 'todos' ? 'Enviando…' : `Enviar a ${pendientes} ${pendientes === 1 ? 'cuenta' : 'cuentas'}`}
         </button>
       </div>
       <p className="ds-form-hint" style={{ marginTop: '10px' }}>

@@ -99,7 +99,7 @@ export default async function ReportesCastingsPage({ searchParams }: Props) {
             Denuncias de usuarios pendientes de resolver, de la más antigua a la más reciente.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-header-actions">
           <Link href="/admin/castings" className="table-link">Cola de moderación →</Link>
           <span className="status-pill status-pill--draft"
             style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>
