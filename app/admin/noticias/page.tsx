@@ -139,7 +139,7 @@ export default async function AdminNoticiasPage() {
             Revisión de candidatas, alta manual y fuentes. Nada se publica sin pasar por aquí.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-header-actions">
           <Link href="/noticias" className="table-link">Ver sección pública →</Link>
           <span className="status-pill status-pill--draft"
             style={{ fontFamily: 'var(--mono)', fontSize: '10px', letterSpacing: '0.04em' }}>

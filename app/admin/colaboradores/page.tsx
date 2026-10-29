@@ -63,7 +63,7 @@ export default async function AdminColaboradoresPage() {
             Medios, instituciones y patrocinadores. Nada se muestra en la web hasta activarlo.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-header-actions">
           <Link href="/colaboradores" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/galeria" className="table-link">Galerías de perfiles →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>

@@ -199,3 +199,13 @@ export function imagenCanalPodcast(xml: string): string | null {
 
 export const urlFeedYoutube = (channelId: string) =>
   `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`
+
+/**
+ * El mismo feed pedido por la lista de subidas del canal («UC…» → «UU…»).
+ * Devuelve las mismas entradas y el mismo formato; sirve de segunda vía
+ * cuando YouTube responde 404 a channel_id, cosa que hace a rachas.
+ */
+export const urlFeedYoutubeSubidas = (channelId: string) =>
+  /^UC[A-Za-z0-9_-]{22}$/.test(channelId)
+    ? `https://www.youtube.com/feeds/videos.xml?playlist_id=UU${encodeURIComponent(channelId.slice(2))}`
+    : null

@@ -11,7 +11,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
-import { imagenCanalPodcast, leerFeedPodcast, leerFeedYoutube, urlFeedYoutube, claveEpisodio, type EpisodioFuente } from './feeds'
+import { imagenCanalPodcast, leerFeedPodcast, leerFeedYoutube, urlFeedYoutube, urlFeedYoutubeSubidas, claveEpisodio, type EpisodioFuente } from './feeds'
 
 type Cliente = SupabaseClient<Database>
 
@@ -46,8 +46,44 @@ async function descargar(url: string, fetcher: typeof fetch): Promise<string> {
     signal: AbortSignal.timeout(TIEMPO_MAX_MS),
     cache: 'no-store',
   })
-  if (!r.ok) throw new Error(`${new URL(url).hostname} respondió ${r.status}`)
+  if (!r.ok) throw new ErrorDescarga(`${new URL(url).hostname} respondió ${r.status}`, r.status)
   return r.text()
+}
+
+class ErrorDescarga extends Error {
+  constructor(message: string, readonly status: number) { super(message) }
+}
+
+/** 404, 429, 5xx o fallo de red: YouTube los da a rachas y al rato responde bien. */
+const reintentable = (e: unknown) =>
+  !(e instanceof ErrorDescarga) || e.status === 404 || e.status === 429 || e.status >= 500
+
+const INTENTOS_YOUTUBE = 4
+const MARGEN_REINTENTOS_MS = 25_000
+
+/**
+ * Feed de YouTube con reintentos. El feed por channel_id devuelve 404 a
+ * rachas, sobre todo a servidores (Vercel), aunque el canal exista: se
+ * alterna con el feed de la lista de subidas, que trae lo mismo, y se
+ * espera un poco entre intentos. Si todos fallan se lanza el último error.
+ */
+export async function descargarFeedYoutube(
+  channelId: string,
+  fetcher: typeof fetch,
+  esperar: (ms: number) => Promise<void> = ms => new Promise(r => setTimeout(r, ms)),
+): Promise<string> {
+  const urls = [urlFeedYoutube(channelId), urlFeedYoutubeSubidas(channelId)].filter((u): u is string => !!u)
+  const inicio = Date.now()
+  let ultimo: unknown
+  for (let i = 0; i < INTENTOS_YOUTUBE; i++) {
+    if (i > 0) {
+      if (!reintentable(ultimo) || Date.now() - inicio > MARGEN_REINTENTOS_MS) break
+      await esperar(1000 * i)
+    }
+    try { return await descargar(urls[i % urls.length], fetcher) }
+    catch (e) { ultimo = e }
+  }
+  throw ultimo
 }
 
 /** Campos que rellenar en un existente a partir de una fuente, sin pisar nada. */
@@ -120,7 +156,7 @@ export async function importarPrograma(
   let portada: string | null = null
 
   if (p.youtube_channel_id) {
-    try { fuentes.push(...leerFeedYoutube(await descargar(urlFeedYoutube(p.youtube_channel_id), fetcher), { filtroTitulo: p.filtro_titulo })) }
+    try { fuentes.push(...leerFeedYoutube(await descargarFeedYoutube(p.youtube_channel_id, fetcher), { filtroTitulo: p.filtro_titulo })) }
     catch (e) { errores.push(`YouTube: ${e instanceof Error ? e.message : e}`) }
   }
   if (p.rss_url) {

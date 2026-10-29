@@ -134,7 +134,7 @@ export default async function ModeracionConvocatoriasPage() {
             Convocatorias en espera de revisión, de la más antigua a la más reciente.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="admin-header-actions">
           <Link href="/admin/castings" className="table-link">Cola de castings →</Link>
           <Link href="/admin/galeria" className="table-link">Galerías de perfiles →</Link>
           <Link href="/admin/espacios" className="table-link">Espacios escénicos →</Link>

@@ -53,7 +53,7 @@ export default async function AdminMediatecaPage() {
             Podcasts y canales de vídeo. Los episodios llegan solos cada día; aquí se dan de alta programas y se retiran episodios.
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="admin-header-actions">
           <Link href="/mediateca" className="table-link">Ver la página pública →</Link>
           <Link href="/admin/colaboradores" className="table-link">Colaboradores →</Link>
           <Link href="/admin/boletin" className="table-link">Boletín →</Link>
