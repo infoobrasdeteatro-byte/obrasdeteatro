@@ -1539,6 +1539,8 @@ a.mc-evento-texto:hover { text-decoration: underline; }
 .precios-legal-item input { accent-color: var(--black); flex-shrink: 0; margin-top: 2px; }
 .precios-legal-warning { font-size: 11px; color: #92400e; margin-top: 10px; }
 .precios-trust { text-align: center; font-size: 13px; color: var(--muted); }
+.precios-moneda { text-align: center; font-size: 12px; line-height: 1.6; color: var(--muted); max-width: 620px; margin: -20px auto 36px; }
+.precios-periodo + .precios-moneda { margin-top: -24px; }
 
 /* ═══════════════════════════════════════════════════
    MOBILE NAV (hamburger)
