@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { planConCortesia } from '@/lib/embajadores/plan-efectivo'
+import { planDePriceId } from '@/lib/stripe-precios'
 
 function getServiceClient() {
   return createClient(
@@ -81,11 +82,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const supabase = getServiceClient()
 
   const priceId = subscription.items.data[0]?.price.id
-  const plan =
-    priceId === process.env.STRIPE_PRICE_PREMIUM_ID ? 'premium' :
-    priceId === process.env.STRIPE_PRICE_DESTACADO_ID ? 'destacado' :
-    priceId === process.env.STRIPE_PRICE_EMPRESAS_ID ? 'empresas' :
-    null
+  // Precio mensual o anual de cualquiera de los tres planes (lib/stripe-precios.ts).
+  const plan = planDePriceId(priceId)?.plan ?? null
 
   const status = subscription.status
 

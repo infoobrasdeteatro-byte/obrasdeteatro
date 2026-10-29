@@ -52,6 +52,9 @@ import { POST } from '../route'
 process.env.STRIPE_PRICE_PREMIUM_ID = 'price_premium_test'
 process.env.STRIPE_PRICE_DESTACADO_ID = 'price_destacado_test'
 process.env.STRIPE_PRICE_EMPRESAS_ID = 'price_empresas_test'
+process.env.STRIPE_PRICE_PREMIUM_ANUAL_ID = 'price_premium_anual_test'
+process.env.STRIPE_PRICE_DESTACADO_ANUAL_ID = 'price_destacado_anual_test'
+process.env.STRIPE_PRICE_EMPRESAS_ANUAL_ID = 'price_empresas_anual_test'
 
 const PROFILE_ID = 'profile-1'
 
@@ -128,6 +131,9 @@ describe('POST /api/webhooks/stripe — customer.subscription.updated', () => {
       ['price_premium_test', 'premium'],
       ['price_destacado_test', 'destacado'],
       ['price_empresas_test', 'empresas'],
+      ['price_premium_anual_test', 'premium'],
+      ['price_destacado_anual_test', 'destacado'],
+      ['price_empresas_anual_test', 'empresas'],
     ])('%s → %s en subscriptions y profiles', async (priceId, plan) => {
       const res = await send({ priceId })
 

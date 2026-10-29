@@ -5,6 +5,7 @@ import { tituloEmbajador } from '@/lib/embajadores/textos'
 import { PLANES, type CellValue } from '@/lib/plans'
 import { getUsageLimit } from '@/lib/repository-layer'
 import { parseAuthorizedLimit } from '@/lib/credit-manager/parse-authorized-limit'
+import { anualDisponible } from '@/lib/stripe-precios'
 
 /**
  * Texto de la cuota de IA de cada plan para la tabla comparativa. Sale de la
@@ -64,6 +65,8 @@ export default async function PreciosPage({
       cortesia={cortesia}
       cancelled={!!params.cancelled}
       cuotasIA={PLANES.map(p => cuotaIATexto(p.id))}
+      // El selector mensual/anual solo aparece con los tres precios anuales configurados en Stripe.
+      anualDisponible={anualDisponible()}
     />
   )
 }

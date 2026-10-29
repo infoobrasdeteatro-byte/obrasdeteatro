@@ -7,6 +7,7 @@ import type { CellValue } from '@/lib/plans'
 import { loginUrlWithNext } from '@/lib/auth/next-param'
 import TopNav from '@/components/design-system/TopNav'
 import NavAutenticado from '@/components/NavAutenticado'
+import { ahorroAnual, euros, mensualEquivalente, type Periodo } from '@/lib/stripe-precios'
 
 interface Props {
   userId: string | null
@@ -17,9 +18,11 @@ interface Props {
   cancelled: boolean
   /** Cuota real de IA por plan, en el orden de PLANES (fila `cuotaIA` de la tabla). */
   cuotasIA: CellValue[]
+  /** ¿Están los precios anuales configurados en Stripe? Sin ellos no se muestra el selector. */
+  anualDisponible?: boolean
 }
 
-export default function PreciosClient({ userId, userEmail, currentPlan, cancelled, cuotasIA, cortesia = null }: Props) {
+export default function PreciosClient({ userId, userEmail, currentPlan, cancelled, cuotasIA, cortesia = null, anualDisponible = false }: Props) {
   const RANGO: Record<string, number> = { gratuito: 0, premium: 1, destacado: 2, empresas: 3 }
   const hastaCortesia = cortesia ? new Date(cortesia.hasta).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
@@ -28,6 +31,8 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
   const [acceptPrivacy, setAcceptPrivacy] = useState(false)
   const [acceptRenewal, setAcceptRenewal] = useState(false)
   const [exploringOther, setExploringOther] = useState(false)
+  const [periodoElegido, setPeriodo] = useState<Periodo>('mensual')
+  const periodo: Periodo = anualDisponible ? periodoElegido : 'mensual'
   const legalAccepted = acceptTerms && acceptPrivacy && acceptRenewal
 
   const handleSubscribe = async (planId: string) => {
@@ -40,7 +45,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planId, userId, email: userEmail }),
+        body: JSON.stringify({ plan: planId, periodo }),
       })
 
       // Sesión caducada o ausente: la API responde 401 (PR #11). En vez de
@@ -91,6 +96,30 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
           </p>
         </div>
 
+        {/* Selector mensual / anual */}
+        {anualDisponible && (
+          <div className="precios-periodo" role="radiogroup" aria-label="Periodo de facturación">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={periodo === 'mensual'}
+              className={`precios-periodo-opcion${periodo === 'mensual' ? ' precios-periodo-opcion--activa' : ''}`}
+              onClick={() => setPeriodo('mensual')}
+            >
+              Mensual
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={periodo === 'anual'}
+              className={`precios-periodo-opcion${periodo === 'anual' ? ' precios-periodo-opcion--activa' : ''}`}
+              onClick={() => setPeriodo('anual')}
+            >
+              Anual <span className="precios-periodo-ahorro">2 meses gratis</span>
+            </button>
+          </div>
+        )}
+
         {/* Banner: pago cancelado */}
         {cancelled && (
           <div className="ds-status-banner ds-status-banner--draft" style={{ maxWidth: '520px', margin: '0 auto 32px' }}>
@@ -111,6 +140,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
             const isCurrent = currentPlan === plan.id
             const isLoading = loadingPlan === plan.id
             const isPaid = plan.id !== 'gratuito'
+            const anual = periodo === 'anual' && plan.precioAnual !== undefined
 
             return (
               <div
@@ -125,12 +155,19 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                 <div className="precios-card-label">{plan.nombre}</div>
 
                 <div className="precios-card-price">
-                  {plan.precio === 0 ? 'Gratis' : `${plan.precio.toFixed(2).replace('.', ',')} €`}
+                  {plan.precio === 0 ? 'Gratis' : euros(anual ? plan.precioAnual! : plan.precio)}
                 </div>
-                {plan.precio > 0 && (
+                {plan.precio > 0 && !anual && (
                   <>
                     <div className="precios-card-period">/mes</div>
                     <div className="precios-card-billing">Facturación mensual · Cancela cuando quieras</div>
+                  </>
+                )}
+                {plan.precio > 0 && anual && (
+                  <>
+                    <div className="precios-card-period">/año · equivale a {euros(mensualEquivalente(plan.precioAnual!))}/mes</div>
+                    <div className="precios-card-saving">Ahorras {euros(ahorroAnual(plan.precio, plan.precioAnual!))} al año</div>
+                    <div className="precios-card-billing">Un único pago al año · Cancela cuando quieras</div>
                   </>
                 )}
                 {plan.precio === 0 && <div className="precios-card-period">Para siempre</div>}
@@ -184,7 +221,7 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                     title={!legalAccepted ? 'Acepta los términos para continuar' : undefined}
                     className={`precios-card-btn ${plan.recomendado ? 'precios-card-btn--red' : 'precios-card-btn--dark'}`}
                   >
-                    {isLoading ? 'Redirigiendo a Stripe…' : `Activar plan ${plan.nombre}`}
+                    {isLoading ? 'Redirigiendo a Stripe…' : `Activar plan ${plan.nombre}${anual ? ' anual' : ''}`}
                   </button>
                 )}
               </div>
@@ -205,7 +242,11 @@ export default function PreciosClient({ userId, userEmail, currentPlan, cancelle
                     <th scope="col" key={p.id} className={`precios-compare-th${p.recomendado ? ' precios-compare-th--highlighted' : ''}`}>
                       <span className="precios-compare-plan-name">{p.nombre}</span>
                       <span className="precios-compare-plan-price">
-                        {p.precio === 0 ? 'Gratis' : `${p.precio.toFixed(2).replace('.', ',')} €/mes`}
+                        {p.precio === 0
+                          ? 'Gratis'
+                          : periodo === 'anual' && p.precioAnual !== undefined
+                            ? `${euros(p.precioAnual)}/año`
+                            : `${euros(p.precio)}/mes`}
                       </span>
                     </th>
                   ))}

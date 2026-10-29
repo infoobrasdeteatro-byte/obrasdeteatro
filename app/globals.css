@@ -1362,6 +1362,33 @@ a.mc-evento-texto:hover { text-decoration: underline; }
 .precios-card--highlighted .precios-card-period { color: rgba(255,255,255,0.35); }
 .precios-card-billing { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
 .precios-card--highlighted .precios-card-billing { color: rgba(255,255,255,0.3); }
+.precios-card-saving { font-size: 12px; font-weight: 600; color: var(--red); margin-bottom: 6px; }
+.precios-card--highlighted .precios-card-saving { color: #ff6b7d; }
+
+/* Selector de periodo: mensual / anual */
+.precios-periodo {
+  display: flex; width: fit-content; margin: -24px auto 40px;
+  padding: 4px; gap: 4px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 999px; box-shadow: var(--shadow);
+}
+.precios-periodo-opcion {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 18px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--muted);
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: background 0.2s ease, color 0.2s ease;
+}
+.precios-periodo-opcion:hover { color: var(--text); }
+.precios-periodo-opcion:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.precios-periodo-opcion--activa { background: var(--black); color: var(--white); }
+.precios-periodo-opcion--activa:hover { color: var(--white); }
+.precios-periodo-ahorro {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+  padding: 2px 8px; border-radius: 20px;
+  background: var(--red-light); color: var(--red);
+}
+.precios-periodo-opcion--activa .precios-periodo-ahorro { background: var(--red); color: var(--white); }
 .precios-card-features { list-style: none; padding: 0; margin: 0 0 24px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
 .precios-card-feature {
   display: flex; align-items: flex-start; gap: 8px;

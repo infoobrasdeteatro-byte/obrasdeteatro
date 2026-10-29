@@ -13,6 +13,12 @@ export interface Plan {
   id: PlanId
   nombre: string
   precio: number
+  /**
+   * Precio del pago anual por adelantado («2 meses gratis»: 10 cuotas
+   * mensuales). Solo en los planes de pago. Tiene que coincidir con el precio
+   * anual creado en Stripe (STRIPE_PRICE_*_ANUAL_ID).
+   */
+  precioAnual?: number
   tagline: string
   bloques: FeatureGroup[]
   descripcion?: string
@@ -65,6 +71,7 @@ export const PLANES: Plan[] = [
     id: 'premium',
     nombre: 'Premium',
     precio: 2.99,
+    precioAnual: 29.9,
     tagline: 'Tu perfil profesional completo y sin límites.',
     bloques: [
       {
@@ -125,6 +132,7 @@ export const PLANES: Plan[] = [
     id: 'destacado',
     nombre: 'Destacado',
     precio: 6.99,
+    precioAnual: 69.9,
     tagline: 'La máxima presencia profesional en ObrasDeTeatro®.',
     bloques: [
       {
@@ -201,6 +209,7 @@ export const PLANES: Plan[] = [
     id: 'empresas',
     nombre: 'Empresas',
     precio: 14.99,
+    precioAnual: 149.9,
     tagline: 'La solución integral para organizaciones teatrales.',
     bloques: [
       {
