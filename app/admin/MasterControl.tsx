@@ -183,7 +183,7 @@ function BloqueCifras({ c }: { c: Cifras }) {
         <div className="mc-barra" role="progressbar" aria-valuemin={0} aria-valuemax={META_ESPACIOS} aria-valuenow={c.espaciosPublicados ?? 0} aria-label="Progreso hacia 10.000 espacios">
           <div style={{ width: `${pctEspacios}%` }} />
         </div>
-        <div className="mc-cifra-nota">{pctEspacios.toLocaleString('es-ES', { maximumFractionDigits: 1 })} % de {miles(META_ESPACIOS)}</div>
+        <div className="mc-cifra-nota">{c.espaciosPublicados === null ? '—' : `${pctEspacios.toLocaleString('es-ES', { maximumFractionDigits: 1 })} % de ${miles(META_ESPACIOS)}`}</div>
       </div>
       <div className="obras-stat-card">
         <div className="obras-stat-label">Suscriptores de Proscenio</div>
