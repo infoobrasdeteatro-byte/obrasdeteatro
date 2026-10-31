@@ -8,7 +8,7 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({
     auth: {
       exchangeCodeForSession: mockExchange,
-      verifyOtp: vi.fn(),
+      verifyOtp: async () => ({ error: { message: 'Token has expired or is invalid' } }),
       // Sin email: el email de bienvenida no se envía en estos tests.
       getUser: async () => ({ data: { user: usuario } }),
     },
@@ -61,6 +61,53 @@ describe('GET /auth/callback — vuelta tras confirmar el registro', () => {
     mockExchange.mockResolvedValue({ error: { message: 'expirado' } })
 
     const res = await GET(confirmacion('/precios'))
+
+    expect(res.headers.get('location')).toBe('https://app.test/auth/confirmada?estado=confirmada')
+  })
+})
+
+describe('GET /auth/callback — registro confirmado en otro aparato (enlace antiguo)', () => {
+  const pedir = (url: string, cookie?: string) => {
+    const headers = new Headers()
+    if (cookie) headers.set('cookie', cookie)
+    return new NextRequest(url, { headers })
+  }
+  const VERIFIER = 'sb-ref-auth-token-code-verifier'
+  const enBase64 = (v: string) => 'base64-' + Buffer.from(JSON.stringify(v)).toString('base64url')
+
+  it('sin code verifier en este aparato: «Tu cuenta está confirmada», nunca el error de recuperación', async () => {
+    mockExchange.mockResolvedValue({ error: { message: 'invalid request: both auth code and code verifier should be non-empty' } })
+
+    const res = await GET(pedir('https://app.test/auth/callback?code=abc'))
+
+    expect(res.headers.get('location')).toBe('https://app.test/auth/confirmada?estado=confirmada')
+  })
+
+  it('con el verifier de un registro (no de recuperación), tampoco muestra recuperación', async () => {
+    mockExchange.mockResolvedValue({ error: { message: 'invalid flow state' } })
+
+    const res = await GET(pedir('https://app.test/auth/callback?code=abc', `${VERIFIER}=${enBase64('verifier123')}`))
+
+    expect(res.headers.get('location')).toBe('https://app.test/auth/confirmada?estado=confirmada')
+  })
+
+  it('enlace caducado (Supabase vuelve sin code): aviso del enlace con opción de pedir otro', async () => {
+    const res = await GET(pedir('https://app.test/auth/callback?error=access_denied&error_code=otp_expired'))
+
+    expect(res.headers.get('location')).toBe('https://app.test/auth/confirmada?estado=enlace')
+  })
+
+  it('recuperación de contraseña (verifier «/recovery»): sin cambios, a /auth/recuperar?expired=true', async () => {
+    mockExchange.mockResolvedValue({ error: { message: 'expirado' } })
+
+    for (const valor of [enBase64('verifier123/recovery'), encodeURIComponent(JSON.stringify('verifier123/recovery'))]) {
+      const res = await GET(pedir('https://app.test/auth/callback?code=abc', `${VERIFIER}=${valor}`))
+      expect(res.headers.get('location')).toBe('https://app.test/auth/recuperar?expired=true')
+    }
+  })
+
+  it('recuperación por token_hash fallida: sin cambios, a /auth/recuperar?expired=true', async () => {
+    const res = await GET(pedir('https://app.test/auth/callback?token_hash=x&type=recovery'))
 
     expect(res.headers.get('location')).toBe('https://app.test/auth/recuperar?expired=true')
   })
