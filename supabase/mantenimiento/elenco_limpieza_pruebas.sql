@@ -26,6 +26,16 @@
 --     verificado_profesional son exactamente los de antes. Si algo cambiara,
 --     la transacción se deshace entera.
 --
+-- Visibilidad (cuentas que se conservan para pruebas):
+--   · viajeseutour@gmail.com, info.obrasdeteatro+prueba3/4/5@gmail.com: se
+--     desactiva su perfil público (perfil_publico = false). Así no aparecen en
+--     el directorio, en las búsquedas, en el sitemap ni en /perfil/<slug>
+--     (la política RLS «Perfiles públicos visibles» exige perfil_publico).
+--     Se añaden también a avisos_perfil_excluidos para que no reciban el
+--     correo «completa tu perfil». No se borran.
+--   · info.obrasdeteatro@gmail.com NO cambia de visibilidad: sigue en el
+--     directorio como cuenta del equipo (la comprobación final lo verifica).
+--
 -- Cómo usarlo:
 --   1. Ejecuta solo la PARTE A (solo lectura) y revisa qué filas borraría.
 --   2. Si es correcto, ejecuta la PARTE B entera (de «begin;» a «commit;»).
@@ -40,6 +50,12 @@ with correos(email) as (values
 ),
 conservar(email) as (values
   ('info.obrasdeteatro@gmail.com')
+),
+ocultar(email) as (values
+  ('viajeseutour@gmail.com'),
+  ('info.obrasdeteatro+prueba3@gmail.com'),
+  ('info.obrasdeteatro+prueba4@gmail.com'),
+  ('info.obrasdeteatro+prueba5@gmail.com')
 ),
 numeros(n) as (values (0)),
 cuentas as (
@@ -108,12 +124,31 @@ select 8, 'Cuenta protegida (plan intacto)', null,
        ' · perfil modificado ' || to_char(p.updated_at, 'YYYY-MM-DD')
 from public.profiles p join conservar k on lower(p.email) = lower(k.email)
 union all
-select 9, 'Plazas que seguirán vivas tras la limpieza', null,
+select 9, 'Visibilidad: actual → tras la limpieza', null,
+       p.email || ' (/perfil/' || coalesce(p.slug, '—') || '): ' ||
+       case when p.perfil_publico then 'pública' else 'oculta' end || ' → ' ||
+       case
+         when lower(p.email) in (select lower(email) from ocultar) then 'oculta'
+         else 'sin cambios (' || case when p.perfil_publico then 'pública' else 'oculta' end || ')'
+       end
+from public.profiles p where p.id in (select id from cuentas)
+union all
+select 10, 'Aviso «completa tu perfil»: actual → tras la limpieza', null,
+       p.email || ': ' ||
+       case when e.profile_id is null then 'lo recibe' else 'excluida' end || ' → ' ||
+       case
+         when lower(p.email) in (select lower(email) from ocultar) then 'excluida'
+         else 'sin cambios'
+       end
+from public.profiles p left join public.avisos_perfil_excluidos e on e.profile_id = p.id
+where p.id in (select id from cuentas)
+union all
+select 11, 'Plazas que seguirán vivas tras la limpieza', null,
        coalesce(string_agg(lpad(f.numero::text, 3, '0') || ' ' || f.nombre, ', ' order by f.numero), 'ninguna')
 from public.elenco_fundadores f
 where f.estado <> 'anulada' and f.id not in (select id from fund)
 union all
-select 10, 'Siguiente número que se asignará', lpad(min(g)::text, 3, '0'), null
+select 12, 'Siguiente número que se asignará', lpad(min(g)::text, 3, '0'), null
 from generate_series(1, 100) g
 where not exists (
   select 1 from public.elenco_fundadores f
@@ -135,9 +170,20 @@ insert into _correos values
 
 -- Cuentas cuyo plan no se toca nunca (administración y equipo).
 create temp table _conservar on commit drop as
-  select p.id, p.plan::text as plan, p.is_premium, p.verificado_profesional
+  select p.id, p.plan::text as plan, p.is_premium, p.verificado_profesional, p.perfil_publico
   from public.profiles p
   where lower(p.email) in ('info.obrasdeteatro@gmail.com');
+
+-- Cuentas de prueba que se conservan pero dejan de ser públicas.
+create temp table _ocultar on commit drop as
+  select p.id from public.profiles p
+  where lower(p.email) in (
+    'viajeseutour@gmail.com',
+    'info.obrasdeteatro+prueba3@gmail.com',
+    'info.obrasdeteatro+prueba4@gmail.com',
+    'info.obrasdeteatro+prueba5@gmail.com'
+  )
+  and p.id not in (select id from _conservar);
 
 create temp table _numeros (n integer) on commit drop;
 insert into _numeros values (0);
@@ -177,24 +223,38 @@ set plan = o.plan::public.plan_suscripcion, is_premium = (o.plan <> 'gratuito'),
 from (select r.id, public.elenco_plan_objetivo(r.id) as plan from _recalcular r) o
 where p.id = o.id and p.id not in (select id from _conservar) and p.plan::text <> o.plan;
 
--- Garantía: las cuentas protegidas conservan exactamente su plan. Si no, se
--- deshace todo.
+-- Cuentas de prueba: fuera del directorio, las búsquedas y su ficha pública.
+update public.profiles
+set perfil_publico = false, updated_at = now()
+where id in (select id from _ocultar) and perfil_publico;
+
+-- Y sin el correo «completa tu perfil».
+insert into public.avisos_perfil_excluidos (profile_id, motivo)
+select id, 'Cuenta de prueba del Elenco Fundador (31-10-2026)' from _ocultar
+on conflict (profile_id) do nothing;
+
+-- Garantía: las cuentas protegidas conservan exactamente su plan y su
+-- visibilidad. Si no, se deshace todo.
 do $$
 begin
   if exists (
     select 1 from _conservar k join public.profiles p on p.id = k.id
     where p.plan::text <> k.plan or p.is_premium <> k.is_premium or p.verificado_profesional <> k.verificado_profesional
+       or p.perfil_publico <> k.perfil_publico
   ) then
-    raise exception 'La cuenta protegida ha cambiado de plan: no se aplica la limpieza';
+    raise exception 'La cuenta protegida ha cambiado de plan o de visibilidad: no se aplica la limpieza';
   end if;
 end $$;
 
--- Comprobación: lo que queda (todo a 0), el plan de cada cuenta y el siguiente número.
+-- Comprobación: lo que queda (todo a 0), plan y visibilidad de cada cuenta,
+-- cuántas quedan excluidas del aviso (4) y el siguiente número.
 select
   (select count(*) from public.elenco_fundadores where id in (select id from _fund)) as fundadores_restantes,
   (select count(*) from public.elenco_referidos where profile_id in (select id from _cuentas)) as atribuciones_restantes,
   (select count(*) from public.elenco_cortesias where profile_id in (select id from _cuentas)) as tramos_restantes,
-  (select string_agg(p.email || ' ' || p.plan, ' · ' order by p.email) from public.profiles p where p.id in (select id from _cuentas)) as planes,
+  (select string_agg(p.email || ' ' || p.plan || case when p.perfil_publico then ' pública' else ' oculta' end, ' · ' order by p.email)
+   from public.profiles p where p.id in (select id from _cuentas)) as planes_y_visibilidad,
+  (select count(*) from public.avisos_perfil_excluidos where profile_id in (select id from _ocultar)) as excluidas_del_aviso,
   (select lpad(min(g)::text, 3, '0') from generate_series(1, 100) g
    where not exists (select 1 from public.elenco_fundadores f where f.numero = g and f.estado <> 'anulada')) as siguiente_numero;
 
