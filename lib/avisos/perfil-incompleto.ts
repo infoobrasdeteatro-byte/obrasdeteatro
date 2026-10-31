@@ -6,6 +6,8 @@
 import { TIPOS_PERSONA } from '@/lib/perfiles/profesiones'
 
 export const ASUNTO_AVISO_PERFIL = 'Unos detalles para completar tu perfil en ObrasDeTeatro®'
+/** Organizaciones en «ustedes» (vale en los 20 países). */
+export const ASUNTO_AVISO_PERFIL_ORGANIZACION = 'Unos detalles para completar su perfil en ObrasDeTeatro®'
 export const REMITENTE_AVISO_PERFIL = 'Renee Bausson · ObrasDeTeatro® <hola@obrasdeteatro.com>'
 export const RESPONDER_A_AVISO_PERFIL = 'hola@obrasdeteatro.com'
 export const URL_PANEL_PERFIL = 'https://www.obrasdeteatro.com/perfil'
@@ -22,6 +24,27 @@ export type DatosPerfil = {
 
 const esPersona = (tipo: string) => (TIPOS_PERSONA as readonly string[]).includes(tipo)
 const esOrganizacion = (tipo: string) => tipo !== 'publico' && !esPersona(tipo)
+
+export function asuntoAvisoPerfil(tipo: string): string {
+  return esOrganizacion(tipo) ? ASUNTO_AVISO_PERFIL_ORGANIZACION : ASUNTO_AVISO_PERFIL
+}
+
+/** Párrafos del correo: personas en «tú», organizaciones en «ustedes». */
+function frases(tipo: string) {
+  return esOrganizacion(tipo)
+    ? {
+        intro: 'Su perfil ya está en marcha, pero le faltan algunos detalles para que se vea completo en el directorio y quienes les busquen sepan quiénes son y a qué se dedican:',
+        boton: 'Completen su perfil',
+        panel: 'En su panel verán el porcentaje completado y el siguiente paso recomendado.',
+        dudas: 'Si tienen cualquier duda, respondan a este correo y les ayudamos personalmente.',
+      }
+    : {
+        intro: 'Tu perfil ya está en marcha, pero le faltan algunos detalles para que se vea completo en el directorio y quienes te busquen sepan quién eres y a qué te dedicas:',
+        boton: 'Completa tu perfil',
+        panel: 'En tu panel verás el porcentaje completado y el siguiente paso recomendado.',
+        dudas: 'Si tienes cualquier duda, responde a este correo y te ayudamos personalmente.',
+      }
+}
 
 /** Lo que le falta a un perfil, en el orden en que se cuenta en el correo. */
 export function faltasDelPerfil(p: DatosPerfil): Falta[] {
@@ -46,17 +69,17 @@ export function textoFalta(f: Falta, tipo: string): [string, string] {
       return ['Tu tipo de perfil.', ' Tu cuenta figura como «Público general». Si te dedicas a las artes escénicas, cámbialo a Profesional o al tipo de tu organización (compañía, sala, festival, escuela…); solo así apareces en el directorio. Si vienes como espectador o espectadora, puedes dejarlo tal cual.']
     case 'foto':
       return esOrganizacion(tipo)
-        ? ['El logotipo de tu organización.', ' Sin él, tu ficha no aparece en el directorio.']
+        ? ['El logotipo de su organización.', ' Sin él, su ficha no aparece en el directorio.']
         : ['Una foto de perfil.', ' Sin ella, tu ficha no aparece en el directorio.']
     case 'profesiones':
       return ['Tus profesiones', ' (dirección, interpretación, producción…). Marca primero la principal.']
     case 'bio':
       return esOrganizacion(tipo)
-        ? ['Una breve presentación.', ' Tres o cuatro líneas sobre vuestra trayectoria bastan para empezar.']
+        ? ['Una breve presentación.', ' Tres o cuatro líneas sobre su trayectoria bastan para empezar.']
         : ['Una breve biografía.', ' Tres o cuatro líneas bastan para empezar.']
     case 'ciudad':
       return esOrganizacion(tipo)
-        ? ['Vuestra ciudad.', ' Así os encuentran quienes buscan compañías o salas en vuestra zona.']
+        ? ['Su ciudad.', ' Así les encuentran quienes buscan compañías o salas en su zona.']
         : ['Tu ciudad.', ' Así te encuentran quienes buscan profesionales o salas en tu zona.']
   }
 }
@@ -64,6 +87,7 @@ export function textoFalta(f: Falta, tipo: string): [string, string] {
 /** El correo en HTML. `nombre` vacío deja el saludo en «Hola:». */
 export function construirHtmlAvisoPerfil(nombre: string, tipo: string, faltas: Falta[]): string {
   const saludo = nombre.trim() ? `Hola, ${esc(nombre.trim())}:` : 'Hola:'
+  const f = frases(tipo)
   const p = (t: string) => `<p style="margin:0 0 14px;font-family:Arial,sans-serif;font-size:15px;color:#374151;line-height:1.6;">${t}</p>`
   const puntos = faltas.map(f => {
     const [neg, resto] = textoFalta(f, tipo)
@@ -71,7 +95,7 @@ export function construirHtmlAvisoPerfil(nombre: string, tipo: string, faltas: F
   }).join('')
 
   return `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(ASUNTO_AVISO_PERFIL)}</title></head>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(asuntoAvisoPerfil(tipo))}</title></head>
 <body style="margin:0;padding:0;background:#f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f6"><tr><td align="center" style="padding:24px 16px;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e7eb;">
@@ -81,11 +105,11 @@ export function construirHtmlAvisoPerfil(nombre: string, tipo: string, faltas: F
       <tr><td style="padding:28px;">
         ${p(saludo)}
         ${p('Gracias por formar parte de ObrasDeTeatro®.')}
-        ${p('Tu perfil ya está en marcha, pero le faltan algunos detalles para que se vea completo en el directorio y quienes te busquen sepan quién eres y a qué te dedicas:')}
+        ${p(f.intro)}
         <ul style="margin:0 0 18px;padding-left:20px;font-family:Arial,sans-serif;font-size:15px;color:#374151;line-height:1.6;">${puntos}</ul>
-        <p style="margin:0 0 18px;"><a href="${URL_PANEL_PERFIL}" style="display:inline-block;background:#b91c1c;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;padding:12px 22px;text-decoration:none;">Completa tu perfil</a></p>
-        ${p('En tu panel verás el porcentaje completado y el siguiente paso recomendado.')}
-        ${p('Si tienes cualquier duda, responde a este correo y te ayudamos personalmente.')}
+        <p style="margin:0 0 18px;"><a href="${URL_PANEL_PERFIL}" style="display:inline-block;background:#b91c1c;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;padding:12px 22px;text-decoration:none;">${f.boton}</a></p>
+        ${p(f.panel)}
+        ${p(f.dudas)}
         <p style="margin:22px 0 0;font-family:Arial,sans-serif;font-size:15px;color:#374151;line-height:1.6;">Un saludo cordial,<br><br><strong style="color:#111827;">Renee Bausson</strong><br>Fundador de ObrasDeTeatro®<br><a href="https://www.obrasdeteatro.com" style="color:#b91c1c;">www.obrasdeteatro.com</a></p>
       </td></tr>
     </table>
@@ -97,19 +121,20 @@ export function construirHtmlAvisoPerfil(nombre: string, tipo: string, faltas: F
 export function construirTextoAvisoPerfil(nombre: string, tipo: string, faltas: Falta[]): string {
   const saludo = nombre.trim() ? `Hola, ${nombre.trim()}:` : 'Hola:'
   const puntos = faltas.map(f => `- ${textoFalta(f, tipo).join('')}`).join('\n')
+  const f = frases(tipo)
   return `${saludo}
 
 Gracias por formar parte de ObrasDeTeatro®.
 
-Tu perfil ya está en marcha, pero le faltan algunos detalles para que se vea completo en el directorio y quienes te busquen sepan quién eres y a qué te dedicas:
+${f.intro}
 
 ${puntos}
 
-Completa tu perfil: ${URL_PANEL_PERFIL}
+${f.boton}: ${URL_PANEL_PERFIL}
 
-En tu panel verás el porcentaje completado y el siguiente paso recomendado.
+${f.panel}
 
-Si tienes cualquier duda, responde a este correo y te ayudamos personalmente.
+${f.dudas}
 
 Un saludo cordial,
 

@@ -168,3 +168,45 @@ describe('GET /auth/confirm — pestaña original del registro (ya ha iniciado s
     expect(destino(res)).toBe('https://app.test/auth/login')
   })
 })
+
+describe('GET /auth/confirm — Elenco Fundador', () => {
+  const TOKEN_ELENCO = 'b'.repeat(32)
+
+  it('registrado desde su invitación: la acepta al confirmar en otro aparato y va a Mi red', async () => {
+    usuarioTrasVerificar = { ...usuarioTrasVerificar!, user_metadata: { invitacion_elenco: TOKEN_ELENCO, next_registro: `/elenco/invitacion/${TOKEN_ELENCO}` } }
+
+    const res = await GET(pedir('?token_hash=h&type=signup'))
+
+    expect(mockRpc).toHaveBeenCalledWith('aceptar_invitacion_elenco', { p_token: TOKEN_ELENCO })
+    expect(destino(res)).toBe('https://app.test/perfil/red?elenco=1')
+  })
+
+  it('si la invitación ya no vale, vuelve a su página', async () => {
+    usuarioTrasVerificar = { ...usuarioTrasVerificar!, user_metadata: { invitacion_elenco: TOKEN_ELENCO } }
+    mockRpc.mockResolvedValue({ data: 'caducada', error: null })
+
+    const res = await GET(pedir('?token_hash=h&type=signup'))
+
+    expect(destino(res)).toBe(`https://app.test/elenco/invitacion/${TOKEN_ELENCO}`)
+  })
+
+  it('pestaña original: también acepta la invitación (ya aceptada → Mi red)', async () => {
+    usuario = { email: 'n@example.com', email_confirmed_at: recien(), user_metadata: { invitacion_elenco: TOKEN_ELENCO } }
+    mockRpc.mockResolvedValue({ data: 'ya_fundador', error: null })
+
+    const res = await GET(pedir(`?next=${encodeURIComponent(`/elenco/invitacion/${TOKEN_ELENCO}`)}`))
+
+    expect(destino(res)).toBe('https://app.test/perfil/red?elenco=1')
+  })
+
+  it('Embajadores decide antes que el Elenco; la cookie del enlace /elenco/<nº> se borra', async () => {
+    const TOKEN = '372ede63068e4b46bf06d147ecc83444'
+    usuarioTrasVerificar = { ...usuarioTrasVerificar!, user_metadata: { invitacion_embajador: TOKEN, invitacion_elenco: TOKEN_ELENCO } }
+
+    const res = await GET(pedir('?token_hash=h&type=signup', { odt_elenco: '007' }))
+
+    expect(mockRpc).not.toHaveBeenCalledWith('aceptar_invitacion_elenco', expect.anything())
+    expect(destino(res)).toBe('https://app.test/perfil/centro?embajador=1')
+    expect(res.cookies.get('odt_elenco')?.value).toBe('')
+  })
+})

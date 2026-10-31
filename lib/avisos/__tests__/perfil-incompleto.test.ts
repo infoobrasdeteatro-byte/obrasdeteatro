@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { construirHtmlAvisoPerfil, construirTextoAvisoPerfil, faltasDelPerfil } from '../perfil-incompleto'
+import { asuntoAvisoPerfil, construirHtmlAvisoPerfil, construirTextoAvisoPerfil, faltasDelPerfil } from '../perfil-incompleto'
 
 const base = { avatar_url: null, bio: null, ciudad: null, num_profesiones: 0 }
 
@@ -25,15 +25,30 @@ describe('correo del aviso', () => {
   it('solo incluye los puntos que faltan, con firma de Renee Bausson', () => {
     const html = construirHtmlAvisoPerfil('Ana ', 'teatro', ['foto'])
     expect(html).toContain('Hola, Ana:')
-    expect(html).toContain('El logotipo de tu organización.')
+    expect(html).toContain('El logotipo de su organización.')
     expect(html).not.toContain('Tus profesiones')
     expect(html).not.toContain('Público general')
     expect(html).toContain('Renee Bausson')
     expect(html).not.toContain('Díaz')
   })
-  it('ciudad: tú para personas, vosotros para organizaciones', () => {
-    expect(construirHtmlAvisoPerfil('A', 'actor', ['ciudad'])).toContain('Tu ciudad.')
-    expect(construirHtmlAvisoPerfil('A', 'compania', ['ciudad'])).toContain('Vuestra ciudad.')
+  it('tú para personas, ustedes para organizaciones (válido en los 20 países)', () => {
+    const persona = construirTextoAvisoPerfil('A', 'actor', ['bio', 'ciudad'])
+    expect(persona).toContain('Tu ciudad. Así te encuentran quienes buscan profesionales o salas en tu zona.')
+    expect(persona).toContain('Completa tu perfil:')
+    expect(persona).toContain('Si tienes cualquier duda, responde a este correo')
+    expect(asuntoAvisoPerfil('actor')).toBe('Unos detalles para completar tu perfil en ObrasDeTeatro®')
+
+    const org = construirTextoAvisoPerfil('A', 'compania', ['foto', 'bio', 'ciudad'])
+    expect(org).toContain('Su ciudad. Así les encuentran quienes buscan compañías o salas en su zona.')
+    expect(org).toContain('Tres o cuatro líneas sobre su trayectoria bastan para empezar.')
+    expect(org).toContain('El logotipo de su organización. Sin él, su ficha no aparece en el directorio.')
+    expect(org).toContain('Su perfil ya está en marcha')
+    expect(org).toContain('Completen su perfil:')
+    expect(org).toContain('Si tienen cualquier duda, respondan a este correo y les ayudamos personalmente.')
+    expect(asuntoAvisoPerfil('compania')).toBe('Unos detalles para completar su perfil en ObrasDeTeatro®')
+    for (const t of [org, construirHtmlAvisoPerfil('A', 'compania', ['foto', 'bio', 'ciudad'])]) {
+      expect(t).not.toMatch(/(?<!\p{L})(vuestr[oa]s?|os|tu|tus|tienes|responde)(?!\p{L})/iu)
+    }
   })
   it('escapa el nombre', () => {
     expect(construirHtmlAvisoPerfil('<b>x</b>', 'publico', ['tipo'])).toContain('Hola, &lt;b&gt;x&lt;/b&gt;:')

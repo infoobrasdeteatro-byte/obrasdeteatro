@@ -150,3 +150,16 @@ describe('GET /auth/callback — Embajadores de Escena', () => {
     expect(mockRpc).not.toHaveBeenCalled()
   })
 })
+
+describe('GET /auth/callback — Elenco Fundador (enlaces ya enviados)', () => {
+  it('registrado desde su invitación del Elenco: la acepta y va a Mi red', async () => {
+    const TOKEN = 'b'.repeat(32)
+    usuario = { user_metadata: { invitacion_elenco: TOKEN } }
+    mockRpc.mockResolvedValue({ data: 'ok', error: null })
+
+    const res = await GET(confirmacion())
+
+    expect(mockRpc).toHaveBeenCalledWith('aceptar_invitacion_elenco', { p_token: TOKEN })
+    expect(res.headers.get('location')).toBe('https://app.test/perfil/red?elenco=1')
+  })
+})

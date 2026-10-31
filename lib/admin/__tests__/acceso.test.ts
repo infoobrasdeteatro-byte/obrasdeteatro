@@ -37,19 +37,20 @@ describe('guard de roles del Master Control', () => {
 })
 
 describe('secciones', () => {
-  it('son 17 en cinco grupos', () => {
-    expect(GRUPOS_SECCIONES.flatMap(g => g.secciones)).toHaveLength(17)
+  it('son 18 en cinco grupos', () => {
+    expect(GRUPOS_SECCIONES.flatMap(g => g.secciones)).toHaveLength(18)
     expect(GRUPOS_SECCIONES.map(g => g.titulo)).toEqual(['Moderación', 'Catálogos', 'Comunidad', 'Equipo', 'Comunicación'])
   })
-  it('moderación no ve Embajadores, Avisos de perfil, Recordatorio de confirmación ni Correo entrante', () => {
+  it('moderación no ve Embajadores, Elenco Fundador, Avisos de perfil, Recordatorio de confirmación ni Correo entrante', () => {
     const hrefs = seccionesVisibles(false).flatMap(g => g.secciones.map(s => s.href))
     expect(hrefs).toHaveLength(13)
     expect(hrefs).toContain('/admin/tareas')
     expect(hrefs).not.toContain('/admin/embajadores')
+    expect(hrefs).not.toContain('/admin/elenco')
     expect(hrefs).not.toContain('/admin/avisos-perfil')
     expect(hrefs).not.toContain('/admin/recordatorio-confirmacion')
     expect(hrefs).not.toContain('/admin/correo')
-    expect(seccionesVisibles(true).flatMap(g => g.secciones)).toHaveLength(17)
+    expect(seccionesVisibles(true).flatMap(g => g.secciones)).toHaveLength(18)
   })
 })
 

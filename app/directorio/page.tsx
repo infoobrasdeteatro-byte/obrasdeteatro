@@ -14,6 +14,7 @@ import FiltrosDirectorio from './FiltrosDirectorio'
 import TopNav from '@/components/design-system/TopNav'
 import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO } from '@/lib/perfiles/profesiones'
 import { tituloEmbajador } from '@/lib/embajadores/textos'
+import { distintivo } from '@/lib/elenco/textos'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
 
@@ -229,6 +230,13 @@ export default async function DirectorioPage({ searchParams }: Props) {
   if (perfilesPagina.length > 0) {
     const { data: emb } = await supabase.rpc('embajadores_activos', { p_perfiles: perfilesPagina.map(p => p.id) })
     for (const e of emb ?? []) embajadores.set(e.profile_id, e.genero)
+  }
+
+  // Elenco Fundador: distintivo con su número.
+  const elenco = new Map<string, number>()
+  if (perfilesPagina.length > 0) {
+    const { data: el } = await supabase.rpc('elenco_distintivos', { p_perfiles: perfilesPagina.map(p => p.id) })
+    for (const e of el ?? []) elenco.set(e.profile_id, e.numero)
   }
 
   // PP2-E.3B: aparición de cada tarjeta mostrada (no para bots). Después de responder.
@@ -453,13 +461,16 @@ export default async function DirectorioPage({ searchParams }: Props) {
                       <h2 className="dir2-name">{nombrePublico}</h2>
                       {ubicacion   && <p className="dir2-loc">{ubicacion}</p>}
 
-                      {(perfil.verificado_profesional || isPlan || embajadores.has(perfil.id)) && (
+                      {(perfil.verificado_profesional || isPlan || embajadores.has(perfil.id) || elenco.has(perfil.id)) && (
                         <div className="dir2-badges">
                           {perfil.verificado_profesional && (
                             <span className="dir2-badge dir2-badge--verificado">✓ Verificado</span>
                           )}
                           {embajadores.has(perfil.id) && (
                             <span className="dir2-badge dir2-badge--embajador">{tituloEmbajador(embajadores.get(perfil.id))}</span>
+                          )}
+                          {elenco.has(perfil.id) && (
+                            <span className="dir2-badge dir2-badge--elenco">{distintivo(elenco.get(perfil.id)!)}</span>
                           )}
                           {perfil.plan === 'destacado' && !embajadores.has(perfil.id) && (
                             <span className="dir2-badge dir2-badge--plan">Destacado</span>

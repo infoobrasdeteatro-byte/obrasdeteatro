@@ -208,6 +208,13 @@ function BloqueCifras({ c }: { c: Cifras }) {
           <div className="mc-cifra-nota">Aceptadas y pendientes sin caducar</div>
         </div>
       )}
+      {c.elenco !== undefined && (
+        <Link href="/admin/elenco" className="obras-stat-card mc-cifra-enlace">
+          <div className="obras-stat-label">Plazas de Elenco Fundador</div>
+          <div className="obras-stat-value">{c.elenco ? `${c.elenco.ocupadas}/${c.elenco.total}` : '—'}</div>
+          <div className="mc-cifra-nota">Aceptadas y pendientes sin anular</div>
+        </Link>
+      )}
     </div>
   )
 }

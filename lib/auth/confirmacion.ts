@@ -3,6 +3,7 @@ import type { createClient } from '@/lib/supabase/server'
 import { sendWelcomeEmail } from '@/lib/email/welcome-email'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE } from '@/lib/auth/next-param'
 import { COOKIE_REFERIDO, codigoValido, tokenValido } from '@/lib/embajadores/textos'
+import { COOKIE_ELENCO } from '@/lib/elenco/textos'
 
 /**
  * Lo que ocurre al confirmar el correo del registro, sea por /auth/callback
@@ -67,10 +68,36 @@ export async function aplicarEmbajadores(request: NextRequest, supabase: Supabas
 }
 
 /**
- * Redirección final. Orden: lo que fije Embajadores; el `next` del enlace;
+ * Elenco Fundador, al confirmar el correo: si se registró desde su invitación,
+ * se acepta con la cuenta recién confirmada (destino: Mi red con la
+ * bienvenida). Solo si Embajadores no ha decidido ya el destino. Un fallo
+ * nunca bloquea la confirmación.
+ */
+export async function aplicarElenco(supabase: Supabase): Promise<string | undefined> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const token = tokenValido((user?.user_metadata as Record<string, unknown> | undefined)?.invitacion_elenco)
+    if (!token) return undefined
+    const { data } = await supabase.rpc('aceptar_invitacion_elenco', { p_token: token })
+    if (data === 'ok' || data === 'ya_fundador') return '/perfil/red?elenco=1'
+    return `/elenco/invitacion/${token}`
+  } catch { return undefined }
+}
+
+/**
+ * Programas al confirmar el correo (Embajadores y, si no decide, Elenco
+ * Fundador). Devuelve el destino que fijen, si alguno lo fija.
+ */
+export async function aplicarProgramas(request: NextRequest, supabase: Supabase): Promise<string | undefined> {
+  return (await aplicarEmbajadores(request, supabase)) ?? (await aplicarElenco(supabase))
+}
+
+/**
+ * Redirección final. Orden: lo que fijen Embajadores o el Elenco; el `next` del enlace;
  * la cookie de vuelta del registro (mismo navegador); el `next` guardado en la
  * cuenta al registrarse (otro aparato); y, si no hay nada, `porDefecto`.
- * Las cookies de vuelta y de referido se borran: sirven una vez.
+ * Las cookies de vuelta, de referido y del enlace del Elenco se borran:
+ * sirven una vez (la atribución del Elenco ya se hizo al registrarse).
  */
 export function redirigirTrasConfirmar(
   request: NextRequest,
@@ -85,6 +112,7 @@ export function redirigirTrasConfirmar(
   const respuesta = NextResponse.redirect(`${origin}${destino}`)
   respuesta.cookies.delete(NEXT_TRAS_REGISTRO_COOKIE)
   respuesta.cookies.delete(COOKIE_REFERIDO)
+  respuesta.cookies.delete(COOKIE_ELENCO)
   return respuesta
 }
 

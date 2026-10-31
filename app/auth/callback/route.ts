@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import {
-  aplicarEmbajadores, notifyWelcomeIfFirstConfirmation, redirigirTrasConfirmar, urlResultado, verifierEsDeRecuperacion,
+  aplicarProgramas, notifyWelcomeIfFirstConfirmation, redirigirTrasConfirmar, urlResultado, verifierEsDeRecuperacion,
 } from '@/lib/auth/confirmacion'
 
 /**
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
       return redirigirTrasConfirmar(request, origin, {
-        forzado: await aplicarEmbajadores(request, supabase), porDefecto: '/auth/update-password',
+        forzado: await aplicarProgramas(request, supabase), porDefecto: '/auth/update-password',
       })
     }
     if (!esRecuperacion) return NextResponse.redirect(urlResultado(origin, 'confirmada'))
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
       return redirigirTrasConfirmar(request, origin, {
-        forzado: await aplicarEmbajadores(request, supabase), porDefecto: '/auth/update-password',
+        forzado: await aplicarProgramas(request, supabase), porDefecto: '/auth/update-password',
       })
     }
   }

@@ -8,6 +8,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { PLAZAS_FUNDADORAS } from '@/lib/embajadores/textos'
 import { plazasOcupadas } from '@/lib/embajadores/plazas'
+import { PLAZAS_ELENCO } from '@/lib/elenco/textos'
 import { leerEstadoMake } from './make'
 import { contar } from './colas'
 import {
@@ -78,6 +79,8 @@ export type Cifras = {
   suscriptoresProscenio: number | null
   /** Solo admin. */
   embajadores?: { ocupadas: number; total: number } | null
+  /** Solo admin. Elenco Fundador: aceptadas y pendientes sin anular. */
+  elenco?: { ocupadas: number; total: number } | null
 }
 
 export async function cargarCifras(sesion: SupabaseClient, servicio: SupabaseClient, esAdmin: boolean, ahora: Date): Promise<Cifras> {
@@ -86,13 +89,14 @@ export async function cargarCifras(sesion: SupabaseClient, servicio: SupabaseCli
   const perfiles = () => servicio.from('profiles').select('id', { count: 'exact', head: true }).is('deleted_at', null)
   const hace7d = new Date(ahora.getTime() - 7 * 86_400_000).toISOString()
 
-  const [usuarios, nuevos, subs, espacios, proscenio, invitaciones] = await Promise.all([
+  const [usuarios, nuevos, subs, espacios, proscenio, invitaciones, elenco] = await Promise.all([
     cuenta(perfiles()),
     cuenta(perfiles().gte('created_at', hace7d)),
     servicio.from('subscriptions').select('plan').in('status', [...ESTADOS_SUSCRIPCION_ACTIVA]).limit(10000),
     cuenta(sesion.from('espacios_escenicos').select('id', { count: 'exact', head: true }).eq('estado', 'publicado')),
     cuenta(sesion.from('boletin_suscriptores').select('id', { count: 'exact', head: true }).eq('estado', 'confirmado')),
     esAdmin ? servicio.from('embajadores_invitaciones').select('estado, caduca_at').limit(5000) : Promise.resolve(null),
+    esAdmin ? cuenta(servicio.from('elenco_fundadores').select('id', { count: 'exact', head: true }).neq('estado', 'anulada')) : Promise.resolve(null),
   ])
 
   const porPlan = new Map<string, number>()
@@ -109,6 +113,7 @@ export async function cargarCifras(sesion: SupabaseClient, servicio: SupabaseCli
     cifras.embajadores = invitaciones && !invitaciones.error
       ? { ocupadas: plazasOcupadas((invitaciones.data ?? []) as { estado: string; caduca_at: string }[], ahora.getTime()), total: PLAZAS_FUNDADORAS }
       : null
+    cifras.elenco = elenco === null ? null : { ocupadas: elenco, total: PLAZAS_ELENCO }
   }
   return cifras
 }

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import {
-  aplicarEmbajadores, notifyWelcomeIfFirstConfirmation, redirigirTrasConfirmar, urlResultado,
+  aplicarProgramas, notifyWelcomeIfFirstConfirmation, redirigirTrasConfirmar, urlResultado,
 } from '@/lib/auth/confirmacion'
 
 /**
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
   const continuar = async () => {
     await notifyWelcomeIfFirstConfirmation(supabase)
-    const forzado = await aplicarEmbajadores(request, supabase)
+    const forzado = await aplicarProgramas(request, supabase)
     const { data: { user } } = await supabase.auth.getUser()
     return redirigirTrasConfirmar(request, origin, {
       forzado, next, metaNext: user?.user_metadata?.next_registro, porDefecto: '/dashboard',
