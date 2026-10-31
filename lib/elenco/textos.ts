@@ -113,8 +113,9 @@ export function progresoEscalera(puntos: number): { siguiente: number; anterior:
   return { siguiente, anterior, progreso: Math.min(1, Math.max(0, (puntos - anterior) / (siguiente - anterior))) }
 }
 
-/** Puntos que vale cada colega activo según su tipo de perfil. */
+/** Puntos que vale cada colega activo según su tipo de perfil (público general: ninguno). */
 export function puntosColega(tipoPerfil: string): number {
+  if (tipoPerfil === 'publico') return 0
   return ['compania', 'productora', 'teatro', 'festival', 'escuela', 'institucion'].includes(tipoPerfil) ? 3 : 1
 }
 

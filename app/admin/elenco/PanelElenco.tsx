@@ -17,7 +17,7 @@ const ESTADO: Record<string, { texto: string; color: string }> = {
   pendiente: { texto: 'Pendiente', color: '#92400e' },
   aceptada: { texto: 'Aceptada', color: '#166534' },
 }
-const CLASE: Record<string, string> = { persona: 'Persona', organizacion: 'Organización', sala: 'Sala' }
+const CLASE: Record<string, string> = { persona: 'Persona', organizacion: 'Organización', sala: 'Sala', publico: 'Público general' }
 
 function descargar(nombre: string, contenido: string) {
   const blob = new Blob(['﻿' + contenido], { type: 'text/csv;charset=utf-8' })

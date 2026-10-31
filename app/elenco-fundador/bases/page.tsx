@@ -43,7 +43,8 @@ export default function BasesElencoPage() {
           <ul className="inv-lista">
             <li>Cada fundador tiene un enlace público para invitar a sus colegas. Quien se une con él entra en el plan gratuito.</li>
             <li>Cuenta el primer enlace con el que se registra cada persona u organización, una sola vez por cuenta. Quien ya tiene cuenta no se atribuye a nadie.</li>
-            <li><strong>Colega activo:</strong> una persona con el correo confirmado y foto de perfil (1 punto); una organización con el perfil completo y su logo, o una sala con su ficha de Espacios Escénicos reclamada y aprobada (3 puntos).</li>
+            <li><strong>Colega activo:</strong> un profesional con el correo confirmado, foto de perfil y al menos una profesión elegida (1 punto); una organización con el perfil completo y su logo, o una sala con su ficha de Espacios Escénicos reclamada y aprobada (3 puntos).</li>
+            <li>Las cuentas de público general pueden unirse con tu enlace, pero no suman puntos.</li>
             <li>Los puntos se calculan siempre con los datos reales de cada perfil.</li>
           </ul>
         </section>

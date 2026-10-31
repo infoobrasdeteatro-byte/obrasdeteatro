@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { PGlite } from '@electric-sql/pglite'
 import { baseConMigraciones, U1, U2, type Resultado } from '@/lib/espacios/__tests__/pglite'
 
@@ -34,12 +36,31 @@ const PREVIO = `
     add column tipo_perfil public.tipo_perfil not null default 'profesional',
     add column deleted_at timestamptz,
     add column slug text,
-    add column perfil_publico boolean not null default true;
+    add column perfil_publico boolean not null default true,
+    add column email text;
   create table public.subscriptions (profile_id uuid unique, plan text not null, status text not null);
   create table public.espacios_reclamaciones (id uuid primary key default gen_random_uuid(), profile_id uuid not null, estado text not null default 'pendiente');
-  create table public.cartelera_destacados (id uuid primary key default gen_random_uuid());
+  create table public.cartelera_destacados (id uuid primary key default gen_random_uuid(), espectaculo_id uuid, desde date, hasta date);
+  create table public.profile_specialties (id uuid primary key default gen_random_uuid(), profile_id uuid not null, specialty text not null, is_primary boolean not null default false);
   create role service_role nologin;
   grant usage on schema public to service_role;
+  -- Sello «✓ Verificado» que sigue al plan (copia de 20261023140000_perfiles_verificacion_profesional).
+  alter table public.profiles add column verificado_profesional boolean not null default false;
+  create table public.verificaciones_profesionales (profile_id uuid, estado text);
+  create function public.profiles_sello_sigue_plan() returns trigger language plpgsql set search_path = 'public' as $$
+  begin
+    if new.plan is distinct from old.plan then
+      if new.plan::text = 'gratuito' then
+        new.verificado_profesional := false;
+      elsif old.plan::text = 'gratuito' and exists (
+        select 1 from public.verificaciones_profesionales v where v.profile_id = new.id and v.estado = 'aprobada') then
+        new.verificado_profesional := true;
+      end if;
+    end if;
+    return new;
+  end $$;
+  create trigger profiles_sello_sigue_plan before update of plan on public.profiles
+    for each row execute function public.profiles_sello_sigue_plan();
 `
 
 const uno = async (sql: string) => (await db.query<Record<string, unknown>>(sql)).rows[0]
@@ -61,20 +82,22 @@ const tramos = async (p: string) =>
 
 /** Crea un colega nuevo atribuido al fundador nº `numero`. */
 let siguiente = 100
-async function colega(numero: number, tipo = 'profesional', datos = '') {
+async function colega(numero: number, tipo = 'profesional', datos = '', profesion = false) {
   const p = id(++siguiente)
   await db.exec(`insert into profiles (id, nombre, tipo_perfil) values ('${p}', 'colega ${siguiente}', '${tipo}')`)
   expect((await uno(`select elenco_atribuir('${p}', ${numero}) as v`)).v).toBe('ok')
   if (datos) await db.exec(`update profiles set ${datos} where id = '${p}'`)
+  if (profesion) await elegirProfesion(p)
   return p
 }
+const elegirProfesion = (p: string) => db.exec(`insert into profile_specialties (profile_id, specialty, is_primary) values ('${p}', 'interpretacion', true)`)
 const activarPersona = 'verificado = true, avatar_url = \'f.jpg\''
 
 let n1: { id: string; numero: number; token: string }
 
 beforeAll(async () => {
   ({ db, como } = await baseConMigraciones(
-    ['20261025120000_embajadores_de_escena.sql', '20261031120000_elenco_fundador.sql'], PREVIO))
+    ['20261025120000_embajadores_de_escena.sql', '20261031120000_elenco_fundador.sql', '20261031150000_elenco_colega_profesion.sql'], PREVIO))
   await db.exec(`
     insert into profiles (id, nombre, tipo_perfil) values ('${ORG}', 'Compañía', 'compania'), ('${EMB}', 'Embajadora', 'actor');
     insert into profiles (id, nombre, plan, is_premium) values ('${PAGA}', 'paga', 'empresas', true);
@@ -159,7 +182,15 @@ describe('colegas activos y puntos (calculados en SQL)', () => {
     const sinConfirmar = await colega(2, 'actor', "avatar_url = 'f.jpg'")
     expect(await puntos(f)).toBe(base)
 
-    await colega(2, 'actor', activarPersona)
+    // Correo confirmado y foto, pero sin profesión: todavía no cuenta.
+    const sinProfesion = await colega(2, 'actor', activarPersona)
+    expect(await puntos(f)).toBe(base)
+    // Público general: queda atribuido, pero nunca suma, aunque lo tenga todo.
+    const publico = await colega(2, 'publico', activarPersona, true)
+    expect(await puntos(f)).toBe(base)
+    expect((await uno(`select clase, activo, puntos from elenco_colegas where profile_id = '${publico}'`))).toEqual({ clase: 'publico', activo: false, puntos: 0 })
+    // Al elegir una profesión pasa a activo en el momento (trigger).
+    await elegirProfesion(sinProfesion)
     expect(await puntos(f)).toBe(base + 1)
 
     await colega(2, 'compania', "avatar_url = 'logo.png', bio = 'x'")
@@ -183,9 +214,9 @@ describe('colegas activos y puntos (calculados en SQL)', () => {
 describe('escalera de recompensas', () => {
   it('al llegar a 5 puntos otorga el escalón al momento (trigger) y nunca dos veces', async () => {
     const f = n1.id
-    for (let i = 0; i < 4; i++) await colega(1, 'actor', activarPersona)
+    for (let i = 0; i < 4; i++) await colega(1, 'actor', activarPersona, true)
     expect(await escalones(f)).toEqual([])
-    await colega(1, 'actor', activarPersona)   // 5.º colega activo
+    await colega(1, 'actor', activarPersona, true)   // 5.º colega activo
     expect(await puntos(f)).toBe(5)
     expect(await escalones(f)).toEqual([5])
     expect(await plan(U1)).toBe('premium')
@@ -215,7 +246,7 @@ describe('escalera de recompensas', () => {
   })
 
   it('25 puntos: año de Destacado a la persona sin recortar su tiempo de Premium; organización: semanas de Cartelera', async () => {
-    for (let i = 0; i < 20; i++) await colega(1, 'actor', activarPersona)
+    for (let i = 0; i < 20; i++) await colega(1, 'actor', activarPersona, true)
     expect(await escalones(n1.id)).toEqual([5, 10, 25])
     expect(await plan(U1)).toBe('destacado')
 
@@ -307,10 +338,12 @@ describe('el plan no baja nunca', () => {
     expect(await plan(PAGA)).toBe('empresas')
   })
 
-  it('si Stripe retira una suscripción mientras dura un tramo del Elenco, el plan se queda en el del tramo', async () => {
+  it('si Stripe retira una suscripción mientras dura un tramo del Elenco, el plan se queda en el del tramo y el sello no se pierde', async () => {
     expect(await plan(U1)).toBe('destacado')
+    await db.exec(`update profiles set verificado_profesional = true where id = '${U1}'`)
     await db.exec(`update profiles set plan = 'gratuito', is_premium = false where id = '${U1}'`)
     expect(await plan(U1)).toBe('destacado')
+    expect((await uno(`select verificado_profesional as v from profiles where id = '${U1}'`)).v).toBe(true)
   })
 })
 
@@ -340,5 +373,43 @@ describe('páginas públicas', () => {
     expect(pub.every(r => Number(r.escalon) >= 10)).toBe(true)
     expect((await como('anon', null, 'select * from elenco_fundador_publico(1)')).filas[0]).toMatchObject({ numero: 1, nombre: 'u1' })
     expect((await como('anon', null, 'select * from elenco_fundador_publico(99)')).filas).toHaveLength(0)
+  })
+})
+
+describe('script del editor supabase/tests/elenco_escalones.sql', () => {
+  it('termina en ELENCO_OK y no deja nada guardado', async () => {
+    for (let i = 0; i < 18; i++) await db.exec(`insert into profiles (id, nombre, created_at) values ('${id(500 + i)}', 'libre ${i}', now() - interval '1000 days')`)
+    const antes = (await uno('select (select count(*) from elenco_fundadores) + (select count(*) from elenco_recompensas) + (select count(*) from elenco_referidos) as v')).v
+    const script = readFileSync(path.resolve(__dirname, '../../../supabase/tests/elenco_escalones.sql'), 'utf8')
+    await expect(db.exec(script)).rejects.toThrow(/ELENCO_OK: fundador nº \d{3}; 51 puntos, escalones \{5,10,25,50\}/)
+    await db.exec('rollback')
+    const despues = (await uno('select (select count(*) from elenco_fundadores) + (select count(*) from elenco_recompensas) + (select count(*) from elenco_referidos) as v')).v
+    expect(despues).toBe(antes)
+  })
+})
+
+describe('script de limpieza supabase/mantenimiento/elenco_limpieza_pruebas.sql', () => {
+  it('muestra antes lo que borraría y borra solo lo de las cuentas indicadas', async () => {
+    await db.exec(`update profiles set email = 'u1@prueba.es' where id = '${U1}'; update profiles set email = 'org@prueba.es' where id = '${ORG}'`)
+    const otros = (await uno(`select count(*)::int as v from elenco_fundadores where aceptada_por not in ('${U1}', '${ORG}') or aceptada_por is null`)).v
+    const texto = readFileSync(path.resolve(__dirname, '../../../supabase/mantenimiento/elenco_limpieza_pruebas.sql'), 'utf8')
+      .replace(/\('prueba1@ejemplo\.com'\),\s*\('prueba2@ejemplo\.com'\)/g, "('u1@prueba.es'), ('ORG@prueba.es')")
+    const [parteA, parteB] = texto.split('-- ═══ PARTE B')
+
+    const vista = (await db.query<{ que: string; numero: string | null; detalle: string | null }>(parteA.slice(parteA.indexOf('with correos')))).rows
+    expect(vista.filter(r => r.que === 'Cuenta de prueba encontrada')).toHaveLength(2)
+    expect(vista.filter(r => r.que === 'Invitación / plaza de fundador').map(r => r.numero).sort()).toHaveLength(2)
+    expect(vista.some(r => r.que === 'Recompensa (escalón)')).toBe(true)
+    expect(vista.find(r => r.que === 'Siguiente número que se asignará')!.numero).toBe('001')
+    // La parte A no borra nada.
+    expect((await uno(`select count(*)::int as v from elenco_fundadores where aceptada_por in ('${U1}', '${ORG}')`)).v).toBe(2)
+
+    await db.exec(parteB.slice(parteB.indexOf('begin;')))
+    expect((await uno(`select count(*)::int as v from elenco_fundadores where aceptada_por in ('${U1}', '${ORG}')`)).v).toBe(0)
+    expect((await uno(`select count(*)::int as v from elenco_cortesias where profile_id in ('${U1}', '${ORG}')`)).v).toBe(0)
+    expect((await uno(`select count(*)::int as v from elenco_fundadores`)).v).toBe(otros)
+    expect(await plan(U1)).toBe('gratuito')
+    expect(await plan(ORG)).toBe('gratuito')
+    expect((await uno(`select min(g)::int as v from generate_series(1, 100) g where not exists (select 1 from elenco_fundadores f where f.numero = g and f.estado <> 'anulada')`)).v).toBe(1)
   })
 })

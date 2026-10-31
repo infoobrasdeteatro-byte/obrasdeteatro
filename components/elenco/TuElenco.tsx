@@ -108,7 +108,7 @@ export default function TuElenco({ datos, nombre, bienvenida }: { datos: DatosEl
           <p className="cortesia-cifra">Tienes {datos.semanas_cartelera} semana{datos.semanas_cartelera === 1 ? '' : 's'} de destacado en Cartelera: escríbenos a hola@obrasdeteatro.com y lo aplicamos a vuestro espectáculo.</p>
         )}
         <p className="cortesia-cifra">
-          Persona activa (correo confirmado y foto): 1 punto. Organización con perfil completo y logo, o sala con su ficha reclamada: 3 puntos.{' '}
+          Profesional activo (correo confirmado, foto y al menos una profesión): 1 punto. Las cuentas de público general no suman. Organización con perfil completo y logo, o sala con su ficha reclamada: 3 puntos.{' '}
           <Link href="/elenco-fundador/bases">Bases del programa</Link>
         </p>
       </div>

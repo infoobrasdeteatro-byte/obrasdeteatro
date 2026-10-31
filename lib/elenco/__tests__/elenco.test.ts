@@ -47,6 +47,7 @@ describe('textos', () => {
     expect(progresoEscalera(50)).toBeNull()
     expect(puntosColega('actor')).toBe(1)
     expect(puntosColega('teatro')).toBe(3)
+    expect(puntosColega('publico')).toBe(0)
   })
 })
 
