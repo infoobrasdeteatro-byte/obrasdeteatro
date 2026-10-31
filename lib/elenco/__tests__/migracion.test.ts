@@ -378,10 +378,15 @@ describe('páginas públicas', () => {
 
 describe('script del editor supabase/tests/elenco_escalones.sql', () => {
   it('termina en ELENCO_OK y no deja nada guardado', async () => {
+    // Dos perfiles reales que ya contarían como colega activo, los primeros por antigüedad: el script no debe elegirlos.
+    for (let i = 0; i < 2; i++) {
+      await db.exec(`insert into profiles (id, nombre, created_at, tipo_perfil, verificado, avatar_url) values ('${id(600 + i)}', 'activo ${i}', now() - interval '2000 days', 'actor', true, 'f.jpg')`)
+      await elegirProfesion(id(600 + i))
+    }
     for (let i = 0; i < 18; i++) await db.exec(`insert into profiles (id, nombre, created_at) values ('${id(500 + i)}', 'libre ${i}', now() - interval '1000 days')`)
     const antes = (await uno('select (select count(*) from elenco_fundadores) + (select count(*) from elenco_recompensas) + (select count(*) from elenco_referidos) as v')).v
     const script = readFileSync(path.resolve(__dirname, '../../../supabase/tests/elenco_escalones.sql'), 'utf8')
-    await expect(db.exec(script)).rejects.toThrow(/ELENCO_OK: fundador nº \d{3}; 51 puntos, escalones \{5,10,25,50\}/)
+    await expect(db.exec(script)).rejects.toThrow(/ELENCO_OK: fundador nº \d{3}; 51 puntos \(partida 0\), escalones \{5,10,25,50\}/)
     await db.exec('rollback')
     const despues = (await uno('select (select count(*) from elenco_fundadores) + (select count(*) from elenco_recompensas) + (select count(*) from elenco_referidos) as v')).v
     expect(despues).toBe(antes)

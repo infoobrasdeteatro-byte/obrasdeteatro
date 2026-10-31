@@ -11,8 +11,11 @@
 -- Qué hace, dentro de la transacción:
 --   1. Crea una invitación de prueba (toma el primer número libre) y la acepta
 --      con un perfil existente, por la misma función que usa la web.
---   2. Atribuye 17 perfiles existentes a ese fundador y los va volviendo
---      «organización con perfil completo» (3 puntos cada uno).
+--   2. Atribuye 17 perfiles existentes que TODAVÍA NO cuentan como colega
+--      activo (mismas reglas que elenco_colegas) y los va volviendo
+--      «organización con perfil completo» (3 puntos cada uno). No depende del
+--      estado de los perfiles reales: mide los puntos de partida y comprueba
+--      los escalones a partir de ellos.
 --   3. Comprueba en cada paso que los escalones 5, 10, 25 y 50 se otorgan
 --      justo al llegar y una sola vez, también al repetir la revisión diaria.
 
@@ -28,6 +31,7 @@ declare
   esperado integer[];
   obtenido integer[];
   pts      integer;
+  base     integer;
   ok       text := '';
 begin
   -- 1 ─ Fundador de prueba
@@ -44,21 +48,32 @@ begin
   end if;
   ok := ok || format('fundador nº %s; ', lpad(inv.numero::text, 3, '0'));
 
-  -- 2 ─ 17 colegas de prueba (perfiles existentes, sin atribución previa)
+  -- 2 ─ 17 colegas de prueba: perfiles existentes, sin atribución previa y
+  --     que hoy NO contarían como colega activo (persona con correo, foto y
+  --     profesión; organización con logo, presentación y ciudad; sala con
+  --     reclamación aprobada).
   select array_agg(id) into rs from (
     select p.id from public.profiles p
     where p.deleted_at is null and p.id <> f
       and not exists (select 1 from public.elenco_referidos r where r.profile_id = p.id)
       and not exists (select 1 from public.elenco_fundadores x where x.aceptada_por = p.id)
+      and not (p.tipo_perfil::text not in ('publico', 'teatro') and not public.elenco_es_organizacion(p.tipo_perfil::text)
+               and p.verificado and coalesce(btrim(p.avatar_url), '') <> ''
+               and exists (select 1 from public.profile_specialties s where s.profile_id = p.id))
+      and not (public.elenco_es_organizacion(p.tipo_perfil::text) and p.tipo_perfil::text <> 'teatro'
+               and coalesce(btrim(p.avatar_url), '') <> '' and coalesce(btrim(p.bio), '') <> '' and coalesce(btrim(p.ciudad), '') <> '')
+      and not exists (select 1 from public.espacios_reclamaciones er where er.profile_id = p.id and er.estado = 'aprobada')
     order by p.created_at limit 17
   ) t;
   if coalesce(array_length(rs, 1), 0) < 17 then
-    raise exception 'ELENCO_FALLO: hacen falta 17 perfiles libres y hay %', coalesce(array_length(rs, 1), 0);
+    raise exception 'ELENCO_FALLO: hacen falta 17 perfiles libres y no activos, y hay %', coalesce(array_length(rs, 1), 0);
   end if;
   insert into public.elenco_referidos (profile_id, fundador_id) select unnest(rs), inv.id;
 
-  if public.elenco_puntos(inv.id) <> 0 then
-    raise exception 'ELENCO_FALLO: los colegas recién atribuidos ya suman % puntos', public.elenco_puntos(inv.id);
+  -- Puntos de partida (deberían ser 0; si no, se comprueba a partir de ellos).
+  base := public.elenco_puntos(inv.id);
+  if exists (select 1 from public.elenco_recompensas where fundador_id = inv.id) then
+    raise exception 'ELENCO_FALLO: el fundador de prueba tiene recompensas antes de empezar';
   end if;
 
   -- 3 ─ Activar colegas uno a uno y comprobar los escalones en cada umbral
@@ -77,8 +92,11 @@ begin
       raise exception 'ELENCO_FALLO: con % puntos se esperaban los escalones % y hay %', pts, esperado, obtenido;
     end if;
   end loop;
-  if pts <> 51 then raise exception 'ELENCO_FALLO: se esperaban 51 puntos y hay %', pts; end if;
-  ok := ok || format('%s puntos, escalones %s al momento (trigger); ', pts, obtenido);
+  if pts <> base + 51 then raise exception 'ELENCO_FALLO: se esperaban % puntos y hay %', base + 51, pts; end if;
+  if obtenido is distinct from array[5, 10, 25, 50] then
+    raise exception 'ELENCO_FALLO: al final se esperaban los escalones {5,10,25,50} y hay %', obtenido;
+  end if;
+  ok := ok || format('%s puntos (partida %s), escalones %s al momento (trigger); ', pts, base, obtenido);
 
   -- 4 ─ Repetir la revisión no duplica nada
   perform public.elenco_revisar(inv.id);
