@@ -45,6 +45,7 @@ export const GRUPOS_SECCIONES: GrupoSecciones[] = [
     titulo: 'Comunidad',
     secciones: [
       { href: '/admin/embajadores', titulo: 'Embajadores', descripcion: 'Invitaciones y referidos', soloAdmin: true },
+      { href: '/admin/elenco', titulo: 'Elenco Fundador', descripcion: 'Invitaciones 001–100, referidos y escalera', soloAdmin: true },
       { href: '/admin/verificaciones', titulo: 'Verificaciones', descripcion: 'Sello «✓ Verificado»', colas: ['verificaciones'] },
       { href: '/admin/avisos-perfil', titulo: 'Avisos de perfil', descripcion: 'Correo «completa tu perfil»', soloAdmin: true, colas: ['avisos'] },
       { href: '/admin/recordatorio-confirmacion', titulo: 'Recordatorio de confirmación', descripcion: 'Cuentas sin confirmar el correo', soloAdmin: true, colas: ['recordatorios'] },

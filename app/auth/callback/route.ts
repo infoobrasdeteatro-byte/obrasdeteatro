@@ -4,6 +4,7 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 import { sendWelcomeEmail } from '@/lib/email/welcome-email'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE } from '@/lib/auth/next-param'
 import { COOKIE_REFERIDO, codigoValido, tokenValido } from '@/lib/embajadores/textos'
+import { COOKIE_ELENCO } from '@/lib/elenco/textos'
 
 /**
  * AEC-001: tras un intercambio de código/OTP exitoso, esta es la confirmación
@@ -40,6 +41,7 @@ function redirigirTrasConfirmar(request: NextRequest, origin: string, forzado?: 
   const respuesta = NextResponse.redirect(`${origin}${destino}`)
   respuesta.cookies.delete(NEXT_TRAS_REGISTRO_COOKIE)
   respuesta.cookies.delete(COOKIE_REFERIDO)
+  respuesta.cookies.delete(COOKIE_ELENCO)
   return respuesta
 }
 
@@ -68,6 +70,27 @@ async function aplicarEmbajadores(request: NextRequest, supabase: Awaited<Return
   return undefined
 }
 
+/**
+ * Elenco Fundador, al confirmar el correo: si se registró desde su invitación,
+ * se acepta con la cuenta recién confirmada (destino: Mi red con la
+ * bienvenida). Solo si Embajadores no ha decidido ya el destino. Un fallo
+ * nunca bloquea la confirmación.
+ */
+async function aplicarElenco(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | undefined> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    const token = tokenValido((user?.user_metadata as Record<string, unknown> | undefined)?.invitacion_elenco)
+    if (!token) return undefined
+    const { data } = await supabase.rpc('aceptar_invitacion_elenco', { p_token: token })
+    if (data === 'ok' || data === 'ya_fundador') return '/perfil/red?elenco=1'
+    return `/elenco/invitacion/${token}`
+  } catch { return undefined }
+}
+
+async function destinoTrasConfirmar(request: NextRequest, supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | undefined> {
+  return (await aplicarEmbajadores(request, supabase)) ?? (await aplicarElenco(supabase))
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
@@ -81,7 +104,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
-      return redirigirTrasConfirmar(request, origin, await aplicarEmbajadores(request, supabase))
+      return redirigirTrasConfirmar(request, origin, await destinoTrasConfirmar(request, supabase))
     }
   }
 
@@ -90,7 +113,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
       await notifyWelcomeIfFirstConfirmation(supabase)
-      return redirigirTrasConfirmar(request, origin, await aplicarEmbajadores(request, supabase))
+      return redirigirTrasConfirmar(request, origin, await destinoTrasConfirmar(request, supabase))
     }
   }
 

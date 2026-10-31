@@ -5,6 +5,7 @@ import { PASSWORD_POLICY } from '@/lib/auth/password-policy'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE, NEXT_TRAS_REGISTRO_MAX_AGE_S } from '@/lib/auth/next-param'
 import { TIPOS_REGISTRO, esProfesion } from '@/lib/perfiles/profesiones'
 import { COOKIE_REFERIDO, codigoValido, tokenDeInvitacion } from '@/lib/embajadores/textos'
+import { COOKIE_ELENCO, leerNumero, tokenDeInvitacionElenco } from '@/lib/elenco/textos'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
@@ -99,8 +100,12 @@ export async function POST(req: NextRequest) {
   // aunque se abra el enlace en otro navegador o en el móvil.
   const invitacion = tokenDeInvitacion(destino)
   const referido = codigoValido(req.cookies?.get(COOKIE_REFERIDO)?.value)
+  // Elenco Fundador: invitación personal (igual que la de Embajadores) y
+  // enlace /elenco/<nº> de un fundador (cookie), que se atribuye al crear la cuenta.
+  const invitacionElenco = tokenDeInvitacionElenco(destino)
+  const numeroElenco = leerNumero(req.cookies?.get(COOKIE_ELENCO)?.value)
 
-  const { error } = await supabase.auth.signUp({
+  const { data: alta, error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password,
     options: {
@@ -108,6 +113,7 @@ export async function POST(req: NextRequest) {
         nombre, tipo_perfil: tipo, profesiones: listaProfesiones,
         ...(invitacion ? { invitacion_embajador: invitacion } : {}),
         ...(referido ? { codigo_referido: referido } : {}),
+        ...(invitacionElenco ? { invitacion_elenco: invitacionElenco } : {}),
       },
       emailRedirectTo: `${origin}/auth/callback`,
     },
@@ -117,7 +123,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: 'signup_error', message: error.message }, { status: 400 })
   }
 
+  // Primer enlace del Elenco con el que se registra: una vez por cuenta (lo
+  // garantiza elenco_atribuir). Un fallo nunca bloquea el registro.
+  if (numeroElenco && alta?.user?.id) {
+    try {
+      const servicio = createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      )
+      await servicio.rpc('elenco_atribuir', { p_perfil: alta.user.id, p_numero: numeroElenco })
+    } catch { /* sin atribución */ }
+  }
+
   const respuesta = NextResponse.json({ ok: true })
+  if (numeroElenco) respuesta.cookies.delete(COOKIE_ELENCO)
 
   // Vuelta tras confirmar el email: la lee y la borra /auth/callback (ver
   // NEXT_TRAS_REGISTRO_COOKIE). Solo rutas internas.

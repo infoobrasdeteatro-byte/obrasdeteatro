@@ -4668,6 +4668,23 @@ export type Database = {
       }
       embajadores_activos: { Args: { p_perfiles: string[] }; Returns: { profile_id: string; genero: string | null }[] }
       plan_tras_cortesia: { Args: { p_perfil: string }; Returns: string }
+      elenco_invitacion_publica: { Args: { p_token: string }; Returns: { nombre: string; tipo: string; oficio: string; numero: number; estado: string }[] }
+      aceptar_invitacion_elenco: { Args: { p_token: string }; Returns: string }
+      elenco_activar_bono: { Args: never; Returns: string }
+      mi_elenco: {
+        Args: never
+        Returns: {
+          numero: number; tipo: string; aceptada_at: string; bono_estado: string; bono_limite: string
+          bono_desde: string | null; bono_hasta: string | null; registrados: number; activos: number; puntos: number
+          escalon: number; semanas_cartelera: number; plan_vigente: string | null; cortesia_hasta: string | null
+        }[]
+      }
+      elenco_distintivos: { Args: { p_perfiles: string[] }; Returns: { profile_id: string; numero: number }[] }
+      elenco_fundador_publico: { Args: { p_numero: number }; Returns: { numero: number; nombre: string; slug: string | null }[] }
+      elenco_publico: {
+        Args: never
+        Returns: { numero: number; nombre: string; slug: string | null; avatar_url: string | null; tipo: string; escalon: number }[]
+      }
       bloquear: { Args: { p_perfil: string }; Returns: boolean | null }
       desbloquear: { Args: { p_perfil: string }; Returns: boolean | null }
       reclamar_aviso_mensaje: { Args: { p_conversacion: string }; Returns: string | null }

@@ -25,6 +25,7 @@ import { motivoEscribir, textoNoPuede } from '@/lib/mensajes/mensajes'
 import IconoContacto from '@/components/perfil/IconoContacto'
 import { textoActividad } from '@/lib/red/actividad'
 import { tituloEmbajador } from '@/lib/embajadores/textos'
+import { distintivo } from '@/lib/elenco/textos'
 import { estadoContacto } from '@/lib/red/contacto'
 import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
 import VideosPerfil, { type VideoPublico } from '@/components/perfil/VideosPerfil'
@@ -209,6 +210,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
     { data: actividadDb },
     { data: escribirDb },
     { data: embajadorDb },
+    { data: elencoDb },
   ] = await Promise.all([
     supabase
       .from('profile_specialties')
@@ -259,8 +261,11 @@ export default async function PerfilPublicoPage({ params }: Props) {
       : Promise.resolve({ data: null }),
     // Embajadores de Escena: distintivo público.
     supabase.rpc('embajadores_activos', { p_perfiles: [profile.id] }),
+    // Elenco Fundador: distintivo con su número.
+    supabase.rpc('elenco_distintivos', { p_perfiles: [profile.id] }),
   ])
   const embajador = embajadorDb?.[0] ?? null
+  const fundador = elencoDb?.[0] ?? null
   const motivoMensaje = escribirDb ? motivoEscribir(escribirDb) : null
   const actividad = textoActividad(actividadDb)
   const contacto = contactoDb?.[0] ?? null
@@ -490,7 +495,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
                 </div>
               )}
 
-              {(isVerificado || planBadge || embajador) && (
+              {(isVerificado || planBadge || embajador || fundador) && (
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '12px' }}>
                   {isVerificado && (
                     <span style={{
@@ -503,6 +508,9 @@ export default async function PerfilPublicoPage({ params }: Props) {
                   )}
                   {embajador && (
                     <span className="prof-badge-embajador">{tituloEmbajador(embajador.genero)}</span>
+                  )}
+                  {fundador && (
+                    <span className="prof-badge-elenco">{distintivo(fundador.numero)}</span>
                   )}
                   {planBadge && !embajador && (
                     <span style={{

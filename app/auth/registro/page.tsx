@@ -50,11 +50,16 @@ export default function RegistroPage() {
 
   // Llega desde el enlace personal de un/a Embajador/a de Escena (/r/<código>).
   const [invitado, setInvitado] = useState(false)
+  // Llega desde el enlace de un fundador del Elenco (/elenco/<nº>): sin mes de Premium.
+  const [elenco, setElenco] = useState(false)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     setNext(safeNextPath(p.get('next')))
     setInvitado(p.get('invitado') === '1')
+    setElenco(/^\d{3}$/.test(p.get('elenco') ?? ''))
+    const tipo = p.get('tipo')
+    if (tipo === 'profesional' || tipo === 'organizacion') setRegistro(tipo)
   }, [])
 
   const turnstileContainer = useRef<HTMLDivElement>(null)
@@ -175,6 +180,11 @@ export default function RegistroPage() {
         {invitado && (
           <p className="ds-alert-success" style={{ display: 'block', marginBottom: '14px', fontSize: '13px', lineHeight: 1.5 }}>
             Vienes invitado/a por un/a Embajador/a de Escena: al confirmar tu cuenta tendrás <strong>un mes de Premium gratis</strong>, sin tarjeta.
+          </p>
+        )}
+        {elenco && !invitado && (
+          <p className="ds-alert-success" style={{ display: 'block', marginBottom: '14px', fontSize: '13px', lineHeight: 1.5 }}>
+            Te invita un miembro del <strong>Elenco Fundador</strong>. Estamos construyendo entre todos la casa del teatro en español: unirte es gratis.
           </p>
         )}
         <form onSubmit={handleRegistro} className="auth-form">
