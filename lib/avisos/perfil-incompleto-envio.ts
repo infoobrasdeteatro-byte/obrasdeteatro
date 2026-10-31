@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  ASUNTO_AVISO_PERFIL, REMITENTE_AVISO_PERFIL, RESPONDER_A_AVISO_PERFIL,
+  asuntoAvisoPerfil, REMITENTE_AVISO_PERFIL, RESPONDER_A_AVISO_PERFIL,
   construirHtmlAvisoPerfil, construirTextoAvisoPerfil, faltasDelPerfil, type Falta,
 } from './perfil-incompleto'
 
@@ -80,7 +80,7 @@ function cuerpo(c: CorreoAviso) {
     from: REMITENTE_AVISO_PERFIL,
     reply_to: RESPONDER_A_AVISO_PERFIL,
     to: c.para,
-    subject: ASUNTO_AVISO_PERFIL,
+    subject: asuntoAvisoPerfil(c.tipo),
     html: construirHtmlAvisoPerfil(c.nombre, c.tipo, c.faltas),
     text: construirTextoAvisoPerfil(c.nombre, c.tipo, c.faltas),
   }
