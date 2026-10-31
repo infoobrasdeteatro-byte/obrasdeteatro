@@ -853,6 +853,13 @@ body {
   transition: background 0.2s;
 }
 .nav-btn-logout:hover { background: var(--red); }
+/* TopNav con sesión sobre la foto de la portada: mismo tratamiento que
+   «Registrarse» en modo hero. NavAutenticado es siempre nav--solid. */
+.nav--hero .nav-btn-logout {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.nav--hero .nav-btn-logout:hover { background: rgba(255,255,255,0.20); }
 
 .app-footer {
   border-top: 1px solid var(--border);
