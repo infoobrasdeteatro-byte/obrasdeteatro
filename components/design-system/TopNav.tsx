@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import BrandIcon from '@/components/brand/BrandIcon'
+import { createClient } from '@/lib/supabase/client'
+import { vigilarSesion, type EstadoSesion } from './sesion-cabecera'
+import { CuentaBarra, CuentaMovil } from './TopNavCuenta'
 
 // RC-001A (calibracion continua): heroProgress sustituye al umbral booleano
 // que competia contra la duracion fija de la transicion CSS. progress=0
@@ -74,6 +77,16 @@ export default function TopNav({ heroMode = false }: Props) {
   const [isHero, setIsHero] = useState(heroMode)
   const [mobileOpen, setMobileOpen] = useState(false)
   const navRef = useRef<HTMLElement | null>(null)
+  // El servidor siempre pinta 'comprobando'; la sesión se resuelve aquí.
+  const [sesion, setSesion] = useState<EstadoSesion>('comprobando')
+
+  useEffect(() => {
+    try {
+      return vigilarSesion(createClient(), setSesion)
+    } catch {
+      setSesion('sin-sesion')
+    }
+  }, [])
 
   useEffect(() => {
     if (!heroMode) {
@@ -147,12 +160,7 @@ export default function TopNav({ heroMode = false }: Props) {
         </div>
 
         <div className="nav-right">
-          <Link href="/auth/login" className="nav-btn-login">
-            Iniciar sesión
-          </Link>
-          <Link href="/auth/registro" className="nav-btn-cta nav-btn-cta--pulse">
-            Registrarse
-          </Link>
+          <CuentaBarra estado={sesion} />
           <button
             className="nav-mobile-toggle"
             onClick={() => setMobileOpen(o => !o)}
@@ -171,12 +179,7 @@ export default function TopNav({ heroMode = false }: Props) {
       {mobileOpen && (
         <div className="nav-mobile-menu">
           <span className="nav-mobile-section-label">Cuenta</span>
-          <Link href="/auth/login" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
-            Iniciar sesión
-          </Link>
-          <Link href="/auth/registro" className="nav-mobile-cta" onClick={() => setMobileOpen(false)}>
-            Crear cuenta gratis
-          </Link>
+          <CuentaMovil estado={sesion} onNavegar={() => setMobileOpen(false)} />
           <hr className="nav-mobile-divider" />
           <span className="nav-mobile-section-label">Ecosistema</span>
           <Link href="/directorio" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
