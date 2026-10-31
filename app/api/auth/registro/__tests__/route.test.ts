@@ -102,3 +102,17 @@ describe('POST /api/auth/registro — Embajadores de Escena', () => {
     expect(datos()).not.toHaveProperty('codigo_referido')
   })
 })
+
+describe('POST /api/auth/registro — vuelta al confirmar en otro aparato', () => {
+  const datos = () => mockSignUp.mock.calls[0][0].options.data
+
+  it('guarda el next interno con la cuenta (lo usa /auth/confirm, donde no hay cookie)', async () => {
+    await POST(peticion({ next: '/precios?plan=premium' }))
+    expect(datos().next_registro).toBe('/precios?plan=premium')
+  })
+
+  it.each(['https://evil.example.com', '//evil.example.com', undefined])('no guarda un next no válido (%s)', async (next) => {
+    await POST(peticion({ next }))
+    expect(datos()).not.toHaveProperty('next_registro')
+  })
+})

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Script from 'next/script'
 import Link from 'next/link'
 import BrandIcon from '@/components/brand/BrandIcon'
+import EsperaConfirmacion from '@/components/auth/EsperaConfirmacion'
 import { translateAuthError } from '@/lib/auth-errors'
 import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
 import { safeNextPath } from '@/lib/auth/next-param'
@@ -45,6 +46,9 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
+  // Cuenta creada: la pestaña espera la confirmación y entra sola. Correo y
+  // contraseña solo en memoria (estado de React), nunca en almacenamiento.
+  const [esperando, setEsperando] = useState<{ email: string; password: string } | null>(null)
   // Ruta de vuelta tras confirmar el email (p. ej. /precios), ya validada.
   const [next, setNext] = useState<string | null>(null)
 
@@ -146,9 +150,9 @@ export default function RegistroPage() {
         resetTurnstile()
       } else {
         // AEC-001: el correo de bienvenida ya no se dispara aquí -- se envía
-        // desde app/auth/callback/route.ts, tras la confirmación real del email.
-        setMessage('¡Revisa tu email para confirmar tu cuenta!')
-        setIsSuccess(true)
+        // desde /auth/confirm o /auth/callback, tras la confirmación real del email.
+        setEsperando({ email: email.trim().toLowerCase(), password })
+        setPassword('')
       }
     } catch {
       setMessage('No se pudo completar el registro. Inténtalo de nuevo.')
@@ -170,6 +174,9 @@ export default function RegistroPage() {
         obras<span>de</span>teatro.com
       </Link>
       <div className="auth-card">
+        {esperando ? (
+          <EsperaConfirmacion email={esperando.email} password={esperando.password} next={next} />
+        ) : (<>
         <h1 className="auth-title">Crear cuenta</h1>
         <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
         {invitado && (
@@ -310,6 +317,7 @@ export default function RegistroPage() {
             <Link href="/auth/login">Inicia sesión</Link>
           </p>
         </div>
+        </>)}
       </div>
     </div>
   )

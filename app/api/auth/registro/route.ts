@@ -108,6 +108,9 @@ export async function POST(req: NextRequest) {
         nombre, tipo_perfil: tipo, profesiones: listaProfesiones,
         ...(invitacion ? { invitacion_embajador: invitacion } : {}),
         ...(referido ? { codigo_referido: referido } : {}),
+        // Vuelta tras confirmar en otro aparato (/auth/confirm), donde no
+        // existe la cookie de abajo. Solo rutas internas.
+        ...(destino ? { next_registro: destino } : {}),
       },
       emailRedirectTo: `${origin}/auth/callback`,
     },

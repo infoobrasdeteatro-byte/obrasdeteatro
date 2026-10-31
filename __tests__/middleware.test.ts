@@ -71,6 +71,15 @@ describe('con sesión en /auth: vuelve a `next` si es una ruta interna válida',
     }
   })
 
+  it('/auth/confirm verifica el enlace aunque ya haya sesión; /auth/confirmar y /auth/confirmada siguen como siempre', async () => {
+    for (const ruta of ['/auth/confirm?token_hash=h&type=signup', '/auth/confirm?next=/precios']) {
+      expect(await pasa(ruta), ruta).toBe(true)
+    }
+    for (const ruta of ['/auth/confirmar', '/auth/confirmada?estado=confirmada']) {
+      expect(await destino(ruta), ruta).toEqual({ status: 307, location: BASE + '/dashboard' })
+    }
+  })
+
   it('con sesión, las rutas privadas siguen pasando sin redirección', async () => {
     for (const ruta of ['/dashboard', '/cuenta', '/mis-obras', '/obras/nueva', '/admin']) {
       expect(await pasa(ruta), ruta).toBe(true)
