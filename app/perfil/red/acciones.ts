@@ -94,7 +94,7 @@ async function avisarConexionAceptada(quienAcepta: string, quienPidio: string) {
   if (!otro.email) return
   await enviarAviso(
     otro.email,
-    `${yo.nombre} y tú ya estáis conectados en ObrasDeTeatro®`,
+    `${yo.nombre} y tú ya están conectados en ObrasDeTeatro®`,
     [
       `Hola, ${otro.nombre}:`,
       `${yo.nombre} ha aceptado tu conexión en ObrasDeTeatro®.${yo.slug ? ` Su perfil: ${SITIO}/perfil/${yo.slug}` : ''}`,

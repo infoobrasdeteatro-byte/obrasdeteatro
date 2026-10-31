@@ -13,7 +13,7 @@ export function motivoEscribir(v: string | null | undefined): MotivoEscribir {
 /** Texto para quien no puede escribir (o null si puede o no aplica). */
 export function textoNoPuede(motivo: MotivoEscribir, nombre: string): string | null {
   switch (motivo) {
-    case 'bloqueado': return `Has bloqueado a ${nombre}: no puede escribirte y tú tampoco a ${nombre}. Desbloquea para volver a escribiros.`
+    case 'bloqueado': return `Has bloqueado a ${nombre}: no puede escribirte y tú tampoco a ${nombre}. Desbloquea para volver a escribirse.`
     case 'plan': return `Para escribir a ${nombre} sin estar conectados necesitas un plan de pago. Con una conexión aceptada, los mensajes son gratis.`
     case 'solo_contactos': return `${nombre} solo recibe mensajes de sus contactos. Conecta primero para poder escribirle.`
     case 'no_disponible': return `Ahora mismo no se pueden enviar mensajes a ${nombre}.`
