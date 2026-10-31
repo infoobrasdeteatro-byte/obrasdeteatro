@@ -13,6 +13,7 @@ describe('mensajes', () => {
     expect(textoNoPuede('plan', 'Ana')).toContain('plan de pago')
     expect(textoNoPuede('solo_contactos', 'Ana')).toBe('Ana solo recibe mensajes de sus contactos. Conecta primero para poder escribirle.')
     expect(textoNoPuede('bloqueado', 'Ana')).toContain('Has bloqueado a Ana')
+    expect(textoNoPuede('bloqueado', 'Ana')).toContain('Desbloquea para volver a escribirse.')
   })
   it('errores de envío', () => {
     expect(textoErrorEnvio('limite')).toContain('muchos mensajes')
