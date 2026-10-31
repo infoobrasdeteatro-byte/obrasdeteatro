@@ -77,6 +77,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/auth') &&
     !pathname.startsWith('/auth/logout') &&
     !pathname.startsWith('/auth/callback') &&
+    // /auth/confirm debe verificar el enlace aunque ya haya una sesión abierta
+    // (exacta: /auth/confirmar y /auth/confirmada siguen como siempre).
+    pathname !== '/auth/confirm' &&
     !pathname.startsWith('/auth/update-password')
 
   // Sin sesión en una ruta privada: al login, conservando a dónde iba para
