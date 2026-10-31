@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import type { EstadoSesion } from './sesion-cabecera'
 
-// Accesos de cuenta de la cabecera pública. Con sesión: «Mi cuenta»
-// (/dashboard) y «Cerrar sesión» por POST a /auth/logout, como NavAutenticado.
+// Accesos de cuenta de la cabecera pública. Con sesión replican los de
+// NavAutenticado (Mi cuenta + Cerrar sesión por POST a /auth/logout).
 // Mientras se comprueba la sesión se reserva el hueco con el mismo ancho que
 // los botones sin sesión, invisibles y fuera del árbol accesible, para que no
 // parpadee «Iniciar sesión» a quien ya está conectado.

@@ -41,8 +41,8 @@ export default function NavAutenticado() {
           <Link href="/noticias" className="nav-link">Noticias</Link>
         </div>
         <div className="nav-right">
-          <Link href="/perfil/centro" className="nav-link" style={{ fontWeight: 500 }}>
-            Centro Profesional
+          <Link href="/dashboard" className="nav-link" style={{ fontWeight: 500 }}>
+            Mi cuenta
           </Link>
           {/*
             RC-001A-003A: "Cerrar sesión" se mantiene aqui de forma temporal y
@@ -76,7 +76,7 @@ export default function NavAutenticado() {
       {mobileOpen && (
         <div className="nav-mobile-menu">
           <span className="nav-mobile-section-label">Mi cuenta</span>
-          <Link href="/perfil/centro" className="nav-mobile-link">Centro Profesional</Link>
+          <Link href="/dashboard" className="nav-mobile-link">Mi cuenta</Link>
           <form action="/auth/logout" method="POST">
             <button type="submit" className="nav-mobile-cta" style={{ background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)' }}>
               Cerrar sesión
