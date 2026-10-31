@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
-  distintivo, enlaceElenco, leerNumero, mensajeColegasElenco, mensajeInvitacion, numeroFundador, progresoEscalera,
-  puntosColega, tokenDeInvitacionElenco,
+  distintivo, enlaceElenco, leerNumero, mensajeColegasElenco, mensajeInvitacion, normalizarNumeroElenco, numeroFundador, progresoEscalera,
+  puntosColega, recompensaEscalon, tokenDeInvitacionElenco,
 } from '../textos'
 import { ingresoMensual, origenPlan, filaCsv } from '../origen-plan'
 import { construirPanel, csvFundadores, csvReferidos, estadoBono, type ColegaBD, type FundadorBD } from '../admin'
@@ -19,6 +21,11 @@ describe('textos', () => {
       .toEqual([7, 7, 100, null, null, null, null])
   })
 
+  it('número escrito a mano en el registro', () => {
+    expect(['007', '7', ' 07 ', 'nº 7', 'Nº007', 'n.º 12', '#100', 'no 5'].map(normalizarNumeroElenco)).toEqual([7, 7, 7, 7, 7, 12, 100, 5])
+    expect(['', '000', '101', 'siete', '7a', null, 7].map(normalizarNumeroElenco)).toEqual([null, null, null, null, null, null, null])
+  })
+
   it('reconoce la ruta de una invitación del Elenco', () => {
     expect(tokenDeInvitacionElenco(`/elenco/invitacion/${TOKEN}`)).toBe(TOKEN)
     expect(tokenDeInvitacionElenco(`/invitacion/${TOKEN}`)).toBeNull()
@@ -32,7 +39,11 @@ describe('textos', () => {
     expect(persona).toContain('tres meses de Premium')
     expect(persona).toContain(`/elenco/invitacion/${TOKEN}`)
     expect(org).toContain('tres meses del plan Empresas')
-    expect(org).toMatch(/cartelera y vuestros castings/)
+    expect(org).toMatch(/^Hola Teatro del Sur, soy Renee Bausson/)
+    expect(org).toContain('Quiero invitarles personalmente')
+    expect(org).toContain('podrán publicar su cartelera y sus castings')
+    expect(org).toContain('cuando quieran')
+    expect(org).toContain('Su invitación:')
     expect(colegas).toMatch(/^Hola, soy Lucía Pérez y formo parte del Elenco Fundador/)
     expect(colegas).toContain('/elenco/007')
     for (const m of [persona, org, colegas]) {
@@ -137,14 +148,67 @@ describe('panel de administración', () => {
 })
 
 describe('correo al subir de escalón', () => {
-  it('sale de no-reply y describe la recompensa', () => {
-    const a = { recompensaId: 'x', para: 'a@b.es', nombre: 'Ana López', numero: 7, tipo: 'organizacion' as const, escalon: 25, puntos: 27 }
+  it('persona: en «tú»', () => {
+    const a = { recompensaId: 'x', para: 'a@b.es', nombre: 'Ana López', numero: 7, tipo: 'persona' as const, escalon: 10, puntos: 11 }
     expect(REMITENTE_ELENCO).toBe('ObrasDeTeatro® <no-reply@obrasdeteatro.com>')
-    expect(asuntoEscalon(a)).toBe('Has llegado a 25 puntos en el Elenco Fundador')
+    expect(asuntoEscalon(a)).toBe('Has llegado a 10 puntos en el Elenco Fundador')
     expect(asuntoEscalon({ escalon: 50 })).toBe('Eres Miembro de Honor del Elenco Fundador')
     const t = textoEscalon(a)
     expect(t).toMatch(/^Hola Ana:/)
-    expect(t).toContain('Elenco Fundador nº 007')
+    expect(t).toContain('con tu enlace, ya tienes 11 puntos como Elenco Fundador nº 007')
+    expect(t).toContain('tu nombre en la página del Elenco Fundador')
+    expect(t).toContain('Puedes ver tu progreso')
+  })
+
+  it('organización: en «ustedes», sin formas de «vosotros»', () => {
+    const a = { recompensaId: 'x', para: 'a@b.es', nombre: 'Teatro del Sur', numero: 7, tipo: 'organizacion' as const, escalon: 25, puntos: 27 }
+    expect(asuntoEscalon(a)).toBe('Han llegado a 25 puntos en el Elenco Fundador')
+    expect(asuntoEscalon({ escalon: 50, tipo: 'organizacion' })).toBe('Ya son Miembro de Honor del Elenco Fundador')
+    const t = textoEscalon(a)
+    expect(t).toMatch(/^Hola Teatro del Sur:/)
+    expect(t).toContain('con su enlace, ya tienen 27 puntos como Elenco Fundador nº 007')
+    expect(t).toContain('Ya está aplicada en su cuenta')
+    expect(t).toContain('Pueden ver su progreso')
     expect(t).toContain('4 semanas de destacado en Cartelera')
+    expect(t).not.toMatch(VOSOTROS)
+    expect(recompensaEscalon(10, 'organizacion')).toBe('Un año de Empresas y su nombre en la página del Elenco Fundador')
+  })
+})
+
+/** Formas de «vosotros» que no deben aparecer en los textos para organizaciones. */
+const VOSOTROS = /(?<!\p{L})(vuestr[oa]s?|vosotr[oa]s|os|invitaros|sois|podréis|tendréis|queráis|pidáis)(?!\p{L})|\p{L}(éis|áis)(?!\p{L})/iu
+
+describe('textos para organizaciones en «ustedes» (válidos en los 20 países)', () => {
+  const RAIZ = join(__dirname, '..', '..', '..')
+  it.each([
+    'lib/elenco/textos.ts', 'lib/elenco/correo.ts', 'components/elenco/TuElenco.tsx',
+    'app/elenco/invitacion/[token]/page.tsx', 'app/elenco-fundador/bases/page.tsx',
+  ])('%s no usa «vosotros»', (fichero) => {
+    const codigo = readFileSync(join(RAIZ, fichero), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+    expect(codigo).not.toMatch(VOSOTROS)
+  })
+
+  it('la página de la invitación usa «ustedes» con las organizaciones', () => {
+    const codigo = readFileSync(join(RAIZ, 'app/elenco/invitacion/[token]/page.tsx'), 'utf8')
+    for (const t of ["'les invitamos'", "'Queremos contar con ustedes'", "'su perfil'", "'quieran'", "'sus colegas'", "'pidan'"]) expect(codigo).toContain(t)
+  })
+})
+
+
+describe('«Tu elenco» en Mi red', () => {
+  const codigo = readFileSync(join(__dirname, '..', '..', '..', 'components/elenco/TuElenco.tsx'), 'utf8')
+
+  it('el bono se confirma dentro de la página, sin la ventana del navegador', () => {
+    expect(codigo).not.toMatch(/\b(window\.)?confirm\(/)
+    expect(codigo).toContain("'Sí, activar'")
+    expect(codigo).toContain('Cancelar')
+  })
+
+  it('con una organización, todo el bloque en «ustedes»', () => {
+    for (const t of [
+      "'Su elenco'", "{org ? 'Su' : 'Tu'} plan de base", "'Pueden activarlo cuando quieran'", "${org ? 'su' : 'tu'} tiempo de cortesía",
+      "'Su enlace para colegas.'", "{org ? 'les' : 'te'} suma puntos", "{org ? 'su' : 'tu'} siguiente escalón", "'Ya lo disfrutaron.'",
+      "'Ahora disfrutan'", "'Han completado la escalera: son Miembro de Honor.'", "{org ? 'escríbannos' : 'escríbenos'}", "{org ? 'sus' : 'tus'} 3 meses",
+    ]) expect(codigo).toContain(t)
   })
 })

@@ -9,7 +9,7 @@ function cliente(respuesta: (tabla: string) => { count?: number | null; data?: u
   return {
     from: (tabla: string) => {
       const q: Record<string, unknown> = {}
-      for (const m of ['select', 'eq', 'is', 'gte', 'in', 'limit']) q[m] = () => q
+      for (const m of ['select', 'eq', 'neq', 'is', 'gte', 'in', 'limit']) q[m] = () => q
       q.then = (ok: (r: unknown) => unknown) => ok({ count: null, data: null, ...respuesta(tabla) })
       return q
     },
@@ -35,5 +35,20 @@ describe('La plataforma en cifras: un recuento fallido es «—», no 0', () => 
     const c = cliente(t => (t === 'subscriptions' ? { data: null, error: { message: 'x' } } : { count: null, error: { message: 'x' } }))
     const r = await cargarCifras(c, c, false, AHORA)
     expect(r).toMatchObject({ usuarios: null, espaciosPublicados: null, suscripcionesPorPlan: null })
+  })
+})
+
+describe('Plazas de Elenco Fundador (solo admin)', () => {
+  it('aceptadas y pendientes sin anular sobre 100', async () => {
+    const c = cliente(t => (t === 'elenco_fundadores' ? { count: 2, error: null }
+      : t === 'subscriptions' || t === 'embajadores_invitaciones' ? { data: [], error: null } : { count: 1, error: null }))
+    const r = await cargarCifras(c, c, true, AHORA)
+    expect(r.elenco).toEqual({ ocupadas: 2, total: 100 })
+  })
+
+  it('con error, «—» (null); sin admin, no se lee', async () => {
+    const c = cliente(t => (t === 'elenco_fundadores' ? { count: null, error: { message: 'x' } } : { data: [], count: 1, error: null }))
+    expect((await cargarCifras(c, c, true, AHORA)).elenco).toBeNull()
+    expect((await cargarCifras(c, c, false, AHORA)).elenco).toBeUndefined()
   })
 })

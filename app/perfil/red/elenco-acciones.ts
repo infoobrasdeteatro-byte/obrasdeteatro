@@ -4,8 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
 const ERRORES: Record<string, string> = {
-  no_fundador: 'Tu cuenta no forma parte del Elenco Fundador.',
-  ya_activado: 'Ya activaste tu bono.',
+  no_fundador: 'Esta cuenta no forma parte del Elenco Fundador.',
+  ya_activado: 'El bono ya está activado.',
   caducado: 'El plazo para activar el bono ha terminado.',
 }
 
@@ -13,7 +13,7 @@ const ERRORES: Record<string, string> = {
 export async function activarBonoElenco(): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('elenco_activar_bono')
-  if (error) return { ok: false, error: 'No se pudo activar. Inténtalo de nuevo.' }
+  if (error) return { ok: false, error: 'No se pudo activar en este momento.' }
   revalidatePath('/perfil/red')
   revalidatePath('/perfil')
   return data === 'ok' ? { ok: true } : { ok: false, error: ERRORES[data ?? ''] ?? 'No se pudo activar.' }

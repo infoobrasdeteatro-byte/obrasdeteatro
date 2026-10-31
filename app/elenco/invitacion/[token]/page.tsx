@@ -57,8 +57,8 @@ export default async function InvitacionElencoPage({ params }: Props) {
     <Marco>
       <section className="inv-hero">
         <p className="inv-eyebrow">Invitación personal</p>
-        <h1 className="inv-titulo">{nombre}, {org ? 'os invitamos' : 'te invitamos'} al <em>Elenco Fundador</em></h1>
-        <p className="inv-lead">{PROPOSITO} {org ? 'Queremos contar con vosotros' : 'Queremos contar contigo'} desde el principio. Es gratuito, para siempre y sin compromiso.</p>
+        <h1 className="inv-titulo">{nombre}, {org ? 'les invitamos' : 'te invitamos'} al <em>Elenco Fundador</em></h1>
+        <p className="inv-lead">{PROPOSITO} {org ? 'Queremos contar con ustedes' : 'Queremos contar contigo'} desde el principio. Es gratuito, para siempre y sin compromiso.</p>
         {inv.estado === 'aceptada' ? (
           <p className="inv-lead"><strong>Esta invitación ya ha sido aceptada.</strong> <Link href="/perfil/red">Ir a mi red →</Link></p>
         ) : user ? (
@@ -74,10 +74,10 @@ export default async function InvitacionElencoPage({ params }: Props) {
       <section className="inv-bloque">
         <h2 className="inv-h2">Formar parte del Elenco Fundador</h2>
         <ul className="inv-lista">
-          <li>El distintivo «{distintivo(inv.numero)}» en {org ? 'vuestro perfil' : 'tu perfil'} y en el directorio que consultan profesionales de 20 países.</li>
-          <li>Tres meses del plan {plan} para activar cuando {org ? 'queráis' : 'quieras'} durante el primer año, sin tarjeta y sin cobros.</li>
-          <li>Un enlace propio para invitar a {org ? 'vuestros colegas' : 'tus colegas'}: cada colega que se une suma puntos y desbloquea más tiempo de {plan}, hasta ser Miembro de Honor.</li>
-          <li><strong>Gratuito, para siempre y sin compromiso.</strong> {org ? 'Vuestro' : 'Tu'} plan de base es el gratuito; nada se cobra nunca sin que lo {org ? 'pidáis' : 'pidas'}.</li>
+          <li>El distintivo «{distintivo(inv.numero)}» en {org ? 'su perfil' : 'tu perfil'} y en el directorio que consultan profesionales de 20 países.</li>
+          <li>Tres meses del plan {plan} para activar cuando {org ? 'quieran' : 'quieras'} durante el primer año, sin tarjeta y sin cobros.</li>
+          <li>Un enlace propio para invitar a {org ? 'sus colegas' : 'tus colegas'}: cada colega que se une suma puntos y desbloquea más tiempo de {plan}, hasta ser Miembro de Honor.</li>
+          <li><strong>Gratuito, para siempre y sin compromiso.</strong> {org ? 'Su' : 'Tu'} plan de base es el gratuito; nada se cobra nunca sin que lo {org ? 'pidan' : 'pidas'}.</li>
         </ul>
         <p className="inv-p"><Link href="/elenco-fundador/bases">Bases del programa →</Link></p>
       </section>

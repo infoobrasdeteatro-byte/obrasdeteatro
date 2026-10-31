@@ -13,17 +13,25 @@ export type AvisoEscalon = { recompensaId: string; para: string; nombre: string;
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-export function asuntoEscalon(a: Pick<AvisoEscalon, 'escalon'>): string {
-  return a.escalon === 50 ? 'Eres Miembro de Honor del Elenco Fundador' : `Has llegado a ${a.escalon} puntos en el Elenco Fundador`
+/** Personas en «tú»; organizaciones en «ustedes» (vale en los 20 países). */
+export function asuntoEscalon(a: Pick<AvisoEscalon, 'escalon'> & { tipo?: TipoFundador }): string {
+  const org = a.tipo === 'organizacion'
+  if (a.escalon === 50) return org ? 'Ya son Miembro de Honor del Elenco Fundador' : 'Eres Miembro de Honor del Elenco Fundador'
+  return `${org ? 'Han llegado' : 'Has llegado'} a ${a.escalon} puntos en el Elenco Fundador`
 }
 
 export function textoEscalon(a: AvisoEscalon): string {
-  const nombre = a.nombre.trim().split(/\s+/)[0] || a.nombre
+  const org = a.tipo === 'organizacion'
+  const nombre = org ? a.nombre.trim() : (a.nombre.trim().split(/\s+/)[0] || a.nombre)
   return [
     `Hola ${nombre}:`,
-    `Gracias a los colegas que se han unido con tu enlace, ya tienes ${a.puntos} puntos como ${distintivo(a.numero)}.`,
-    `Tu recompensa por llegar a ${a.escalon} puntos: ${recompensaEscalon(a.escalon, a.tipo)}. Ya está aplicada en tu cuenta, sin tarjeta y sin cobros.`,
-    `Puedes ver tu progreso en ${SITIO}/perfil/red`,
+    org
+      ? `Gracias a los colegas que se han unido con su enlace, ya tienen ${a.puntos} puntos como ${distintivo(a.numero)}.`
+      : `Gracias a los colegas que se han unido con tu enlace, ya tienes ${a.puntos} puntos como ${distintivo(a.numero)}.`,
+    org
+      ? `Su recompensa por llegar a ${a.escalon} puntos: ${recompensaEscalon(a.escalon, a.tipo)}. Ya está aplicada en su cuenta, sin tarjeta y sin cobros.`
+      : `Tu recompensa por llegar a ${a.escalon} puntos: ${recompensaEscalon(a.escalon, a.tipo)}. Ya está aplicada en tu cuenta, sin tarjeta y sin cobros.`,
+    `${org ? 'Pueden ver su' : 'Puedes ver tu'} progreso en ${SITIO}/perfil/red`,
     'Gracias por construir con nosotros la casa del teatro en español.',
     'Renee Bausson\nObrasDeTeatro®',
   ].join('\n\n')

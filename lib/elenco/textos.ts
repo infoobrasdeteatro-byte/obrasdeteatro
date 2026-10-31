@@ -8,6 +8,9 @@ import { SITIO } from '@/lib/embajadores/textos'
 
 export { SITIO }
 
+/** Plazas del Elenco Fundador (números 001–100). */
+export const PLAZAS_ELENCO = 100
+
 export type TipoFundador = 'persona' | 'organizacion'
 
 export const OFICIOS_PERSONA = [
@@ -31,6 +34,15 @@ export function leerNumero(v: string | null | undefined): number | null {
   if (!v || !/^\d{1,3}$/.test(v)) return null
   const n = Number(v)
   return n >= 1 && n <= 100 ? n : null
+}
+
+/**
+ * Número escrito a mano en el registro («007», «7», «nº 7», «#007») → 7, o
+ * null si no es un número de fundador posible.
+ */
+export function normalizarNumeroElenco(v: unknown): number | null {
+  if (typeof v !== 'string') return null
+  return leerNumero(v.trim().replace(/^(n\.?\s*[º°o]?\.?|#)\s*/i, ''))
 }
 
 export function distintivo(n: number): string {
@@ -68,13 +80,13 @@ export function mensajeInvitacionPersona(nombre: string, enlace: string): string
     + `Es gratuito, para siempre y sin compromiso. Tu invitación: ${enlace}`
 }
 
-/** Punto 14: invitación de Renee a una organización (mismo tono). */
+/** Punto 14: invitación de Renee a una organización (mismo tono, en «ustedes»: vale en los 20 países). */
 export function mensajeInvitacionOrganizacion(nombre: string, enlace: string): string {
   return `Hola ${nombre.trim()}, soy Renee Bausson, de ObrasDeTeatro®, la plataforma profesional del teatro en español. `
-    + 'Quiero invitaros personalmente a formar parte del Elenco Fundador, los primeros que construyen con nosotros esta casa del teatro. '
-    + 'Vuestra compañía, sala o escuela tendrá visibilidad en el directorio que consultan profesionales, programadores y público de 20 países, con vuestro número de fundador; '
-    + 'podréis publicar vuestra cartelera y vuestros castings, y tendréis tres meses del plan Empresas para activar cuando queráis durante el primer año. '
-    + `Es gratuito, para siempre y sin compromiso. Vuestra invitación: ${enlace}`
+    + 'Quiero invitarles personalmente a formar parte del Elenco Fundador, los primeros que construyen con nosotros esta casa del teatro. '
+    + 'Su compañía, sala o escuela tendrá visibilidad en el directorio que consultan profesionales, programadores y público de 20 países, con su número de fundador; '
+    + 'podrán publicar su cartelera y sus castings, y tendrán tres meses del plan Empresas para activar cuando quieran durante el primer año. '
+    + `Es gratuito, para siempre y sin compromiso. Su invitación: ${enlace}`
 }
 
 export function mensajeInvitacion(tipo: TipoFundador, nombre: string, token: string): string {
@@ -96,7 +108,7 @@ export function recompensaEscalon(escalon: number, tipo: TipoFundador): string {
   const base = tipo === 'organizacion' ? 'Empresas' : 'Premium'
   switch (escalon) {
     case 5: return `3 meses más de ${base}`
-    case 10: return `Un año de ${base} y tu nombre en la página del Elenco Fundador`
+    case 10: return `Un año de ${base} y ${tipo === 'organizacion' ? 'su' : 'tu'} nombre en la página del Elenco Fundador`
     case 25: return tipo === 'organizacion'
       ? 'Un año de Empresas, 4 semanas de destacado en Cartelera y presentación destacada en redes y en la página del Elenco'
       : 'Un año de Destacado y presentación destacada en redes y en la página del Elenco'

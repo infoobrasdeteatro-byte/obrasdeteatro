@@ -23,61 +23,80 @@ export default function TuElenco({ datos, nombre, bienvenida }: { datos: DatosEl
   const router = useRouter()
   const [copiado, setCopiado] = useState(false)
   const [error, setError] = useState('')
+  // Confirmación dentro de la página (sin la ventana del navegador).
+  const [confirmando, setConfirmando] = useState(false)
   const [pending, startTransition] = useTransition()
   const tipo: TipoFundador = datos.tipo === 'organizacion' ? 'organizacion' : 'persona'
   const enlace = enlaceElenco(datos.numero)
   const progreso = progresoEscalera(datos.puntos)
   const planBono = tipo === 'organizacion' ? 'Empresas' : 'Premium'
+  // Personas en «tú»; organizaciones en «ustedes» (vale en los 20 países).
+  const org = tipo === 'organizacion'
 
   const copiar = async () => {
     try { await navigator.clipboard.writeText(enlace) } catch { /* sin portapapeles */ }
     setCopiado(true); setTimeout(() => setCopiado(false), 2000)
   }
   const activar = () => {
-    if (!window.confirm(`¿Activar ahora tus 3 meses de ${planBono}? Empiezan hoy, sin tarjeta y sin cobros.`)) return
     startTransition(async () => {
       setError('')
       const r = await activarBonoElenco()
-      if (r.ok) router.refresh()
+      if (r.ok) { setConfirmando(false); router.refresh() }
       else setError(r.error ?? 'No se pudo activar.')
     })
   }
 
   return (
     <section className="account-card cortesia" style={{ marginBottom: '20px' }}>
-      <p className="cortesia-eyebrow">{bienvenida ? 'Bienvenida' : 'Tu elenco'}</p>
+      <p className="cortesia-eyebrow">{bienvenida ? 'Bienvenida' : org ? 'Su elenco' : 'Tu elenco'}</p>
       <h2 className="cortesia-titulo">{distintivo(datos.numero)}</h2>
       <p className="cortesia-p">
         {bienvenida && <>Gracias por aceptar la invitación. </>}
-        Estamos construyendo entre todos la casa del teatro en español. Tu plan de base es el gratuito, para siempre y sin compromiso.
+        Estamos construyendo entre todos la casa del teatro en español. {org ? 'Su' : 'Tu'} plan de base es el gratuito, para siempre y sin compromiso.
       </p>
 
       <div className="cortesia-enlace">
         <p className="cortesia-p" style={{ marginBottom: '6px' }}><strong>Bono de bienvenida: 3 meses de {planBono}</strong></p>
         {datos.bono_estado === 'disponible' && (
           <>
-            <p className="cortesia-p">Actívalo cuando quieras hasta el <strong>{fecha(datos.bono_limite)}</strong>. Sin tarjeta y sin cobros.</p>
-            <button type="button" className="ds-btn-primary" style={{ width: 'auto', padding: '9px 18px', fontSize: '13px', marginTop: '8px' }} disabled={pending} onClick={activar}>
-              {pending ? 'Activando…' : 'Activar mis 3 meses'}
-            </button>
+            <p className="cortesia-p">{org ? 'Pueden activarlo cuando quieran' : 'Actívalo cuando quieras'} hasta el <strong>{fecha(datos.bono_limite)}</strong>. Sin tarjeta y sin cobros.</p>
+            {confirmando ? (
+              <div className="elenco-confirmar" role="group" aria-labelledby="elenco-confirmar-texto">
+                <p id="elenco-confirmar-texto" className="cortesia-p">
+                  <strong>¿Activar ahora {org ? 'sus' : 'tus'} 3 meses de {planBono}?</strong> Empiezan hoy y terminan solos, sin tarjeta y sin cobros.
+                </p>
+                <div className="elenco-confirmar-botones">
+                  <button type="button" className="ds-btn-primary" disabled={pending} onClick={activar}>
+                    {pending ? 'Activando…' : 'Sí, activar'}
+                  </button>
+                  <button type="button" className="ds-btn-secondary" disabled={pending} onClick={() => { setConfirmando(false); setError('') }}>
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" className="ds-btn-primary" style={{ width: 'auto', padding: '9px 18px', fontSize: '13px', marginTop: '8px' }} onClick={() => setConfirmando(true)}>
+                {org ? 'Activar los 3 meses' : 'Activar mis 3 meses'}
+              </button>
+            )}
             {error && <p className="inv-error">{error}</p>}
           </>
         )}
         {datos.bono_estado === 'activo' && datos.bono_hasta && <p className="cortesia-p">Activo hasta el <strong>{fecha(datos.bono_hasta)}</strong>.</p>}
-        {datos.bono_estado === 'usado' && <p className="cortesia-p">Ya lo disfrutaste.</p>}
+        {datos.bono_estado === 'usado' && <p className="cortesia-p">{org ? 'Ya lo disfrutaron.' : 'Ya lo disfrutaste.'}</p>}
         {datos.bono_estado === 'caducado' && <p className="cortesia-p">El plazo para activarlo terminó el {fecha(datos.bono_limite)}.</p>}
         {datos.plan_vigente && datos.cortesia_hasta && (
           <p className="cortesia-cifra">
-            Ahora disfrutas de {PLAN[datos.plan_vigente] ?? datos.plan_vigente} por el Elenco Fundador
-            {datos.cortesia_hasta.startsWith('infinity') ? ', para siempre.' : `; tu tiempo de cortesía llega hasta el ${fecha(datos.cortesia_hasta)}.`}
+            {org ? 'Ahora disfrutan' : 'Ahora disfrutas'} de {PLAN[datos.plan_vigente] ?? datos.plan_vigente} por el Elenco Fundador
+            {datos.cortesia_hasta.startsWith('infinity') ? ', para siempre.' : `; ${org ? 'su' : 'tu'} tiempo de cortesía llega hasta el ${fecha(datos.cortesia_hasta)}.`}
           </p>
         )}
       </div>
 
       <div className="cortesia-enlace">
-        <p className="cortesia-p" style={{ marginBottom: '8px' }}><strong>Tu enlace para colegas.</strong> Unirse es gratis; cada colega activo te suma puntos.</p>
+        <p className="cortesia-p" style={{ marginBottom: '8px' }}><strong>{org ? 'Su enlace para colegas.' : 'Tu enlace para colegas.'}</strong> Unirse es gratis; cada colega activo {org ? 'les' : 'te'} suma puntos.</p>
         <div className="compartir-url">
-          <input readOnly value={enlace} aria-label="Tu enlace del Elenco" onFocus={e => e.currentTarget.select()} />
+          <input readOnly value={enlace} aria-label={org ? 'Su enlace del Elenco' : 'Tu enlace del Elenco'} onFocus={e => e.currentTarget.select()} />
           <button type="button" onClick={copiar}>{copiado ? '✓ Copiado' : 'Copiar enlace'}</button>
         </div>
         <div className="cortesia-botones">
@@ -95,17 +114,19 @@ export default function TuElenco({ datos, nombre, bienvenida }: { datos: DatosEl
         {progreso ? (
           <>
             <p className="cortesia-cifra" style={{ marginTop: 0 }}>
-              {datos.puntos} de {progreso.siguiente} puntos para tu siguiente escalón: {recompensaEscalon(progreso.siguiente, tipo)}.
+              {datos.puntos} de {progreso.siguiente} puntos para {org ? 'su' : 'tu'} siguiente escalón: {recompensaEscalon(progreso.siguiente, tipo)}.
             </p>
             <div className="elenco-progreso" role="progressbar" aria-valuemin={progreso.anterior} aria-valuemax={progreso.siguiente} aria-valuenow={datos.puntos}>
               <span style={{ width: `${Math.round(progreso.progreso * 100)}%` }} />
             </div>
           </>
         ) : (
-          <p className="cortesia-cifra">Has completado la escalera: eres Miembro de Honor.</p>
+          <p className="cortesia-cifra">{org ? 'Han completado la escalera: son Miembro de Honor.' : 'Has completado la escalera: eres Miembro de Honor.'}</p>
         )}
         {datos.semanas_cartelera > 0 && (
-          <p className="cortesia-cifra">Tienes {datos.semanas_cartelera} semana{datos.semanas_cartelera === 1 ? '' : 's'} de destacado en Cartelera: escríbenos a hola@obrasdeteatro.com y lo aplicamos a vuestro espectáculo.</p>
+          <p className="cortesia-cifra">
+            {org ? 'Tienen' : 'Tienes'} {datos.semanas_cartelera} semana{datos.semanas_cartelera === 1 ? '' : 's'} de destacado en Cartelera: {org ? 'escríbannos' : 'escríbenos'} a hola@obrasdeteatro.com y lo aplicamos a {org ? 'su' : 'tu'} espectáculo.
+          </p>
         )}
         <p className="cortesia-cifra">
           Profesional activo (correo confirmado, foto y al menos una profesión): 1 punto. Las cuentas de público general no suman. Organización con perfil completo y logo, o sala con su ficha reclamada: 3 puntos.{' '}

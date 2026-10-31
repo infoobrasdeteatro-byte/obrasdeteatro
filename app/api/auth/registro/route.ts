@@ -5,7 +5,7 @@ import { PASSWORD_POLICY } from '@/lib/auth/password-policy'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE, NEXT_TRAS_REGISTRO_MAX_AGE_S } from '@/lib/auth/next-param'
 import { TIPOS_REGISTRO, esProfesion } from '@/lib/perfiles/profesiones'
 import { COOKIE_REFERIDO, codigoValido, tokenDeInvitacion } from '@/lib/embajadores/textos'
-import { COOKIE_ELENCO, leerNumero, tokenDeInvitacionElenco } from '@/lib/elenco/textos'
+import { COOKIE_ELENCO, leerNumero, normalizarNumeroElenco, tokenDeInvitacionElenco } from '@/lib/elenco/textos'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
@@ -53,7 +53,7 @@ async function emailAlreadyRegistered(email: string): Promise<boolean> {
 }
 
 export async function POST(req: NextRequest) {
-  const { email, password, nombre, website, turnstileToken, next, tipoPerfil, profesiones } = await req.json()
+  const { email, password, nombre, website, turnstileToken, next, tipoPerfil, profesiones, numeroElenco } = await req.json()
 
   // Honeypot: verificado también en servidor, no solo en el cliente.
   if (typeof website === 'string' && website.trim() !== '') {
@@ -101,9 +101,13 @@ export async function POST(req: NextRequest) {
   const invitacion = tokenDeInvitacion(destino)
   const referido = codigoValido(req.cookies?.get(COOKIE_REFERIDO)?.value)
   // Elenco Fundador: invitación personal (igual que la de Embajadores) y
-  // enlace /elenco/<nº> de un fundador (cookie), que se atribuye al crear la cuenta.
+  // fundador que le invitó, que se atribuye al crear la cuenta: el número
+  // escrito en el formulario (ya relleno si llega por /elenco/<nº>) y, si no
+  // hay o no corresponde a nadie, el de la cookie del enlace.
   const invitacionElenco = tokenDeInvitacionElenco(destino)
-  const numeroElenco = leerNumero(req.cookies?.get(COOKIE_ELENCO)?.value)
+  const numeroCookie = leerNumero(req.cookies?.get(COOKIE_ELENCO)?.value)
+  const numerosElenco = [...new Set([normalizarNumeroElenco(numeroElenco), numeroCookie])]
+    .filter((n): n is number => n !== null)
 
   const { data: alta, error } = await supabase.auth.signUp({
     email: normalizedEmail,
@@ -126,21 +130,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: 'signup_error', message: error.message }, { status: 400 })
   }
 
-  // Primer enlace del Elenco con el que se registra: una vez por cuenta (lo
-  // garantiza elenco_atribuir). Un fallo nunca bloquea el registro.
-  if (numeroElenco && alta?.user?.id) {
+  // Atribución al Elenco: una sola vez por cuenta (lo garantiza
+  // elenco_atribuir, que además solo acepta fundadores que han aceptado su
+  // invitación). Un número que no corresponde a nadie no bloquea el registro.
+  if (numerosElenco.length && alta?.user?.id) {
     try {
       const servicio = createServiceClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
         { auth: { autoRefreshToken: false, persistSession: false } }
       )
-      await servicio.rpc('elenco_atribuir', { p_perfil: alta.user.id, p_numero: numeroElenco })
+      for (const n of numerosElenco) {
+        const { data } = await servicio.rpc('elenco_atribuir', { p_perfil: alta.user.id, p_numero: n })
+        if (data !== 'no_valido') break
+      }
     } catch { /* sin atribución */ }
   }
 
   const respuesta = NextResponse.json({ ok: true })
-  if (numeroElenco) respuesta.cookies.delete(COOKIE_ELENCO)
+  if (numeroCookie) respuesta.cookies.delete(COOKIE_ELENCO)
 
   // Vuelta tras confirmar el email: la lee y la borra /auth/callback (ver
   // NEXT_TRAS_REGISTRO_COOKIE). Solo rutas internas.

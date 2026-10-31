@@ -32,19 +32,19 @@ export default function BasesElencoPage() {
         <section className="inv-bloque">
           <h2 className="inv-h2">2. Bono de bienvenida</h2>
           <ul className="inv-lista">
-            <li>Tres meses de Premium si eres una persona, o tres meses del plan Empresas si eres una organización.</li>
-            <li>No se activa solo: lo activas tú con un botón en «Mi red», cuando quieras, dentro de los 12 meses siguientes a aceptar la invitación. Si no lo activas en ese plazo, caduca.</li>
-            <li>Al terminar, tu cuenta vuelve a su plan. Si ya pagas un plan superior, lo conservas: el programa nunca baja un plan.</li>
+            <li>Tres meses de Premium para las personas, o tres meses del plan Empresas para las organizaciones.</li>
+            <li>No se activa solo: lo activa el propio fundador con un botón en «Mi red», en el momento que elija, dentro de los 12 meses siguientes a aceptar la invitación. Si no se activa en ese plazo, caduca.</li>
+            <li>Al terminar, la cuenta vuelve a su plan. Si ya paga un plan superior, lo conserva: el programa nunca baja un plan.</li>
           </ul>
         </section>
 
         <section className="inv-bloque">
-          <h2 className="inv-h2">3. Tu enlace y tus colegas</h2>
+          <h2 className="inv-h2">3. El enlace y los colegas</h2>
           <ul className="inv-lista">
             <li>Cada fundador tiene un enlace público para invitar a sus colegas. Quien se une con él entra en el plan gratuito.</li>
             <li>Cuenta el primer enlace con el que se registra cada persona u organización, una sola vez por cuenta. Quien ya tiene cuenta no se atribuye a nadie.</li>
             <li><strong>Colega activo:</strong> un profesional con el correo confirmado, foto de perfil y al menos una profesión elegida (1 punto); una organización con el perfil completo y su logo, o una sala con su ficha de Espacios Escénicos reclamada y aprobada (3 puntos).</li>
-            <li>Las cuentas de público general pueden unirse con tu enlace, pero no suman puntos.</li>
+            <li>Las cuentas de público general pueden unirse con el enlace de un fundador, pero no suman puntos.</li>
             <li>Los puntos se calculan siempre con los datos reales de cada perfil.</li>
           </ul>
         </section>
@@ -57,16 +57,16 @@ export default function BasesElencoPage() {
             ))}
           </ul>
           <p className="inv-p">
-            Las recompensas se otorgan solas, una sola vez cada una, y te avisamos por correo al subir de escalón. El tiempo que ganas se suma
-            al que ya tengas: nunca lo sustituye ni lo recorta. Los planes Empresas del programa incluyen todas sus funciones.
+            Las recompensas se otorgan solas, una sola vez cada una, y avisamos por correo al fundador al subir de escalón. El tiempo ganado se suma
+            al que ya tenga: nunca lo sustituye ni lo recorta. Los planes Empresas del programa incluyen todas sus funciones.
           </p>
         </section>
 
         <section className="inv-bloque">
           <h2 className="inv-h2">5. Sin compromiso</h2>
           <p className="inv-p">
-            Ni el bono ni las recompensas generan cobros ni renovaciones automáticas. Si en algún momento decides suscribirte a un plan,
-            será siempre porque lo pides tú. Para cualquier duda, escríbenos a hola@obrasdeteatro.com.
+            Ni el bono ni las recompensas generan cobros ni renovaciones automáticas. La suscripción a un plan de pago
+            solo se produce si el fundador la pide expresamente. Para cualquier duda, el contacto es hola@obrasdeteatro.com.
           </p>
         </section>
 
