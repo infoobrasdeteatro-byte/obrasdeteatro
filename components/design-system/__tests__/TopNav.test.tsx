@@ -18,7 +18,7 @@ describe('TopNav — renderizado en servidor', () => {
     expect(h).toContain('data-estado="comprobando"')
     expect(h).not.toContain('href="/auth/login"')
     expect(h).not.toContain('href="/auth/registro"')
-    expect(h).not.toContain('href="/perfil/centro"')
+    expect(h).not.toContain('href="/dashboard"')
     expect(h).not.toContain('/auth/logout')
   })
 
@@ -43,13 +43,13 @@ describe('TopNav — barra', () => {
     expect(h).toContain('<a class="nav-btn-login" href="/auth/login">Iniciar sesión</a>')
     expect(h).toContain('<a class="nav-btn-cta nav-btn-cta--pulse" href="/auth/registro">Registrarse</a>')
     expect(h).not.toContain('/auth/logout')
-    expect(h).not.toContain('Centro Profesional')
+    expect(h).not.toContain('Mi cuenta')
   })
 
-  it('con sesión: «Centro Profesional» y «Cerrar sesión» por POST a /auth/logout', () => {
+  it('con sesión: «Mi cuenta» y «Cerrar sesión» por POST a /auth/logout', () => {
     const h = barra('con-sesion')
-    expect(h).toContain('href="/perfil/centro"')
-    expect(h).toContain('Centro Profesional')
+    expect(h).toContain('href="/dashboard"')
+    expect(h).toContain('Mi cuenta')
     expect(h).toContain('<form action="/auth/logout" method="POST">')
     expect(h).toContain('class="nav-btn-logout">Cerrar sesión</button>')
     expect(h).not.toContain('Iniciar sesión')
@@ -74,9 +74,9 @@ describe('TopNav — menú móvil («Cuenta»)', () => {
     expect(h).not.toContain('/auth/logout')
   })
 
-  it('con sesión: «Centro Profesional» y «Cerrar sesión»', () => {
+  it('con sesión: «Mi cuenta» y «Cerrar sesión»', () => {
     const h = movil('con-sesion')
-    expect(h).toContain('href="/perfil/centro"')
+    expect(h).toContain('href="/dashboard"')
     expect(h).toContain('<form action="/auth/logout" method="POST">')
     expect(h).toContain('Cerrar sesión')
     expect(h).not.toContain('Iniciar sesión')

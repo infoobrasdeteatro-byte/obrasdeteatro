@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import type { EstadoSesion } from './sesion-cabecera'
 
-// Accesos de cuenta de la cabecera pública. Con sesión replican los de
-// NavAutenticado (Centro Profesional + Cerrar sesión por POST a /auth/logout).
+// Accesos de cuenta de la cabecera pública. Con sesión: «Mi cuenta»
+// (/dashboard) y «Cerrar sesión» por POST a /auth/logout, como NavAutenticado.
 // Mientras se comprueba la sesión se reserva el hueco con el mismo ancho que
 // los botones sin sesión, invisibles y fuera del árbol accesible, para que no
 // parpadee «Iniciar sesión» a quien ya está conectado.
@@ -20,8 +20,8 @@ export function CuentaBarra({ estado }: { estado: EstadoSesion }) {
   if (estado === 'con-sesion') {
     return (
       <>
-        <Link href="/perfil/centro" className="nav-link" style={{ fontWeight: 500 }}>
-          Centro Profesional
+        <Link href="/dashboard" className="nav-link" style={{ fontWeight: 500 }}>
+          Mi cuenta
         </Link>
         <form action="/auth/logout" method="POST">
           <button type="submit" className="nav-btn-logout">
@@ -57,8 +57,8 @@ export function CuentaMovil({ estado, onNavegar }: { estado: EstadoSesion; onNav
   if (estado === 'con-sesion') {
     return (
       <>
-        <Link href="/perfil/centro" className="nav-mobile-link" onClick={onNavegar}>
-          Centro Profesional
+        <Link href="/dashboard" className="nav-mobile-link" onClick={onNavegar}>
+          Mi cuenta
         </Link>
         <form action="/auth/logout" method="POST">
           <button type="submit" className="nav-mobile-cta" style={{ background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)' }}>
