@@ -212,3 +212,17 @@ describe('«Tu elenco» en Mi red', () => {
     ]) expect(codigo).toContain(t)
   })
 })
+
+describe('textos entre dos personas en «ustedes» (válidos en los 20 países)', () => {
+  const leer = (f: string) => readFileSync(join(__dirname, '..', '..', '..', f), 'utf8')
+  it.each([
+    ['app/perfil/mensajes/Hilo.tsx', 'Podrán volver a escribirse.'],
+    ['app/perfil/red/acciones.ts', 'y tú ya están conectados en'],
+    ['app/perfil/[slug]/ConectarPerfil.tsx', 'dónde se conocieron'],
+    ['lib/mensajes/mensajes.ts', 'Desbloquea para volver a escribirse.'],
+  ])('%s', (fichero, texto) => {
+    const codigo = leer(fichero)
+    expect(codigo).toContain(texto)
+    expect(codigo).not.toMatch(VOSOTROS)
+  })
+})

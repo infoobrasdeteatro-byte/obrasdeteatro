@@ -53,7 +53,7 @@ export default function Hilo({ conversacionId, otro, mensajes, puede, aviso, mot
 
   const bloqueo = () => {
     const pregunta = bloqueado
-      ? `¿Desbloquear a ${otro.nombre}? Podréis volver a escribiros.`
+      ? `¿Desbloquear a ${otro.nombre}? Podrán volver a escribirse.`
       : `¿Bloquear a ${otro.nombre}? No podrá escribirte y no se le avisará.`
     if (!window.confirm(pregunta)) return
     startTransition(async () => {

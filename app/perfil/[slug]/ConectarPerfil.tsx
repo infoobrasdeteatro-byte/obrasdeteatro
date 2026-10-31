@@ -88,7 +88,7 @@ export default function ConectarPerfil({ perfilId, nombre, estado: inicial, soli
             onChange={e => setMensaje(e.target.value.slice(0, MAX_MENSAJE_SOLICITUD))}
             rows={3}
             className="ds-input"
-            placeholder="Preséntate brevemente: dónde os conocisteis, un proyecto en común…"
+            placeholder="Preséntate brevemente: dónde se conocieron, un proyecto en común…"
           />
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button type="button" onClick={() => ejecutar(() => solicitarConexion(perfilId, mensaje))} disabled={pending} className="ds-btn-primary" style={boton}>
