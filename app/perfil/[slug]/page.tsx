@@ -24,7 +24,7 @@ import CompartirPerfil from './CompartirPerfil'
 import { motivoEscribir, textoNoPuede } from '@/lib/mensajes/mensajes'
 import IconoContacto from '@/components/perfil/IconoContacto'
 import { textoActividad } from '@/lib/red/actividad'
-import { tituloEmbajador } from '@/lib/embajadores/textos'
+import { distintivoEmbajador } from '@/lib/embajadores/textos'
 import { distintivo } from '@/lib/elenco/textos'
 import { estadoContacto } from '@/lib/red/contacto'
 import GaleriaFotos, { type FotoPublica } from '@/components/perfil/GaleriaFotos'
@@ -260,7 +260,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
       ? supabase.rpc('puede_escribir', { p_perfil: profile.id })
       : Promise.resolve({ data: null }),
     // Embajadores de Escena: distintivo público.
-    supabase.rpc('embajadores_activos', { p_perfiles: [profile.id] }),
+    supabase.rpc('embajadores_distintivos', { p_perfiles: [profile.id] }),
     // Elenco Fundador: distintivo con su número.
     supabase.rpc('elenco_distintivos', { p_perfiles: [profile.id] }),
   ])
@@ -507,7 +507,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
                     </span>
                   )}
                   {embajador && (
-                    <span className="prof-badge-embajador">{tituloEmbajador(embajador.genero)}</span>
+                    <span className="prof-badge-embajador">{distintivoEmbajador(embajador.genero, embajador.honor)}</span>
                   )}
                   {fundador && (
                     <span className="prof-badge-elenco">{distintivo(fundador.numero)}</span>

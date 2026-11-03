@@ -3349,15 +3349,30 @@ export type Database = {
         Row: {
           profile_id: string; tipo: string; plan: string; desde: string; hasta: string; genero: string | null; oficio: string | null
           invitacion_id: string | null; codigo_referido: string | null; referido_por: string | null; renunciada_at: string | null; procesada: boolean
+          honor_at: string | null
         }
         Insert: {
           profile_id: string; tipo: string; plan: string; desde?: string; hasta: string; genero?: string | null; oficio?: string | null
           invitacion_id?: string | null; codigo_referido?: string | null; referido_por?: string | null; renunciada_at?: string | null; procesada?: boolean
+          honor_at?: string | null
         }
         Update: {
           profile_id?: string; tipo?: string; plan?: string; desde?: string; hasta?: string; genero?: string | null; oficio?: string | null
           invitacion_id?: string | null; codigo_referido?: string | null; referido_por?: string | null; renunciada_at?: string | null; procesada?: boolean
+          honor_at?: string | null
         }
+        Relationships: []
+      }
+      embajadores_referidos: {
+        Row: { profile_id: string; embajador_id: string; creado_at: string }
+        Insert: { profile_id: string; embajador_id: string; creado_at?: string }
+        Update: { profile_id?: string; embajador_id?: string; creado_at?: string }
+        Relationships: []
+      }
+      embajadores_recompensas: {
+        Row: { id: string; embajador_id: string; escalon: number; puntos: number; otorgada_at: string; correo_enviado_at: string | null }
+        Insert: { id?: string; embajador_id: string; escalon: number; puntos: number; otorgada_at?: string; correo_enviado_at?: string | null }
+        Update: { id?: string; embajador_id?: string; escalon?: number; puntos?: number; otorgada_at?: string; correo_enviado_at?: string | null }
         Relationships: []
       }
       conexiones: {
@@ -4667,6 +4682,14 @@ export type Database = {
         Returns: { tipo: string; plan: string; hasta: string; genero: string | null; codigo_referido: string | null; activa: boolean; referidos: number }[]
       }
       embajadores_activos: { Args: { p_perfiles: string[] }; Returns: { profile_id: string; genero: string | null }[] }
+      embajadores_distintivos: { Args: { p_perfiles: string[] }; Returns: { profile_id: string; genero: string | null; honor: boolean }[] }
+      mi_embajador: {
+        Args: never
+        Returns: {
+          codigo_referido: string | null; genero: string | null; plan: string; hasta: string; honor: boolean; activa: boolean
+          registrados: number; activos: number; puntos: number; escalon: number
+        }[]
+      }
       plan_tras_cortesia: { Args: { p_perfil: string }; Returns: string }
       elenco_invitacion_publica: { Args: { p_token: string }; Returns: { nombre: string; tipo: string; oficio: string; numero: number; estado: string }[] }
       aceptar_invitacion_elenco: { Args: { p_token: string }; Returns: string }

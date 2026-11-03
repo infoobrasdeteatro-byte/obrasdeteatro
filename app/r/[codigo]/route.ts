@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { COOKIE_REFERIDO, REFERIDO_MAX_AGE_S, SITIO, VISTA_PREVIA_REFERIDO, codigoValido } from '@/lib/embajadores/textos'
+import { COOKIE_ELENCO } from '@/lib/elenco/textos'
 
 /** Lectores de enlaces de apps de mensajería y redes: reciben la vista previa en vez de la redirección. */
 const LECTOR_DE_ENLACES = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Applebot|Pinterest|redditbot|Googlebot/i
@@ -22,8 +23,9 @@ function vistaPrevia(url: string): NextResponse {
 
 /**
  * Enlace personal de un/a Embajador/a de Escena: guarda el código en una
- * cookie y lleva al registro. El mes de Premium se concede al confirmar el
- * correo (app/auth/callback), con las reglas de canjear_referido.
+ * cookie y lleva al registro. Los tres meses de Premium (o de Empresas, si es
+ * una organización) se conceden solos al confirmar el correo
+ * (lib/auth/confirmacion.ts), con las reglas de canjear_referido.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ codigo: string }> }) {
   const { codigo } = await params
@@ -36,6 +38,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     respuesta.cookies.set(COOKIE_REFERIDO, valido, {
       maxAge: REFERIDO_MAX_AGE_S, httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/',
     })
+    // Cada alta cuenta para un solo programa: manda el último enlace.
+    respuesta.cookies.delete(COOKIE_ELENCO)
   }
   return respuesta
 }

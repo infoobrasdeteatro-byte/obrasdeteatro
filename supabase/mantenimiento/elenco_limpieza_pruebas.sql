@@ -36,6 +36,8 @@
 --   · info.obrasdeteatro@gmail.com NO cambia de visibilidad: sigue en el
 --     directorio como cuenta del equipo (la comprobación final lo verifica).
 --
+-- Todos los correos se comparan en minúsculas (lower() a los dos lados).
+--
 -- Cómo usarlo:
 --   1. Ejecuta solo la PARTE A (solo lectura) y revisa qué filas borraría.
 --   2. Si es correcto, ejecuta la PARTE B entera (de «begin;» a «commit;»).
@@ -172,17 +174,19 @@ insert into _correos values
 create temp table _conservar on commit drop as
   select p.id, p.plan::text as plan, p.is_premium, p.verificado_profesional, p.perfil_publico
   from public.profiles p
-  where lower(p.email) in ('info.obrasdeteatro@gmail.com');
+  where lower(p.email) in (select lower(e) from (values
+    ('info.obrasdeteatro@gmail.com')
+  ) v(e));
 
 -- Cuentas de prueba que se conservan pero dejan de ser públicas.
 create temp table _ocultar on commit drop as
   select p.id from public.profiles p
-  where lower(p.email) in (
-    'viajeseutour@gmail.com',
-    'info.obrasdeteatro+prueba3@gmail.com',
-    'info.obrasdeteatro+prueba4@gmail.com',
-    'info.obrasdeteatro+prueba5@gmail.com'
-  )
+  where lower(p.email) in (select lower(e) from (values
+    ('viajeseutour@gmail.com'),
+    ('info.obrasdeteatro+prueba3@gmail.com'),
+    ('info.obrasdeteatro+prueba4@gmail.com'),
+    ('info.obrasdeteatro+prueba5@gmail.com')
+  ) v(e))
   and p.id not in (select id from _conservar);
 
 create temp table _numeros (n integer) on commit drop;

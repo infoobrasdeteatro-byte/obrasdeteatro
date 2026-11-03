@@ -50,7 +50,7 @@ describe('compartir el enlace personal', () => {
   it('correo con asunto y mensaje con el enlace', async () => {
     const { enlaceCorreo, mensajeColegas, ASUNTO_COLEGAS } = await import('../textos')
     const m = mensajeColegas('https://www.obrasdeteatro.com/r/6AA5572E')
-    expect(m).toContain('un mes de Premium gratis')
+    expect(m).toContain('tres meses gratis de Premium para profesionales, o del plan Empresas para compañías')
     expect(m).toContain('https://www.obrasdeteatro.com/r/6AA5572E')
     const url = enlaceCorreo(ASUNTO_COLEGAS, m)
     expect(url.startsWith('mailto:?subject=Te%20invito%20a%20ObrasDeTeatro%C2%AE&body=')).toBe(true)

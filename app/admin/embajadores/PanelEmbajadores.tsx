@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { Fragment, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { anularInvitacion, crearInvitacion } from './acciones'
 import { OFICIOS, enlaceInvitacion, enlaceWhatsapp, mensajeWhatsapp, tituloEmbajador, type Genero, type Oficio } from '@/lib/embajadores/textos'
+import { CLASE_COLEGA, SITUACION_MEMBRESIA, csvColegas, csvEmbajadores, type FilaEmbajadorPanel } from '@/lib/embajadores/admin'
+import { etiquetaOrigen } from '@/lib/elenco/origen-plan'
 
 export type FilaInvitacion = {
   id: string; token: string; nombre: string; genero: Genero; oficio: string; telefono: string | null; email: string | null
   estado: string; creada_at: string; caduca_at: string; aceptada_por: string | null; aceptada_at: string | null
 }
-export type FilaEmbajador = { nombre: string; genero: Genero; situacion: string; referidos: number; pagan: number }
 
 const fecha = (iso: string) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 const ESTADO: Record<string, { texto: string; color: string }> = {
@@ -18,14 +19,23 @@ const ESTADO: Record<string, { texto: string; color: string }> = {
   anulada: { texto: 'Anulada', color: '#6b7280' },
   caducada: { texto: 'Caducada', color: '#6b7280' },
 }
-const SITUACION: Record<string, string> = { activa: 'Activa', vencida: 'Vencida', renuncio: 'Renunció' }
+const celda: React.CSSProperties = { padding: '8px 8px 8px 0', verticalAlign: 'top' }
 
-export default function PanelEmbajadores({ invitaciones, embajadores }: { invitaciones: FilaInvitacion[]; embajadores: FilaEmbajador[] }) {
+function descargar(nombre: string, contenido: string) {
+  const blob = new Blob(['﻿' + contenido], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = nombre; a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export default function PanelEmbajadores({ invitaciones, embajadores }: { invitaciones: FilaInvitacion[]; embajadores: FilaEmbajadorPanel[] }) {
   const router = useRouter()
   const [f, setF] = useState({ nombre: '', genero: '', oficio: 'interpretacion', telefono: '', email: '', nota: '' })
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
   const [version, setVersion] = useState<Record<string, 'conoce' | 'nuevo'>>({})
   const [copiado, setCopiado] = useState<string | null>(null)
+  const [abierto, setAbierto] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
   const crear = (e: React.FormEvent) => {
@@ -142,23 +152,78 @@ export default function PanelEmbajadores({ invitaciones, embajadores }: { invita
       </section>
 
       <section className="account-card">
-        <h2 style={{ fontFamily: 'var(--serif)', fontSize: '20px', color: 'var(--black)', marginBottom: '10px' }}>Referidos por embajador/a <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)' }}>· interno</span></h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '10px' }}>
+          <h2 style={{ fontFamily: 'var(--serif)', fontSize: '20px', color: 'var(--black)' }}>
+            Colegas por embajador/a <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'var(--sans)' }}>· interno</span>
+          </h2>
+          {embajadores.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="ds-btn-secondary" onClick={() => descargar('embajadores.csv', csvEmbajadores(embajadores))}>Exportar CSV</button>
+              <button type="button" className="ds-btn-secondary" onClick={() => descargar('embajadores-colegas.csv', csvColegas(embajadores))}>CSV de colegas</button>
+            </div>
+          )}
+        </div>
         {embajadores.length === 0 ? (
           <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Cuando alguien acepte su invitación, aquí verás los colegas que trae.</p>
         ) : (
-          <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
-            <thead><tr style={{ textAlign: 'left', color: 'var(--muted)' }}><th>Nombre</th><th>Membresía</th><th>Colegas referidos</th><th>Pagan</th></tr></thead>
-            <tbody>
-              {[...embajadores].sort((a, b) => b.referidos - a.referidos).map((e, n) => (
-                <tr key={n} style={{ borderTop: '1px solid var(--border)' }}>
-                  <td style={{ padding: '8px 8px 8px 0' }}>{e.nombre}</td>
-                  <td>{SITUACION[e.situacion] ?? e.situacion}</td>
-                  <td>{e.referidos}</td>
-                  <td>{e.pagan}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse', minWidth: '820px' }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: 'var(--muted)' }}>
+                  <th>Nombre</th><th>Membresía</th><th>Fin</th><th>Registrados</th><th>Activos</th><th>De pago</th><th>Puntos</th><th>Escalón</th><th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {embajadores.map(e => (
+                  <Fragment key={e.id}>
+                    <tr style={{ borderTop: '1px solid var(--border)' }}>
+                      <td style={celda}>{e.nombre}<div style={{ color: 'var(--muted)', fontSize: '12px' }}>{e.titulo}</div></td>
+                      <td style={celda}>{SITUACION_MEMBRESIA[e.situacion]}</td>
+                      <td style={celda}>{e.situacion === 'honor' ? 'Para siempre' : e.hasta ? fecha(e.hasta) : '—'}</td>
+                      <td style={celda}>{e.registrados}</td>
+                      <td style={celda}>{e.activos}</td>
+                      <td style={celda}>{e.dePago}</td>
+                      <td style={celda}>{e.puntos}</td>
+                      <td style={celda}>{e.escalon || '—'}</td>
+                      <td style={celda}>
+                        <button type="button" className="red-enlace" onClick={() => setAbierto(abierto === e.id ? null : e.id)}>
+                          {abierto === e.id ? 'Cerrar' : 'Detalle'}
+                        </button>
+                      </td>
+                    </tr>
+                    {abierto === e.id && (
+                      <tr>
+                        <td colSpan={9} style={{ padding: '6px 0 16px' }}>
+                          {e.colegas.length === 0 ? (
+                            <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Sin colegas todavía.</p>
+                          ) : (
+                            <table style={{ width: '100%', fontSize: '12.5px', borderCollapse: 'collapse' }}>
+                              <thead><tr style={{ textAlign: 'left', color: 'var(--muted)' }}><th>Nombre</th><th>Tipo</th><th>Alta</th><th>Activo</th><th>Puntos</th><th>Origen del plan</th></tr></thead>
+                              <tbody>
+                                {e.colegas.map(c => (
+                                  <tr key={c.profileId} style={{ borderTop: '1px solid var(--border)' }}>
+                                    <td style={celda}>{c.nombre}</td>
+                                    <td style={celda}>{CLASE_COLEGA[c.clase] ?? c.clase}</td>
+                                    <td style={celda}>{fecha(c.alta)}</td>
+                                    <td style={celda}>{c.activo ? 'Sí' : 'No'}</td>
+                                    <td style={celda}>{c.puntos}</td>
+                                    <td style={celda}>
+                                      {etiquetaOrigen(c.origen)}
+                                      {c.origen.origen === 'pago' && c.origen.desde && <span style={{ color: 'var(--muted)' }}> · desde {fecha(c.origen.desde)}</span>}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </>

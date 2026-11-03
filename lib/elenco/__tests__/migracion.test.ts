@@ -397,8 +397,15 @@ describe('script de limpieza supabase/mantenimiento/elenco_limpieza_pruebas.sql'
   it('muestra antes lo que borraría y borra solo lo de las cuentas indicadas', async () => {
     await db.exec(`update profiles set email = 'u1@prueba.es' where id = '${U1}'; update profiles set email = 'org@prueba.es' where id = '${ORG}'`)
     const otros = (await uno(`select count(*)::int as v from elenco_fundadores where aceptada_por not in ('${U1}', '${ORG}') or aceptada_por is null`)).v
+    // El script quedó relleno con las cuentas reales (ya se ejecutó): aquí se
+    // sustituyen por las de la prueba. La cuenta protegida no existe aquí.
+    await db.exec(`create table if not exists public.avisos_perfil_excluidos (profile_id uuid primary key, motivo text, created_at timestamptz not null default now())`)
     const texto = readFileSync(path.resolve(__dirname, '../../../supabase/mantenimiento/elenco_limpieza_pruebas.sql'), 'utf8')
-      .replace(/\('prueba1@ejemplo\.com'\),\s*\('prueba2@ejemplo\.com'\)/g, "('u1@prueba.es'), ('ORG@prueba.es')")
+      .replaceAll('info.obrasdeteatro@gmail.com', 'nadie@prueba.es')
+      .replaceAll('viajeseutour@gmail.com', 'ORG@prueba.es')
+      .replaceAll('info.obrasdeteatro+prueba3@gmail.com', 'u1@prueba.es')
+      .replaceAll('info.obrasdeteatro+prueba4@gmail.com', 'nadie4@prueba.es')
+      .replaceAll('info.obrasdeteatro+prueba5@gmail.com', 'nadie5@prueba.es')
     const [parteA, parteB] = texto.split('-- ═══ PARTE B')
 
     const vista = (await db.query<{ que: string; numero: string | null; detalle: string | null }>(parteA.slice(parteA.indexOf('with correos')))).rows
@@ -415,6 +422,9 @@ describe('script de limpieza supabase/mantenimiento/elenco_limpieza_pruebas.sql'
     expect((await uno(`select count(*)::int as v from elenco_fundadores`)).v).toBe(otros)
     expect(await plan(U1)).toBe('gratuito')
     expect(await plan(ORG)).toBe('gratuito')
+    // Las cuentas de prueba se conservan, ocultas y sin el aviso «completa tu perfil».
+    expect((await uno(`select count(*)::int as v from profiles where id in ('${U1}', '${ORG}') and not perfil_publico`)).v).toBe(2)
+    expect((await uno(`select count(*)::int as v from avisos_perfil_excluidos where profile_id in ('${U1}', '${ORG}')`)).v).toBe(2)
     expect((await uno(`select min(g)::int as v from generate_series(1, 100) g where not exists (select 1 from elenco_fundadores f where f.numero = g and f.estado <> 'anulada')`)).v).toBe(1)
   })
 })

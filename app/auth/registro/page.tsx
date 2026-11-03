@@ -169,7 +169,8 @@ export default function RegistroPage() {
           email, password, nombre, website, turnstileToken, next,
           tipoPerfil: registro === 'organizacion' ? tipoOrganizacion : registro,
           profesiones: registro === 'profesional' ? profesiones : [],
-          numeroElenco: numeroElenco.trim() || undefined,
+          // Cada alta cuenta para un solo programa: por el enlace de un embajador, sin Elenco.
+          numeroElenco: invitado ? undefined : numeroElenco.trim() || undefined,
         }),
       })
       const data = await res.json()
@@ -213,7 +214,9 @@ export default function RegistroPage() {
         <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
         {invitado && (
           <p className="ds-alert-success" style={{ display: 'block', marginBottom: '14px', fontSize: '13px', lineHeight: 1.5 }}>
-            Vienes invitado/a por un/a Embajador/a de Escena: al confirmar tu cuenta tendrás <strong>un mes de Premium gratis</strong>, sin tarjeta.
+            {registro === 'organizacion'
+              ? <>Vienen invitados por un/a Embajador/a de Escena: al confirmar su cuenta tendrán <strong>tres meses del plan Empresas gratis</strong>, sin tarjeta.</>
+              : <>Vienes invitado/a por un/a Embajador/a de Escena: al confirmar tu cuenta tendrás <strong>tres meses de Premium gratis</strong> (o del plan Empresas, si registras una organización), sin tarjeta.</>}
           </p>
         )}
         {elenco && !invitado && (
@@ -320,7 +323,7 @@ export default function RegistroPage() {
             </fieldset>
           )}
 
-          <div className="reg-elenco">
+          {!invitado && (<div className="reg-elenco">
             <label htmlFor="numero-elenco" className="reg-legend">¿Te invitó alguien del Elenco Fundador? Escribe su número</label>
             <input
               id="numero-elenco"
@@ -339,7 +342,7 @@ export default function RegistroPage() {
               {fundador?.estado === 'no_existe' && 'No hay ningún miembro del Elenco Fundador con ese número. Puedes registrarte igualmente.'}
               {fundador?.estado === 'formato' && 'El número va del 001 al 100. Puedes registrarte igualmente.'}
             </p>
-          </div>
+          </div>)}
 
           <input
             type="password"

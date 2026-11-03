@@ -35,6 +35,12 @@ describe('/elenco/<nº>/unirse — atribución por cookie', () => {
     expect(sala.cookies.get('odt_elenco')?.value).toBe('007')
   })
 
+  it('cada alta cuenta para un solo programa: deja de contar un enlace de embajador anterior', async () => {
+    const r = await pedir('/elenco/007/unirse?como=profesional', 'odt_ref=AB12CD34')
+    expect(r.cookies.get('odt_elenco')?.value).toBe('007')
+    expect(r.cookies.get('odt_ref')?.value).toBe('')
+  })
+
   it('primer enlace: no sustituye la cookie de otro fundador', async () => {
     const r = await pedir('/elenco/007/unirse?como=profesional', 'odt_elenco=003')
     expect(r.cookies.get('odt_elenco')).toBeUndefined()

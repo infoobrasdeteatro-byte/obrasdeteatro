@@ -6,7 +6,9 @@ import type { Metadata } from 'next'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
-import PanelEmbajadores, { type FilaInvitacion, type FilaEmbajador } from './PanelEmbajadores'
+import PanelEmbajadores, { type FilaInvitacion } from './PanelEmbajadores'
+import { construirPanelEmbajadores, type ColegaEmbajadorBD, type EmbajadorBD } from '@/lib/embajadores/admin'
+import type { Suscripcion } from '@/lib/elenco/origen-plan'
 import { PLAZAS_FUNDADORAS } from '@/lib/embajadores/textos'
 import { plazasOcupadas } from '@/lib/embajadores/plazas'
 
@@ -29,42 +31,60 @@ export default async function AdminEmbajadoresPage() {
   }
 
   const s = createServiceClient() as unknown as SupabaseClient
-  const [{ data: invitaciones }, { data: cortesias }, { data: subs }] = await Promise.all([
+  const ahoraIso = new Date().toISOString()
+  const [{ data: invitaciones }, { data: membresias }, { data: colegas }, { data: recompensas }] = await Promise.all([
     s.from('embajadores_invitaciones')
       .select('id, token, nombre, genero, oficio, telefono, email, estado, creada_at, caduca_at, aceptada_por, aceptada_at')
       .order('creada_at', { ascending: false }).limit(500),
-    s.from('membresias_cortesia').select('profile_id, tipo, hasta, renunciada_at, referido_por').limit(5000),
-    s.from('subscriptions').select('profile_id, status').in('status', ['active', 'trialing', 'past_due']).limit(5000),
+    s.from('membresias_cortesia').select('profile_id, tipo, hasta, renunciada_at, honor_at').eq('tipo', 'embajador').limit(5000),
+    s.from('embajadores_colegas').select('embajador_id, profile_id, alta, nombre, tipo_perfil, clase, activo, puntos').limit(10000),
+    s.from('embajadores_recompensas').select('embajador_id, escalon').limit(5000),
   ])
 
   const ahora = Date.now()
-  const pagando = new Set(((subs ?? []) as { profile_id: string }[]).map(x => x.profile_id))
-  type C = { profile_id: string; tipo: string; hasta: string; renunciada_at: string | null; referido_por: string | null }
-  const filasC = (cortesias ?? []) as C[]
-
-  // Estadísticas internas por embajador/a: colegas que han entrado con su código y cuántos pagan.
-  const porEmbajador = new Map<string, { referidos: number; pagan: number }>()
-  for (const c of filasC) {
-    if (c.tipo !== 'referido' || !c.referido_por) continue
-    const e = porEmbajador.get(c.referido_por) ?? { referidos: 0, pagan: 0 }
-    e.referidos++
-    if (pagando.has(c.profile_id)) e.pagan++
-    porEmbajador.set(c.referido_por, e)
-  }
-  const activa = new Map(filasC.filter(c => c.tipo === 'embajador').map(c => [c.profile_id, c.renunciada_at ? 'renuncio' : Date.parse(c.hasta) > ahora ? 'activa' : 'vencida']))
-
   type I = { id: string; token: string; nombre: string; genero: 'f' | 'm'; oficio: string; telefono: string | null; email: string | null
     estado: string; creada_at: string; caduca_at: string; aceptada_por: string | null; aceptada_at: string | null }
   const filas: FilaInvitacion[] = ((invitaciones ?? []) as I[]).map(i => ({
     ...i,
     estado: i.estado === 'pendiente' && Date.parse(i.caduca_at) < ahora ? 'caducada' : i.estado,
   }))
-  const embajadores: FilaEmbajador[] = filas.filter(f => f.estado === 'aceptada' && f.aceptada_por).map(f => ({
-    nombre: f.nombre, genero: f.genero,
-    situacion: activa.get(f.aceptada_por!) ?? 'activa',
-    referidos: porEmbajador.get(f.aceptada_por!)?.referidos ?? 0,
-    pagan: porEmbajador.get(f.aceptada_por!)?.pagan ?? 0,
-  }))
+
+  // Embajadores: invitaciones aceptadas con su membresía.
+  type M = { profile_id: string; hasta: string; renunciada_at: string | null; honor_at: string | null }
+  const porPerfil = new Map(((membresias ?? []) as M[]).map(m => [m.profile_id, m]))
+  const embajadoresBD: EmbajadorBD[] = filas
+    .filter(f => f.estado === 'aceptada' && f.aceptada_por && porPerfil.has(f.aceptada_por))
+    .map(f => {
+      const m = porPerfil.get(f.aceptada_por!)!
+      return { profile_id: f.aceptada_por!, nombre: f.nombre, genero: f.genero, aceptada_at: f.aceptada_at, hasta: m.hasta, renunciada_at: m.renunciada_at, honor_at: m.honor_at }
+    })
+
+  const listaColegas = (colegas ?? []) as ColegaEmbajadorBD[]
+  const ids = listaColegas.map(c => c.profile_id)
+  const [{ data: perfiles }, { data: subs }, { data: cortEmb }, { data: cortElenco }] = await Promise.all([
+    ids.length ? s.from('profiles').select('id, plan').in('id', ids) : Promise.resolve({ data: [] }),
+    ids.length ? s.from('subscriptions').select('profile_id, plan, status, stripe_price_id, created_at').in('profile_id', ids) : Promise.resolve({ data: [] }),
+    ids.length ? s.from('membresias_cortesia').select('profile_id, plan').in('profile_id', ids).gt('hasta', ahoraIso).is('renunciada_at', null) : Promise.resolve({ data: [] }),
+    ids.length ? s.from('elenco_cortesias').select('profile_id, plan').in('profile_id', ids).lte('desde', ahoraIso).gt('hasta', ahoraIso) : Promise.resolve({ data: [] }),
+  ])
+  const escalones = new Map<string, number>()
+  for (const r of (recompensas ?? []) as { embajador_id: string; escalon: number }[]) {
+    escalones.set(r.embajador_id, Math.max(escalones.get(r.embajador_id) ?? 0, r.escalon))
+  }
+  const cortesias = new Map<string, string>()
+  for (const c of [...((cortEmb ?? []) as { profile_id: string; plan: string }[]), ...((cortElenco ?? []) as { profile_id: string; plan: string }[])]) {
+    cortesias.set(c.profile_id, c.plan)
+  }
+
+  const { filas: embajadores, totales } = construirPanelEmbajadores({
+    embajadores: embajadoresBD,
+    colegas: listaColegas,
+    planes: new Map(((perfiles ?? []) as { id: string; plan: string }[]).map(p => [p.id, p.plan])),
+    suscripciones: new Map(((subs ?? []) as (Suscripcion & { profile_id: string })[]).map(x => [x.profile_id, x])),
+    cortesias,
+    escalones,
+    ahora,
+  })
   const ocupadas = plazasOcupadas((invitaciones ?? []) as I[], ahora)
 
   return (
@@ -72,7 +92,7 @@ export default async function AdminEmbajadoresPage() {
       <div className="page-header">
         <div className="page-title-group">
           <h1 className="page-title">Embajadores de Escena</h1>
-          <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Invitaciones personales: un año de Destacado por cortesía, sin tarjeta y sin compromiso. Todo lo de esta página es interno.</span>
+          <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Invitaciones personales: un año de Destacado por cortesía, sin tarjeta y sin compromiso. Sus colegas, tres meses de Premium o Empresas; su actividad renueva la membresía (5, 10 y 25 puntos). Todo lo de esta página es interno.</span>
         </div>
         <div className="admin-header-actions">
           <Link href="/admin" className="table-link">← Master Control</Link>
@@ -81,9 +101,9 @@ export default async function AdminEmbajadoresPage() {
 
       <div className="obras-stat-grid obras-stat-grid--4">
         <div className="obras-stat-card"><div className="obras-stat-label">Plazas ocupadas</div><div className="obras-stat-value">{ocupadas}/{PLAZAS_FUNDADORAS}</div></div>
-        <div className="obras-stat-card"><div className="obras-stat-label">Embajadores</div><div className="obras-stat-value obras-stat-value--green">{embajadores.length}</div></div>
-        <div className="obras-stat-card"><div className="obras-stat-label">Colegas referidos</div><div className="obras-stat-value">{embajadores.reduce((t, e) => t + e.referidos, 0)}</div></div>
-        <div className="obras-stat-card"><div className="obras-stat-label">Referidos que pagan</div><div className="obras-stat-value obras-stat-value--amber">{embajadores.reduce((t, e) => t + e.pagan, 0)}</div></div>
+        <div className="obras-stat-card"><div className="obras-stat-label">Embajadores</div><div className="obras-stat-value obras-stat-value--green">{totales.embajadores}</div></div>
+        <div className="obras-stat-card"><div className="obras-stat-label">Colegas registrados</div><div className="obras-stat-value">{totales.registrados}</div><div style={{ fontSize: '12px', color: 'var(--muted)' }}>{totales.activos} activos</div></div>
+        <div className="obras-stat-card"><div className="obras-stat-label">Colegas de pago</div><div className="obras-stat-value obras-stat-value--amber">{totales.dePago}</div><div style={{ fontSize: '12px', color: 'var(--muted)' }}>Suscripción activa o en prueba</div></div>
       </div>
 
       <PanelEmbajadores invitaciones={filas} embajadores={embajadores} />

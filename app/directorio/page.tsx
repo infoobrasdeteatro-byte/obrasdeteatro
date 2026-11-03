@@ -13,7 +13,8 @@ import { COUNTRIES } from '@/lib/geo/countries'
 import FiltrosDirectorio from './FiltrosDirectorio'
 import TopNav from '@/components/design-system/TopNav'
 import { textoProfesiones, TIPOS_PERSONA, ETIQUETA_EQUIPO } from '@/lib/perfiles/profesiones'
-import { tituloEmbajador } from '@/lib/embajadores/textos'
+import { distintivoEmbajador } from '@/lib/embajadores/textos'
+import { ordenarDirectorio } from '@/lib/directorio/orden'
 import { distintivo } from '@/lib/elenco/textos'
 
 type TipoPerfil = Database['public']['Enums']['tipo_perfil']
@@ -209,28 +210,21 @@ export default async function DirectorioPage({ searchParams }: Props) {
     }
   }
 
-  // Sort editorial: plan prioritario (moderado) → verificado → nombre
-  const sorted = [...(perfilesRaw ?? [])].sort((a, b) => {
-    const tA = (a.plan === 'destacado' || a.plan === 'empresas') ? 0 : 1
-    const tB = (b.plan === 'destacado' || b.plan === 'empresas') ? 0 : 1
-    if (tA !== tB) return tA - tB
-    const vA = a.verificado_profesional ? 0 : 1
-    const vB = b.verificado_profesional ? 0 : 1
-    if (vA !== vB) return vA - vB
-    return (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es', { sensitivity: 'base' })
-  })
+  // Embajadores de Escena activos (de todos los resultados, no solo de la
+  // página): van los primeros y llevan su distintivo en la tarjeta.
+  const embajadores = new Map<string, { genero: string | null; honor: boolean }>()
+  if (profileIds.length > 0) {
+    const { data: emb } = await supabase.rpc('embajadores_distintivos', { p_perfiles: profileIds })
+    for (const e of emb ?? []) embajadores.set(e.profile_id, { genero: e.genero, honor: e.honor })
+  }
+
+  // Sort editorial: embajadores → plan prioritario (moderado) → verificado → nombre
+  const sorted = ordenarDirectorio(perfilesRaw ?? [], new Set(embajadores.keys()))
 
   const total = sorted.length
   const totalPages = Math.ceil(total / PER_PAGE)
   const offset = (pageNum - 1) * PER_PAGE
   const perfilesPagina = sorted.slice(offset, offset + PER_PAGE)
-
-  // Embajadores de Escena: distintivo en la tarjeta (en lugar de «Destacado»).
-  const embajadores = new Map<string, string | null>()
-  if (perfilesPagina.length > 0) {
-    const { data: emb } = await supabase.rpc('embajadores_activos', { p_perfiles: perfilesPagina.map(p => p.id) })
-    for (const e of emb ?? []) embajadores.set(e.profile_id, e.genero)
-  }
 
   // Elenco Fundador: distintivo con su número.
   const elenco = new Map<string, number>()
@@ -467,7 +461,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
                             <span className="dir2-badge dir2-badge--verificado">✓ Verificado</span>
                           )}
                           {embajadores.has(perfil.id) && (
-                            <span className="dir2-badge dir2-badge--embajador">{tituloEmbajador(embajadores.get(perfil.id))}</span>
+                            <span className="dir2-badge dir2-badge--embajador">{distintivoEmbajador(embajadores.get(perfil.id)!.genero, embajadores.get(perfil.id)!.honor)}</span>
                           )}
                           {elenco.has(perfil.id) && (
                             <span className="dir2-badge dir2-badge--elenco">{distintivo(elenco.get(perfil.id)!)}</span>
