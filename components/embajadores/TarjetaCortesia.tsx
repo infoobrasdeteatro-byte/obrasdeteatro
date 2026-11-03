@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { renunciarCortesia } from '@/app/perfil/centro/cortesia-acciones'
 import {
@@ -127,7 +128,8 @@ export default function TarjetaCortesia({ tipo, plan, hasta, genero, codigo, bie
                 <p className="cortesia-cifra">Has completado la escalera: eres {tituloHonor(genero)}.</p>
               )}
               <p className="cortesia-cifra">
-                Colega activo: profesional con el correo confirmado, foto y al menos una profesión (1 punto); organización con el perfil completo y su logo, o sala con su ficha reclamada (3 puntos). Las cuentas de público general no suman.
+                Colega activo: profesional con el correo confirmado, foto y al menos una profesión (1 punto); organización con el perfil completo y su logo, o sala con su ficha reclamada (3 puntos). Las cuentas de público general no suman.{' '}
+                <Link href="/embajadores/bases">Bases del programa</Link>
               </p>
             </>
           )}

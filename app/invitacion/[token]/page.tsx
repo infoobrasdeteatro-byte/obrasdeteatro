@@ -96,6 +96,7 @@ export default async function InvitacionPage({ params }: Props) {
           <li>Tu actividad renueva tu membresía: con 5 puntos de colegas activos, 6 meses más; con 10, 12 meses más; con 25, eres {tituloHonor(genero)} y tu membresía Destacado es para siempre.</li>
           <li><strong>Sin tarjeta y sin compromiso.</strong> Al terminar el año, si lo deseas, podrás continuar con tu suscripción. Puedes renunciar en cualquier momento.</li>
         </ul>
+        <p className="inv-p"><Link href="/embajadores/bases">Bases del programa →</Link></p>
       </section>
 
       <p className="inv-firma">Renee Bausson · Fundador de ObrasDeTeatro®</p>

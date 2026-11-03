@@ -402,7 +402,7 @@ describe('script de limpieza supabase/mantenimiento/elenco_limpieza_pruebas.sql'
     await db.exec(`create table if not exists public.avisos_perfil_excluidos (profile_id uuid primary key, motivo text, created_at timestamptz not null default now())`)
     const texto = readFileSync(path.resolve(__dirname, '../../../supabase/mantenimiento/elenco_limpieza_pruebas.sql'), 'utf8')
       .replaceAll('info.obrasdeteatro@gmail.com', 'nadie@prueba.es')
-      .replaceAll('viajeseutour@gmail.com', 'org@prueba.es')
+      .replaceAll('viajeseutour@gmail.com', 'ORG@prueba.es')
       .replaceAll('info.obrasdeteatro+prueba3@gmail.com', 'u1@prueba.es')
       .replaceAll('info.obrasdeteatro+prueba4@gmail.com', 'nadie4@prueba.es')
       .replaceAll('info.obrasdeteatro+prueba5@gmail.com', 'nadie5@prueba.es')

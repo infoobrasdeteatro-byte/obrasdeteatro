@@ -173,3 +173,43 @@ describe('directorio: los embajadores, los primeros', () => {
     expect(c.indexOf("rpc('embajadores_distintivos'")).toBeLessThan(c.indexOf('ordenarDirectorio(perfilesRaw'))
   })
 })
+
+describe('bases del programa (/embajadores/bases)', () => {
+  const bases = leer('app/embajadores/bases/page.tsx')
+
+  it('cuentan lo que recibe el embajador, los 3 meses de los colegas, el colega activo, la escalera y que es gratuito', () => {
+    for (const t of [
+      'Un año de membresía Destacado por cortesía',
+      '<strong>tres meses de Premium</strong> si es una persona',
+      '<strong>tres meses del plan Empresas</strong> si es una organización',
+      'correo confirmado, foto de perfil y al menos una profesión elegida. 1 punto',
+      'perfil completo (logo, presentación y ciudad), o sala con su ficha de Espacios Escénicos reclamada y aprobada. 3 puntos',
+      'no suman puntos',
+      "'6 meses más de membresía Destacado'",
+      "'12 meses más de membresía Destacado'",
+      'la membresía Destacado, para siempre',
+      '<strong>gratuito y sin compromiso</strong>',
+      'nunca lo sustituye ni lo recorta',
+    ]) expect(bases).toContain(t)
+    expect(bases).toContain('ESCALONES_EMBAJADOR.map')
+  })
+
+  it('en forma impersonal: valen igual para personas y organizaciones', () => {
+    const texto = bases.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+    expect(texto).not.toMatch(/(?<!\p{L})(tú|tu|tus|te|ti|vosotr[oa]s|vuestr[oa]s?)(?!\p{L})/iu)
+  })
+
+  it('se enlazan desde la tarjeta del embajador y desde la página de la invitación', () => {
+    expect(leer('components/embajadores/TarjetaCortesia.tsx')).toContain('<Link href="/embajadores/bases">Bases del programa</Link>')
+    expect(leer('app/invitacion/[token]/page.tsx')).toContain('<Link href="/embajadores/bases">Bases del programa →</Link>')
+  })
+})
+
+describe('script de limpieza del Elenco: correos en minúsculas', () => {
+  it('compara siempre lower() con lower()', () => {
+    const sql = leer('supabase/mantenimiento/elenco_limpieza_pruebas.sql').replace(/--.*$/gm, '')
+    const comparaciones = sql.match(/lower\(p\.email\)\s*(=|in)\s*[^\n]*/g) ?? []
+    expect(comparaciones.length).toBeGreaterThanOrEqual(7)
+    for (const c of comparaciones) expect(c).toMatch(/lower\(p\.email\)\s*(=\s*lower\(|in \(select lower\()/)
+  })
+})
