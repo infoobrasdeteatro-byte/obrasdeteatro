@@ -49,6 +49,7 @@ export default async function CentroProfesionalPage({ searchParams }: { searchPa
     { data: estadisticasDb },
     { data: visitasMesDb },
     { data: cortesiaDb },
+    { data: embajadorDb },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -100,8 +101,11 @@ export default async function CentroProfesionalPage({ searchParams }: { searchPa
     supabase.rpc('mis_visitas_por_mes'),
     // Embajadores de Escena: membresía de cortesía (solo la propia).
     supabase.rpc('mi_cortesia'),
+    // Y, si es embajador/a, su escalera (colegas, puntos, escalón).
+    supabase.rpc('mi_embajador'),
   ])
   const cortesia = cortesiaDb?.[0]?.activa ? cortesiaDb[0] : null
+  const escalera = embajadorDb?.[0] ?? null
 
   // ── Phase 2: mutual follows (requires follower list from Phase 1) ──────────
   const followerList = followers ?? []
@@ -228,7 +232,8 @@ export default async function CentroProfesionalPage({ searchParams }: { searchPa
 
           {cortesia && (
             <TarjetaCortesia tipo={cortesia.tipo} plan={cortesia.plan} hasta={cortesia.hasta} genero={cortesia.genero}
-              codigo={cortesia.codigo_referido} referidos={cortesia.referidos} bienvenida={bienvenidaEmbajador === '1'} />
+              codigo={cortesia.codigo_referido} bienvenida={bienvenidaEmbajador === '1'}
+              escalera={escalera ? { registrados: escalera.registrados, activos: escalera.activos, puntos: escalera.puntos, honor: escalera.honor } : null} />
           )}
 
           {/* ═══════════════════════════════════════════════════════════════

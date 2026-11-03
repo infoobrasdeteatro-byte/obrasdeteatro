@@ -27,6 +27,44 @@ export function tituloEmbajador(genero: Genero | string | null | undefined): str
   return genero === 'f' ? 'Embajadora de Escena' : 'Embajador de Escena'
 }
 
+/** «Embajadora de Honor» / «Embajador de Honor» (25 puntos). */
+export function tituloHonor(genero: Genero | string | null | undefined): string {
+  return genero === 'f' ? 'Embajadora de Honor' : 'Embajador de Honor'
+}
+
+/** Distintivo público: el de Honor si lo es, si no, el de Embajador/a de Escena. */
+export function distintivoEmbajador(genero: Genero | string | null | undefined, honor: boolean): string {
+  return honor ? tituloHonor(genero) : tituloEmbajador(genero)
+}
+
+/**
+ * Cortesía de los colegas que entran por el enlace de un/a embajador/a: tres
+ * meses de Premium (personas) o del plan Empresas (organizaciones), sola al
+ * confirmar el correo. La concede canjear_referido (migración 20261103120000).
+ */
+export const MESES_COLEGA = 3
+export const CORTESIA_COLEGA_TEXTO = 'tres meses gratis de Premium para profesionales, o del plan Empresas para compañías, salas, escuelas, productoras y festivales'
+
+/** Escalera del embajador: puntos de cada escalón (mismas reglas de colega activo que el Elenco Fundador). */
+export const ESCALONES_EMBAJADOR = [5, 10, 25] as const
+
+export function recompensaEmbajador(escalon: number, genero: Genero | string | null | undefined): string {
+  switch (escalon) {
+    case 5: return '6 meses más de tu membresía Destacado'
+    case 10: return '12 meses más de tu membresía Destacado'
+    case 25: return `${tituloHonor(genero)}: tu membresía Destacado para siempre`
+    default: return ''
+  }
+}
+
+/** Siguiente escalón y progreso (0–1) hacia él. null si ya es de Honor. */
+export function progresoEmbajador(puntos: number): { siguiente: number; anterior: number; progreso: number } | null {
+  const siguiente = ESCALONES_EMBAJADOR.find(e => puntos < e)
+  if (siguiente === undefined) return null
+  const anterior = [...ESCALONES_EMBAJADOR].reverse().find(e => e <= puntos) ?? 0
+  return { siguiente, anterior, progreso: Math.min(1, Math.max(0, (puntos - anterior) / (siguiente - anterior))) }
+}
+
 /** El oficio con su género, para «Lo que ObrasDeTeatro® puede hacer por ti como…». */
 export function oficioPersona(oficio: Oficio, genero: Genero): string {
   switch (oficio) {
@@ -141,7 +179,7 @@ export function enlaceOutlook(asunto: string, cuerpo: string): string {
 
 /** Mensaje de un/a embajador/a para sus colegas, con su enlace personal. */
 export function mensajeColegas(enlace: string): string {
-  return `Te invito a ObrasDeTeatro®, la plataforma profesional del teatro en español. Con mi enlace tienes un mes de Premium gratis, sin tarjeta: ${enlace}`
+  return `Te invito a ObrasDeTeatro®, la plataforma profesional del teatro en español. Con mi enlace, ${CORTESIA_COLEGA_TEXTO}, sin tarjeta: ${enlace}`
 }
 export const ASUNTO_COLEGAS = 'Te invito a ObrasDeTeatro®'
 
@@ -151,8 +189,8 @@ export const VISTA_PREVIA_INVITACION = {
   descripcion: 'ObrasDeTeatro®, la plataforma profesional del teatro en español en los 20 países de habla hispana.',
 }
 export const VISTA_PREVIA_REFERIDO = {
-  titulo: 'Te invitan a ObrasDeTeatro® · Un mes de Premium gratis',
-  descripcion: 'La plataforma profesional del teatro en español en los 20 países de habla hispana. Sin tarjeta.',
+  titulo: 'Te invitan a ObrasDeTeatro® · Tres meses gratis',
+  descripcion: 'La plataforma profesional del teatro en español en los 20 países de habla hispana. Tres meses de Premium, o del plan Empresas para organizaciones. Sin tarjeta.',
 }
 
 /** Cookie del código de referido entre el enlace y la confirmación del correo. */

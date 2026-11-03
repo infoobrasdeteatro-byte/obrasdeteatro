@@ -16,7 +16,7 @@ describe('GET /r/[codigo]', () => {
     const res = await pedir('WhatsApp/2.23.20.0 A')
     const html = await res.text()
     expect(res.status).toBe(200)
-    expect(html).toContain('<meta property="og:title" content="Te invitan a ObrasDeTeatro® · Un mes de Premium gratis">')
+    expect(html).toContain('<meta property="og:title" content="Te invitan a ObrasDeTeatro® · Tres meses gratis">')
     expect(html).toContain('og:image" content="https://www.obrasdeteatro.com/opengraph-image.png"')
     expect(res.cookies.get('odt_ref')).toBeUndefined()
   })

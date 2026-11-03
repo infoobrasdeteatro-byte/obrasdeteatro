@@ -213,7 +213,9 @@ export default function RegistroPage() {
         <p className="auth-tagline">Únete al ecosistema del teatro en español. Siempre gratis.</p>
         {invitado && (
           <p className="ds-alert-success" style={{ display: 'block', marginBottom: '14px', fontSize: '13px', lineHeight: 1.5 }}>
-            Vienes invitado/a por un/a Embajador/a de Escena: al confirmar tu cuenta tendrás <strong>un mes de Premium gratis</strong>, sin tarjeta.
+            {registro === 'organizacion'
+              ? <>Vienen invitados por un/a Embajador/a de Escena: al confirmar su cuenta tendrán <strong>tres meses del plan Empresas gratis</strong>, sin tarjeta.</>
+              : <>Vienes invitado/a por un/a Embajador/a de Escena: al confirmar tu cuenta tendrás <strong>tres meses de Premium gratis</strong> (o del plan Empresas, si registras una organización), sin tarjeta.</>}
           </p>
         )}
         {elenco && !invitado && (

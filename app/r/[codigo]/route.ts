@@ -22,8 +22,9 @@ function vistaPrevia(url: string): NextResponse {
 
 /**
  * Enlace personal de un/a Embajador/a de Escena: guarda el código en una
- * cookie y lleva al registro. El mes de Premium se concede al confirmar el
- * correo (app/auth/callback), con las reglas de canjear_referido.
+ * cookie y lleva al registro. Los tres meses de Premium (o de Empresas, si es
+ * una organización) se conceden solos al confirmar el correo
+ * (lib/auth/confirmacion.ts), con las reglas de canjear_referido.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ codigo: string }> }) {
   const { codigo } = await params

@@ -52,7 +52,7 @@ export default async function PreciosPage({
     if (fila?.activa) {
       cortesia = {
         plan: fila.plan, hasta: fila.hasta,
-        titulo: fila.tipo === 'embajador' ? tituloEmbajador(fila.genero) : 'Premium por invitación',
+        titulo: fila.tipo === 'embajador' ? tituloEmbajador(fila.genero) : `${fila.plan === 'empresas' ? 'Empresas' : 'Premium'} por invitación`,
       }
     }
   }

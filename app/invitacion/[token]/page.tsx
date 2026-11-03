@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import TopNav from '@/components/design-system/TopNav'
 import Aceptar from './Aceptar'
-import { CORTESIA, VENTAJAS_OFICIO, VISTA_PREVIA_INVITACION, esOficio, oficioPersona, tituloEmbajador, type Genero } from '@/lib/embajadores/textos'
+import { CORTESIA, VENTAJAS_OFICIO, VISTA_PREVIA_INVITACION, esOficio, oficioPersona, tituloEmbajador, type Genero, tituloHonor } from '@/lib/embajadores/textos'
 
 export const metadata: Metadata = {
   title: 'Invitación · Embajadores de Escena | ObrasDeTeatro®',
@@ -92,7 +92,8 @@ export default async function InvitacionPage({ params }: Props) {
         <ul className="inv-lista">
           <li>Un año de membresía Destacado: tu perfil con la máxima presencia en el Directorio.</li>
           <li>El distintivo «{titulo}» en tu ficha profesional.</li>
-          <li>Un enlace personal para invitar a tus colegas: quien se registre con él disfrutará de un mes de Premium.</li>
+          <li>Un enlace personal para invitar a tus colegas: quien se registre con él disfrutará de tres meses de Premium, o del plan Empresas si es una organización.</li>
+          <li>Tu actividad renueva tu membresía: con 5 puntos de colegas activos, 6 meses más; con 10, 12 meses más; con 25, eres {tituloHonor(genero)} y tu membresía Destacado es para siempre.</li>
           <li><strong>Sin tarjeta y sin compromiso.</strong> Al terminar el año, si lo deseas, podrás continuar con tu suscripción. Puedes renunciar en cualquier momento.</li>
         </ul>
       </section>
