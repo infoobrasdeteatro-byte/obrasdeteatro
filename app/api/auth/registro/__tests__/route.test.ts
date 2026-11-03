@@ -177,3 +177,33 @@ describe('POST /api/auth/registro — «¿Te invitó alguien del Elenco Fundador
     expect(res.status).toBe(200)
   })
 })
+
+describe('POST /api/auth/registro — cada alta cuenta para un solo programa', () => {
+  const atribuciones = () => mockServicioRpc.mock.calls.filter(c => c[0] === 'elenco_atribuir')
+  beforeEach(() => {
+    mockSignUp.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
+    mockServicioRpc.mockResolvedValue({ data: 'ok', error: null })
+  })
+  async function registrar(cookie: string, extra: Record<string, unknown> = {}) {
+    const { NextRequest } = await import('next/server')
+    return POST(new NextRequest('https://app.test/api/auth/registro', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ email: 'n@example.com', password: 'Segura123', nombre: 'N', website: '', turnstileToken: 't', ...extra }),
+    }))
+  }
+
+  it('por el enlace de un embajador: cuenta para Embajadores y nunca para el Elenco (ni campo ni cookie)', async () => {
+    const res = await registrar('odt_ref=ab12cd34; odt_elenco=007', { numeroElenco: '7' })
+    expect(res.status).toBe(200)
+    expect(atribuciones()).toEqual([])
+    expect(mockSignUp.mock.calls[0][0].options.data.codigo_referido).toBe('AB12CD34')
+    expect(res.cookies.get('odt_elenco')?.value).toBe('')
+  })
+
+  it('por /elenco/<nº> (sin código de embajador): todo sigue igual', async () => {
+    await registrar('odt_elenco=007', { numeroElenco: '007' })
+    expect(atribuciones().map(c => c[1])).toEqual([{ p_perfil: 'u1', p_numero: 7 }])
+    expect(mockSignUp.mock.calls[0][0].options.data).not.toHaveProperty('codigo_referido')
+  })
+})

@@ -21,6 +21,13 @@ describe('GET /r/[codigo]', () => {
     expect(res.cookies.get('odt_ref')).toBeUndefined()
   })
 
+  it('cada alta cuenta para un solo programa: borra la cookie del enlace del Elenco', async () => {
+    const res = await GET(new NextRequest('https://www.obrasdeteatro.com/r/AB12CD34', { headers: { 'user-agent': 'Mozilla/5.0', cookie: 'odt_elenco=007' } }),
+      { params: Promise.resolve({ codigo: 'AB12CD34' }) })
+    expect(res.cookies.get('odt_ref')?.value).toBe('AB12CD34')
+    expect(res.cookies.get('odt_elenco')?.value).toBe('')
+  })
+
   it('código no válido: registro normal', async () => {
     const res = await pedir('WhatsApp/2', 'x')
     expect(res.headers.get('location')).toBe('https://www.obrasdeteatro.com/auth/registro')

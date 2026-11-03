@@ -106,7 +106,9 @@ export async function POST(req: NextRequest) {
   // hay o no corresponde a nadie, el de la cookie del enlace.
   const invitacionElenco = tokenDeInvitacionElenco(destino)
   const numeroCookie = leerNumero(req.cookies?.get(COOKIE_ELENCO)?.value)
-  const numerosElenco = [...new Set([normalizarNumeroElenco(numeroElenco), numeroCookie])]
+  // Cada alta cuenta para un solo programa: quien llega por el enlace de un
+  // embajador (/r/<código>) no se atribuye al Elenco, ni por el campo ni por la cookie.
+  const numerosElenco = referido ? [] : [...new Set([normalizarNumeroElenco(numeroElenco), numeroCookie])]
     .filter((n): n is number => n !== null)
 
   const { data: alta, error } = await supabase.auth.signUp({

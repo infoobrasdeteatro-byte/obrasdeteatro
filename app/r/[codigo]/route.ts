@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { COOKIE_REFERIDO, REFERIDO_MAX_AGE_S, SITIO, VISTA_PREVIA_REFERIDO, codigoValido } from '@/lib/embajadores/textos'
+import { COOKIE_ELENCO } from '@/lib/elenco/textos'
 
 /** Lectores de enlaces de apps de mensajería y redes: reciben la vista previa en vez de la redirección. */
 const LECTOR_DE_ENLACES = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Applebot|Pinterest|redditbot|Googlebot/i
@@ -37,6 +38,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     respuesta.cookies.set(COOKIE_REFERIDO, valido, {
       maxAge: REFERIDO_MAX_AGE_S, httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/',
     })
+    // Cada alta cuenta para un solo programa: manda el último enlace.
+    respuesta.cookies.delete(COOKIE_ELENCO)
   }
   return respuesta
 }

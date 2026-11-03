@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { COOKIE_ELENCO, ELENCO_MAX_AGE_S, leerNumero, numeroFundador } from '@/lib/elenco/textos'
+import { COOKIE_REFERIDO } from '@/lib/embajadores/textos'
 
 /**
  * Elección en /elenco/<nº>: guarda el número del fundador en una cookie
@@ -34,6 +35,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const respuesta = NextResponse.redirect(destino)
+  // Cada alta cuenta para un solo programa: manda el último enlace (si antes
+  // pasó por el de un embajador, ese deja de contar).
+  respuesta.cookies.delete(COOKIE_REFERIDO)
   if (!leerNumero(request.cookies.get(COOKIE_ELENCO)?.value)) {
     respuesta.cookies.set(COOKIE_ELENCO, codigo, {
       maxAge: ELENCO_MAX_AGE_S, httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/',

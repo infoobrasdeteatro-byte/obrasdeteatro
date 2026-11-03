@@ -213,3 +213,11 @@ describe('script de limpieza del Elenco: correos en minúsculas', () => {
     for (const c of comparaciones) expect(c).toMatch(/lower\(p\.email\)\s*(=\s*lower\(|in \(select lower\()/)
   })
 })
+
+describe('registro: cada alta cuenta para un solo programa', () => {
+  it('por el enlace de un embajador se oculta el campo del Elenco y no se envía ningún número', () => {
+    const c = leer('app/auth/registro/page.tsx')
+    expect(c).toContain('{!invitado && (<div className="reg-elenco">')
+    expect(c).toContain('numeroElenco: invitado ? undefined : numeroElenco.trim() || undefined')
+  })
+})
