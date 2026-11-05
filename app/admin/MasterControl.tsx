@@ -202,11 +202,11 @@ function BloqueCifras({ c }: { c: Cifras }) {
         <div className="mc-cifra-nota">Confirmados</div>
       </div>
       {c.embajadores !== undefined && (
-        <div className="obras-stat-card">
+        <Link href="/admin/embajadores" className="obras-stat-card mc-cifra-enlace">
           <div className="obras-stat-label">Plazas de Embajadores</div>
           <div className="obras-stat-value">{c.embajadores ? `${c.embajadores.ocupadas}/${c.embajadores.total}` : '—'}</div>
           <div className="mc-cifra-nota">Aceptadas y pendientes sin caducar</div>
-        </div>
+        </Link>
       )}
       {c.elenco !== undefined && (
         <Link href="/admin/elenco" className="obras-stat-card mc-cifra-enlace">
