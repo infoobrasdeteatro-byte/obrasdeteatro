@@ -157,8 +157,10 @@ function conNombre(texto: string, nombre: string): string {
 /** Asunto (solo correo) y cuerpo, con el nombre ya puesto. */
 export function preinvitacion(distintivo: Distintivo, canal: Canal, nombre?: string | null): { asunto: string | null; cuerpo: string } {
   const p = PLANTILLAS[distintivo][canal]
+  // Las plantillas viajan con saltos LF; si Git las saca con CRLF, se normalizan.
+  const lf = (t: string) => t.replace(/\r\n/g, '\n')
   const n = nombreDePila(nombre)
-  return { asunto: p.asunto ? conNombre(p.asunto, n) : null, cuerpo: conNombre(p.cuerpo, n) }
+  return { asunto: p.asunto ? conNombre(p.asunto, n) : null, cuerpo: lf(conNombre(p.cuerpo, n)) }
 }
 
 /** Enlace wa.me con el texto: al número si lo hay (con prefijo), si no, para elegir contacto. */
