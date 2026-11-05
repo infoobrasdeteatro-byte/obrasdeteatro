@@ -6,6 +6,7 @@ import { totalColas, type ElementoAtencion, type Pendientes } from '@/lib/admin/
 import { seccionesVisibles } from '@/lib/admin/secciones'
 import { peorColor, type Color, type Semaforo } from '@/lib/admin/salud'
 import EnlaceTarea from './tareas/EnlaceTarea'
+import GeneradorPreinvitacion from './GeneradorPreinvitacion'
 
 const ZONA = 'Atlantic/Canary'
 const fechaHora = (iso: string) => new Date(iso).toLocaleString('es-ES', { timeZone: ZONA, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -115,6 +116,12 @@ export default function MasterControl({ ahora, esAdmin, pendientes, atencion, sa
           <p className="ds-form-hint" style={{ marginTop: '10px' }}>Se muestran los {LIMITE_MAXIMO} más recientes.</p>
         )}
       </Bloque>
+
+      {esAdmin && (
+        <Bloque titulo="Preinvitación">
+          <GeneradorPreinvitacion />
+        </Bloque>
+      )}
 
       <Bloque titulo="Secciones">
         {seccionesVisibles(esAdmin).map(g => (
