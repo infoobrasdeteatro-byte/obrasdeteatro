@@ -17,7 +17,8 @@ interface AvisoInstalacion extends Event {
 // la instalación solo se ofrece donde la web lo ha decidido (menú, tarjeta del
 // panel y página /app), nunca como una interrupción a quien acaba de llegar.
 let aviso: AvisoInstalacion | null = null
-let instalada = false
+// Instalada desde esta pestaña: la persona sigue en el navegador.
+let recienInstalada = false
 const oyentes = new Set<() => void>()
 const avisar = () => oyentes.forEach(f => f())
 
@@ -29,7 +30,7 @@ if (typeof window !== 'undefined') {
   })
   window.addEventListener('appinstalled', () => {
     aviso = null
-    instalada = true
+    recienInstalada = true
     avisar()
   })
 }
@@ -37,8 +38,8 @@ if (typeof window !== 'undefined') {
 function leerEstado(): EstadoInstalacion {
   const nav = window.navigator as Navigator & { standalone?: boolean }
   return estadoInstalacion({
-    enPantallaCompleta:
-      instalada || window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true,
+    enPantallaCompleta: window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true,
+    recienInstalada,
     hayAvisoDelNavegador: aviso !== null,
     userAgent: nav.userAgent,
     plataforma: nav.platform,
@@ -68,7 +69,7 @@ export function useInstalacion(): { estado: EstadoInstalacion | null; instalar: 
     const { outcome } = await a.userChoice
     // El aviso solo sirve una vez, se acepte o no.
     aviso = null
-    if (outcome === 'accepted') instalada = true
+    if (outcome === 'accepted') recienInstalada = true
     avisar()
   }, [])
 
