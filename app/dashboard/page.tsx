@@ -4,6 +4,7 @@ import Link from 'next/link'
 import NavAutenticado from '@/components/NavAutenticado'
 import Sidebar from '@/components/design-system/Sidebar'
 import { etiquetaPerfil } from '@/lib/perfiles/profesiones'
+import { TarjetaInstalar } from '@/components/app/Instalar'
 
 const TIPO_PERFIL_LABEL: Record<string, string> = {
   actor:        'Actor / Actriz',
@@ -158,6 +159,9 @@ export default async function DashboardPage({
               </div>
             </div>
           )}
+
+          {/* ── Instalar la aplicación (se oculta sola si ya está instalada o se cierra) ── */}
+          <TarjetaInstalar />
 
           {/* ── Módulos ── */}
           <div className="dash-sec-header">
