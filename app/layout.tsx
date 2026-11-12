@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Newsreader, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
 import CookieBanner from "@/components/CookieBanner"
@@ -32,6 +32,19 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.obrasdeteatro.com"),
   title: "ObrasDeTeatro® — Plataforma profesional de teatro en español",
   description: "Conectamos actores, directores, dramaturgos, compañías y teatros de toda la comunidad hispanohablante.",
+  // Versión instalable (ver app/manifest.ts). En iPhone, al añadirla a la
+  // pantalla de inicio se abre a pantalla completa y con este nombre.
+  appleWebApp: {
+    capable: true,
+    title: "ObrasDeTeatro",
+    statusBarStyle: "default",
+  },
+}
+
+// Color de la barra del navegador y del sistema: el blanco de la cabecera,
+// para que la web se vea igual que hasta ahora.
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
 }
 
 export default function RootLayout({
