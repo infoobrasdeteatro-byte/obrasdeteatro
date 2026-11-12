@@ -6,6 +6,7 @@ import BrandIcon from '@/components/brand/BrandIcon'
 import { createClient } from '@/lib/supabase/client'
 import { vigilarSesion, type EstadoSesion } from './sesion-cabecera'
 import { CuentaBarra, CuentaMovil } from './TopNavCuenta'
+import { EnlaceInstalarMenu } from '@/components/app/Instalar'
 
 // RC-001A (calibracion continua): heroProgress sustituye al umbral booleano
 // que competia contra la duracion fija de la transicion CSS. progress=0
@@ -209,6 +210,7 @@ export default function TopNav({ heroMode = false }: Props) {
           <Link href="/noticias" className="nav-mobile-link" onClick={() => setMobileOpen(false)}>
             Noticias
           </Link>
+          <EnlaceInstalarMenu onNavegar={() => setMobileOpen(false)} />
         </div>
       )}
     </>

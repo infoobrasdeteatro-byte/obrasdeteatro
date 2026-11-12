@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import BrandIcon from '@/components/brand/BrandIcon'
 import { usePathname } from 'next/navigation'
+import { EnlaceInstalarMenu } from '@/components/app/Instalar'
 
 export default function NavAutenticado() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -92,6 +93,7 @@ export default function NavAutenticado() {
           <Link href="/formacion" className="nav-mobile-link">Formación</Link>
           <Link href="/mediateca" className="nav-mobile-link">Mediateca</Link>
           <Link href="/noticias" className="nav-mobile-link">Noticias</Link>
+          <EnlaceInstalarMenu />
         </div>
       )}
     </>
