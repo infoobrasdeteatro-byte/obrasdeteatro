@@ -8,15 +8,20 @@
 
 /**
  * - instalada:  ya se está usando como aplicación (pantalla completa).
+ * - recien-instalada: se acaba de instalar desde esta misma pestaña del
+ *   navegador. La persona sigue en el navegador, no en la aplicación: hay que
+ *   decirle dónde encontrarla, no que ya la está usando.
  * - disponible: el navegador ofrece instalarla con un toque (Chrome, Edge…).
  * - ios:        iPhone o iPad; se instala a mano desde el botón de compartir.
  * - manual:     el resto; se instala desde el menú del navegador.
  */
-export type EstadoInstalacion = 'instalada' | 'disponible' | 'ios' | 'manual'
+export type EstadoInstalacion = 'instalada' | 'recien-instalada' | 'disponible' | 'ios' | 'manual'
 
 export interface EntornoInstalacion {
   /** display-mode: standalone, o navigator.standalone en iOS. */
   enPantallaCompleta: boolean
+  /** Se ha aceptado la instalación en esta pestaña (o el navegador la ha confirmado). */
+  recienInstalada: boolean
   /** El navegador ha lanzado beforeinstallprompt y lo tenemos guardado. */
   hayAvisoDelNavegador: boolean
   userAgent: string
@@ -32,6 +37,7 @@ export function esIOS(userAgent: string, plataforma: string, puntosTactiles: num
 
 export function estadoInstalacion(e: EntornoInstalacion): EstadoInstalacion {
   if (e.enPantallaCompleta) return 'instalada'
+  if (e.recienInstalada) return 'recien-instalada'
   if (e.hayAvisoDelNavegador) return 'disponible'
   if (esIOS(e.userAgent, e.plataforma, e.puntosTactiles)) return 'ios'
   return 'manual'

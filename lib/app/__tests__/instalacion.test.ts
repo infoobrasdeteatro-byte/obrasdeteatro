@@ -7,6 +7,7 @@ const UA_MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.
 
 const entorno = (e: Partial<EntornoInstalacion>): EntornoInstalacion => ({
   enPantallaCompleta: false,
+  recienInstalada: false,
   hayAvisoDelNavegador: false,
   userAgent: UA_ANDROID,
   plataforma: 'Linux armv81',
@@ -30,6 +31,11 @@ describe('esIOS', () => {
 describe('estadoInstalacion', () => {
   it('instalada: a pantalla completa, aunque el navegador aún ofrezca instalar', () => {
     expect(estadoInstalacion(entorno({ enPantallaCompleta: true, hayAvisoDelNavegador: true }))).toBe('instalada')
+  })
+  it('recien-instalada: instalada desde el navegador, sin estar aún dentro de la aplicación', () => {
+    expect(estadoInstalacion(entorno({ recienInstalada: true }))).toBe('recien-instalada')
+    // Dentro de la aplicación manda «instalada», aunque se acabe de instalar.
+    expect(estadoInstalacion(entorno({ recienInstalada: true, enPantallaCompleta: true }))).toBe('instalada')
   })
   it('disponible: el navegador ha ofrecido instalar', () => {
     expect(estadoInstalacion(entorno({ hayAvisoDelNavegador: true }))).toBe('disponible')

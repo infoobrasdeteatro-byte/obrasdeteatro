@@ -12,7 +12,7 @@ import { useInstalacion } from './useInstalacion'
  */
 export function EnlaceInstalarMenu({ onNavegar }: { onNavegar?: () => void }) {
   const { estado } = useInstalacion()
-  if (estado === 'instalada') return null
+  if (estado === 'instalada' || estado === 'recien-instalada') return null
   return (
     <>
       <hr className="nav-mobile-divider" />
@@ -39,6 +39,15 @@ export function BotonInstalar() {
     return (
       <div className="inst-accion">
         <p className="inst-hecho" role="status">Ya estás usando la aplicación en este dispositivo.</p>
+      </div>
+    )
+  }
+  if (estado === 'recien-instalada') {
+    return (
+      <div className="inst-accion">
+        <p className="inst-hecho" role="status">
+          Aplicación instalada. En unos segundos tendrás el icono de ObrasDeTeatro® entre tus aplicaciones: ábrela desde ahí.
+        </p>
       </div>
     )
   }
@@ -87,6 +96,18 @@ export function TarjetaInstalar() {
   const cerrar = () => {
     setOculta(true)
     try { window.localStorage.setItem(CLAVE_TARJETA_OCULTA, '1') } catch { /* sin almacenamiento: se oculta solo esta vez */ }
+  }
+
+  if (estado === 'recien-instalada') {
+    return (
+      <aside className="account-card inst-tarjeta" aria-label="Aplicación instalada">
+        <span className="inst-tarjeta-icono" aria-hidden="true"><BrandIcon /></span>
+        <div className="inst-tarjeta-texto" role="status">
+          <h3 className="inst-tarjeta-titulo">Aplicación instalada</h3>
+          <p className="inst-tarjeta-desc">En unos segundos tendrás el icono de ObrasDeTeatro® entre tus aplicaciones: ábrela desde ahí.</p>
+        </div>
+      </aside>
+    )
   }
 
   return (
