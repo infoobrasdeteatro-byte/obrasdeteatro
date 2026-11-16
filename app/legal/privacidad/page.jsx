@@ -80,14 +80,22 @@ const SECTIONS = [
     ],
   },
   {
-    title: "7. Conservación de los datos",
+    title: "7. Google Analytics",
+    content: [
+      { type: "text", text: "Con el consentimiento del usuario, la plataforma utiliza Google Analytics 4, un servicio de analítica web prestado por Google Ireland Limited, para obtener estadísticas agregadas de uso: páginas visitadas, tiempo de navegación, procedencia del tráfico, país aproximado y tipo de dispositivo." },
+      { type: "text", text: "Este tratamiento se basa en el consentimiento que el usuario presta en el aviso de cookies, y puede retirarlo en cualquier momento. Si no lo acepta, Google Analytics no se carga y no se envía ningún dato a Google." },
+      { type: "text", text: "ObrasDeTeatro® no utiliza estos datos para identificar a personas concretas ni tiene activadas las funciones publicitarias de Google. Google trata los datos conforme a su propia política de privacidad, disponible en policies.google.com/privacy, y puede realizar transferencias internacionales con las garantías previstas en el Reglamento General de Protección de Datos." },
+    ],
+  },
+  {
+    title: "8. Conservación de los datos",
     content: [
       { type: "text", text: "Los datos se conservarán durante la existencia de la relación contractual, el tiempo necesario para cumplir obligaciones legales y los plazos exigidos por normativa fiscal, mercantil o administrativa." },
       { type: "text", text: "Los datos podrán conservarse bloqueados cuando sea necesario para la defensa de posibles reclamaciones." },
     ],
   },
   {
-    title: "8. Derechos de los usuarios",
+    title: "9. Derechos de los usuarios",
     content: [
       { type: "text", text: "Los usuarios podrán ejercer en cualquier momento los siguientes derechos: acceso, rectificación, supresión, oposición, limitación del tratamiento, portabilidad y retirada del consentimiento." },
       { type: "text", text: "Las solicitudes podrán dirigirse a:" },
@@ -97,19 +105,19 @@ const SECTIONS = [
     ],
   },
   {
-    title: "9. Medidas de seguridad",
+    title: "10. Medidas de seguridad",
     content: [
       { type: "text", text: "ObrasDeTeatro® aplica medidas técnicas y organizativas adecuadas para proteger los datos personales frente a acceso no autorizado, alteración, pérdida, destrucción o divulgación indebida." },
     ],
   },
   {
-    title: "10. Transferencias internacionales",
+    title: "11. Transferencias internacionales",
     content: [
       { type: "text", text: "Algunos proveedores tecnológicos utilizados por la plataforma podrán encontrarse fuera del Espacio Económico Europeo. En tal caso, se adoptarán las garantías exigidas por el Reglamento General de Protección de Datos (RGPD)." },
     ],
   },
   {
-    title: "11. Reclamaciones",
+    title: "12. Reclamaciones",
     content: [
       { type: "text", text: "Si el usuario considera que sus derechos no han sido respetados, podrá presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD)." },
       { type: "contact", items: [
@@ -118,7 +126,7 @@ const SECTIONS = [
     ],
   },
   {
-    title: "12. Contacto",
+    title: "13. Contacto",
     content: [
       { type: "contact", items: [
         { label: "Protección de datos", value: "protecciondatos@obrasdeteatro.com", href: "mailto:protecciondatos@obrasdeteatro.com" },
