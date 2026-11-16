@@ -8,6 +8,8 @@ import { languageName } from '@/lib/geo/languages'
 import { WORK_RIGHTS_LABELS } from '@/lib/obras-system'
 import type { WorkRightsStatus } from '@/lib/obras-system'
 import { libreEnTodosLosPaises, obraAnonimaAntigua } from '@/lib/biblioteca/catalogo'
+import { descripcionObra, jsonLdObra, tituloObra } from '@/lib/seo/metadatos'
+import { SITIO } from '@/lib/convocatorias/resumen-semanal'
 
 const RIGHTS_DOT: Record<string, string> = {
   public_domain: 'obra-rights-dot--green',
@@ -22,20 +24,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('works')
-    .select('title, synopsis_short, synopsis, author')
+    .select('title, synopsis_short, synopsis, author, genre, year, rights_status')
     .eq('slug', slug)
     .eq('is_published', true)
     .is('deleted_at', null)
     .single()
 
-  if (!data) return { title: 'Obra no encontrada | ObrasDeTeatro' }
+  if (!data) return { title: 'Obra no encontrada | ObrasDeTeatro®' }
 
-  const desc = data.synopsis_short ?? data.synopsis
+  const obra = { ...data, sinopsis: data.synopsis_short ?? data.synopsis }
+  const title = tituloObra(obra)
+  const description = descripcionObra(obra)
+  const ruta = `/obras/${encodeURIComponent(slug)}`
   return {
-    title: `${data.title} | ObrasDeTeatro`,
-    description: desc
-      ? desc.slice(0, 160)
-      : `Ficha de "${data.title}"${data.author ? ` de ${data.author}` : ''} en ObrasDeTeatro.`,
+    title,
+    description,
+    alternates: { canonical: ruta },
+    openGraph: { title, description, url: ruta, siteName: 'ObrasDeTeatro', locale: 'es_ES', type: 'article' },
   }
 }
 
@@ -131,8 +136,18 @@ export default async function ObraPublicaPage({ params }: Props) {
     obra.duration_minutes || reparto || obra.language || countryName || obra.min_age !== null
   )
 
+  const jsonLd = jsonLdObra(
+    { slug, title: obra.title, author: obra.author, genre: obra.genre, year: obra.year, rights_status: obra.rights_status, sinopsis: obra.synopsis_short ?? obra.synopsis, idioma: obra.language },
+    SITIO,
+  )
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        // «<» escapado: el título o la sinopsis no pueden cerrar el <script>.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
       <TopNav />
       <div style={{ background: 'var(--white)', minHeight: '100vh' }}>
         <main className="obra-page">
