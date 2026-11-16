@@ -7,7 +7,10 @@ import { InsigniaVerificado } from '@/components/castings/publico'
 import { fecha, lugar } from '@/components/shared/formato'
 
 export const metadata: Metadata = {
-  title: 'Castings | ObrasDeTeatro',
+  title: 'Castings de teatro y artes escénicas | ObrasDeTeatro®',
+  description:
+    'Castings y audiciones abiertos para actores, actrices y profesionales de las artes escénicas en los países de habla hispana, publicados por compañías y productoras.',
+  alternates: { canonical: '/castings' },
 }
 
 type Props = {

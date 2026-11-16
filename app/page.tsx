@@ -1,4 +1,8 @@
+import type { Metadata } from 'next'
 import TopNav from '@/components/design-system/TopNav'
+import { jsonLdSitio } from '@/lib/seo/metadatos'
+import { SITIO } from '@/lib/convocatorias/resumen-semanal'
+import { REDES_SOCIALES } from '@/lib/redes-sociales'
 import Link from 'next/link'
 import EcosistemaPulso from '@/components/homepage/EcosistemaPulso'
 import { obtenerDatosPortada } from '@/lib/portada/datos'
@@ -12,6 +16,12 @@ import { enCartelPortada } from '@/lib/cartelera/portada'
 // Las cifras y listas de la portada son reales: se vuelven a leer cada 10 minutos.
 export const revalidate = 600
 
+// La portada hereda título y descripción del layout; aquí solo fija su URL
+// canónica (en el layout se propagaría a todas las páginas).
+export const metadata: Metadata = { alternates: { canonical: '/' } }
+
+const JSON_LD_SITIO = jsonLdSitio(SITIO, REDES_SOCIALES.map(r => r.url))
+
 export default async function Home() {
   const ahora = Date.now()
   const [datos, colaboradores, cartel] = await Promise.all([obtenerDatosPortada(), colaboradoresActivos(), enCartelPortada(ahora)])
@@ -23,6 +33,10 @@ export default async function Home() {
     : null
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD_SITIO).replace(/</g, '\\u003c') }}
+      />
       <TopNav heroMode />
 
       {/* ── HERO ── */}

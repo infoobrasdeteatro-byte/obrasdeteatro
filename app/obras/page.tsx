@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: 'Biblioteca de Obras | ObrasDeTeatro®',
   description:
     'La biblioteca de referencia del teatro en español. 59 géneros, obras clásicas y contemporáneas, dramaturgos y colecciones organizadas para profesionales e investigadores.',
+  alternates: { canonical: '/obras' },
 }
 
 const PROXIMAS_FUNCIONALIDADES = [

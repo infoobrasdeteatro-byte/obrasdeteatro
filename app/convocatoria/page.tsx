@@ -7,7 +7,10 @@ import { fecha } from '@/components/shared/formato'
 import { COUNTRIES } from '@/lib/geo/countries'
 
 export const metadata: Metadata = {
-  title: 'Convocatorias | ObrasDeTeatro',
+  title: 'Convocatorias de teatro: premios, ayudas, becas y festivales | ObrasDeTeatro®',
+  description:
+    'Convocatorias abiertas de artes escénicas en los países de habla hispana: premios, ayudas, becas, residencias y festivales, con plazos, dotación y enlace a las bases oficiales.',
+  alternates: { canonical: '/convocatoria' },
 }
 
 type Props = {

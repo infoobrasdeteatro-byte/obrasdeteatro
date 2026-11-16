@@ -23,6 +23,7 @@ function cuotaIATexto(plan: string): CellValue {
 export const metadata: Metadata = {
   title: 'Precios | ObrasDeTeatro®',
   description: 'Elige el plan que mejor se adapta a tu actividad profesional en el teatro hispanohablante.',
+  alternates: { canonical: '/precios' },
 }
 
 export default async function PreciosPage({

@@ -6,12 +6,42 @@ import { createClient } from '@/lib/supabase/server'
 import { etiquetaCategoria } from '@/components/convocatorias/vocabulario'
 import { fecha } from '@/components/shared/formato'
 import { nombrePais } from '@/lib/noticias/presentacion'
-
-export const metadata: Metadata = {
-  title: 'Convocatoria | ObrasDeTeatro',
-}
+import { descripcionConvocatoria, tituloConvocatoria } from '@/lib/seo/metadatos'
 
 type Props = { params: Promise<{ id: string }> }
+
+/** Título y descripción propios de cada convocatoria, para los buscadores. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('calls')
+    .select('title, category, deadline, prize, entidad_convocante, pais_code, ciudad')
+    .eq('id', id)
+    .eq('estado', 'publicado')
+    .is('deleted_at', null)
+    .single()
+
+  if (!data) return { title: 'Convocatoria | ObrasDeTeatro®' }
+
+  const pais = data.pais_code ? nombrePais(data.pais_code) : null
+  const title = tituloConvocatoria(data)
+  const description = descripcionConvocatoria({
+    title: data.title,
+    categoria: data.category ? etiquetaCategoria(data.category) : null,
+    entidad: data.entidad_convocante,
+    lugar: [data.ciudad, pais].filter(Boolean).join(', ') || null,
+    plazo: data.deadline ? fecha(data.deadline) : null,
+    dotacion: data.prize,
+  })
+  const ruta = `/convocatoria/${encodeURIComponent(id)}`
+  return {
+    title,
+    description,
+    alternates: { canonical: ruta },
+    openGraph: { title, description, url: ruta, siteName: 'ObrasDeTeatro', locale: 'es_ES', type: 'article' },
+  }
+}
 
 /**
  * Ficha pública de una convocatoria.
