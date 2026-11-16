@@ -21,7 +21,7 @@ const COOKIE_TYPES = [
     id: "analytics",
     label: "Cookies analíticas",
     description:
-      "Hoy no hay ninguna activa en ObrasDeTeatro®. Si se incorporan (por ejemplo, Google Analytics), recopilarán estadísticas de uso y solo funcionarán con tu consentimiento.",
+      "Usamos Google Analytics para conocer de forma agregada cómo se usa la plataforma: visitas, páginas vistas, procedencia y tipo de dispositivo. Solo se activa con tu consentimiento.",
     required: false,
   },
   {

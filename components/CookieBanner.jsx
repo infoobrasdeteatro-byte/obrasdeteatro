@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from "react";
 import CookiePreferences from "./CookiePreferences";
+import { EVENTO_COOKIES, consentimientoAnterior } from "@/lib/analitica";
+
+// Avisa a components/Analitica.tsx de que la elección ha cambiado.
+const avisarCambio = () => window.dispatchEvent(new Event(EVENTO_COOKIES));
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
@@ -9,7 +13,9 @@ export default function CookieBanner() {
 
   useEffect(() => {
     const consent = localStorage.getItem("cookieConsent");
-    if (!consent) {
+    // Quien eligió antes de que el aviso informara de Google Analytics vuelve
+    // a verlo: aquel consentimiento no cubría las cookies analíticas.
+    if (!consent || consentimientoAnterior(localStorage.getItem("cookieConsentDate"))) {
       setVisible(true);
     }
   }, []);
@@ -24,13 +30,7 @@ export default function CookieBanner() {
       marketing: true,
     }));
     setVisible(false);
-    // Activar Google Analytics si está disponible
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("consent", "update", {
-        analytics_storage: "granted",
-        ad_storage: "granted",
-      });
-    }
+    avisarCambio();
   };
 
   const handleRejectAll = () => {
@@ -43,12 +43,7 @@ export default function CookieBanner() {
       marketing: false,
     }));
     setVisible(false);
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("consent", "update", {
-        analytics_storage: "denied",
-        ad_storage: "denied",
-      });
-    }
+    avisarCambio();
   };
 
   const handleSavePreferences = (prefs) => {
@@ -57,12 +52,7 @@ export default function CookieBanner() {
     localStorage.setItem("cookiePreferences", JSON.stringify(prefs));
     setVisible(false);
     setShowPreferences(false);
-    if (typeof window !== "undefined" && window.gtag) {
-      window.gtag("consent", "update", {
-        analytics_storage: prefs.analytics ? "granted" : "denied",
-        ad_storage: prefs.marketing ? "granted" : "denied",
-      });
-    }
+    avisarCambio();
   };
 
   if (!visible) return null;
@@ -105,7 +95,7 @@ export default function CookieBanner() {
                     Utilizamos cookies en ObrasDeTeatro®
                   </p>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Usamos cookies propias y de terceros para garantizar el funcionamiento de la plataforma y recordar tus preferencias. Hoy no utilizamos cookies analíticas ni publicitarias. Puedes aceptar todas, rechazarlas o configurar tus preferencias.{" "}
+                    Usamos cookies propias y de terceros para garantizar el funcionamiento de la plataforma y recordar tus preferencias y, solo si lo aceptas, cookies analíticas de Google Analytics para medir las visitas. No utilizamos cookies publicitarias. Puedes aceptar todas, rechazarlas o configurar tus preferencias.{" "}
                     <a
                       href="/legal/cookies"
                       className="text-red-700 underline hover:text-red-900 font-medium"
