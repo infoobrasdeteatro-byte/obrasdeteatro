@@ -215,9 +215,9 @@ describe('script de limpieza del Elenco: correos en minúsculas', () => {
 })
 
 describe('registro: cada alta cuenta para un solo programa', () => {
-  it('por el enlace de un embajador se oculta el campo del Elenco y no se envía ningún número', () => {
+  it('por el enlace de un embajador se oculta el campo del Elenco y no se envía ningún código', () => {
     const c = leer('app/auth/registro/page.tsx')
     expect(c).toContain('{!invitado && (<div className="reg-elenco">')
-    expect(c).toContain('numeroElenco: invitado ? undefined : numeroElenco.trim() || undefined')
+    expect(c).toContain('codigoElenco: invitado ? undefined : codigoElenco.trim() || undefined')
   })
 })

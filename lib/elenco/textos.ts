@@ -3,6 +3,11 @@
  * Las reglas que deciden (puntos, escalones, plazos) viven en la base
  * (migración 20261031120000_elenco_fundador); aquí solo se describen.
  * En ningún mensaje se menciona el número de plazas ni a otros invitados.
+ *
+ * El número de plaza (001–100) es solo interno: lo ve el Master Control. Los
+ * fundadores y el público ven su código personal, hecho con su nombre o su
+ * nombre artístico (/elenco/<código>), y el distintivo «Elenco Fundador»,
+ * sin número, para que nadie se sienta «de los últimos».
  */
 import { SITIO } from '@/lib/embajadores/textos'
 
@@ -24,7 +29,7 @@ export function esTipoFundador(v: unknown): v is TipoFundador {
   return v === 'persona' || v === 'organizacion'
 }
 
-/** 7 → «007». */
+/** 7 → «007». Solo para el Master Control y los enlaces antiguos. */
 export function numeroFundador(n: number): string {
   return String(n).padStart(3, '0')
 }
@@ -37,24 +42,36 @@ export function leerNumero(v: string | null | undefined): number | null {
 }
 
 /**
- * Número escrito a mano en el registro («007», «7», «nº 7», «#007») → 7, o
- * null si no es un número de fundador posible.
+ * Código personal del fundador a partir de un texto («Conchi Garcés»,
+ * «la-chunga», «ConchiGarces») → «conchigarces»: minúsculas, sin tildes y solo
+ * letras y números. Misma regla que elenco_codigo_normalizar() en la base.
  */
-export function normalizarNumeroElenco(v: unknown): number | null {
-  if (typeof v !== 'string') return null
-  return leerNumero(v.trim().replace(/^(n\.?\s*[º°o]?\.?|#)\s*/i, ''))
+export function normalizarCodigoElenco(v: unknown): string {
+  if (typeof v !== 'string') return ''
+  return v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/&/g, 'y').replace(/[^a-z0-9]/g, '')
 }
 
-export function distintivo(n: number): string {
-  return `Elenco Fundador nº ${numeroFundador(n)}`
+/** Rutas bajo /elenco/ que no pueden ser códigos. */
+const CODIGOS_RESERVADOS = new Set(['invitacion', 'unirse'])
+
+/** Código válido (3–30 letras o números, con al menos una letra), o null. */
+export function leerCodigoElenco(v: unknown): string | null {
+  const c = normalizarCodigoElenco(v)
+  return /^[a-z0-9]{3,30}$/.test(c) && /[a-z]/.test(c) && !CODIGOS_RESERVADOS.has(c) ? c : null
+}
+
+/** Distintivo público, sin número de plaza. */
+export function distintivo(): string {
+  return 'Elenco Fundador'
 }
 
 export function enlaceInvitacionElenco(token: string): string {
   return `${SITIO}/elenco/invitacion/${token}`
 }
 
-export function enlaceElenco(n: number): string {
-  return `${SITIO}/elenco/${numeroFundador(n)}`
+export function enlaceElenco(codigo: string): string {
+  return `${SITIO}/elenco/${codigo}`
 }
 
 /** Token de una ruta /elenco/invitacion/<token> (32 hex), o null. */
@@ -63,7 +80,7 @@ export function tokenDeInvitacionElenco(ruta: string | null | undefined): string
   return m ? m[1] : null
 }
 
-/** Cookie del enlace /elenco/<nº> entre la visita y el registro (30 días). */
+/** Cookie del enlace /elenco/<código> entre la visita y el registro (30 días). Guarda el código. */
 export const COOKIE_ELENCO = 'odt_elenco'
 export const ELENCO_MAX_AGE_S = 60 * 60 * 24 * 30
 
@@ -75,7 +92,7 @@ const primerNombre = (nombre: string) => nombre.trim().split(/\s+/)[0] || nombre
 export function mensajeInvitacionPersona(nombre: string, enlace: string): string {
   return `Hola ${primerNombre(nombre)}, soy Renee Bausson, de ObrasDeTeatro®, la plataforma profesional del teatro en español. `
     + 'Quiero invitarte personalmente a formar parte del Elenco Fundador, los primeros profesionales que construyen con nosotros esta casa del teatro. '
-    + 'Tu perfil aparecerá en el directorio que consultan productores, directores y compañías de 20 países, con tu número de fundador, '
+    + 'Tu perfil aparecerá en el directorio que consultan productores, directores y compañías de 20 países, con tu distintivo de fundador, '
     + 'y tendrás tres meses de Premium para activar cuando quieras durante el primer año. '
     + `Es gratuito, para siempre y sin compromiso. Tu invitación: ${enlace}`
 }
@@ -84,7 +101,7 @@ export function mensajeInvitacionPersona(nombre: string, enlace: string): string
 export function mensajeInvitacionOrganizacion(nombre: string, enlace: string): string {
   return `Hola ${nombre.trim()}, soy Renee Bausson, de ObrasDeTeatro®, la plataforma profesional del teatro en español. `
     + 'Quiero invitarles personalmente a formar parte del Elenco Fundador, los primeros que construyen con nosotros esta casa del teatro. '
-    + 'Su compañía, sala o escuela tendrá visibilidad en el directorio que consultan profesionales, programadores y público de 20 países, con su número de fundador; '
+    + 'Su compañía, sala o escuela tendrá visibilidad en el directorio que consultan profesionales, programadores y público de 20 países, con su distintivo de fundador; '
     + 'podrán publicar su cartelera y sus castings, y tendrán tres meses del plan Empresas para activar cuando quieran durante el primer año. '
     + `Es gratuito, para siempre y sin compromiso. Su invitación: ${enlace}`
 }
@@ -95,10 +112,10 @@ export function mensajeInvitacion(tipo: TipoFundador, nombre: string, token: str
 }
 
 /** Punto 15: mensaje del fundador a sus colegas. */
-export function mensajeColegasElenco(nombre: string, numero: number): string {
+export function mensajeColegasElenco(nombre: string, codigo: string): string {
   return `Hola, soy ${nombre.trim()} y formo parte del Elenco Fundador de ObrasDeTeatro®, la plataforma profesional del teatro en español. `
     + 'Estamos construyendo entre todos la casa del oficio: directorio de profesionales, castings, convocatorias, salas de 20 países y una biblioteca de miles de obras. '
-    + `Cuantos más estemos, más oportunidades habrá para todos. Unirte es gratis: ${enlaceElenco(numero)}`
+    + `Cuantos más estemos, más oportunidades habrá para todos. Unirte es gratis: ${enlaceElenco(codigo)}`
 }
 
 /** Escalera de recompensas, tal como se aplica en elenco_revisar(). */

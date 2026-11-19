@@ -261,7 +261,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
       : Promise.resolve({ data: null }),
     // Embajadores de Escena: distintivo público.
     supabase.rpc('embajadores_distintivos', { p_perfiles: [profile.id] }),
-    // Elenco Fundador: distintivo con su número.
+    // Elenco Fundador: distintivo (sin número de plaza).
     supabase.rpc('elenco_distintivos', { p_perfiles: [profile.id] }),
   ])
   const embajador = embajadorDb?.[0] ?? null
@@ -510,7 +510,7 @@ export default async function PerfilPublicoPage({ params }: Props) {
                     <span className="prof-badge-embajador">{distintivoEmbajador(embajador.genero, embajador.honor)}</span>
                   )}
                   {fundador && (
-                    <span className="prof-badge-elenco">{distintivo(fundador.numero)}</span>
+                    <span className="prof-badge-elenco">{distintivo()}</span>
                   )}
                   {planBadge && !embajador && (
                     <span style={{

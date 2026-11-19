@@ -32,7 +32,7 @@ export default async function AdminElencoPage() {
   const ahora = new Date().toISOString()
   const [{ data: fundadores }, { data: colegas }, { data: recompensas }, { data: usos }, { data: bonos }] = await Promise.all([
     s.from('elenco_fundadores')
-      .select('id, numero, token, nombre, tipo, oficio, telefono, email, nota, estado, creada_at, aceptada_por, aceptada_at, bono_activado_at')
+      .select('id, numero, codigo, token, nombre, tipo, oficio, telefono, email, nota, estado, creada_at, aceptada_por, aceptada_at, bono_activado_at')
       .order('numero').limit(500),
     s.from('elenco_colegas').select('fundador_id, profile_id, alta, nombre, tipo_perfil, clase, activo, puntos').limit(10000),
     s.from('elenco_recompensas').select('fundador_id, escalon, semanas_cartelera').limit(1000),

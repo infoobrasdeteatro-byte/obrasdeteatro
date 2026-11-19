@@ -10,7 +10,7 @@ import {
 } from '@/lib/elenco/textos'
 
 export type DatosElenco = {
-  numero: number; tipo: string; bono_estado: string; bono_limite: string; bono_hasta: string | null
+  codigo: string; tipo: string; bono_estado: string; bono_limite: string; bono_hasta: string | null
   registrados: number; activos: number; puntos: number; escalon: number; semanas_cartelera: number
   plan_vigente: string | null; cortesia_hasta: string | null
 }
@@ -27,7 +27,7 @@ export default function TuElenco({ datos, nombre, bienvenida }: { datos: DatosEl
   const [confirmando, setConfirmando] = useState(false)
   const [pending, startTransition] = useTransition()
   const tipo: TipoFundador = datos.tipo === 'organizacion' ? 'organizacion' : 'persona'
-  const enlace = enlaceElenco(datos.numero)
+  const enlace = enlaceElenco(datos.codigo)
   const progreso = progresoEscalera(datos.puntos)
   const planBono = tipo === 'organizacion' ? 'Empresas' : 'Premium'
   // Personas en «tú»; organizaciones en «ustedes» (vale en los 20 países).
@@ -49,7 +49,7 @@ export default function TuElenco({ datos, nombre, bienvenida }: { datos: DatosEl
   return (
     <section className="account-card cortesia" style={{ marginBottom: '20px' }}>
       <p className="cortesia-eyebrow">{bienvenida ? 'Bienvenida' : org ? 'Su elenco' : 'Tu elenco'}</p>
-      <h2 className="cortesia-titulo">{distintivo(datos.numero)}</h2>
+      <h2 className="cortesia-titulo">{distintivo()}</h2>
       <p className="cortesia-p">
         {bienvenida && <>Gracias por aceptar la invitación. </>}
         Estamos construyendo entre todos la casa del teatro en español. {org ? 'Su' : 'Tu'} plan de base es el gratuito, para siempre y sin compromiso.
@@ -95,12 +95,15 @@ export default function TuElenco({ datos, nombre, bienvenida }: { datos: DatosEl
 
       <div className="cortesia-enlace">
         <p className="cortesia-p" style={{ marginBottom: '8px' }}><strong>{org ? 'Su enlace para colegas.' : 'Tu enlace para colegas.'}</strong> Unirse es gratis; cada colega activo {org ? 'les' : 'te'} suma puntos.</p>
+        <p className="cortesia-p" style={{ marginBottom: '8px' }}>
+          {org ? 'Su código personal' : 'Tu código personal'}: <strong>{datos.codigo}</strong>. Quien se registre sin el enlace puede escribirlo en el formulario de alta.
+        </p>
         <div className="compartir-url">
           <input readOnly value={enlace} aria-label={org ? 'Su enlace del Elenco' : 'Tu enlace del Elenco'} onFocus={e => e.currentTarget.select()} />
           <button type="button" onClick={copiar}>{copiado ? '✓ Copiado' : 'Copiar enlace'}</button>
         </div>
         <div className="cortesia-botones">
-          <a className="ds-btn-secondary cortesia-wa" href={enlaceWhatsapp(mensajeColegasElenco(nombre, datos.numero))} target="_blank" rel="noopener noreferrer">
+          <a className="ds-btn-secondary cortesia-wa" href={enlaceWhatsapp(mensajeColegasElenco(nombre, datos.codigo))} target="_blank" rel="noopener noreferrer">
             Compartir por WhatsApp
           </a>
         </div>

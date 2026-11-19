@@ -74,7 +74,7 @@ export default async function InvitacionElencoPage({ params }: Props) {
       <section className="inv-bloque">
         <h2 className="inv-h2">Formar parte del Elenco Fundador</h2>
         <ul className="inv-lista">
-          <li>El distintivo «{distintivo(inv.numero)}» en {org ? 'su perfil' : 'tu perfil'} y en el directorio que consultan profesionales de 20 países.</li>
+          <li>El distintivo «{distintivo()}» en {org ? 'su perfil' : 'tu perfil'} y en el directorio que consultan profesionales de 20 países.</li>
           <li>Tres meses del plan {plan} para activar cuando {org ? 'quieran' : 'quieras'} durante el primer año, sin tarjeta y sin cobros.</li>
           <li>Un enlace propio para invitar a {org ? 'sus colegas' : 'tus colegas'}: cada colega que se une suma puntos y desbloquea más tiempo de {plan}, hasta ser Miembro de Honor.</li>
           <li><strong>Gratuito, para siempre y sin compromiso.</strong> {org ? 'Su' : 'Tu'} plan de base es el gratuito; nada se cobra nunca sin que lo {org ? 'pidan' : 'pidas'}.</li>

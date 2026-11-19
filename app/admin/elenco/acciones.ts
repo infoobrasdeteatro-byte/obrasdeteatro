@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { esTipoFundador } from '@/lib/elenco/textos'
+import { esTipoFundador, leerCodigoElenco, normalizarCodigoElenco } from '@/lib/elenco/textos'
 import { telefonoValido, emailValido } from '@/lib/red/contacto'
 
 async function administrador(): Promise<boolean> {
@@ -17,9 +17,25 @@ async function administrador(): Promise<boolean> {
 
 const servicio = () => createServiceClient() as unknown as SupabaseClient
 
+/**
+ * ¿Está libre este código personal? Para el aviso en vivo del formulario.
+ * Devuelve el código ya normalizado (sin tildes, espacios ni signos).
+ */
+export async function comprobarCodigoElenco(texto: string): Promise<{ codigo: string; libre: boolean; aviso: string }> {
+  const codigo = normalizarCodigoElenco(texto)
+  if (!(await administrador())) return { codigo, libre: false, aviso: '' }
+  if (!leerCodigoElenco(codigo)) {
+    return { codigo, libre: false, aviso: codigo.length < 3 ? 'Mínimo 3 letras o números.' : codigo.length > 30 ? 'Máximo 30 caracteres.' : 'Necesita al menos una letra.' }
+  }
+  const { data } = await servicio().rpc('elenco_codigo_disponible', { p_codigo: codigo })
+  const fila = (data as { libre: boolean; motivo: string | null }[] | null)?.[0]
+  if (fila?.libre) return { codigo, libre: true, aviso: '' }
+  return { codigo, libre: false, aviso: fila?.motivo === 'ocupado' ? 'Ya lo tiene otro fundador: elige otra variante (segundo apellido, ciudad, nombre artístico…).' : 'Ese código no se puede usar.' }
+}
+
 export async function crearInvitacionElenco(datos: {
-  nombre: string; tipo: string; oficio: string; telefono: string; email: string; nota: string
-}): Promise<{ ok: true; numero: number } | { ok: false; error: string }> {
+  nombre: string; codigo: string; tipo: string; oficio: string; telefono: string; email: string; nota: string
+}): Promise<{ ok: true; numero: number; codigo: string } | { ok: false; error: string }> {
   if (!(await administrador())) return { ok: false, error: 'Solo administración.' }
   const nombre = datos.nombre.trim()
   if (!nombre || nombre.length > 120) return { ok: false, error: 'Escribe el nombre.' }
@@ -30,16 +46,25 @@ export async function crearInvitacionElenco(datos: {
   if (!telefono && !email) return { ok: false, error: 'Indica un teléfono o un correo.' }
   if (telefono && !telefonoValido(telefono)) return { ok: false, error: 'Revisa el teléfono (con prefijo, p. ej. +34…).' }
   if (email && !emailValido(email)) return { ok: false, error: 'Revisa el correo.' }
+  const codigo = leerCodigoElenco(datos.codigo || nombre)
+  if (!codigo) return { ok: false, error: 'Revisa el código personal: de 3 a 30 letras o números.' }
 
   const { data, error } = await servicio().rpc('elenco_crear_invitacion', {
-    p_nombre: nombre, p_tipo: datos.tipo, p_oficio: oficio, p_telefono: telefono, p_email: email, p_nota: nota,
+    p_nombre: nombre, p_tipo: datos.tipo, p_oficio: oficio, p_telefono: telefono, p_email: email, p_nota: nota, p_codigo: codigo,
   })
   if (error) {
-    return { ok: false, error: /sin_plazas/.test(error.message) ? 'Ya están ocupadas las 100 plazas del Elenco Fundador.' : 'No se pudo crear la invitación.' }
+    const m = error.message
+    return {
+      ok: false,
+      error: /sin_plazas/.test(m) ? 'Ya están ocupadas las 100 plazas del Elenco Fundador.'
+        : /codigo_ocupado/.test(m) ? `El código «${codigo}» ya lo tiene otro fundador: elige otra variante.`
+        : /codigo_no_valido/.test(m) ? 'Revisa el código personal: de 3 a 30 letras o números.'
+        : 'No se pudo crear la invitación.',
+    }
   }
-  const fila = (data as { numero: number }[] | null)?.[0]
+  const fila = (data as { numero: number; codigo: string }[] | null)?.[0]
   revalidatePath('/admin/elenco')
-  return fila ? { ok: true, numero: fila.numero } : { ok: false, error: 'No se pudo crear la invitación.' }
+  return fila ? { ok: true, numero: fila.numero, codigo: fila.codigo } : { ok: false, error: 'No se pudo crear la invitación.' }
 }
 
 export async function anularInvitacionElenco(id: string): Promise<{ ok: boolean }> {

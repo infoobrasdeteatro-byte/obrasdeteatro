@@ -26,8 +26,8 @@ export function textoEscalon(a: AvisoEscalon): string {
   return [
     `Hola ${nombre}:`,
     org
-      ? `Gracias a los colegas que se han unido con su enlace, ya tienen ${a.puntos} puntos como ${distintivo(a.numero)}.`
-      : `Gracias a los colegas que se han unido con tu enlace, ya tienes ${a.puntos} puntos como ${distintivo(a.numero)}.`,
+      ? `Gracias a los colegas que se han unido con su enlace, ya tienen ${a.puntos} puntos como miembros del ${distintivo()}.`
+      : `Gracias a los colegas que se han unido con tu enlace, ya tienes ${a.puntos} puntos como miembro del ${distintivo()}.`,
     org
       ? `Su recompensa por llegar a ${a.escalon} puntos: ${recompensaEscalon(a.escalon, a.tipo)}. Ya está aplicada en su cuenta, sin tarjeta y sin cobros.`
       : `Tu recompensa por llegar a ${a.escalon} puntos: ${recompensaEscalon(a.escalon, a.tipo)}. Ya está aplicada en tu cuenta, sin tarjeta y sin cobros.`,
@@ -41,7 +41,7 @@ export function htmlEscalon(a: AvisoEscalon): string {
   const parrafos = textoEscalon(a).split('\n\n').map(p => `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1a1a1a">${esc(p).replace(/\n/g, '<br>')}</p>`)
   return `<!doctype html><html lang="es"><body style="margin:0;padding:24px;background:#f7f5f2;font-family:Georgia,serif">
 <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:28px">
-<p style="margin:0 0 18px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#888">${esc(distintivo(a.numero))}</p>
+<p style="margin:0 0 18px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#888">${esc(distintivo())}</p>
 ${parrafos.join('\n')}
 </div></body></html>`
 }

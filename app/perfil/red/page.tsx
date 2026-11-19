@@ -22,15 +22,17 @@ export default async function MiRedPage({ searchParams }: { searchParams: Promis
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login?next=/perfil/red')
 
-  const [{ data }, { data: conexiones }, { data: seguimientos }, { data: elencoDb }, { data: yo }] = await Promise.all([
+  const [{ data }, { data: conexiones }, { data: seguimientos }, { data: elencoDb }, { data: codigoElenco }, { data: yo }] = await Promise.all([
     supabase.rpc('mis_solicitudes_contacto'),
     supabase.rpc('mis_conexiones'),
     supabase.rpc('mis_seguimientos'),
     // Elenco Fundador: bloque «Tu elenco» (vacío si no es fundador).
     supabase.rpc('mi_elenco'),
+    supabase.rpc('mi_codigo_elenco'),
     supabase.from('profiles').select('nombre, nombre_artistico').eq('id', user.id).maybeSingle(),
   ])
-  const elenco = (elencoDb?.[0] ?? null) as DatosElenco | null
+  const filaElenco = elencoDb?.[0]
+  const elenco: DatosElenco | null = filaElenco && codigoElenco ? { ...filaElenco, codigo: codigoElenco } as DatosElenco : null
   const nombre = yo?.nombre_artistico?.trim() || yo?.nombre?.trim() || ''
 
   return (

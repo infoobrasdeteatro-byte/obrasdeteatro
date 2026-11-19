@@ -52,7 +52,7 @@ export default async function ElencoFundadorPage() {
   )
 }
 
-type Fila = { numero: number; nombre: string; slug: string | null; avatar_url: string | null; tipo: string }
+type Fila = { codigo: string; nombre: string; slug: string | null; avatar_url: string | null; tipo: string }
 
 function Lista({ filas, destacada = false }: { filas: Fila[]; destacada?: boolean }) {
   return (
@@ -65,13 +65,13 @@ function Lista({ filas, destacada = false }: { filas: Fila[]; destacada?: boolea
               ? <img src={f.avatar_url} alt="" loading="lazy" />
               : <span className="elenco-inicial" aria-hidden="true">{f.nombre.trim().charAt(0).toUpperCase()}</span>}
             <strong>{f.nombre}</strong>
-            <small>{distintivo(f.numero)}</small>
+            <small>{distintivo()}</small>
           </>
         )
         const clase = `elenco-ficha${destacada ? ' elenco-ficha--destacada' : ''}`
         return f.slug
-          ? <Link key={f.numero} href={`/perfil/${f.slug}`} className={clase}>{contenido}</Link>
-          : <div key={f.numero} className={clase}>{contenido}</div>
+          ? <Link key={f.codigo} href={`/perfil/${f.slug}`} className={clase}>{contenido}</Link>
+          : <div key={f.codigo} className={clase}>{contenido}</div>
       })}
     </div>
   )

@@ -226,11 +226,11 @@ export default async function DirectorioPage({ searchParams }: Props) {
   const offset = (pageNum - 1) * PER_PAGE
   const perfilesPagina = sorted.slice(offset, offset + PER_PAGE)
 
-  // Elenco Fundador: distintivo con su número.
-  const elenco = new Map<string, number>()
+  // Elenco Fundador: distintivo (sin número de plaza).
+  const elenco = new Set<string>()
   if (perfilesPagina.length > 0) {
     const { data: el } = await supabase.rpc('elenco_distintivos', { p_perfiles: perfilesPagina.map(p => p.id) })
-    for (const e of el ?? []) elenco.set(e.profile_id, e.numero)
+    for (const e of el ?? []) elenco.add(e.profile_id)
   }
 
   // PP2-E.3B: aparición de cada tarjeta mostrada (no para bots). Después de responder.
@@ -464,7 +464,7 @@ export default async function DirectorioPage({ searchParams }: Props) {
                             <span className="dir2-badge dir2-badge--embajador">{distintivoEmbajador(embajadores.get(perfil.id)!.genero, embajadores.get(perfil.id)!.honor)}</span>
                           )}
                           {elenco.has(perfil.id) && (
-                            <span className="dir2-badge dir2-badge--elenco">{distintivo(elenco.get(perfil.id)!)}</span>
+                            <span className="dir2-badge dir2-badge--elenco">{distintivo()}</span>
                           )}
                           {perfil.plan === 'destacado' && !embajadores.has(perfil.id) && (
                             <span className="dir2-badge dir2-badge--plan">Destacado</span>
