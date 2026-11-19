@@ -1,12 +1,12 @@
 'use client'
 
-import { Fragment, useState, useTransition } from 'react'
+import { Fragment, useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { anularInvitacionElenco, aplicarSemanasCartelera, crearInvitacionElenco } from './acciones'
+import { anularInvitacionElenco, aplicarSemanasCartelera, comprobarCodigoElenco, crearInvitacionElenco } from './acciones'
 import { csvFundadores, csvReferidos, type FilaFundador } from '@/lib/elenco/admin'
 import { etiquetaOrigen } from '@/lib/elenco/origen-plan'
 import {
-  ESTADO_BONO, OFICIOS_PERSONA, TIPOS_ORGANIZACION_ELENCO, enlaceInvitacionElenco, mensajeInvitacion, numeroFundador,
+  ESTADO_BONO, OFICIOS_PERSONA, TIPOS_ORGANIZACION_ELENCO, enlaceInvitacionElenco, mensajeInvitacion, normalizarCodigoElenco, numeroFundador,
 } from '@/lib/elenco/textos'
 import { enlaceWhatsapp } from '@/lib/embajadores/textos'
 
@@ -29,8 +29,22 @@ function descargar(nombre: string, contenido: string) {
 
 export default function PanelElenco({ filas, espectaculos }: { filas: FilaFundador[]; espectaculos: Record<string, Espectaculo[]> }) {
   const router = useRouter()
-  const vacio = { nombre: '', tipo: 'persona', oficio: OFICIOS_PERSONA[0] as string, telefono: '', email: '', nota: '' }
+  const vacio = { nombre: '', codigo: '', tipo: 'persona', oficio: OFICIOS_PERSONA[0] as string, telefono: '', email: '', nota: '' }
   const [f, setF] = useState(vacio)
+  // Código personal: se propone a partir del nombre hasta que se escribe a mano.
+  const [codigoManual, setCodigoManual] = useState(false)
+  const [estadoCodigo, setEstadoCodigo] = useState<{ codigo: string; libre: boolean; aviso: string } | null>(null)
+  const codigoPropuesto = codigoManual ? normalizarCodigoElenco(f.codigo) : normalizarCodigoElenco(f.nombre)
+
+  useEffect(() => {
+    if (!codigoPropuesto) { setEstadoCodigo(null); return }
+    let vigente = true
+    const t = setTimeout(async () => {
+      const r = await comprobarCodigoElenco(codigoPropuesto)
+      if (vigente) setEstadoCodigo(r)
+    }, 350)
+    return () => { vigente = false; clearTimeout(t) }
+  }, [codigoPropuesto])
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
   const [copiado, setCopiado] = useState<string | null>(null)
   const [abierto, setAbierto] = useState<string | null>(null)
@@ -43,10 +57,11 @@ export default function PanelElenco({ filas, espectaculos }: { filas: FilaFundad
     e.preventDefault()
     startTransition(async () => {
       setAviso(null)
-      const r = await crearInvitacionElenco(f)
+      const r = await crearInvitacionElenco({ ...f, codigo: codigoPropuesto })
       if (r.ok) {
-        setAviso({ ok: true, texto: `Invitación nº ${numeroFundador(r.numero)} creada para ${f.nombre.trim()}. Envíala desde la tabla.` })
+        setAviso({ ok: true, texto: `Invitación nº ${numeroFundador(r.numero)} creada para ${f.nombre.trim()} (código ${r.codigo}). Envíala desde la tabla.` })
         setF({ ...vacio, tipo: f.tipo, oficio: f.oficio })
+        setCodigoManual(false)
         router.refresh()
       } else setAviso({ ok: false, texto: r.error })
     })
@@ -88,6 +103,18 @@ export default function PanelElenco({ filas, espectaculos }: { filas: FilaFundad
               <input id="el-nombre" className="ds-input" value={f.nombre} maxLength={120} required onChange={e => setF({ ...f, nombre: e.target.value })} />
             </div>
             <div className="ds-form-group" style={campo}>
+              <label className="ds-label" htmlFor="el-codigo">Código personal</label>
+              <input id="el-codigo" className="ds-input" value={codigoManual ? f.codigo : codigoPropuesto} maxLength={40}
+                autoCapitalize="none" spellCheck={false} placeholder="Se crea con el nombre"
+                aria-invalid={estadoCodigo && !estadoCodigo.libre ? true : undefined} aria-describedby="el-codigo-aviso"
+                onChange={e => { setCodigoManual(true); setF({ ...f, codigo: e.target.value }) }} />
+              <p id="el-codigo-aviso" className={estadoCodigo && !estadoCodigo.libre ? 'ds-field-error' : 'ds-form-hint'} aria-live="polite" style={{ marginTop: '6px' }}>
+                {estadoCodigo && !estadoCodigo.libre
+                  ? estadoCodigo.aviso
+                  : codigoPropuesto ? <>Su enlace: obrasdeteatro.com/elenco/<strong>{codigoPropuesto}</strong></> : 'Nombre o nombre artístico, sin espacios.'}
+              </p>
+            </div>
+            <div className="ds-form-group" style={campo}>
               <label className="ds-label" htmlFor="el-tipo">Destinatario</label>
               <select id="el-tipo" className="ds-select" value={f.tipo}
                 onChange={e => setF({ ...f, tipo: e.target.value, oficio: e.target.value === 'organizacion' ? TIPOS_ORGANIZACION_ELENCO[0] : OFICIOS_PERSONA[0] })}>
@@ -114,14 +141,14 @@ export default function PanelElenco({ filas, espectaculos }: { filas: FilaFundad
               <input id="el-nota" className="ds-input" maxLength={500} value={f.nota} onChange={e => setF({ ...f, nota: e.target.value })} />
             </div>
             <div>
-              <button type="submit" className="ds-btn-primary" disabled={pending} style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }}>
+              <button type="submit" className="ds-btn-primary" disabled={pending || (estadoCodigo !== null && !estadoCodigo.libre)} style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }}>
                 {pending ? 'Creando…' : 'Crear invitación'}
               </button>
             </div>
           </form>
         )}
         <p className="ds-form-hint" style={{ marginTop: '10px' }}>
-          Teléfono y/o correo. Se asigna el siguiente número libre. Cada enlace es de un solo uso; lo envías tú desde tu WhatsApp, revisando el mensaje antes.
+          Teléfono y/o correo. Se asigna el siguiente número libre, que solo ves tú aquí: el fundador y el público ven su código personal y el distintivo «Elenco Fundador», sin número. Cada invitación es de un solo uso; la envías tú desde tu WhatsApp, revisando el mensaje antes.
         </p>
       </section>
 
@@ -148,7 +175,7 @@ export default function PanelElenco({ filas, espectaculos }: { filas: FilaFundad
                   <Fragment key={fila.id}>
                     <tr style={{ borderTop: '1px solid var(--border)' }}>
                       <td style={celda}><strong>{numeroFundador(fila.numero)}</strong></td>
-                      <td style={celda}>{fila.nombre}<div style={{ color: 'var(--muted)', fontSize: '12px' }}>{fila.oficio}</div></td>
+                      <td style={celda}>{fila.nombre}<div style={{ color: 'var(--muted)', fontSize: '12px' }}>{fila.oficio} · <span style={{ fontFamily: 'var(--mono)' }}>{fila.codigo}</span></div></td>
                       <td style={celda}>{fila.tipo === 'organizacion' ? 'Organización' : 'Persona'}</td>
                       <td style={{ ...celda, color: ESTADO[fila.estado]?.color }}>{ESTADO[fila.estado]?.texto ?? fila.estado}</td>
                       <td style={celda}>{fecha(fila.fecha)}</td>

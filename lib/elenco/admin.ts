@@ -3,7 +3,7 @@ import { numeroFundador, type TipoFundador } from './textos'
 
 /** Datos tal como salen de la base (cliente de servicio). */
 export type FundadorBD = {
-  id: string; numero: number; token: string; nombre: string; tipo: TipoFundador; oficio: string
+  id: string; numero: number; codigo: string; token: string; nombre: string; tipo: TipoFundador; oficio: string
   telefono: string | null; email: string | null; nota: string | null; estado: string
   creada_at: string; aceptada_por: string | null; aceptada_at: string | null; bono_activado_at: string | null
 }
@@ -31,7 +31,7 @@ export type FilaReferido = {
   activo: boolean; puntos: number; plan: string; origen: OrigenPlan
 }
 export type FilaFundador = {
-  id: string; numero: number; nombre: string; tipo: TipoFundador; oficio: string; estado: string
+  id: string; numero: number; codigo: string; nombre: string; tipo: TipoFundador; oficio: string; estado: string
   fecha: string; token: string; telefono: string | null; email: string | null; nota: string | null
   aceptadaPor: string | null; registrados: number; activos: number; dePago: number; puntos: number
   escalon: number; bono: EstadoBono; bonoLimite: string | null; semanasPendientes: number; referidos: FilaReferido[]
@@ -64,7 +64,7 @@ export function construirPanel(d: DatosPanel): { filas: FilaFundador[]; totales:
         }
       }).sort((a, b) => b.alta.localeCompare(a.alta))
       return {
-        id: f.id, numero: f.numero, nombre: f.nombre, tipo: f.tipo, oficio: f.oficio, estado: f.estado,
+        id: f.id, numero: f.numero, codigo: f.codigo, nombre: f.nombre, tipo: f.tipo, oficio: f.oficio, estado: f.estado,
         fecha: f.aceptada_at ?? f.creada_at, token: f.token, telefono: f.telefono, email: f.email, nota: f.nota,
         aceptadaPor: f.aceptada_por,
         registrados: referidos.length,
@@ -96,12 +96,12 @@ export function construirPanel(d: DatosPanel): { filas: FilaFundador[]; totales:
 const dia = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
 const ESTADO_INV: Record<string, string> = { pendiente: 'Pendiente', aceptada: 'Aceptada', anulada: 'Anulada' }
 
-export const CABECERA_CSV_FUNDADORES = ['Número', 'Nombre', 'Tipo', 'Oficio', 'Estado', 'Fecha', 'Registrados', 'Activos', 'De pago', 'Puntos', 'Escalón', 'Bono']
+export const CABECERA_CSV_FUNDADORES = ['Número', 'Código', 'Nombre', 'Tipo', 'Oficio', 'Estado', 'Fecha', 'Registrados', 'Activos', 'De pago', 'Puntos', 'Escalón', 'Bono']
 export const CABECERA_CSV_REFERIDOS = ['Fundador', 'Referido', 'Tipo', 'Alta', 'Activo', 'Plan', 'Origen del plan', 'Periodo', 'Alta del pago', 'Ingreso mensual (€)']
 
 export function csvFundadores(filas: FilaFundador[]): string {
   return [filaCsv(CABECERA_CSV_FUNDADORES), ...filas.map(f => filaCsv([
-    numeroFundador(f.numero), f.nombre, f.tipo === 'organizacion' ? 'Organización' : 'Persona', f.oficio,
+    numeroFundador(f.numero), f.codigo, f.nombre, f.tipo === 'organizacion' ? 'Organización' : 'Persona', f.oficio,
     ESTADO_INV[f.estado] ?? f.estado, dia(f.fecha), f.registrados, f.activos, f.dePago, f.puntos, f.escalon || '', f.bono,
   ]))].join('\r\n')
 }

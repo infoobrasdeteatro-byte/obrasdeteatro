@@ -4691,22 +4691,25 @@ export type Database = {
         }[]
       }
       plan_tras_cortesia: { Args: { p_perfil: string }; Returns: string }
-      elenco_invitacion_publica: { Args: { p_token: string }; Returns: { nombre: string; tipo: string; oficio: string; numero: number; estado: string }[] }
+      elenco_invitacion_publica: { Args: { p_token: string }; Returns: { nombre: string; tipo: string; oficio: string; estado: string }[] }
       aceptar_invitacion_elenco: { Args: { p_token: string }; Returns: string }
       elenco_activar_bono: { Args: never; Returns: string }
       mi_elenco: {
         Args: never
         Returns: {
-          numero: number; tipo: string; aceptada_at: string; bono_estado: string; bono_limite: string
+          tipo: string; aceptada_at: string; bono_estado: string; bono_limite: string
           bono_desde: string | null; bono_hasta: string | null; registrados: number; activos: number; puntos: number
           escalon: number; semanas_cartelera: number; plan_vigente: string | null; cortesia_hasta: string | null
         }[]
       }
-      elenco_distintivos: { Args: { p_perfiles: string[] }; Returns: { profile_id: string; numero: number }[] }
-      elenco_fundador_publico: { Args: { p_numero: number }; Returns: { numero: number; nombre: string; slug: string | null }[] }
+      elenco_distintivos: { Args: { p_perfiles: string[] }; Returns: { profile_id: string }[] }
+      elenco_fundador_por_codigo: { Args: { p_codigo: string }; Returns: { codigo: string; nombre: string; slug: string | null }[] }
+      mi_codigo_elenco: { Args: never; Returns: string | null }
+      elenco_codigo_disponible: { Args: { p_codigo: string }; Returns: { codigo: string; libre: boolean; motivo: string | null }[] }
+      elenco_atribuir_codigo: { Args: { p_perfil: string; p_codigo: string }; Returns: string }
       elenco_publico: {
         Args: never
-        Returns: { numero: number; nombre: string; slug: string | null; avatar_url: string | null; tipo: string; escalon: number }[]
+        Returns: { codigo: string; nombre: string; slug: string | null; avatar_url: string | null; tipo: string; escalon: number }[]
       }
       bloquear: { Args: { p_perfil: string }; Returns: boolean | null }
       desbloquear: { Args: { p_perfil: string }; Returns: boolean | null }

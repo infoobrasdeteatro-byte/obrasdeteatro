@@ -5,7 +5,8 @@ import { PASSWORD_POLICY } from '@/lib/auth/password-policy'
 import { safeNextPath, NEXT_TRAS_REGISTRO_COOKIE, NEXT_TRAS_REGISTRO_MAX_AGE_S } from '@/lib/auth/next-param'
 import { TIPOS_REGISTRO, esProfesion } from '@/lib/perfiles/profesiones'
 import { COOKIE_REFERIDO, codigoValido, tokenDeInvitacion } from '@/lib/embajadores/textos'
-import { COOKIE_ELENCO, leerNumero, normalizarNumeroElenco, tokenDeInvitacionElenco } from '@/lib/elenco/textos'
+import { COOKIE_ELENCO, leerCodigoElenco, tokenDeInvitacionElenco } from '@/lib/elenco/textos'
+import { codigoDeEnlaceAntiguo } from '@/lib/elenco/enlace-antiguo'
 
 /**
  * SEC-001 Fase 3: única puerta de entrada al registro público. El cliente ya
@@ -53,7 +54,7 @@ async function emailAlreadyRegistered(email: string): Promise<boolean> {
 }
 
 export async function POST(req: NextRequest) {
-  const { email, password, nombre, website, turnstileToken, next, tipoPerfil, profesiones, numeroElenco } = await req.json()
+  const { email, password, nombre, website, turnstileToken, next, tipoPerfil, profesiones, codigoElenco } = await req.json()
 
   // Honeypot: verificado también en servidor, no solo en el cliente.
   if (typeof website === 'string' && website.trim() !== '') {
@@ -101,15 +102,17 @@ export async function POST(req: NextRequest) {
   const invitacion = tokenDeInvitacion(destino)
   const referido = codigoValido(req.cookies?.get(COOKIE_REFERIDO)?.value)
   // Elenco Fundador: invitación personal (igual que la de Embajadores) y
-  // fundador que le invitó, que se atribuye al crear la cuenta: el número
-  // escrito en el formulario (ya relleno si llega por /elenco/<nº>) y, si no
-  // hay o no corresponde a nadie, el de la cookie del enlace.
+  // fundador que le invitó, que se atribuye al crear la cuenta: el código
+  // escrito en el formulario (ya relleno si llega por /elenco/<código>) y, si
+  // no hay o no corresponde a nadie, el de la cookie del enlace. Las cookies
+  // de los enlaces antiguos guardaban el número: se traduce a su código.
   const invitacionElenco = tokenDeInvitacionElenco(destino)
-  const numeroCookie = leerNumero(req.cookies?.get(COOKIE_ELENCO)?.value)
+  const valorCookie = req.cookies?.get(COOKIE_ELENCO)?.value
   // Cada alta cuenta para un solo programa: quien llega por el enlace de un
   // embajador (/r/<código>) no se atribuye al Elenco, ni por el campo ni por la cookie.
-  const numerosElenco = referido ? [] : [...new Set([normalizarNumeroElenco(numeroElenco), numeroCookie])]
-    .filter((n): n is number => n !== null)
+  const codigoCookie = referido ? null : (await codigoDeEnlaceAntiguo(valorCookie)) ?? leerCodigoElenco(valorCookie)
+  const codigosElenco = referido ? [] : [...new Set([leerCodigoElenco(codigoElenco), codigoCookie])]
+    .filter((c): c is string => c !== null)
 
   const { data: alta, error } = await supabase.auth.signUp({
     email: normalizedEmail,
@@ -134,23 +137,23 @@ export async function POST(req: NextRequest) {
 
   // Atribución al Elenco: una sola vez por cuenta (lo garantiza
   // elenco_atribuir, que además solo acepta fundadores que han aceptado su
-  // invitación). Un número que no corresponde a nadie no bloquea el registro.
-  if (numerosElenco.length && alta?.user?.id) {
+  // invitación). Un código que no corresponde a nadie no bloquea el registro.
+  if (codigosElenco.length && alta?.user?.id) {
     try {
       const servicio = createServiceClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
         { auth: { autoRefreshToken: false, persistSession: false } }
       )
-      for (const n of numerosElenco) {
-        const { data } = await servicio.rpc('elenco_atribuir', { p_perfil: alta.user.id, p_numero: n })
+      for (const c of codigosElenco) {
+        const { data } = await servicio.rpc('elenco_atribuir_codigo', { p_perfil: alta.user.id, p_codigo: c })
         if (data !== 'no_valido') break
       }
     } catch { /* sin atribución */ }
   }
 
   const respuesta = NextResponse.json({ ok: true })
-  if (numeroCookie) respuesta.cookies.delete(COOKIE_ELENCO)
+  if (valorCookie) respuesta.cookies.delete(COOKIE_ELENCO)
 
   // Vuelta tras confirmar el email: la lee y la borra /auth/callback (ver
   // NEXT_TRAS_REGISTRO_COOKIE). Solo rutas internas.

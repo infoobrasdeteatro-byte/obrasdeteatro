@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  distintivo, enlaceElenco, leerNumero, mensajeColegasElenco, mensajeInvitacion, normalizarNumeroElenco, numeroFundador, progresoEscalera,
+  distintivo, enlaceElenco, leerCodigoElenco, leerNumero, mensajeColegasElenco, mensajeInvitacion, normalizarCodigoElenco, numeroFundador, progresoEscalera,
   puntosColega, recompensaEscalon, tokenDeInvitacionElenco,
 } from '../textos'
 import { ingresoMensual, origenPlan, filaCsv } from '../origen-plan'
@@ -13,17 +13,24 @@ const TOKEN = 'a'.repeat(32)
 const ENV = { STRIPE_PRICE_PREMIUM_ID: 'p_m', STRIPE_PRICE_PREMIUM_ANUAL_ID: 'p_a', STRIPE_PRICE_EMPRESAS_ID: 'e_m', STRIPE_PRICE_EMPRESAS_ANUAL_ID: 'e_a' }
 
 describe('textos', () => {
-  it('números de fundador 001–100', () => {
+  it('el público ve el distintivo y el código; el número es solo interno', () => {
+    expect(distintivo()).toBe('Elenco Fundador')
+    expect(distintivo()).not.toMatch(/\d|nº/)
+    expect(enlaceElenco('conchigarces')).toBe('https://www.obrasdeteatro.com/elenco/conchigarces')
     expect(numeroFundador(7)).toBe('007')
-    expect(distintivo(7)).toBe('Elenco Fundador nº 007')
-    expect(enlaceElenco(7)).toBe('https://www.obrasdeteatro.com/elenco/007')
     expect([leerNumero('007'), leerNumero('7'), leerNumero('100'), leerNumero('000'), leerNumero('101'), leerNumero('x7'), leerNumero(null)])
       .toEqual([7, 7, 100, null, null, null, null])
   })
 
-  it('número escrito a mano en el registro', () => {
-    expect(['007', '7', ' 07 ', 'nº 7', 'Nº007', 'n.º 12', '#100', 'no 5'].map(normalizarNumeroElenco)).toEqual([7, 7, 7, 7, 7, 12, 100, 5])
-    expect(['', '000', '101', 'siete', '7a', null, 7].map(normalizarNumeroElenco)).toEqual([null, null, null, null, null, null, null])
+  it('código personal a partir del nombre (misma regla que la base)', () => {
+    expect(['Conchi Garcés', 'María López', 'La Chunga', 'Teatro del Sur', 'Muñoz & Cía', ' marialopez ', 'MARIA-LOPEZ'].map(normalizarCodigoElenco))
+      .toEqual(['conchigarces', 'marialopez', 'lachunga', 'teatrodelsur', 'munozycia', 'marialopez', 'marialopez'])
+  })
+
+  it('código escrito a mano en el registro', () => {
+    expect(['marialopez', 'María López', 'Lachunga2', 'abc'].map(leerCodigoElenco)).toEqual(['marialopez', 'marialopez', 'lachunga2', 'abc'])
+    expect(['', 'ab', '007', '12345', 'invitacion', 'unirse', 'a'.repeat(31), null, 7].map(leerCodigoElenco))
+      .toEqual([null, null, null, null, null, null, null, null, null])
   })
 
   it('reconoce la ruta de una invitación del Elenco', () => {
@@ -34,7 +41,7 @@ describe('textos', () => {
   it('los mensajes llevan su enlace y nunca mencionan plazas ni a otros invitados', () => {
     const persona = mensajeInvitacion('persona', 'Lucía Pérez', TOKEN)
     const org = mensajeInvitacion('organizacion', 'Teatro del Sur', TOKEN)
-    const colegas = mensajeColegasElenco('Lucía Pérez', 7)
+    const colegas = mensajeColegasElenco('Lucía Pérez', 'luciaperez')
     expect(persona).toMatch(/^Hola Lucía, soy Renee Bausson, de ObrasDeTeatro®/)
     expect(persona).toContain('tres meses de Premium')
     expect(persona).toContain(`/elenco/invitacion/${TOKEN}`)
@@ -45,9 +52,9 @@ describe('textos', () => {
     expect(org).toContain('cuando quieran')
     expect(org).toContain('Su invitación:')
     expect(colegas).toMatch(/^Hola, soy Lucía Pérez y formo parte del Elenco Fundador/)
-    expect(colegas).toContain('/elenco/007')
+    expect(colegas).toContain('/elenco/luciaperez')
     for (const m of [persona, org, colegas]) {
-      expect(m).not.toMatch(/\b100\b|plazas|otros invitados/i)
+      expect(m).not.toMatch(/\b100\b|plazas|otros invitados|número|nº/i)
     }
   })
 
@@ -90,7 +97,7 @@ describe('origen del plan de un referido', () => {
 describe('panel de administración', () => {
   const AHORA = Date.parse('2026-11-01T00:00:00Z')
   const fundador = (o: Partial<FundadorBD>): FundadorBD => ({
-    id: 'f1', numero: 1, token: TOKEN, nombre: 'Ana', tipo: 'persona', oficio: 'Interpretación', telefono: '+34600000000', email: null,
+    id: 'f1', numero: 1, codigo: 'ana', token: TOKEN, nombre: 'Ana', tipo: 'persona', oficio: 'Interpretación', telefono: '+34600000000', email: null,
     nota: null, estado: 'aceptada', creada_at: '2026-10-01T00:00:00Z', aceptada_por: 'pa', aceptada_at: '2026-10-02T00:00:00Z',
     bono_activado_at: null, ...o,
   })
@@ -126,8 +133,8 @@ describe('panel de administración', () => {
     expect(totales).toEqual({ fundadores: 1, registrados: 4, activos: 3, dePago: 2, ingresosMensuales: 15.48 })
 
     const csv = csvFundadores(filas).split('\r\n')
-    expect(csv[0]).toBe('Número;Nombre;Tipo;Oficio;Estado;Fecha;Registrados;Activos;De pago;Puntos;Escalón;Bono')
-    expect(csv[1]).toBe('001;Ana;Persona;Interpretación;Aceptada;2026-10-02;4;3;2;5;5;disponible')
+    expect(csv[0]).toBe('Número;Código;Nombre;Tipo;Oficio;Estado;Fecha;Registrados;Activos;De pago;Puntos;Escalón;Bono')
+    expect(csv[1]).toBe('001;ana;Ana;Persona;Interpretación;Aceptada;2026-10-02;4;3;2;5;5;disponible')
     const ref = csvReferidos(filas)
     expect(ref).toContain('001;R;persona;2026-10-10;sí;premium;Pago · premium mensual;mensual;2026-10-20;2.99')
     expect(ref).toContain('Cortesía · premium')
@@ -155,7 +162,7 @@ describe('correo al subir de escalón', () => {
     expect(asuntoEscalon({ escalon: 50 })).toBe('Eres Miembro de Honor del Elenco Fundador')
     const t = textoEscalon(a)
     expect(t).toMatch(/^Hola Ana:/)
-    expect(t).toContain('con tu enlace, ya tienes 11 puntos como Elenco Fundador nº 007')
+    expect(t).toContain('con tu enlace, ya tienes 11 puntos como miembro del Elenco Fundador')
     expect(t).toContain('tu nombre en la página del Elenco Fundador')
     expect(t).toContain('Puedes ver tu progreso')
   })
@@ -166,7 +173,7 @@ describe('correo al subir de escalón', () => {
     expect(asuntoEscalon({ escalon: 50, tipo: 'organizacion' })).toBe('Ya son Miembro de Honor del Elenco Fundador')
     const t = textoEscalon(a)
     expect(t).toMatch(/^Hola Teatro del Sur:/)
-    expect(t).toContain('con su enlace, ya tienen 27 puntos como Elenco Fundador nº 007')
+    expect(t).toContain('con su enlace, ya tienen 27 puntos como miembros del Elenco Fundador')
     expect(t).toContain('Ya está aplicada en su cuenta')
     expect(t).toContain('Pueden ver su progreso')
     expect(t).toContain('4 semanas de destacado en Cartelera')

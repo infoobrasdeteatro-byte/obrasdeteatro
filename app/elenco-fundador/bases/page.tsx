@@ -24,8 +24,9 @@ export default function BasesElencoPage() {
           <h2 className="inv-h2">1. Qué es</h2>
           <p className="inv-p">
             El Elenco Fundador reúne, por invitación personal de ObrasDeTeatro®, a profesionales de cualquier oficio de la escena y a
-            organizaciones (compañías, salas, escuelas, productoras y festivales). Cada fundador tiene un número propio y el distintivo
-            «Elenco Fundador nº …» en su perfil público y en el directorio. Su plan de base es el gratuito, para siempre.
+            organizaciones (compañías, salas, escuelas, productoras y festivales). Cada fundador luce el distintivo «Elenco Fundador»
+            en su perfil público y en el directorio, y tiene un enlace personal con su nombre para invitar a sus colegas. Su plan de
+            base es el gratuito, para siempre.
           </p>
         </section>
 

@@ -12,6 +12,10 @@ vi.mock('@supabase/supabase-js', () => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ auth: { signUp: mockSignUp } }),
 }))
+// Cookies de los enlaces antiguos con número: la plaza 007 es la de Ana.
+vi.mock('@/lib/elenco/enlace-antiguo', () => ({
+  codigoDeEnlaceAntiguo: async (v: string | null | undefined) => (v === '007' ? 'anagarcia' : null),
+}))
 
 import { POST } from '../route'
 import { NEXT_TRAS_REGISTRO_COOKIE } from '@/lib/auth/next-param'
@@ -120,7 +124,7 @@ describe('POST /api/auth/registro — vuelta al confirmar en otro aparato', () =
 })
 
 describe('POST /api/auth/registro — «¿Te invitó alguien del Elenco Fundador?»', () => {
-  const atribuciones = () => mockServicioRpc.mock.calls.filter(c => c[0] === 'elenco_atribuir').map(c => c[1])
+  const atribuciones = () => mockServicioRpc.mock.calls.filter(c => c[0] === 'elenco_atribuir_codigo').map(c => c[1])
   beforeEach(() => {
     mockSignUp.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
     mockServicioRpc.mockResolvedValue({ data: 'ok', error: null })
@@ -134,52 +138,57 @@ describe('POST /api/auth/registro — «¿Te invitó alguien del Elenco Fundador
     }))
   }
 
-  it('el número escrito se atribuye a la cuenta, como el enlace', async () => {
-    const res = await POST(peticion({ numeroElenco: 'nº 007' }))
+  it('el código escrito se atribuye a la cuenta, como el enlace (tildes y mayúsculas da igual)', async () => {
+    const res = await POST(peticion({ codigoElenco: 'Ana García' }))
     expect(res.status).toBe(200)
-    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_numero: 7 }])
+    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_codigo: 'anagarcia' }])
   })
 
-  it('si el número no corresponde a ningún fundador, no bloquea el registro', async () => {
+  it('si el código no corresponde a ningún fundador, no bloquea el registro', async () => {
     mockServicioRpc.mockResolvedValue({ data: 'no_valido', error: null })
-    const res = await POST(peticion({ numeroElenco: '042' }))
+    const res = await POST(peticion({ codigoElenco: 'nadie' }))
     expect(res.status).toBe(200)
     expect((await res.json()).ok).toBe(true)
   })
 
-  it('un número imposible se ignora sin llamar a la base', async () => {
-    const res = await POST(peticion({ numeroElenco: '999' }))
+  it('un código imposible se ignora sin llamar a la base', async () => {
+    const res = await POST(peticion({ codigoElenco: 'ab' }))
     expect(res.status).toBe(200)
     expect(atribuciones()).toEqual([])
   })
 
-  it('llega por /elenco/<nº>: campo y cookie con el mismo número, una sola atribución; la cookie se borra', async () => {
-    const res = await conCookie('odt_elenco=007', { numeroElenco: '007' })
-    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_numero: 7 }])
+  it('llega por /elenco/<código>: campo y cookie con el mismo código, una sola atribución; la cookie se borra', async () => {
+    const res = await conCookie('odt_elenco=anagarcia', { codigoElenco: 'anagarcia' })
+    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_codigo: 'anagarcia' }])
     expect(res.cookies.get('odt_elenco')?.value).toBe('')
   })
 
-  it('el número escrito manda; si no es válido, se usa el del enlace', async () => {
-    mockServicioRpc.mockResolvedValueOnce({ data: 'no_valido', error: null }).mockResolvedValueOnce({ data: 'ok', error: null })
-    await conCookie('odt_elenco=007', { numeroElenco: '42' })
-    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_numero: 42 }, { p_perfil: 'u1', p_numero: 7 }])
+  it('cookie de un enlace antiguo con número: se atribuye por su código', async () => {
+    await conCookie('odt_elenco=007')
+    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_codigo: 'anagarcia' }])
   })
 
-  it('una vez atribuida (o ya atribuida), no se prueba otro número', async () => {
+  it('el código escrito manda; si no es válido, se usa el del enlace', async () => {
+    mockServicioRpc.mockResolvedValueOnce({ data: 'no_valido', error: null }).mockResolvedValueOnce({ data: 'ok', error: null })
+    await conCookie('odt_elenco=anagarcia', { codigoElenco: 'luisperez' })
+    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_codigo: 'luisperez' }, { p_perfil: 'u1', p_codigo: 'anagarcia' }])
+  })
+
+  it('una vez atribuida (o ya atribuida), no se prueba otro código', async () => {
     mockServicioRpc.mockResolvedValue({ data: 'ya_atribuida', error: null })
-    await conCookie('odt_elenco=007', { numeroElenco: '42' })
-    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_numero: 42 }])
+    await conCookie('odt_elenco=anagarcia', { codigoElenco: 'luisperez' })
+    expect(atribuciones()).toEqual([{ p_perfil: 'u1', p_codigo: 'luisperez' }])
   })
 
   it('un fallo de la base no bloquea el registro', async () => {
     mockServicioRpc.mockRejectedValue(new Error('caída'))
-    const res = await POST(peticion({ numeroElenco: '7' }))
+    const res = await POST(peticion({ codigoElenco: 'anagarcia' }))
     expect(res.status).toBe(200)
   })
 })
 
 describe('POST /api/auth/registro — cada alta cuenta para un solo programa', () => {
-  const atribuciones = () => mockServicioRpc.mock.calls.filter(c => c[0] === 'elenco_atribuir')
+  const atribuciones = () => mockServicioRpc.mock.calls.filter(c => c[0] === 'elenco_atribuir_codigo')
   beforeEach(() => {
     mockSignUp.mockResolvedValue({ data: { user: { id: 'u1' } }, error: null })
     mockServicioRpc.mockResolvedValue({ data: 'ok', error: null })
@@ -194,16 +203,16 @@ describe('POST /api/auth/registro — cada alta cuenta para un solo programa', (
   }
 
   it('por el enlace de un embajador: cuenta para Embajadores y nunca para el Elenco (ni campo ni cookie)', async () => {
-    const res = await registrar('odt_ref=ab12cd34; odt_elenco=007', { numeroElenco: '7' })
+    const res = await registrar('odt_ref=ab12cd34; odt_elenco=anagarcia', { codigoElenco: 'anagarcia' })
     expect(res.status).toBe(200)
     expect(atribuciones()).toEqual([])
     expect(mockSignUp.mock.calls[0][0].options.data.codigo_referido).toBe('AB12CD34')
     expect(res.cookies.get('odt_elenco')?.value).toBe('')
   })
 
-  it('por /elenco/<nº> (sin código de embajador): todo sigue igual', async () => {
-    await registrar('odt_elenco=007', { numeroElenco: '007' })
-    expect(atribuciones().map(c => c[1])).toEqual([{ p_perfil: 'u1', p_numero: 7 }])
+  it('por /elenco/<código> (sin código de embajador): todo sigue igual', async () => {
+    await registrar('odt_elenco=anagarcia', { codigoElenco: 'anagarcia' })
+    expect(atribuciones().map(c => c[1])).toEqual([{ p_perfil: 'u1', p_codigo: 'anagarcia' }])
     expect(mockSignUp.mock.calls[0][0].options.data).not.toHaveProperty('codigo_referido')
   })
 })

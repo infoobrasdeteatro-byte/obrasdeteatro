@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { permanentRedirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import TopNav from '@/components/design-system/TopNav'
-import { PROPOSITO, distintivo, leerNumero, numeroFundador } from '@/lib/elenco/textos'
+import { PROPOSITO, distintivo, leerCodigoElenco } from '@/lib/elenco/textos'
+import { codigoDeEnlaceAntiguo } from '@/lib/elenco/enlace-antiguo'
 
-type Props = { params: Promise<{ numero: string }> }
+type Props = { params: Promise<{ codigo: string }> }
 
 const DESCRIPCION = 'Únete gratis a ObrasDeTeatro®, la plataforma profesional del teatro en español en los 20 países de habla hispana.'
 
@@ -22,13 +24,21 @@ export const metadata: Metadata = {
 }
 export const dynamic = 'force-dynamic'
 
-/** Enlace público y reutilizable de un fundador: /elenco/007. */
+/**
+ * Enlace público y reutilizable de un fundador, con su código personal:
+ * /elenco/conchigarces. Los enlaces antiguos con número (/elenco/001) llevan
+ * al del código.
+ */
 export default async function ElencoEnlacePage({ params }: Props) {
-  const numero = leerNumero((await params).numero)
+  const segmento = decodificar((await params).codigo)
+  const antiguo = await codigoDeEnlaceAntiguo(segmento)
+  if (antiguo) permanentRedirect(`/elenco/${antiguo}`)
+
+  const codigo = leerCodigoElenco(segmento)
   const supabase = await createClient()
   const [{ data: { user } }, { data }] = await Promise.all([
     supabase.auth.getUser(),
-    numero ? supabase.rpc('elenco_fundador_publico', { p_numero: numero }) : Promise.resolve({ data: null }),
+    codigo ? supabase.rpc('elenco_fundador_por_codigo', { p_codigo: codigo }) : Promise.resolve({ data: null }),
   ])
   const fundador = data?.[0] ?? null
 
@@ -45,7 +55,7 @@ export default async function ElencoEnlacePage({ params }: Props) {
     )
   }
 
-  if (!numero || !fundador) {
+  if (!codigo || !fundador) {
     return (
       <Marco>
         <section className="inv-hero">
@@ -58,12 +68,12 @@ export default async function ElencoEnlacePage({ params }: Props) {
     )
   }
 
-  const base = `/elenco/${numeroFundador(numero)}/unirse`
+  const base = `/elenco/${fundador.codigo}/unirse`
 
   return (
     <Marco>
       <section className="inv-hero">
-        <p className="inv-eyebrow">Te invita {fundador.nombre} · {distintivo(numero)}</p>
+        <p className="inv-eyebrow">Te invita {fundador.nombre} · {distintivo()}</p>
         <h1 className="inv-titulo">{PROPOSITO}</h1>
         <p className="inv-lead">
           Directorio de profesionales, castings, convocatorias, salas de 20 países y una biblioteca de miles de obras.
@@ -107,4 +117,9 @@ function Marco({ children }: { children: React.ReactNode }) {
       <main className="inv">{children}</main>
     </>
   )
+}
+
+/** Segmento de la URL tal cual o decodificado («Garc%C3%ADa» → «García»). */
+function decodificar(v: string): string {
+  try { return decodeURIComponent(v) } catch { return v }
 }

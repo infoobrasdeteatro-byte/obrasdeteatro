@@ -10,7 +10,7 @@ import { PASSWORD_POLICY, PASSWORD_HINT } from '@/lib/auth/password-policy'
 import { safeNextPath } from '@/lib/auth/next-param'
 import { GRUPOS_PROFESIONES, PROFESIONES, TIPOS_ORGANIZACION } from '@/lib/perfiles/profesiones'
 import { createClient } from '@/lib/supabase/client'
-import { distintivo, normalizarNumeroElenco } from '@/lib/elenco/textos'
+import { distintivo, leerCodigoElenco } from '@/lib/elenco/textos'
 
 // Al registrarse, el plan es Gratuito: hasta 3 profesiones (como en el perfil).
 const MAX_PROFESIONES_REGISTRO = 3
@@ -56,41 +56,43 @@ export default function RegistroPage() {
 
   // Llega desde el enlace personal de un/a Embajador/a de Escena (/r/<código>).
   const [invitado, setInvitado] = useState(false)
-  // Llega desde el enlace de un fundador del Elenco (/elenco/<nº>): sin mes de Premium.
+  // Llega desde el enlace de un fundador del Elenco (/elenco/<código>): sin mes de Premium.
   const [elenco, setElenco] = useState(false)
   // «¿Te invitó alguien del Elenco Fundador?»: opcional; ya relleno si llega
-  // por /elenco/<nº>. Se comprueba que es un fundador que ha aceptado; si no,
-  // se avisa sin bloquear el registro.
-  const [numeroElenco, setNumeroElenco] = useState('')
-  const [fundador, setFundador] = useState<{ estado: 'comprobando' | 'ok' | 'no_existe' | 'formato'; nombre?: string; numero?: number } | null>(null)
+  // por /elenco/<código>. Es el código personal del fundador (su nombre o su
+  // nombre artístico, sin espacios). Se comprueba que es un fundador que ha
+  // aceptado; si no, se avisa sin bloquear el registro.
+  const [codigoElenco, setCodigoElenco] = useState('')
+  const [fundador, setFundador] = useState<{ estado: 'comprobando' | 'ok' | 'no_existe' | 'formato'; nombre?: string } | null>(null)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
     setNext(safeNextPath(p.get('next')))
     setInvitado(p.get('invitado') === '1')
-    setElenco(/^\d{3}$/.test(p.get('elenco') ?? ''))
-    if (normalizarNumeroElenco(p.get('elenco') ?? '') !== null) setNumeroElenco(p.get('elenco') ?? '')
+    const delEnlace = leerCodigoElenco(p.get('elenco') ?? '')
+    setElenco(delEnlace !== null)
+    if (delEnlace) setCodigoElenco(delEnlace)
     const tipo = p.get('tipo')
     if (tipo === 'profesional' || tipo === 'organizacion') setRegistro(tipo)
   }, [])
 
   useEffect(() => {
-    if (numeroElenco.trim() === '') { setFundador(null); return }
-    const n = normalizarNumeroElenco(numeroElenco)
-    if (n === null) { setFundador({ estado: 'formato' }); return }
+    if (codigoElenco.trim() === '') { setFundador(null); return }
+    const c = leerCodigoElenco(codigoElenco)
+    if (c === null) { setFundador({ estado: 'formato' }); return }
     setFundador({ estado: 'comprobando' })
     let vigente = true
     const t = setTimeout(async () => {
       try {
-        const { data, error } = await createClient().rpc('elenco_fundador_publico', { p_numero: n })
+        const { data, error } = await createClient().rpc('elenco_fundador_por_codigo', { p_codigo: c })
         if (!vigente) return
         if (error) { setFundador(null); return }
         const f = (data as { nombre: string | null }[] | null)?.[0]
-        setFundador(f ? { estado: 'ok', nombre: f.nombre ?? '', numero: n } : { estado: 'no_existe' })
+        setFundador(f ? { estado: 'ok', nombre: f.nombre ?? '' } : { estado: 'no_existe' })
       } catch { if (vigente) setFundador(null) }
     }, 400)
     return () => { vigente = false; clearTimeout(t) }
-  }, [numeroElenco])
+  }, [codigoElenco])
 
   const turnstileContainer = useRef<HTMLDivElement>(null)
   const turnstileWidgetId = useRef<string | null>(null)
@@ -170,7 +172,7 @@ export default function RegistroPage() {
           tipoPerfil: registro === 'organizacion' ? tipoOrganizacion : registro,
           profesiones: registro === 'profesional' ? profesiones : [],
           // Cada alta cuenta para un solo programa: por el enlace de un embajador, sin Elenco.
-          numeroElenco: invitado ? undefined : numeroElenco.trim() || undefined,
+          codigoElenco: invitado ? undefined : codigoElenco.trim() || undefined,
         }),
       })
       const data = await res.json()
@@ -324,23 +326,24 @@ export default function RegistroPage() {
           )}
 
           {!invitado && (<div className="reg-elenco">
-            <label htmlFor="numero-elenco" className="reg-legend">¿Te invitó alguien del Elenco Fundador? Escribe su número</label>
+            <label htmlFor="codigo-elenco" className="reg-legend">¿Te invitó alguien del Elenco Fundador? Escribe su código</label>
             <input
-              id="numero-elenco"
+              id="codigo-elenco"
               type="text"
-              inputMode="numeric"
               autoComplete="off"
-              placeholder="Por ejemplo, 007 (opcional)"
-              maxLength={8}
-              value={numeroElenco}
-              onChange={e => setNumeroElenco(e.target.value)}
-              aria-describedby="numero-elenco-aviso"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="Su nombre, por ejemplo: marialopez (opcional)"
+              maxLength={40}
+              value={codigoElenco}
+              onChange={e => setCodigoElenco(e.target.value)}
+              aria-describedby="codigo-elenco-aviso"
               className="ds-input"
             />
-            <p id="numero-elenco-aviso" className="reg-ayuda" aria-live="polite" style={{ margin: '4px 0 0' }}>
-              {fundador?.estado === 'ok' && <>✓ {fundador.nombre ? `${fundador.nombre} · ` : ''}{distintivo(fundador.numero!)}</>}
-              {fundador?.estado === 'no_existe' && 'No hay ningún miembro del Elenco Fundador con ese número. Puedes registrarte igualmente.'}
-              {fundador?.estado === 'formato' && 'El número va del 001 al 100. Puedes registrarte igualmente.'}
+            <p id="codigo-elenco-aviso" className="reg-ayuda" aria-live="polite" style={{ margin: '4px 0 0' }}>
+              {fundador?.estado === 'ok' && <>✓ {fundador.nombre ? `${fundador.nombre} · ` : ''}{distintivo()}</>}
+              {fundador?.estado === 'no_existe' && 'No hay ningún miembro del Elenco Fundador con ese código. Puedes registrarte igualmente.'}
+              {fundador?.estado === 'formato' && 'El código son letras y números, sin espacios. Puedes registrarte igualmente.'}
             </p>
           </div>)}
 
