@@ -53,6 +53,9 @@ export default function ColaNoticias({
   const [avisos, setAvisos] = useState<Record<string, string>>({})
   const [conMotivo, setConMotivo] = useState<{ id: string; accion: 'descartar' | 'retirar' } | null>(null)
   const [motivo, setMotivo] = useState('')
+  // Se pulsó «Confirmar» con el motivo vacío: se marca la casilla y se avisa,
+  // en lugar de dejar un botón bloqueado que no explica por qué no responde.
+  const [faltaMotivo, setFaltaMotivo] = useState(false)
   const [ocupada, setOcupada] = useState<string | null>(null)
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [resueltas, setResueltas] = useState<Record<string, string>>({})
@@ -86,6 +89,7 @@ export default function ColaNoticias({
 
     setConMotivo(null)
     setMotivo('')
+    setFaltaMotivo(false)
     setResueltas(p => ({
       ...p,
       [id]: data.estado === 'publicada' ? 'Publicada. Ya aparece en /noticias.'
@@ -181,20 +185,38 @@ export default function ColaNoticias({
                   {conMotivo.accion === 'descartar' ? 'Motivo del descarte' : 'Motivo de la retirada'}
                 </label>
                 <textarea id={`motivo-${n.id}`} className="ds-textarea" style={{ minHeight: '72px' }} maxLength={500}
-                  value={motivo} onChange={e => setMotivo(e.target.value)}
+                  value={motivo}
+                  onChange={e => { setMotivo(e.target.value); if (e.target.value.trim()) setFaltaMotivo(false) }}
+                  aria-invalid={faltaMotivo || undefined}
+                  aria-describedby={faltaMotivo ? `motivo-error-${n.id}` : undefined}
                   placeholder={conMotivo.accion === 'descartar'
                     ? 'Fuera de ámbito, repetida, poco relevante…'
                     : 'Solicitud de retirada del medio, error en el resumen…'} />
+                {faltaMotivo && (
+                  <p id={`motivo-error-${n.id}`} className="ds-field-error" role="alert">
+                    {conMotivo.accion === 'descartar'
+                      ? 'Escribe un motivo breve para descartarla.'
+                      : 'Escribe un motivo breve para retirarla.'}
+                  </p>
+                )}
                 <p className="ds-form-hint">Queda en el registro de noticias. No se muestra al público.</p>
                 <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                   <button type="button" className="ds-btn-danger"
-                    disabled={enCurso || motivo.trim().length === 0}
-                    onClick={() => ejecutar(n.id, conMotivo.accion, motivo.trim())}>
+                    disabled={enCurso}
+                    onClick={() => {
+                      const texto = motivo.trim()
+                      if (!texto) {
+                        setFaltaMotivo(true)
+                        document.getElementById(`motivo-${n.id}`)?.focus()
+                        return
+                      }
+                      void ejecutar(n.id, conMotivo.accion, texto)
+                    }}>
                     {enCurso ? '…' : conMotivo.accion === 'descartar' ? 'Confirmar descarte' : 'Confirmar retirada'}
                   </button>
                   <button type="button" className="ds-btn-secondary" disabled={enCurso}
                     style={{ padding: '10px 20px', fontSize: '13px' }}
-                    onClick={() => { setConMotivo(null); setMotivo('') }}>
+                    onClick={() => { setConMotivo(null); setMotivo(''); setFaltaMotivo(false) }}>
                     Cancelar
                   </button>
                 </div>
@@ -215,14 +237,14 @@ export default function ColaNoticias({
                     </button>
                     <button type="button" className="ds-btn-secondary" disabled={enCurso || Boolean(resuelta)}
                       style={{ padding: '9px 18px', fontSize: '13px' }}
-                      onClick={() => { setConMotivo({ id: n.id, accion: 'descartar' }); setMotivo(''); setEditando(null) }}>
+                      onClick={() => { setConMotivo({ id: n.id, accion: 'descartar' }); setMotivo(''); setFaltaMotivo(false); setEditando(null) }}>
                       Descartar
                     </button>
                   </>
                 ) : (
                   <button type="button" className="ds-btn-secondary" disabled={enCurso || Boolean(resuelta)}
                     style={{ padding: '9px 18px', fontSize: '13px' }}
-                    onClick={() => { setConMotivo({ id: n.id, accion: 'retirar' }); setMotivo('') }}>
+                    onClick={() => { setConMotivo({ id: n.id, accion: 'retirar' }); setMotivo(''); setFaltaMotivo(false) }}>
                     Retirar
                   </button>
                 )}
