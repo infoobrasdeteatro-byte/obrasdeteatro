@@ -99,7 +99,7 @@ describe('POST /api/auth/registro — Embajadores de Escena', () => {
       body: JSON.stringify({ email: 'n@example.com', password: 'Segura123', nombre: 'N', website: '', turnstileToken: 't' }),
     })
     await POST(req)
-    expect(datos().codigo_referido).toBe('AB12CD34')
+    expect(datos().codigo_referido).toBe('ab12cd34')
   })
 
   it('sin invitación ni código, no añade nada', async () => {
@@ -206,7 +206,7 @@ describe('POST /api/auth/registro — cada alta cuenta para un solo programa', (
     const res = await registrar('odt_ref=ab12cd34; odt_elenco=anagarcia', { codigoElenco: 'anagarcia' })
     expect(res.status).toBe(200)
     expect(atribuciones()).toEqual([])
-    expect(mockSignUp.mock.calls[0][0].options.data.codigo_referido).toBe('AB12CD34')
+    expect(mockSignUp.mock.calls[0][0].options.data.codigo_referido).toBe('ab12cd34')
     expect(res.cookies.get('odt_elenco')?.value).toBe('')
   })
 

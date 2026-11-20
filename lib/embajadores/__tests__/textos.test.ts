@@ -40,9 +40,15 @@ describe('textos de Embajadores de Escena', () => {
   })
 
   it('código de referido', () => {
-    expect(codigoValido(' ab12cd34 ')).toBe('AB12CD34')
-    expect(codigoValido('corto')).toBeNull()
-    expect(codigoValido("x'; drop")).toBeNull()
+    // Códigos antiguos aleatorios y personales con el nombre: forma normalizada.
+    expect(codigoValido(' AB12CD34 ')).toBe('ab12cd34')
+    expect(codigoValido('José Roberto Díaz')).toBe('joserobertodiaz')
+    expect(codigoValido('lachunga')).toBe('lachunga')
+    expect(codigoValido('ab')).toBeNull()
+    expect(codigoValido('12345678')).toBeNull()
+    expect(codigoValido('a'.repeat(31))).toBeNull()
+    expect(codigoValido(null)).toBeNull()
+    expect(codigoValido("x'; drop")).toBe('xdrop')
   })
 })
 

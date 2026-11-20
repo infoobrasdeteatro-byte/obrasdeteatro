@@ -10,6 +10,7 @@
  * sin número, para que nadie se sienta «de los últimos».
  */
 import { SITIO } from '@/lib/embajadores/textos'
+import { formaCodigoPersonal, normalizarCodigoPersonal } from '@/lib/codigo-personal'
 
 export { SITIO }
 
@@ -47,9 +48,7 @@ export function leerNumero(v: string | null | undefined): number | null {
  * letras y números. Misma regla que elenco_codigo_normalizar() en la base.
  */
 export function normalizarCodigoElenco(v: unknown): string {
-  if (typeof v !== 'string') return ''
-  return v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-    .replace(/&/g, 'y').replace(/[^a-z0-9]/g, '')
+  return normalizarCodigoPersonal(v)
 }
 
 /** Rutas bajo /elenco/ que no pueden ser códigos. */
@@ -58,7 +57,7 @@ const CODIGOS_RESERVADOS = new Set(['invitacion', 'unirse'])
 /** Código válido (3–30 letras o números, con al menos una letra), o null. */
 export function leerCodigoElenco(v: unknown): string | null {
   const c = normalizarCodigoElenco(v)
-  return /^[a-z0-9]{3,30}$/.test(c) && /[a-z]/.test(c) && !CODIGOS_RESERVADOS.has(c) ? c : null
+  return formaCodigoPersonal(c) && !CODIGOS_RESERVADOS.has(c) ? c : null
 }
 
 /** Distintivo público, sin número de plaza. */
