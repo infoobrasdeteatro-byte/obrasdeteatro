@@ -34,7 +34,7 @@ export default async function AdminEmbajadoresPage() {
   const ahoraIso = new Date().toISOString()
   const [{ data: invitaciones }, { data: membresias }, { data: colegas }, { data: recompensas }] = await Promise.all([
     s.from('embajadores_invitaciones')
-      .select('id, token, nombre, genero, oficio, telefono, email, estado, creada_at, caduca_at, aceptada_por, aceptada_at')
+      .select('id, token, codigo, nombre, genero, oficio, telefono, email, estado, creada_at, caduca_at, aceptada_por, aceptada_at')
       .order('creada_at', { ascending: false }).limit(500),
     s.from('membresias_cortesia').select('profile_id, tipo, hasta, renunciada_at, honor_at').eq('tipo', 'embajador').limit(5000),
     s.from('embajadores_colegas').select('embajador_id, profile_id, alta, nombre, tipo_perfil, clase, activo, puntos').limit(10000),
@@ -42,7 +42,7 @@ export default async function AdminEmbajadoresPage() {
   ])
 
   const ahora = Date.now()
-  type I = { id: string; token: string; nombre: string; genero: 'f' | 'm'; oficio: string; telefono: string | null; email: string | null
+  type I = { id: string; token: string; codigo: string; nombre: string; genero: 'f' | 'm'; oficio: string; telefono: string | null; email: string | null
     estado: string; creada_at: string; caduca_at: string; aceptada_por: string | null; aceptada_at: string | null }
   const filas: FilaInvitacion[] = ((invitaciones ?? []) as I[]).map(i => ({
     ...i,

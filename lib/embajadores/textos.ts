@@ -3,6 +3,7 @@
  * oficio y género. Sin precio y sin mencionar a otros invitados: cada
  * invitación es personal.
  */
+import { formaCodigoPersonal, normalizarCodigoPersonal } from '@/lib/codigo-personal'
 export const SITIO = 'https://www.obrasdeteatro.com'
 
 /** Plazas de la promoción fundadora: límite interno, solo se ve en el panel de administración. */
@@ -208,7 +209,13 @@ export function tokenValido(v: unknown): string | null {
   return typeof v === 'string' && /^[0-9a-f]{32}$/.test(v) ? v : null
 }
 
+/**
+ * Código del enlace /r/<código> de un/a embajador/a: el personal con su nombre
+ * («joserobertodiaz») o el aleatorio de los primeros enlaces («B369X5XY»).
+ * Devuelve la forma normalizada (minúsculas); la base compara sin distinguir
+ * mayúsculas y acepta los dos.
+ */
 export function codigoValido(v: string | null | undefined): string | null {
-  const c = (v ?? '').trim().toUpperCase()
-  return /^[0-9A-Z]{8}$/.test(c) ? c : null
+  const c = normalizarCodigoPersonal(v)
+  return formaCodigoPersonal(c) ? c : null
 }

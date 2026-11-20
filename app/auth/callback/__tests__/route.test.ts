@@ -141,7 +141,7 @@ describe('GET /auth/callback — Embajadores de Escena', () => {
 
     await GET(confirmacion())
 
-    expect(mockRpc).toHaveBeenCalledWith('canjear_referido', { p_codigo: 'AB12CD34' })
+    expect(mockRpc).toHaveBeenCalledWith('canjear_referido', { p_codigo: 'ab12cd34' })
   })
 
   it('sin nada de embajadores, no llama a la base', async () => {

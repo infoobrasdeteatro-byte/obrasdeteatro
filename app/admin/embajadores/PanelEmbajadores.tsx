@@ -1,14 +1,15 @@
 'use client'
 
-import { Fragment, useState, useTransition } from 'react'
+import { Fragment, useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { anularInvitacion, crearInvitacion } from './acciones'
+import { anularInvitacion, comprobarCodigoEmbajador, crearInvitacion } from './acciones'
+import { normalizarCodigoPersonal } from '@/lib/codigo-personal'
 import { OFICIOS, enlaceInvitacion, enlaceWhatsapp, mensajeWhatsapp, tituloEmbajador, type Genero, type Oficio } from '@/lib/embajadores/textos'
 import { CLASE_COLEGA, SITUACION_MEMBRESIA, csvColegas, csvEmbajadores, type FilaEmbajadorPanel } from '@/lib/embajadores/admin'
 import { etiquetaOrigen } from '@/lib/elenco/origen-plan'
 
 export type FilaInvitacion = {
-  id: string; token: string; nombre: string; genero: Genero; oficio: string; telefono: string | null; email: string | null
+  id: string; token: string; codigo: string; nombre: string; genero: Genero; oficio: string; telefono: string | null; email: string | null
   estado: string; creada_at: string; caduca_at: string; aceptada_por: string | null; aceptada_at: string | null
 }
 
@@ -31,7 +32,21 @@ function descargar(nombre: string, contenido: string) {
 
 export default function PanelEmbajadores({ invitaciones, embajadores }: { invitaciones: FilaInvitacion[]; embajadores: FilaEmbajadorPanel[] }) {
   const router = useRouter()
-  const [f, setF] = useState({ nombre: '', genero: '', oficio: 'interpretacion', telefono: '', email: '', nota: '' })
+  const [f, setF] = useState({ nombre: '', codigo: '', genero: '', oficio: 'interpretacion', telefono: '', email: '', nota: '' })
+  // Código personal del enlace /r/<código>: se propone con el nombre hasta que se escribe a mano.
+  const [codigoManual, setCodigoManual] = useState(false)
+  const [estadoCodigo, setEstadoCodigo] = useState<{ codigo: string; libre: boolean; aviso: string } | null>(null)
+  const codigoPropuesto = codigoManual ? normalizarCodigoPersonal(f.codigo) : normalizarCodigoPersonal(f.nombre)
+
+  useEffect(() => {
+    if (!codigoPropuesto) { setEstadoCodigo(null); return }
+    let vigente = true
+    const t = setTimeout(async () => {
+      const r = await comprobarCodigoEmbajador(codigoPropuesto)
+      if (vigente) setEstadoCodigo(r)
+    }, 350)
+    return () => { vigente = false; clearTimeout(t) }
+  }, [codigoPropuesto])
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null)
   const [version, setVersion] = useState<Record<string, 'conoce' | 'nuevo'>>({})
   const [copiado, setCopiado] = useState<string | null>(null)
@@ -42,10 +57,11 @@ export default function PanelEmbajadores({ invitaciones, embajadores }: { invita
     e.preventDefault()
     startTransition(async () => {
       setAviso(null)
-      const r = await crearInvitacion(f)
+      const r = await crearInvitacion({ ...f, codigo: codigoPropuesto })
       if (r.ok) {
-        setAviso({ ok: true, texto: `Invitación creada para ${f.nombre.trim()}. Envíala desde la lista.` })
-        setF({ nombre: '', genero: '', oficio: f.oficio, telefono: '', email: '', nota: '' })
+        setAviso({ ok: true, texto: `Invitación creada para ${f.nombre.trim()} (código ${r.codigo}). Envíala desde la lista.` })
+        setF({ nombre: '', codigo: '', genero: '', oficio: f.oficio, telefono: '', email: '', nota: '' })
+        setCodigoManual(false)
         router.refresh()
       } else setAviso({ ok: false, texto: r.error })
     })
@@ -77,6 +93,18 @@ export default function PanelEmbajadores({ invitaciones, embajadores }: { invita
             <input id="emb-nombre" className="ds-input" value={f.nombre} maxLength={120} required onChange={e => setF({ ...f, nombre: e.target.value })} />
           </div>
           <div className="ds-form-group" style={campo}>
+            <label className="ds-label" htmlFor="emb-codigo">Código personal</label>
+            <input id="emb-codigo" className="ds-input" value={codigoManual ? f.codigo : codigoPropuesto} maxLength={40}
+              autoCapitalize="none" spellCheck={false} placeholder="Se crea con el nombre"
+              aria-invalid={estadoCodigo && !estadoCodigo.libre ? true : undefined} aria-describedby="emb-codigo-aviso"
+              onChange={e => { setCodigoManual(true); setF({ ...f, codigo: e.target.value }) }} />
+            <p id="emb-codigo-aviso" className={estadoCodigo && !estadoCodigo.libre ? 'ds-field-error' : 'ds-form-hint'} aria-live="polite" style={{ marginTop: '6px' }}>
+              {estadoCodigo && !estadoCodigo.libre
+                ? estadoCodigo.aviso
+                : codigoPropuesto ? <>Su enlace para colegas: obrasdeteatro.com/r/<strong>{codigoPropuesto}</strong></> : 'Nombre o nombre artístico, sin espacios.'}
+            </p>
+          </div>
+          <div className="ds-form-group" style={campo}>
             <label className="ds-label" htmlFor="emb-genero">Distintivo</label>
             <select id="emb-genero" className="ds-select" value={f.genero} required onChange={e => setF({ ...f, genero: e.target.value })}>
               <option value="" disabled>Elige…</option>
@@ -103,7 +131,7 @@ export default function PanelEmbajadores({ invitaciones, embajadores }: { invita
             <input id="emb-nota" className="ds-input" maxLength={500} value={f.nota} onChange={e => setF({ ...f, nota: e.target.value })} />
           </div>
           <div>
-            <button type="submit" className="ds-btn-primary" disabled={pending} style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }}>
+            <button type="submit" className="ds-btn-primary" disabled={pending || (estadoCodigo !== null && !estadoCodigo.libre)} style={{ width: 'auto', padding: '9px 18px', fontSize: '13px' }}>
               {pending ? 'Creando…' : 'Crear invitación'}
             </button>
           </div>
@@ -122,7 +150,7 @@ export default function PanelEmbajadores({ invitaciones, embajadores }: { invita
             {invitaciones.map(i => (
               <div key={i.id} className="red-fila" style={{ flexDirection: 'column', gap: '6px' }}>
                 <div className="red-cabecera" style={{ width: '100%' }}>
-                  <span className="red-nombre">{i.nombre} · <span style={{ color: 'var(--muted)', fontWeight: 400 }}>{tituloEmbajador(i.genero)} · {OFICIOS.find(o => o.id === i.oficio)?.etiqueta.split(' (')[0]}</span></span>
+                  <span className="red-nombre">{i.nombre} · <span style={{ color: 'var(--muted)', fontWeight: 400 }}>{tituloEmbajador(i.genero)} · {OFICIOS.find(o => o.id === i.oficio)?.etiqueta.split(' (')[0]} · <span style={{ fontFamily: 'var(--mono)' }}>{i.codigo}</span></span></span>
                   <span className="red-fecha" style={{ color: ESTADO[i.estado]?.color }}>
                     {ESTADO[i.estado]?.texto ?? i.estado}
                     {i.estado === 'pendiente' && ` · caduca ${fecha(i.caduca_at)}`}

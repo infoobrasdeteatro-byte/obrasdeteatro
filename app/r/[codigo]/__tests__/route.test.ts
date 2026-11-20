@@ -9,7 +9,7 @@ describe('GET /r/[codigo]', () => {
   it('una persona: guarda el código y va al registro', async () => {
     const res = await pedir('Mozilla/5.0 (iPhone)')
     expect(res.headers.get('location')).toBe('https://www.obrasdeteatro.com/auth/registro?invitado=1')
-    expect(res.cookies.get('odt_ref')?.value).toBe('AB12CD34')
+    expect(res.cookies.get('odt_ref')?.value).toBe('ab12cd34')
   })
 
   it('WhatsApp: recibe la vista previa con título e imagen, sin cookie', async () => {
@@ -24,7 +24,7 @@ describe('GET /r/[codigo]', () => {
   it('cada alta cuenta para un solo programa: borra la cookie del enlace del Elenco', async () => {
     const res = await GET(new NextRequest('https://www.obrasdeteatro.com/r/AB12CD34', { headers: { 'user-agent': 'Mozilla/5.0', cookie: 'odt_elenco=007' } }),
       { params: Promise.resolve({ codigo: 'AB12CD34' }) })
-    expect(res.cookies.get('odt_ref')?.value).toBe('AB12CD34')
+    expect(res.cookies.get('odt_ref')?.value).toBe('ab12cd34')
     expect(res.cookies.get('odt_elenco')?.value).toBe('')
   })
 
